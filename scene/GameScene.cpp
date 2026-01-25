@@ -192,6 +192,10 @@ void GameScene::Init()
 	m_startDelayTimer = 0.0f;
 
 	m_isSceneChanging = false;
+
+	//敗北ロジック制御変数の初期化
+	m_isGameOverProcessing = false;
+	m_gameOverTimer = 0.0f;
 }
 
 
@@ -581,20 +585,33 @@ void GameScene::SetGameContext(GameContext* context){
 
 void GameScene::CheckGameStatus(float deltaSeconds)
 {
+	// シーン遷移中（フェードアウト中）の場合、重複呼び出し防止のため何もしない
+	if (m_isSceneChanging) return;
 	//まずは失敗条件をチェック
 	//もしプレーヤーか味方が死んだら、失敗にします
 	bool allyDead = (m_context->GetAlly() && m_context->GetAlly()->GetHP() <= 0);
 	bool playerDead = (m_player && m_player->GetHP() <= 0);
+	bool isGameOverCondition = (allyDead || playerDead);
 
-	if (allyDead || playerDead)
+	if (isGameOverCondition || m_isGameOverProcessing)
 	{
-		//失敗シーンに遷移
-		if (!m_isSceneChanging)
+		// 初めて敗北を検知した場合：ステータスをロック
+		if (!m_isGameOverProcessing) {
+			m_isGameOverProcessing = true;
+			m_gameOverTimer = 0.0f;
+			std::cout << "[GameScene] GameOver detected! Waiting for animation..." << std::endl;
+		}
+
+		// 経過時間をタイマーに加算
+		m_gameOverTimer += deltaSeconds;
+
+		// 待ち時間が経過（2秒）した後、SceneManagerにシーン遷移を通知
+		if (m_gameOverTimer >= GAMEOVER_WAIT_DURATION)
 		{
 			m_isSceneChanging = true;
 			SceneManager::GetInstance().SetCurrentScene(
 				"GameOverScene",
-				std::make_unique<FadeTransition>(1000.0f, FadeTransition::Mode::FadeOutOnly)
+				std::make_unique<FadeTransition>(1000.0f, FadeTransition::Mode::FadeInOut)//// FadeInOutを使用してスムーズな遷移を確保し、画面のちらつきや急な切り替わりを防止する。
 			);
 		}
 		return; //失敗シーンに遷移したら、そのまま戻る

@@ -23,6 +23,16 @@ GameClearScene::GameClearScene()
  */
 void GameClearScene::update(uint64_t deltatime)
 {
+    float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
+
+    // 経過時間をタイマーに加算
+    m_inputDelayTimer += deltaSeconds;
+
+    // ロック時間に達していない場合、入力を受け付けずにリターン
+    if (m_inputDelayTimer < INPUT_LOCK_DURATION) {
+        return;
+    }
+
     if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_RETURN))
     {
         //AudioManager::StopBGM();
@@ -71,6 +81,9 @@ void GameClearScene::Init()
             "assets/texture/gameclear.png"
         );
     }
+
+    //入力遅延タイマーを初期化
+    m_inputDelayTimer = 0.0f;
 
     if (m_image) {
         std::cerr << "=== GameClearScene m_image Created Successfully ===" << std::endl;

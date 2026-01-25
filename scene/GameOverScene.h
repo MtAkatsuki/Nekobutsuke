@@ -64,4 +64,8 @@ private:
 	/// @brief タイトルロゴや背景などのスプライト
 	std::unique_ptr<CSprite> m_image;	
 
+	// 誤操作による即時スキップを防止するための入力遅延タイマー
+	float m_inputDelayTimer = 0.0f;
+	const float INPUT_LOCK_DURATION = 1.0f; // 1秒間ロック
+
 };

@@ -181,6 +181,14 @@ private:
 	float m_startDelayTimer = 0.0f; 
 	const float START_WAIT_TIME = 1.0f; // 待ち時間
 
+	// ===敗北ロジック制御変数===
+	// フラグ：敗北処理が開始されているか（リザルトへの遷移待ち状態）
+	bool m_isGameOverProcessing = false;
+	// 敗北後のウェイト用タイマー
+	float m_gameOverTimer = 0.0f;
+	// 敗北待ち時間（秒）：ダメージ表示やHPゲージの減少、プレイヤーの反応時間を考慮
+	const float GAMEOVER_WAIT_DURATION = 1.0f;
+
 	private:
 		void TurnChangeCheck();
 
