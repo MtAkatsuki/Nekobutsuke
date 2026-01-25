@@ -38,6 +38,16 @@ public:
 	//UIリセット
 	void Clear();
 
+	// 汎用ガイドUIの表示
+	// targetPos: 矢印アニメーションの中心座標（通常はプレイヤーの位置）
+	// showArrows: WASD矢印のアニメーションを表示するかどうか
+	// showEnter: Enterキーの確認プロンプトを表示するかどうか
+	// showEsc: ESCキーのキャンセルプロンプトを表示するかどうか
+	void ShowGuideUI(const Vector3& targetPos, bool showArrows, bool showEnter, bool showEsc);
+
+	// ガイドUIの非表示
+	void HideGuideUI();
+
 private:
 	GameContext* m_context = nullptr;
 	MenuType m_currentType = MenuType::None;
@@ -53,4 +63,33 @@ private:
 
 	void LoadSprite(std::vector<MenuOption>& list, const std::string& path, float w, float h);
 	void DrawMenuGroup(std::vector<MenuOption>& list, float startX, float startY);
+
+	// === ガイドUI関連メンバ ===
+	bool m_isGuideActive = false;      // ガイド全体の有効化フラグ（総親機）
+	bool m_showArrows = false;         // 矢印を表示するかどうか
+	bool m_showEnter = false;          // Enter（決定）を表示するかどうか
+	bool m_showEsc = false;            // Esc（キャンセル）を表示するかどうか
+
+	Vector3 m_guideTargetPos{ 0,0,0 };
+	float m_guideTimer = 0.0f;
+
+	// ESC キャンセルヒント (右下)
+	std::unique_ptr<CSprite> m_escHintSprite;
+	// Enter 確認ヒント (右下)
+	std::unique_ptr<CSprite> m_enterHintSprite;
+
+	// WASD 方向ヒント (4方向)
+	// 1つのスプライトをDraw時に回転・移動させて再利用するか、4つ読み込む
+	// 各矢印の揺れ（シェイク）を個別に制御するため、構造体を使用
+	struct TutorialArrow {
+		std::unique_ptr<CSprite> sprite;
+		Vector3 baseOffset;   // 基準オフセット（中心からの相対距離）
+		Vector3 currentShake; // 現在のシェイクオフセット
+	};
+	std::vector<TutorialArrow> m_arrows;
+
+	// ガイドUIの描画
+	void DrawGuideUI();
+	// ガイドUIの更新
+	void UpdateGuideUI(float dt);
 };

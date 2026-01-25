@@ -23,7 +23,7 @@ void Ally::Init()
 
 
     //初期ステータスを設置
-    m_maxHP = 5;
+    m_maxHP = 4;
     m_currentHP = m_maxHP;
     m_team = Team::Ally;
     m_maxMovePoints = 0;//現在仲間は移動できない

@@ -559,7 +559,7 @@ void Player::SwitchToMenuMain() {
 	else {
 		m_context->GetUIManager()->SetMoveOptionEnabled(true);
 	}
-
+	m_context->GetUIManager()->HideGuideUI();
 	m_context->GetUIManager()->OpenMainMenu();
 
 	// プレーヤー位置の誤差修正
@@ -570,6 +570,14 @@ void Player::SwitchToMenuMain() {
 void Player::SwitchToMoveSelect() {
 	m_state = PlayerState::MOVE_SELECT;
 	m_context->GetUIManager()->CloseMenu();
+
+	// 移動モード：矢印+ Enter + Esc
+	m_context->GetUIManager()->ShowGuideUI(
+		m_srt.pos,  // 矢印を表示する位置
+		true,       // Show Arrows
+		true,       // Show Enter
+		true        // Show Esc
+	);
 
 	// 初期化予想モデル位置
 	m_previewGridX = m_gridX;
@@ -584,6 +592,13 @@ void Player::SwitchToAttackMenu() {
 	m_state = PlayerState::MENU_ATTACK;
 	m_nextState = PlayerState::MENU_ATTACK;
 	m_context->GetUIManager()->OpenAttackMenu();
+	// 移動モード：Escだけ
+	m_context->GetUIManager()->ShowGuideUI(
+		m_srt.pos,
+		false,      // No Arrows
+		false,      // No Enter
+		true        // Show Esc
+	);
 }
 // 攻撃方向選択状態に切り替え
 void Player::SwitchToAttackDirSelect(AttackType type) {
@@ -594,6 +609,13 @@ void Player::SwitchToAttackDirSelect(AttackType type) {
 
 	// デフォルトの攻撃方向を現在の向きに設定
 	m_attackDir = m_facing;
+	// 攻撃方向選択状態：矢印+ Enter + Esc
+	m_context->GetUIManager()->ShowGuideUI(
+		m_srt.pos,
+		true,       // Show Arrows
+		true,       // Show Enter
+		true        // Show Esc
+	);
 }
 
 //メニュー操作入力処理
@@ -616,6 +638,9 @@ void Player::HandleMenuInput() {
 void Player::HandleMoveInput(float dt) {
 	// ESC: プレーヤー位置をリセットしてメインメニューに戻る
 	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_ESCAPE)) {
+		// 移動チュートリアルを非表示
+		m_context->GetUIManager()->HideGuideUI();
+
 		m_gridX = m_startGridX;
 		m_gridZ = m_startGridZ;
 
@@ -629,10 +654,11 @@ void Player::HandleMoveInput(float dt) {
 	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
 	else {
 		int dx = 0, dz = 0;
-		if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_W)) dz = 1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_S)) dz = -1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_A)) dx = -1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_D)) dx = 1;
+		if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_W) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_UP)) 
+		  dz = 1;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_S) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_DOWN)) dz = -1;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_A) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_LEFT)) dx = -1;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_D) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_RIGHT)) dx = 1;
 
 		if (dx != 0 || dz != 0) {
 			int nextX = m_previewGridX + dx;
@@ -677,6 +703,7 @@ void Player::HandleMoveInput(float dt) {
 
 	// Enter: 移動確認
 	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_RETURN)) {
+		m_context->GetUIManager()->HideGuideUI();
 		ExecuteMove();
 	}
 }
@@ -693,6 +720,7 @@ void Player::HandleAttackMenuInput() {
 		m_nextState = PlayerState::ATTACK_DIR_SELECT;
 	}
 	else if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_ESCAPE)) {
+		m_context->GetUIManager()->HideGuideUI();
 		//攻撃メニューからメインメニューに戻る
 		SwitchToMenuMain();
 	}
@@ -718,6 +746,7 @@ void Player::HandleAttackDirInput(float dt) {
 	}
 
 	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_RETURN)) {
+		m_context->GetUIManager()->HideGuideUI();
 		ExecuteAttack();
 	}
 }
