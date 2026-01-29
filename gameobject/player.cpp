@@ -13,15 +13,25 @@
 
 void Player::playerResourceLoader()
 {
-	static std::unique_ptr<CSprite> g_spr;
-	std::unique_ptr<CStaticMesh> smesh = std::make_unique<CStaticMesh>();
-	smesh->Load("assets/model/character/player.obj", "assets/model/character/");
 
-	std::unique_ptr<CStaticMeshRenderer> srenderer = std::make_unique<CStaticMeshRenderer>();
-	srenderer->Init(*smesh);
-
-	MeshManager::RegisterMesh<CStaticMesh>("player_mesh", std::move(smesh));
-	MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("player_mesh", std::move(srenderer));
+	// ---  Model Front ---
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+		mesh->Load("assets/model/character/player_front.obj", "assets/model/character/");
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+		MeshManager::RegisterMesh<CStaticMesh>("player_front_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("player_front_mesh", std::move(renderer));
+	}
+	// ---  Model Back ---
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+		mesh->Load("assets/model/character/player_back.obj", "assets/model/character/");
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+		MeshManager::RegisterMesh<CStaticMesh>("player_back_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("player_back_mesh", std::move(renderer));
+	}
 	//パス直線
 	{
 		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
@@ -41,36 +51,35 @@ void Player::playerResourceLoader()
 		MeshManager::RegisterMesh<CStaticMesh>("arrow_corner_mesh", std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("arrow_corner_mesh", std::move(renderer));
 	}
+
+
+	//m_PlayerMesh = MeshManager::getMesh<CStaticMesh>("player_mesh");
+	//m_PlayerMeshrenderer = MeshManager::getRenderer<CStaticMeshRenderer>("player_mesh");
+	m_PlayerShader = MeshManager::getShader<CShader>("unlightshader");
+	m_PathLineRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
+	m_PathCornerRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_corner_mesh");
+
+
+	// 基底クラスのレンダラー初期化
+	auto* frontR = MeshManager::getRenderer<CStaticMeshRenderer>("player_front_mesh");
+	auto* backR = MeshManager::getRenderer<CStaticMeshRenderer>("player_back_mesh");
+
+	// Unitクラスへ制御権を委譲し、前後両面のモデルを登録
+	SetModelRenderers(frontR, backR);
+
+
+	if (m_PlayerShader) {
+		std::cerr << "Player Shader Loaded Successfully." << std::endl;
+	}
+	else {
+		std::cerr << "CRITICAL ERROR: 'lightshaderSpecular' not found! Check shader file paths." << std::endl;
+	}
 }
 
 void Player::Init() {
 
 	playerResourceLoader();
 
-	m_PlayerMesh = MeshManager::getMesh<CStaticMesh>("player_mesh");
-	m_PlayerMeshrenderer = MeshManager::getRenderer<CStaticMeshRenderer>("player_mesh");
-	m_PlayerShader = MeshManager::getShader<CShader>("unlightshader");
-	m_PathLineRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
-	m_PathCornerRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_corner_mesh");
-
-	if(m_PlayerMesh){
-		std::cerr << "Player Mesh Loaded Successfully." << std::endl;
-	}
-	else{
-		std::cerr << "CRITICAL ERROR: 'player_mesh' not found! Check model file paths." << std::endl;
-	}
-	if(m_PlayerMeshrenderer){
-		std::cerr << "Player MeshRenderer Loaded Successfully." << std::endl;
-	}
-	else{
-		std::cerr << "CRITICAL ERROR: 'player_mesh' Renderer not found! Check model file paths." << std::endl;
-	}
-	if(m_PlayerShader){
-		std::cerr << "Player Shader Loaded Successfully." << std::endl;
-	}
-	else{
-		std::cerr << "CRITICAL ERROR: 'lightshaderSpecular' not found! Check shader file paths." << std::endl;
-	}
 
 	const int BORN_GRID_X = 1;
 	const int BORN_GRID_Z = 1;
@@ -101,7 +110,7 @@ void Player::Init() {
 	m_targetWorldPos = m_srt.pos;
 	m_moveSpeed = 5.0f;
 
-	SetFacing(Direction::North);
+	SetFacing(Direction::South);
 	m_srt.rot.y = m_targetRot.y;
 	 
 	m_currentMovePoints = 4;
@@ -121,6 +130,9 @@ void Player::Update(uint64_t dt) {
 	//ミリ秒を秒に
 	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 	if (m_context->GetUIManager()->IsAnimating()) {return;}
+
+	// 基底クラスの反転（フリップ）アニメーション処理を実行
+	UpdateFlipAnimation(deltaSeconds);
 
 	//アニメション終わった後、またメニュー遷移実際に実行する
 	//メインメニュー状態の場合
@@ -186,7 +198,7 @@ void Player::Update(uint64_t dt) {
 	
 	}
 	//向きの更新
-	UpdatePaperOrientation();
+	/*UpdatePaperOrientation();*/
 
 	UpdateWorldMatrix();
 }
@@ -216,7 +228,6 @@ void Player::OnDraw(uint64_t dt) {
 	else if (m_state == PlayerState::ATTACK_DIR_SELECT) {
 		DrawAttackWarning();
 	}
-	if (m_PlayerMeshrenderer != nullptr) {
 		//プレーヤー本体は透明の部分あるため
 		Renderer::SetBlendState(BS_ALPHABLEND);
 
@@ -224,14 +235,14 @@ void Player::OnDraw(uint64_t dt) {
 
 		Renderer::SetWorldMatrix(&m_WorldMatrix);
 
-		m_PlayerMeshrenderer->Draw();
+		/*m_PlayerMeshrenderer->Draw();*/
+		DrawModel();
 		
 		Renderer::SetBlendState(BS_NONE);
-	}
+
 }
 //スタート点の半透明残影
 void Player::DrawGhost() {
-	if (!m_PlayerMeshrenderer) return;
 
 	Vector3 ghostPos = m_context->GetMapManager()->GetWorldPosition(m_startGridX, m_startGridZ);
 	ghostPos.y += 0.015f;
@@ -241,7 +252,7 @@ void Player::DrawGhost() {
 	Renderer::SetWorldMatrix(&ghostWorld);
 
 	// マテリアルを灰色半透明に変更して描画
-	CMaterial* mtrl = m_PlayerMeshrenderer->GetMaterial(0);
+	CMaterial* mtrl = m_frontRenderer->GetMaterial(0);
 	MATERIAL old = mtrl->GetData();
 	MATERIAL gray = old;
 	gray.Diffuse = Color(1.0f, 1.0f, 1.0f, 0.6f); //灰色半透明
@@ -249,11 +260,20 @@ void Player::DrawGhost() {
 
 	Renderer::SetBlendState(BS_ALPHABLEND);
 	Renderer::SetDepthEnable(false);
-	m_PlayerMeshrenderer->Draw();
+	m_frontRenderer->Draw();
 	Renderer::SetDepthEnable(true);
 	Renderer::SetBlendState(BS_NONE);
 
-	mtrl->SetMaterial(old); //マテリアルをリセット
+	
+
+
+	MATERIAL restore = old;
+	restore.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+	restore.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f); 
+	restore.Emission = Color(0.1f, 0.1f, 0.1f, 1.0f); 
+	restore.TextureEnable = TRUE;
+
+	mtrl->SetMaterial(restore);
 
 	//WorldMatrixを元に戻す
 	UpdateWorldMatrix();
@@ -494,18 +514,6 @@ Unit* Player::GetTargetInLine(int range)
 }
 
 
-void Player::SetFacing(Direction newDir)
-{
-	m_facing = newDir;
-
-	float angleOffset = PI;//現在使用のモデルの初期向き補正
-
-	float baseAngle = static_cast<int>(m_facing) * (PI / 2.0f);
-
-	m_targetRot.y = baseAngle + angleOffset;
-
-	m_isRotating = true;
-}
 
 // パスでの移動更新
 bool Player::UpdatePathMovement(float dt) {
@@ -519,7 +527,8 @@ bool Player::UpdatePathMovement(float dt) {
 	Vector3 diff = targetPos - m_srt.pos;
 	if (diff.LengthSquared() > 0.001f) {
 		// 向きを設置
-		m_facing = DirOffset::FromVector(diff.x, diff.z);
+		// Unit::SetFacing が呼ばれ、紙片反転アニメーションとモデル切り替えが発動します。
+		SetFacingFromVector(diff);
 	}
 
 	// ベクトルの正規化と距離計算
@@ -777,52 +786,52 @@ void Player::ExecuteAttack() {
 	m_state = PlayerState::ANIM_ATTACK;
 }
 
-//プレーヤーモデルの向き更新
-void Player::UpdatePaperOrientation() {
-	// 突然の変化を防ぐため、lastScaleXで最後の左右向きを記憶
-	// 初期化は 1.0f (右向き)
-	static float lastScaleX = 1.0f;
-
-	float targetRotY = 0.0f;     // 0 = 正面, π = 背後
-	float targetScaleX = 1.0f;   // 1 = 右向き, -1 = 左向き（ミラー）
-
-	//現在の方向を決定
-	//攻撃方向選択中は攻撃方向を優先
-	Direction currentDir = m_facing;
-	if (m_state == PlayerState::ATTACK_DIR_SELECT) {
-		currentDir = m_attackDir;
-	}
-
-	// 方向に基づいて回転とスケールを設定
-	switch (currentDir) {
-	case Direction::North: //上向き (+Z) -> 背面
-		targetRotY = 3.14159f;     // 180度（背面）
-		targetScaleX = lastScaleX; // 左右は維持
-		break;
-
-	case Direction::South: // 下向き(-Z) ->正面
-		targetRotY = 0.0f;         // 正面
-		targetScaleX = lastScaleX; // 左右は維持
-		break;
-
-	case Direction::East:  // 右向き (+X) -> 正面 + 右向き
-		targetRotY = 0.0f;
-		targetScaleX = 1.0f;
-		lastScaleX = 1.0f; // 更新臨時データ
-		break;
-
-	case Direction::West:  // 左向き (-X) -> 正面 + 左向き（ミラー）
-		targetRotY = 0.0f;
-		targetScaleX = -1.0f;
-		lastScaleX = -1.0f; // 更新臨時データ
-		break;
-	}
-
-	// 回転の適用
-	m_srt.rot.y = targetRotY;
-
-	// スケールの適用
-	m_srt.scale.x = targetScaleX;
-
-}
+////プレーヤーモデルの向き更新
+//void Player::UpdatePaperOrientation() {
+//	// 突然の変化を防ぐため、lastScaleXで最後の左右向きを記憶
+//	// 初期化は 1.0f (右向き)
+//	static float lastScaleX = 1.0f;
+//
+//	float targetRotY = 0.0f;     // 0 = 正面, π = 背後
+//	float targetScaleX = 1.0f;   // 1 = 右向き, -1 = 左向き（ミラー）
+//
+//	//現在の方向を決定
+//	//攻撃方向選択中は攻撃方向を優先
+//	Direction currentDir = m_facing;
+//	if (m_state == PlayerState::ATTACK_DIR_SELECT) {
+//		currentDir = m_attackDir;
+//	}
+//
+//	// 方向に基づいて回転とスケールを設定
+//	switch (currentDir) {
+//	case Direction::North: //上向き (+Z) -> 背面
+//		targetRotY = 3.14159f;     // 180度（背面）
+//		targetScaleX = lastScaleX; // 左右は維持
+//		break;
+//
+//	case Direction::South: // 下向き(-Z) ->正面
+//		targetRotY = 0.0f;         // 正面
+//		targetScaleX = lastScaleX; // 左右は維持
+//		break;
+//
+//	case Direction::East:  // 右向き (+X) -> 正面 + 右向き
+//		targetRotY = 0.0f;
+//		targetScaleX = 1.0f;
+//		lastScaleX = 1.0f; // 更新臨時データ
+//		break;
+//
+//	case Direction::West:  // 左向き (-X) -> 正面 + 左向き（ミラー）
+//		targetRotY = 0.0f;
+//		targetScaleX = -1.0f;
+//		lastScaleX = -1.0f; // 更新臨時データ
+//		break;
+//	}
+//
+//	// 回転の適用
+//	m_srt.rot.y = targetRotY;
+//
+//	// スケールの適用
+//	m_srt.scale.x = targetScaleX;
+//
+//}
 

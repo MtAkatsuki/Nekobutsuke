@@ -86,13 +86,12 @@ private:
 
 	virtual void OnTurnChanged(TurnState state) override;
 	Unit* GetTargetInLine(int range);
-	void SetFacing(Direction newDir);
 
 	void HandleMoveSelectionInput(float dt);//移動入力
 	void UpdatePathToPrivew();//スタート点からゴールまでのルート
 
 	bool UpdatePathMovement(float dt);
-	void UpdatePaperOrientation();
+	/*void UpdatePaperOrientation();*/
 
 
 private:
@@ -104,8 +103,8 @@ private:
 	};
 	ControlState m_controlState = ControlState::WAITING;
 
-	CStaticMesh*			m_PlayerMesh;
-	CStaticMeshRenderer*	m_PlayerMeshrenderer;
+	//CStaticMesh*			m_PlayerMesh;
+	//CStaticMeshRenderer*	m_PlayerMeshrenderer;
 	CShader*	m_PlayerShader;
 	//状態
 	PlayerState m_state = PlayerState::WAITING;

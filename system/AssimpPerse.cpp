@@ -200,6 +200,11 @@ namespace myAssimp{
 	// マテリアル情報をａｓｓｉｍｐを使用して取得する
 	void GetMaterialData(const aiScene* pScene,std::string texturedirectory)
 	{
+		if (pScene == nullptr) {
+			std::string errorMsg = "Critical Error: pScene is null! Path: " + texturedirectory + "\n";
+			OutputDebugStringA(errorMsg.c_str()); // VSの出力ウィンドウに表示
+			return;
+		}
 		// マテリアル数分テクスチャ格納エリアを用意する
 		g_diffuseTextures.resize(pScene->mNumMaterials);
 
@@ -345,7 +350,19 @@ namespace myAssimp{
 
 		if (pScene == nullptr)
 		{
-			std::cerr << "load error" << filename.c_str() << importer.GetErrorString() << std::endl;
+			// Assimp 公式のエラー詳細情報を取得
+			std::string errorReason = importer.GetErrorString();
+
+			// エラーメッセージの構築
+			std::string msg = "【Assimp モデル読み込み失敗】\n";
+			msg += "対象ファイルパス: " + std::string(filename) + "\n";
+			msg += "詳細理由: " + errorReason + "\n";
+
+			// 開発時に即座に気づけるよう、メッセージボックスを表示
+			MessageBoxA(NULL, msg.c_str(), "Assimp Error", MB_OK | MB_ICONERROR);
+
+			// 【重要】読み込み失敗時は後続の処理を中断し、クラッシュを防止
+			return; // または return nullptr; (関数の戻り値型に合わせる)
 		}
 		assert(pScene != nullptr);
 

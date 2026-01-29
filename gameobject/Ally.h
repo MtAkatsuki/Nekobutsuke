@@ -18,8 +18,6 @@ public:
     void TakeDamage(int damage, Unit* attacker)override;
 
 private:
-    CStaticMesh* m_mesh = nullptr;
-    CStaticMeshRenderer* m_renderer = nullptr;
     CShader* m_shader = nullptr;
 
 };

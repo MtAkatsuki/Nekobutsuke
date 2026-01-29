@@ -519,27 +519,7 @@ void GameScene::resourceLoader()
 		MeshManager::RegisterMesh<CStaticMesh>("range_panel_mesh", std::move(smesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("range_panel_mesh", std::move(srenderer));
 	}
-
-	// メッシュデータ読み込み（Enemyキャラクター用）
-	{
-		for (int i = 0; i < 3; ++i)
-		{
-			std::string fileName = "assets/model/character/enemy_cat_" + std::to_string(i) + ".obj";
-			std::string meshName = "enemy_cat_mesh_" + std::to_string(i); // 登録名enemy_cat_mesh_0、enemy_cat_mesh_1…
-
-			std::unique_ptr<CStaticMesh> smesh = std::make_unique<CStaticMesh>();
-			// ソースパスassets/model/character/
-			smesh->Load(fileName.c_str(), "assets/model/character/");
-
-			std::unique_ptr<CStaticMeshRenderer> srenderer = std::make_unique<CStaticMeshRenderer>();
-			srenderer->Init(*smesh);
-
-			MeshManager::RegisterMesh<CStaticMesh>(meshName, std::move(smesh));
-			MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(meshName, std::move(srenderer));
-
-			std::cerr << "   [Resource] Loaded: " << meshName << std::endl;
-		}
-	}
+	
 }
 
 void GameScene::drawGridDebugText()

@@ -19,25 +19,84 @@ void Enemy::init(){}
 
 void Enemy::Init(int sequenceNumber)
 {
-	std::string meshName = "enemy_cat_mesh_" + std::to_string(sequenceNumber);
+	std::string numStr = std::to_string(sequenceNumber + 1);
+	std::string frontName = "enemy_front_" + numStr;
+	std::string backName = "enemy_back_" + numStr;
 
-	m_EnemyMesh = MeshManager::getMesh<CStaticMesh>(meshName);
-	m_EnemyMeshrenderer = MeshManager::getRenderer<CStaticMeshRenderer>(meshName);
+	// ディレクトリパス
+	std::string dirPath = "assets/model/character/";
 
-	if (m_EnemyMeshrenderer && m_EnemyMeshrenderer->GetMaterial(0)) {
-		MATERIAL m = m_EnemyMeshrenderer->GetMaterial(0)->GetData();
-		m.Diffuse = Color(1, 1, 1, 1); 
-		m.TextureEnable = TRUE;
-		m_EnemyMeshrenderer->GetMaterial(0)->SetMaterial(m);
+	// 正面（Front）モデルのロード ---
+	{
+		// 完全なファイルパスを構築
+		std::string fullPath = dirPath + frontName + ".obj";
+
+		// ファイルが本当に存在するかチェックする
+		if (!std::filesystem::exists(fullPath)) {
+			// コンソールが無い場合でもVSの出力ウィンドウに出るようにする
+			std::string err = "[Error] File NOT Found: " + fullPath + "\n";
+			OutputDebugStringA(err.c_str());
+			MessageBoxA(NULL, err.c_str(), "File Load Error", MB_OK | MB_ICONERROR);
+			// ここで return しないとクラッシュします
+			return;
+		}
+
+		// デバッグ用：ロードしようとしているパスを出力
+		std::string msg = "[Log] Loading: " + fullPath + "\n";
+		OutputDebugStringA(msg.c_str());
+
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+
+		// 構築済みの fullPath を渡す
+		mesh->Load(fullPath.c_str(), dirPath.c_str());
+
+		// --- ここから下は変更なし ---
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+		MeshManager::RegisterMesh<CStaticMesh>(frontName, std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(frontName, std::move(renderer));
 	}
 
+	// 背面（Back）モデルのロード
+	{
+		// 完全なファイルパスを構築
+		std::string fullPath = dirPath + backName + ".obj";
+
+		// ファイルが本当に存在するかチェックする
+		if (!std::filesystem::exists(fullPath)) {
+			// コンソールが無い場合でもVSの出力ウィンドウに出るようにする
+			std::string err = "[Error] File NOT Found: " + fullPath + "\n";
+			OutputDebugStringA(err.c_str());
+			MessageBoxA(NULL, err.c_str(), "File Load Error", MB_OK | MB_ICONERROR);
+			// ここで return しないとクラッシュします
+			return;
+		}
+
+		// デバッグ用：ロードしようとしているパスを出力
+		std::string msg = "[Log] Loading: " + fullPath + "\n";
+		OutputDebugStringA(msg.c_str());
+
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+
+		// 構築済みの fullPath を渡す
+		mesh->Load(fullPath.c_str(), dirPath.c_str());
+
+		// --- ここから下は変更なし ---
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+		MeshManager::RegisterMesh<CStaticMesh>(backName, std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(backName, std::move(renderer));
+	}
+
+	// シェーダーの取得（ライティング無効の Unlit シェーダーを使用）
 	m_EnemyShader = MeshManager::getShader<CShader>("unlightshader");
 
-	if (!m_EnemyMesh) {
-		std::cerr << "[Warning] Specific mesh " << meshName << " not found! Trying fallback." << std::endl;
-		return;
-	}
+	//  Unit クラス（基底クラス）への登録
+	auto* frontR = MeshManager::getRenderer<CStaticMeshRenderer>(frontName);
+	auto* backR = MeshManager::getRenderer<CStaticMeshRenderer>(backName);
+	SetModelRenderers(frontR, backR);
 
+	// 敵の出現位置を決定
 	const int BORN_GRID_X = 3+ sequenceNumber*2;
 	const int BORN_GRID_Z = 4 + sequenceNumber;
 	Tile* bornTile = m_context->GetMapManager()->GetTile(BORN_GRID_X, BORN_GRID_Z);
@@ -72,30 +131,59 @@ void Enemy::Init(int sequenceNumber)
 	m_currentHP = m_maxHP;
 
 	m_team = Team::Enemy;
-	//初期化時、プレーヤーに向く
-	Player* target = m_context->GetPlayer();
-	if (target)
-	{
-		//向きの再設定
-		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
-		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(target->GetUnitGridX(), target->GetUnitGridZ());
 
-		SetFacingFromVector(targetPos - myPos);
-	}
+
 
 	m_state = EnemyState::IDLE;
 	m_isDead = false;
-
-	UpdatePaperOrientation();
-	UpdateWorldMatrix();
+	//初期向き：プレイヤーの方を向く
+	// デフォルトの初期状態として【南】を向かせる
+	// これにより、目標が「西」になった場合に「南 -> 西」の回転アニメーションが再生される
 
 	
+
+	//  目標方向の計算（水平方向優先の重み付けロジック）
+	Player* target = m_context->GetPlayer();
+	if (target)
+	{
+		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
+		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(target->GetUnitGridX(), target->GetUnitGridZ());
+
+		// ベクトル：自分 -> ターゲット (targetPos - myPos = 前進方向)
+		Vector3 diff = targetPos - myPos;
+
+		Direction finalDir = Direction::South;
+
+		// --- 【重要】水平方向優先 (Horizontal Bias) の判定 ---
+		// 通常、斜め（例：-2, -3）の場合は数値の大きい South が判定されるが、
+		// 視覚的にはプレイヤーを側面的に捉えた方が自然なため、X軸に重みを持たせる。
+		if (std::abs(diff.x) > 0.1f)
+		{
+			// 東・西を優先判定
+			finalDir = (diff.x > 0) ? Direction::East : Direction::West;
+		}
+		else
+		{
+			// 角度が垂直に近い場合のみ、北・南と判定
+			finalDir = (diff.z > 0) ? Direction::North : Direction::South;
+		}
+
+		// 3. 向きの適用 (アニメーションのトリガー)
+		// finalDir が West なら「South -> West」の反転アニメーションが開始される
+		// finalDir が South の場合は静止を維持する（仕様通り）
+		SetFacing(finalDir);
+	}
+
+	UpdateWorldMatrix(); // 初期行列を確定させる
 }
 
 void Enemy::Update(uint64_t dt) {
 
 	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 
+	// 基底クラスの反転（フリップ）アニメーション処理を実行
+	UpdateFlipAnimation(deltaSeconds);
+	//死亡飛翔中の更新処理
 	if (m_state == EnemyState::DEAD_FLYING)
 	{
 		DeathFlyingUpdate(deltaSeconds);
@@ -169,9 +257,7 @@ void Enemy::Update(uint64_t dt) {
 		break;
 	}
 
-	if (m_state != EnemyState::DEAD_FLYING) {
-		UpdatePaperOrientation();
-	}
+
 
 	UpdateWorldMatrix();
 }
@@ -208,12 +294,12 @@ void Enemy::OnDraw(uint64_t dt){
 		if (m_EnemyShader != nullptr) {
 			m_EnemyShader->SetGPU();
 		}
-		if (m_EnemyMeshrenderer != nullptr) {
-			//プレーヤー本体は透明の部分あるため
-			Renderer::SetBlendState(BS_ALPHABLEND);
-			m_EnemyMeshrenderer->Draw();
-			Renderer::SetBlendState(BS_NONE);
-		}
+
+		//プレーヤー本体は透明の部分あるため
+		Renderer::SetBlendState(BS_ALPHABLEND);
+		DrawModel();// 基底クラスの描画メソッドを呼び出す
+		Renderer::SetBlendState(BS_NONE);
+	
 	}
 }
 
@@ -541,9 +627,8 @@ void Enemy::ChargeAnimation() {
 	}
 
 	if (m_EnemyShader)m_EnemyShader->SetGPU();
-	if (m_EnemyMeshrenderer != nullptr) {
-		m_EnemyMeshrenderer->Draw();
-	}
+	DrawModel();
+
 	if (m_isCharging) {
 		m_srt.pos = originalPos;
 		UpdateWorldMatrix();
@@ -667,8 +752,6 @@ void Enemy::UpdatePaperOrientation() {
 
 	float targetRotY = 0.0f;     // 0 = 正面, π = 背後
 	float targetScaleX = 1.0f;   // 1 = 右向き, -1 = 左向き（ミラー）
-
-
 
 	// 方向に基づいて回転とスケールを設定
 	switch (m_facing) {

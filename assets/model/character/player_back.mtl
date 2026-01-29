@@ -1,0 +1,12 @@
+# Blender 4.5.4 LTS MTL File: 'player_mouse - 副本.blend'
+# www.blender.org
+
+newmtl mouse_back.001
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 1
+map_Kd mouse_back_1.png
+map_d mouse_back_1.png

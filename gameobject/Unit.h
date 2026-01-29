@@ -9,6 +9,7 @@
 class MapManager;
 class TurnManager;
 class Tile;
+class CStaticMeshRenderer;
 
 class Unit:public GameObject
 {
@@ -40,7 +41,14 @@ public:
 	virtual void ResetMovePoints() { m_currentMovePoints = m_maxMovePoints; };
 	virtual Team GetTeam()const { return m_team; };
 
-	void SetFacingFromVector(const Vector3& dir);
+	// モデル設定インターフェース ---
+	// 子クラスの Init 内で呼び出し、前後両面のレンダラーを登録する
+	void SetModelRenderers(CStaticMeshRenderer* front, CStaticMeshRenderer* back);
+
+	void SetFacingFromVector(const Vector3& dir);// ベクトルから向きを計算
+	void SetFacing(Direction newDir);             // 向きを手動で直接設定
+
+
 	void StartAttackAnimation(const Vector3& targetPos);
 	//コールバック関数でダメージ数字を表示する
 	bool UpdateAttackAnimation(float dt, std::function<void()> onImpact);
@@ -53,10 +61,31 @@ public:
 	//HP Barの描画
 	void DrawUI();
 
+	// --- 共通モデル描画メソッド ---
+	// 子クラスの OnDraw 内で呼び出し、キャラ本体の描画を実行する
+	void DrawModel();
+
+	// --- 反転（フリップ）アニメーション制御 ---
+	void UpdateFlipAnimation(float dt);
+
 protected:
 	virtual void OnTurnChanged(TurnState state);
 	virtual void StartTurn();
 	virtual void EndTurn();
+protected:
+
+	// フリップアニメーションの種類を定義
+	enum class FlipStyle {
+		None,   // アニメーションなし
+		Simple, // 単純な反転 (0 -> 90 -> 0) : 主に北向き（背面）用
+		Swing   // スイング反転 (0 -> 90 -> -90 -> 0) : 左右の鏡像反転用
+	};
+	FlipStyle m_currentFlipStyle = FlipStyle::Swing;
+
+	// --- レンダリング関連 ---
+	CStaticMeshRenderer* m_frontRenderer = nullptr; // 正面用モデル
+	CStaticMeshRenderer* m_backRenderer = nullptr;  // 背面用モデル
+	CStaticMeshRenderer* m_currRenderer = nullptr;  // 現在描画中のモデル
 
 	int m_maxHP = 5;
 	int m_currentHP = 5;
@@ -91,5 +120,18 @@ protected:
 	Vector3 m_slideEndPos;
 	float m_slideTimer = 0.0f;
 	
+	// --- 左右の向きの記憶用フラグ ---
+	// true = 右向き（東/南）、false = 左向き（西）
+	// 背面（北）を向いた際にも、直前の左右の視覚的な傾向を維持するために使用する
+	bool m_isFacingRight = true;
+
 	std::unique_ptr<HPBar> m_hpBar;
+
+
+	// --- 反転アニメーションの状態管理 ---
+	bool m_isFlipping = false;          // 反転動作中フラグ
+	float m_flipTimer = 0.0f;           // 反転用タイマー
+	const float FLIP_DURATION = 0.4f;   // 反転にかかる合計時間 (0.2秒)
+	Direction m_nextFacing = Direction::South; // 遷移先の目標方向
+	bool m_hasSwappedMesh = false;      // メッシュの切り替えが完了したかどうかの判定フラグ
 };

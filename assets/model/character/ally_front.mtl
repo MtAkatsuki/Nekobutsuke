@@ -1,0 +1,12 @@
+# Blender 5.0.0 MTL File: 'ally_mouse.blend'
+# www.blender.org
+
+newmtl ally_mouse_front
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 1
+map_Kd ally_mouse_front.png
+map_d ally_mouse_front.png
