@@ -5,14 +5,16 @@
 class Unit;
 
 enum class MapModelType {
-	FLOOR,
-	WALL,
-	TRAP,
-	PROP_SOFA_YELLOW, // W_Y_SOFA
-	PROP_SOFA_WHITE,  // W_W_SOFA
-	PROP_CATTOWER,    // W_CATTOWER
-	PROP_TABLE,       // W_TABLE
-	PROP_BOOKSHELF    // W_BOOKSHELF
+	FLOOR,            // 床
+	WALL,             // 壁
+	TRAP,             // トラップ
+
+	// --- 家具・プロップ (長方形・大型物件) ---
+	PROP_SOFA_YOKO,      // ソファ（横向き 3x1）
+	PROP_SOFA_TATE,      // ソファ（縦向き 1x3） [新規追加]
+	PROP_BOOKSHELF,   // 本棚（横 2x1, 高さ 2.5）
+	PROP_CATTOWER,    // キャットタワー（横 2x1, 高さ 3.0）
+	PROP_TABLE        // テーブル（正方形 2x2）
 };
 
 class MapObject : public GameObject

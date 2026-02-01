@@ -428,32 +428,37 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 			// 行の長さが足りない場合の安全策
 			if (x >= csvData[csvRowIndex].size()) continue;
 
-			// 二次元座標 (x, z) を一次元配列のインデックスに変換
-			int index = z * m_mapWidth + x;
-			Tile& tile = m_grid[index];
-			tile.gridX = x;
-			tile.gridZ = z;
-			tile.type = TileType::FLOOR; // デフォルトは床
-			tile.isWalkable = true;      // デフォルトは通行可能
-			tile.occupant = nullptr;
-			tile.structure = nullptr;
-
-			// CSVのセルから識別子（トークン）を取得し、ワールド座標を計算
-			std::string token = csvData[csvRowIndex][x];
+			// 現在のセル（タイル）を取得
+			Tile* currentTile = GetTile(x, z);
 			Vector3 worldPos = GetWorldPosition(x, z);
-			// 床オブジェクトの生成（全タイル共通）
+
+
+			// すべてのタイルに共通の「床（Floor）」を先に生成
 			auto floorObj = std::make_unique<MapObject>(context);
 			floorObj->Init(MapModelType::FLOOR, worldPos);
-			if (m_Scene) m_Scene->AddObject(std::move(floorObj));
+			if (m_Scene) m_Scene->AddObject(std::move(floorObj)); // シーンへ所有権を移譲
 
-			// 1. 静的オブジェクト（構造物）の生成判定
-			MapModelType propType = MapModelType::FLOOR; // デフォルトは床（なし）
-			bool isTrap = false; // トラップ判定用フラグ
+
+			// === [重要ロジック 1]：先着優先（オーバーラップ防止） ===
+			// このマスに既に構造物（structure）が設定されている場合、
+			// それは大型オブジェクトの一部（例：3x1マスのソファの端など）として処理済みであることを意味する。
+			// 重複してインスタンスを生成しないよう、このマスの処理をスキップする。
+			if (currentTile->structure != nullptr) {
+				continue;
+			}
+
+			// CSVデータから現在のマスのトークンを取得し、配置の基準となるワールド座標を計算
+			std::string token = csvData[csvRowIndex][x];
+
+
+			// トークンに基づいたオブジェクトタイプとトラップ判定の初期化
+			MapModelType propType = MapModelType::FLOOR;
+			bool isTrap = false;
 
 			// トークンに基づき、生成するオブジェクトの種類を判別
 			if (token == "W")                propType = MapModelType::WALL;        // テスト用の壁
-			else if (token == "W_Y_SOFA")    propType = MapModelType::PROP_SOFA_YELLOW; // 黄色のソファ
-			else if (token == "W_W_SOFA")    propType = MapModelType::PROP_SOFA_WHITE;  // 白のソファ
+			else if (token == "W_T_SOFA")    propType = MapModelType::PROP_SOFA_TATE; // 黄色のソファ
+			else if (token == "W_Y_SOFA")    propType = MapModelType::PROP_SOFA_YOKO;  // 白のソファ
 			else if (token == "W_CATTOWER")  propType = MapModelType::PROP_CATTOWER;    // キャットタワー
 			else if (token == "W_TABLE")     propType = MapModelType::PROP_TABLE;       // テーブル
 			else if (token == "W_BOOKSHELF") propType = MapModelType::PROP_BOOKSHELF;   // 本棚
@@ -461,21 +466,60 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 
 			// オブジェクトが設定された場合（床以外）の生成処理
 			if (propType != MapModelType::FLOOR) {
+
+				// 生成するオブジェクトと占有サイズを格納する変数を定義
+				std::unique_ptr<MapObject> newObj = nullptr;
+				int sizeX = 1, sizeZ = 1;
+
 				if (isTrap) {
-					// トラップクラスとしてインスタンス化
+					// --- トラップ（Trap）の生成 ---
 					auto trap = std::make_unique<Trap>(context);
-					trap->Init(propType, worldPos);
-					tile.structure = trap.get(); // タイルに構造物として登録
-					if (m_Scene) m_Scene->AddObject(std::move(trap)); // シーンへ所有権を移譲
+					Trap::GetDimensions(propType, sizeX, sizeZ); // トラップの占有サイズを取得
+					newObj = std::move(trap);
 				}
 				else {
-					// 通常のプロップ（静的物件）としてインスタンス化
+					// --- 家具・障害物（Prop）の生成 ---
 					auto prop = std::make_unique<Prop>(context);
-					prop->Init(propType, worldPos);
-					tile.structure = prop.get();
-					if (m_Scene) m_Scene->AddObject(std::move(prop));
+					Prop::GetDimensions(propType, sizeX, sizeZ); // 家具の占有サイズを取得
+					newObj = std::move(prop);
 				}
+
+				// === 座標計算およびタイル埋め立て（共通ロジック） ===
+
+				// オブジェクトのサイズに基づき、中心点へのオフセットを計算
+				// ※複数マス占有の場合、中心がタイル間にくるため 0.5f の調整が必要
+				float offsetX = (sizeX - 1) * m_tileSize * 0.5f;
+				float offsetZ = (sizeZ - 1) * m_tileSize * 0.5f;
+				Vector3 centerPos = worldPos;
+				centerPos.x += offsetX;
+				centerPos.z += offsetZ;
+
+				// オブジェクトの初期化（計算した中心座標を適用）
+				newObj->Init(propType, centerPos);
+
+				// 占有するすべてのタイルに対して構造物（structure）情報を登録
+				// ※所有権移譲前に生ポインタを取得しておく
+				MapObject* rawPtr = newObj.get();
+
+				for (int i = 0; i < sizeX; ++i) {
+					for (int j = 0; j < sizeZ; ++j) {
+						int targetX = x + i;
+						int targetZ = z + j;
+
+						Tile* t = GetTile(targetX, targetZ);
+						if (t) {
+							// Trap/Prop を問わず、タイルの構造物スロットに登録
+							// これにより、AIの回避や進入イベント判定が可能になる
+							t->structure = rawPtr;
+						}
+					}
+				}
+
+				// シーンマネージャーへ登録（所有権の移動）
+				if (m_Scene) m_Scene->AddObject(std::move(newObj));
 			}
+		
+	
 
 			// 2. 動的ユニット（占有者）の生成および配置
 			else if (token == "P") {
@@ -497,7 +541,7 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				// 初期化後のワールド行列更新
 				pPlayer->UpdateWorldMatrix();
 
-				tile.occupant = pPlayer;
+				currentTile->occupant = pPlayer;
 			}
 			else if (token == "A") {
 				// 味方キャラクター（Ally）の生成
@@ -506,7 +550,7 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				ally->SetGridPosition(x, z);
 				ally->setPosition(worldPos);
 				ally->UpdateWorldMatrix();
-				tile.occupant = ally.get();
+				currentTile->occupant = ally.get();
 				context->SetAlly(ally.get()); // グローバルな味方情報として登録
 				// 後で追加するためにリストへ
 				unitsToSpawn.push_back(std::move(ally));
@@ -522,7 +566,7 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				enemy->SetGridPosition(x, z);
 				enemy->setPosition(worldPos);
 				enemy->UpdateWorldMatrix();
-				tile.occupant = enemy.get();
+				currentTile->occupant = enemy.get();
 
 				// EnemyManagerに登録して管理下に置く
 				if (context->GetEnemyManager()) context->GetEnemyManager()->RegisterEnemy(enemy.get());
@@ -530,6 +574,7 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				unitsToSpawn.push_back(std::move(enemy));
 			}
 		}
+
 	}
 	if (m_Scene) {
 		for (auto& unitObj : unitsToSpawn) {

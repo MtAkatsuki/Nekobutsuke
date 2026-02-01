@@ -326,7 +326,7 @@ void Player::DrawPathLine() {
 
 		//ˆÊ’uæ“¾
 		Vector3 pos = m_context->GetMapManager()->GetWorldPosition(currTile->gridX, currTile->gridZ);
-		pos.y += 0.05f; //’n–Ê‚æ‚è‚¿‚å‚Á‚Æ‚‚¢
+		pos.y += 0.06f; //’n–Ê‚æ‚è‚¿‚å‚Á‚Æ‚‚¢
 
 		float rotY = 0.0f;
 		CStaticMeshRenderer* rendererToUse = nullptr;

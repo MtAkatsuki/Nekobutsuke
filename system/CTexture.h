@@ -24,4 +24,7 @@ public:
 	bool Load(const std::u8string& filename);		// 20250711
 
 	void SetGPU();
+
+	int GetWidth() const { return m_width; }
+	int GetHeight() const { return m_height; }
 };

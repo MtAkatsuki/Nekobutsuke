@@ -14,8 +14,8 @@ void MapObject::Init(MapModelType type, Vector3 position)
     // ※基底クラスで一括設定しているが、特殊な Prop の場合は各 Init でのオーバーライドも可能。
     switch (type) {
     case MapModelType::WALL:
-    case MapModelType::PROP_SOFA_YELLOW:
-    case MapModelType::PROP_SOFA_WHITE:
+    case MapModelType::PROP_SOFA_TATE:
+    case MapModelType::PROP_SOFA_YOKO:
     case MapModelType::PROP_CATTOWER:
     case MapModelType::PROP_TABLE:
     case MapModelType::PROP_BOOKSHELF:

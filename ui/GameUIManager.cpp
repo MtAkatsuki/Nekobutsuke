@@ -11,12 +11,12 @@ void GameUIManager::Init(GameContext* context) {
     m_context = context;
 
 
-    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_move.png", 128, 32);
-    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_attack.png", 128, 32);
-    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_end.png", 128, 32);
+    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_move.png", 140, 35);
+    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_attack.png", 140, 35);
+    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_end.png", 140, 35);
 
-    LoadSprite(m_attackMenuOptions, "assets/texture/ui/ui_text_sub_normal.png", 128, 32);
-    LoadSprite(m_attackMenuOptions, "assets/texture/ui/ui_text_sub_push.png", 128, 32);
+    LoadSprite(m_attackMenuOptions, "assets/texture/ui/ui_text_sub_normal.png", 140, 35);
+    LoadSprite(m_attackMenuOptions, "assets/texture/ui/ui_text_sub_push.png", 140, 35);
 
     m_escHintSprite = std::make_unique<CSprite>(197, 43.5, "assets/texture/ui/ui_text_cancel.png");
     m_enterHintSprite = std::make_unique<CSprite>(197, 42.5, "assets/texture/ui/ui_text_enter.png");

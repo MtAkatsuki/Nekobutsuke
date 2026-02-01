@@ -358,13 +358,7 @@ void GameScene::draw(uint64_t deltatime)
 	if (m_ally && m_ally->GetHP() > 0) {
 		m_ally->DrawUI();
 	}
-	//// エネミー HPの描画
-	//for (int i = 0; i < ENEMYMAX; ++i) {
-	//	// 生きている敵のみ描画
-	//	if (m_enemies[i] && !m_enemies[i]->IsDead()) {
-	//		m_enemies[i]->DrawUI();
-	//	}
-	//}
+
 
 	for (const auto& obj : m_GameObjectList) {
 		// GameObject ポインタを Enemy ポインタへキャスト（変換）を試みる
@@ -507,6 +501,27 @@ void GameScene::resourceLoader()
 		MeshManager::RegisterMesh<CStaticMesh>("wall_mesh", std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("wall_mesh", std::move(renderer));
 	}
+	
+	//Prop Plane
+	{
+		std::unique_ptr<CStaticMesh> smesh_prop = std::make_unique<CStaticMesh>();
+		
+		smesh_prop->Load("assets/model/obj/prop_plane.obj", "assets/model/obj/");
+
+
+			std::unique_ptr<CStaticMeshRenderer> srender_prop = std::make_unique<CStaticMeshRenderer>();
+			srender_prop->Init(*smesh_prop);
+
+			if (auto* mat = srender_prop->GetMaterial(0)) {
+				MATERIAL m = mat->GetData();
+				m.Diffuse = Color(1, 1, 1, 1);
+				m.TextureEnable = FALSE;
+				mat->SetMaterial(m);
+			}
+
+			MeshManager::RegisterMesh("prop_plane_mesh", std::move(smesh_prop));
+			MeshManager::RegisterMeshRenderer("prop_plane_mesh", std::move(srender_prop));
+		}
 	
 }
 

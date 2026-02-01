@@ -96,37 +96,16 @@ void Enemy::Init(int sequenceNumber)
 	auto* backR = MeshManager::getRenderer<CStaticMeshRenderer>(backName);
 	SetModelRenderers(frontR, backR);
 
-	// “G‚ÌoŒ»ˆÊ’u‚ðŒˆ’è
-	/*const int BORN_GRID_X = 3+ sequenceNumber*2;
-	const int BORN_GRID_Z = 4 + sequenceNumber;
-	Tile* bornTile = m_context->GetMapManager()->GetTile(BORN_GRID_X, BORN_GRID_Z);
-
-	if (bornTile == nullptr)
-	{
-		bornTile = m_context->GetMapManager()->GetTile(0, 0);
-		if (bornTile == nullptr) { return; }
-	}
-
-	if (bornTile)
-	{
-		bornTile->occupant = this;
-	}
-
-	Vector3 bornWorldPos = m_context->GetMapManager()->GetWorldPosition(*bornTile);
-	m_srt.pos = bornWorldPos;
-
-
-	m_gridX = bornTile->gridX;
-	m_gridZ = bornTile->gridZ;*/
-
+	
 	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_srt.rot = Vector3(0, 0, 0);
 
 	m_targetWorldPos = m_srt.pos;
 	m_moveSpeed = 5.0f;
 
-	m_currentMovePoints = 3;
-	m_maxMovePoints = 3;
+	m_maxMovePoints = 4;
+	m_currentMovePoints = m_maxMovePoints;
+
 	m_maxHP = 6;
 	m_currentHP = m_maxHP;
 
