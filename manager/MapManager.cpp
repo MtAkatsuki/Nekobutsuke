@@ -300,7 +300,7 @@ void MapManager::DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX
 	for (Tile* t : tiles) 
 	{
 		Vector3 pos = GetWorldPosition(t->gridX, t->gridZ);
-		pos.y += 0.02f;//­‚µ•‚‚©‚¹‚Ä•`‰æ
+		pos.y += 0.05f;//­‚µ•‚‚©‚¹‚Ä•`‰æ
 
 		//Œ©‚â‚·‚¢‚½‚ß‚É­‚µ¬‚³‚­‚·‚é
 		Matrix4x4 world = Matrix4x4::CreateScale(0.9f) * Matrix4x4::CreateTranslation(pos);

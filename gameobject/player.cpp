@@ -201,7 +201,7 @@ void Player::OnDraw(uint64_t dt) {
 
 		//移動範囲の緑タイル
 		Renderer::SetBlendState(BS_ALPHABLEND);
-		Renderer::SetDepthEnable(false);
+		Renderer::SetDepthEnable(true);
 		m_context->GetMapManager()->DrawColoredTiles(m_moveRangeTiles, Color(0, 1, 0, 0.4f));
 
 		//移動ルート
@@ -392,7 +392,7 @@ void Player::DrawAttackWarning() {
 	}
 
 	Renderer::SetBlendState(BS_ALPHABLEND);
-	Renderer::SetDepthEnable(false);
+	Renderer::SetDepthEnable(true);
 	m_context->GetMapManager()->DrawColoredTiles(neighbors, Color(1.0f, 0.0f, 0.0f, 0.1f)); // ごく薄い赤
 
 	//現在選択したタイル（攻撃方向）を描画
