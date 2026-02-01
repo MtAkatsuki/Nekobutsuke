@@ -246,6 +246,12 @@
     <ClCompile Include="gameobject\Ally.cpp">
       <Filter>ソース ファイル\gameobject</Filter>
     </ClCompile>
+    <ClCompile Include="gameobject\Prop.cpp">
+      <Filter>ソース ファイル\gameobject</Filter>
+    </ClCompile>
+    <ClCompile Include="gameobject\Trap.cpp">
+      <Filter>ソース ファイル\gameobject</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
@@ -522,6 +528,12 @@
       <Filter>ソース ファイル\ui</Filter>
     </ClInclude>
     <ClInclude Include="gameobject\Ally.h">
+      <Filter>ソース ファイル\gameobject</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\Prop.h">
+      <Filter>ソース ファイル\gameobject</Filter>
+    </ClInclude>
+    <ClInclude Include="gameobject\Trap.h">
       <Filter>ソース ファイル\gameobject</Filter>
     </ClInclude>
   </ItemGroup>

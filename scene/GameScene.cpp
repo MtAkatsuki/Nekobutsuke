@@ -91,57 +91,20 @@ void GameScene::Init()
 	}
 
 	// MapManager初期化
-	if (m_context == nullptr) {
-		std::cerr << "   [FATAL] m_context is NULL! Did SceneManager pass it?" << std::endl;
-	}
-	m_MapManager = m_context->GetMapManager();
+
 	m_MapManager->SetScene(this);
 	m_MapManager->Init(m_context);
 	std::cerr << "   [GameScene] MapManager OK." << std::endl;
+	m_MapManager->LoadLevel("assets/level/level_01.csv", m_context);
+
 	// 背景
 	m_background = std::make_unique<Background>();
 	m_background->Init();
 	std::cerr << "   [GameScene] Background OK" << std::endl;
-
-	// プレイヤ
-	auto playerPtr = std::make_unique<Player>(m_context);
-	playerPtr->Init();
-	m_player = playerPtr.get();
-	m_context->SetPlayer(m_player);
-	AddObject(std::move(playerPtr));
-	std::cerr << "   [GameScene] Player OK." << std::endl;
-	// Ally初期化
-	auto m_allyPtr = std::make_unique<Ally>(m_context);
-	m_allyPtr->Init();
-	m_ally = m_allyPtr.get();
-	//Allyの固定出現場所
-	int allyTargetX = 1;
-	int allyTargetZ = 4;
-
-	Tile* allyTile = m_MapManager->GetTile(allyTargetX, allyTargetZ);
-	if (allyTile) {
-		allyTile->occupant = m_ally;
-		m_ally->setPosition(m_MapManager->GetWorldPosition(allyTargetX, allyTargetZ));
-		m_ally->UpdateWorldMatrix();
-		m_ally->SetGridPosition(allyTargetX, allyTargetZ);
-	}
-	m_context->SetAlly(m_ally);
-	AddObject(std::move(m_allyPtr));
-	std::cerr << "   [GameScene] Ally OK." << std::endl;
-
-	// 敵
-	for (int i = 0; i < ENEMYMAX; ++i) {
-		auto enemyPtr = std::make_unique<Enemy>(m_context);
-
-		m_enemies[i] = enemyPtr.get();
-
-		m_enemies[i]->Init(i);
-
-		m_context->GetEnemyManager()->RegisterEnemy(m_enemies[i]);
-
-		AddObject(std::move(enemyPtr));
-	}
-	std::cerr << "   [GameScene] Enemies OK." << std::endl;
+	//Unit取得
+	m_player = m_context->GetPlayer();
+	m_ally = m_context->GetAlly();
+	EnemyManager* em = m_context->GetEnemyManager();
 
 	m_gameUIManager = m_context->GetUIManager();
 
@@ -395,11 +358,22 @@ void GameScene::draw(uint64_t deltatime)
 	if (m_ally && m_ally->GetHP() > 0) {
 		m_ally->DrawUI();
 	}
-	// エネミー HPの描画
-	for (int i = 0; i < ENEMYMAX; ++i) {
-		// 生きている敵のみ描画
-		if (m_enemies[i] && !m_enemies[i]->IsDead()) {
-			m_enemies[i]->DrawUI();
+	//// エネミー HPの描画
+	//for (int i = 0; i < ENEMYMAX; ++i) {
+	//	// 生きている敵のみ描画
+	//	if (m_enemies[i] && !m_enemies[i]->IsDead()) {
+	//		m_enemies[i]->DrawUI();
+	//	}
+	//}
+
+	for (const auto& obj : m_GameObjectList) {
+		// GameObject ポインタを Enemy ポインタへキャスト（変換）を試みる
+		Enemy* enemy = dynamic_cast<Enemy*>(obj.get());
+
+		// キャストに成功（オブジェクトが敵である）し、かつ生存している場合のみ処理
+		if (enemy && !enemy->IsDead()) {
+			// 敵専用のUI要素（HPバーやターゲットアイコン等）を描画
+			enemy->DrawUI();
 		}
 	}
 
@@ -518,6 +492,20 @@ void GameScene::resourceLoader()
 
 		MeshManager::RegisterMesh<CStaticMesh>("range_panel_mesh", std::move(smesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("range_panel_mesh", std::move(srenderer));
+	}
+
+	//家具のメッシュデータ読み込み（Wallタイル用）
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+
+		mesh->Load("assets/model/obj/1x1x1_wall.obj", "assets/model/obj/");
+
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+
+
+		MeshManager::RegisterMesh<CStaticMesh>("wall_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("wall_mesh", std::move(renderer));
 	}
 	
 }

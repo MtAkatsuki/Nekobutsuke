@@ -180,6 +180,8 @@ DirectXTK.lib
     <ClCompile Include="gameobject\enemy.cpp" />
     <ClCompile Include="gameobject\MapObject.cpp" />
     <ClCompile Include="gameobject\player.cpp" />
+    <ClCompile Include="gameobject\Prop.cpp" />
+    <ClCompile Include="gameobject\Trap.cpp" />
     <ClCompile Include="gameobject\Unit.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="manager\EnemyManager.cpp" />
@@ -253,6 +255,8 @@ DirectXTK.lib
     <ClInclude Include="gameobject\GameObject.h" />
     <ClInclude Include="gameobject\MapObject.h" />
     <ClInclude Include="gameobject\player.h" />
+    <ClInclude Include="gameobject\Prop.h" />
+    <ClInclude Include="gameobject\Trap.h" />
     <ClInclude Include="gameobject\Unit.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="manager\EnemyManager.h" />

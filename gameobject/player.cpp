@@ -80,29 +80,6 @@ void Player::Init() {
 
 	playerResourceLoader();
 
-
-	const int BORN_GRID_X = 1;
-	const int BORN_GRID_Z = 1;
-	Tile* bornTile = m_context->GetMapManager()->GetTile(BORN_GRID_X, BORN_GRID_Z);
-
-	if(bornTile==nullptr)
-	{
-		bornTile = m_context->GetMapManager()->GetTile(0, 0);
-		if (bornTile == nullptr) { return; }
-	}
-
-	if(bornTile)
-	{
-		bornTile->occupant = this;
-	}
-
-	Vector3 bornWorldPos = m_context->GetMapManager()->GetWorldPosition(*bornTile);
-	m_srt.pos = bornWorldPos;
-
-	m_gridX = bornTile->gridX;
-	m_gridZ = bornTile->gridZ;
-
-
 	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_srt.rot = Vector3(0, 0, 0);
 
@@ -174,6 +151,17 @@ void Player::Update(uint64_t dt) {
 		if (UpdatePathMovement(deltaSeconds)) {
 			
 			m_hasMoved = true; //移動完了のフラグを立てる
+
+			// 現在位置のタイルのイベント（トラップ等）を発火させる
+			// アニメーション中の現在ステップに対応するタイルを取得
+			Tile* finalTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+
+			// タイルが存在し、かつその上に構造物（Trapなど）が配置されているかチェック
+			if (finalTile && finalTile->structure) {
+				// プレイヤーがオブジェクトを踏んだ（進入した）際のイベントを実行
+				// ※ this（Player自身）を引数として渡し、ダメージ処理などを行わせる
+				finalTile->structure->OnEnter(this);
+			}
 
 			//メインメニューに切り替え
 			SwitchToMenuMain();
@@ -540,6 +528,7 @@ bool Player::UpdatePathMovement(float dt) {
 	if (dist <= step) {
 		// ターゲットに到達たら、目標位置にセット
 		m_srt.pos = targetPos;
+
 		m_pathAnimIndex++;// 次のターゲットへ
 
 		// すべてのターゲットに到達したかチェック

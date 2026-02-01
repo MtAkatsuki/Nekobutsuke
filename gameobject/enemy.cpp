@@ -19,7 +19,7 @@ void Enemy::init(){}
 
 void Enemy::Init(int sequenceNumber)
 {
-	std::string numStr = std::to_string(sequenceNumber + 1);
+	std::string numStr = std::to_string(sequenceNumber);
 	std::string frontName = "enemy_front_" + numStr;
 	std::string backName = "enemy_back_" + numStr;
 
@@ -97,7 +97,7 @@ void Enemy::Init(int sequenceNumber)
 	SetModelRenderers(frontR, backR);
 
 	// 敵の出現位置を決定
-	const int BORN_GRID_X = 3+ sequenceNumber*2;
+	/*const int BORN_GRID_X = 3+ sequenceNumber*2;
 	const int BORN_GRID_Z = 4 + sequenceNumber;
 	Tile* bornTile = m_context->GetMapManager()->GetTile(BORN_GRID_X, BORN_GRID_Z);
 
@@ -117,7 +117,7 @@ void Enemy::Init(int sequenceNumber)
 
 
 	m_gridX = bornTile->gridX;
-	m_gridZ = bornTile->gridZ;
+	m_gridZ = bornTile->gridZ;*/
 
 	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_srt.rot = Vector3(0, 0, 0);
@@ -183,6 +183,16 @@ void Enemy::Update(uint64_t dt) {
 
 	// 基底クラスの反転（フリップ）アニメーション処理を実行
 	UpdateFlipAnimation(deltaSeconds);
+
+	if (m_pendingCharge) {
+		// 蓄力（突進準備）が保留されており、かつ反転アニメーションが完了（false）した場合
+		if (!m_isFlipping) {
+			m_pendingCharge = false; // 待機フラグを解除
+			m_isCharging = true;     // 蓄力（震え演出）を正式に開始
+			std::cout << "[Enemy] Turn complete. Now Charging!" << std::endl;
+		}
+	}
+
 	//死亡飛翔中の更新処理
 	if (m_state == EnemyState::DEAD_FLYING)
 	{
@@ -244,6 +254,12 @@ void Enemy::Update(uint64_t dt) {
 			{
 				m_state = EnemyState::IDLE;
 				m_slideEndPos = Vector3(0, 0, 0);
+				//ノックバック終了後、タイルイベントの検査
+				Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+				if (currentTile && currentTile->structure) {
+					std::cout << "[Enemy] Knockback finished. Checking tile event..." << std::endl;
+					currentTile->structure->OnEnter(this);
+				}
 			}
 		}
 		else 
@@ -321,6 +337,7 @@ void Enemy::EnemyStartAction()
 	}
 	else
 	{
+		m_pendingCharge = false;
 		ResetMovePoints();
 		ExecuteAI();
 	}
@@ -548,6 +565,11 @@ void Enemy::onMoveFinished()
 		//ゴールのタイルを占有
 		if (endTile) {
 			endTile->occupant = this;
+			//罠のチェック
+			if (endTile->structure) {
+				std::cout << "[Enemy] Movement finished. Checking tile event..." << std::endl;
+				endTile->structure->OnEnter(this);
+			}
 		}
 
 	}
@@ -594,7 +616,19 @@ void Enemy::StartCharge(Unit* target) {
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
 		SetFacingFromVector(targetPos - myPos);
 	}
-	m_isCharging = true;
+	// 基底クラスの m_isFlipping フラグを確認（Unit.h で定義、Enemy からアクセス可能）
+	if (m_isFlipping) {
+		// 反転アニメーション中の場合は、突進前の「震え演出」を保留にする
+		m_pendingCharge = true;
+		m_isCharging = false;
+		std::cout << "[Enemy] Turning... Waiting to charge." << std::endl;
+	}
+	else {
+		// 既に対象の方向を向いている（反転不要な）場合は、即座に震え演出を開始
+		m_pendingCharge = false;
+		m_isCharging = true;
+		std::cout << "[Enemy] Facing correct. Start charging immediately." << std::endl;
+	}
 
 	EnemyEndAction();
 }
@@ -745,43 +779,3 @@ void Enemy::DeathFlyingUpdate(float deltaSeconds)
 		return;
 }
 
-void Enemy::UpdatePaperOrientation() {
-	// 突然の変化を防ぐため、lastScaleXで最後の左右向きを記憶
-	// 初期化は 1.0f (右向き)
-	
-
-	float targetRotY = 0.0f;     // 0 = 正面, π = 背後
-	float targetScaleX = 1.0f;   // 1 = 右向き, -1 = 左向き（ミラー）
-
-	// 方向に基づいて回転とスケールを設定
-	switch (m_facing) {
-	case Direction::North: //上向き (+Z) -> 背面
-		targetRotY = 3.14159f;     // 180度（背面）
-		targetScaleX = lastScaleX; // 左右は維持
-		break;
-
-	case Direction::South: // 下向き(-Z) ->正面
-		targetRotY = 0.0f;         // 正面
-		targetScaleX = lastScaleX; // 左右は維持
-		break;
-
-	case Direction::East:  // 右向き (+X) -> 正面 + 右向き
-		targetRotY = 0.0f;
-		targetScaleX = 1.0f;
-		lastScaleX = 1.0f; // 更新臨時データ
-		break;
-
-	case Direction::West:  // 左向き (-X) -> 正面 + 左向き（ミラー）
-		targetRotY = 0.0f;
-		targetScaleX = -1.0f;
-		lastScaleX = -1.0f; // 更新臨時データ
-		break;
-	}
-
-	// 回転の適用
-	m_srt.rot.y = targetRotY;
-
-	// スケールの適用
-	m_srt.scale.x = targetScaleX;
-
-}

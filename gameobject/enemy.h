@@ -36,10 +36,14 @@ public:
 	void EnemyStartAction();
 	void SetDisplayOrder(int order);
 	bool IsIdle() const { return m_state == EnemyState::IDLE; }
-	void ResetCharge() { m_isCharging = false; }
+	void ResetCharge() { 
+		m_isCharging = false; 
+		m_pendingCharge = false;
+	}
 	void OnPushed(Direction pushDir);//プッシュ受け
 	virtual void TakeDamage(int damage, Unit* attacker)override;
 	bool IsDeadFlying() const { return m_state == EnemyState::DEAD_FLYING; }//死亡飛翔中か
+
 
 private:
 	
@@ -55,7 +59,7 @@ private:
 	void ChargeAnimation();
 	void DeathFlyingUpdate(float delta);
 
-	void UpdatePaperOrientation();
+
 
 private:
 	CStaticMesh*			m_EnemyMesh;
@@ -82,6 +86,7 @@ private:
 	int m_lockedGridZ = -1;
 
 	bool m_isCharging = false;//チャージ攻撃中のフラグ
+	bool m_pendingCharge = false; //チャージ攻撃予約フラグ
 
 	Vector3 m_deathVelocity = Vector3(0, 0, 0);//死亡時の飛翔速度
 	Vector3 m_deathSpin = Vector3(0, 0, 0);//死亡時の回転軸

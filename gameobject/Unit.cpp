@@ -6,9 +6,14 @@
 #include "../ui/DamageNumberManager.h"
 
 Unit::Unit(GameContext* context) :GameObject(context) {
-	m_context->GetTurnManager()->RegisterObserver
-	([this](TurnState state) {this->OnTurnChanged(state); });
-
+	if (m_context && m_context->GetTurnManager()) {
+		m_context->GetTurnManager()->RegisterObserver(
+			[this](TurnState state) { this->OnTurnChanged(state); }
+		);
+	}
+	else {
+		std::cerr << "[Error] Unit created but TurnManager is NULL! Observer failed." << std::endl;
+	}
 	m_hpBar = std::make_unique<HPBar>();
 	m_hpBar->Init(context);
 }

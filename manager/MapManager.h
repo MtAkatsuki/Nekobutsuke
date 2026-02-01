@@ -10,6 +10,8 @@
 #include    "../system/collision.h"
 #include	"../system/DirectWrite.h"
 #include	"../system/camera.h"
+#include    "../gameobject//Trap.h"	
+#include	"../gameobject/Prop.h"
 
 class GameScene;
 class GameContext;
@@ -17,11 +19,7 @@ class GameContext;
 enum class TileType {
 	FLOOR,
 	WALL,
-	WATER,
-	TRAP_HOLE,
-	MECHANISM,
-	BLANK,
-	BLOCK
+	TRAP
 };
 
 struct Tile {
@@ -30,13 +28,11 @@ struct Tile {
 	bool isWalkable;
 	class Unit* occupant =nullptr;
 
-	//装置データ
-	bool hasMechanism = false;//タイルに装置があるか
-	bool isMechanismCleared = false;//装置がクリアされたか
-	int mechnismTimer = 0;//装置の経過時間
-	int maxMechanismTimer = 0; //装置の最大時間
+	// 静的オブジェクトレイヤー (壁、トラップ等) ---
+	// キャラクターとは異なり、座標が固定されているマップオブジェクトを保持する
+	class MapObject* structure = nullptr;
 
-	Tile() :type(TileType::BLANK), gridX(0), gridZ(0), isWalkable(true), occupant(nullptr) {}
+	Tile() :type(TileType::FLOOR), gridX(0), gridZ(0), isWalkable(true), occupant(nullptr) {}
 };
 
 class MapManager {
@@ -44,8 +40,10 @@ class MapManager {
 public:
 	MapManager() :m_mapWidth(30), m_mapDepth(30), m_tileSize(1) {}
 	void Init(GameContext* context);
-	//検索用のAPI
+	//通過できるか
 	bool IsWalkable(int gridX, int gridZ) const;
+	//ステージロード用
+	void LoadLevel(const std::string& csvPath, GameContext* context);
 
 	Vector3 GetWorldPosition(int gridX, int gridZ) const;
 	Vector3 GetWorldPosition(const Tile& tile) const;
@@ -58,9 +56,6 @@ public:
 	int GetMapWidth() const { return m_mapWidth; }
 	int GetMapDepth() const { return m_mapDepth; }
 
-	//装置の検査
-	bool CheckAllMechanismsCleared();
-
 	void SetScene(GameScene* scene) { m_Scene = scene;}
 	//マンハッタン距離計算
 	int CalculateDistance(int x1, int z1, int x2, int z2)const { return std::abs(x1 - x2) + std::abs(z1 - z2); }
@@ -72,7 +67,14 @@ public:
 	void DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX::SimpleMath::Color& color);
 	//全グリッド上のユニット参照をクリア
 	void ClearOccupants();
+private:
+	// --- CSV解析用のヘルパー関数 ---
+	// 指定されたパスのCSVファイルを読み込み、文字列の2次元配列として返す
+	std::vector<std::vector<std::string>> ParseCSV(const std::string& filePath);
 
+	// --- 全てのMapObjectのメモリ管理用コンテナ ---
+	// unique_ptrを使用することで、マップ破棄時にオブジェクトも自動的に解放される
+	std::vector<std::unique_ptr<MapObject>> m_mapObjects;
 private:
 	int m_mapWidth;
 	int m_mapDepth;

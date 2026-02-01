@@ -1,15 +1,23 @@
 #include <memory>
 #include <queue>
 #include <algorithm> // for reverse
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include	"../gameobject/GameObject.h"
 #include	"../scene/GameScene.h"
-#include	"../manager/MapManager.h"
+#include	"MapManager.h"
 #include	"../gameobject/MapObject.h"
 #include	"../system/stb_perlin.h"
 #include	"../system/RandomEngine.h"
 #include	"../system/collision.h"
 #include	"../utility/WorldToScreen.h"
 #include    "../system/meshmanager.h"
+#include "../gameobject/player.h"
+#include "../gameobject/enemy.h"
+#include "../gameobject/Ally.h"
+#include	"GameContext.h"
+
 
 void MapManager::Init(GameContext* context) {
 	m_mapWidth = 9;
@@ -22,26 +30,7 @@ void MapManager::Init(GameContext* context) {
 	// グリッド初期化
 	m_grid.clear();
 	m_grid.resize(m_mapWidth * m_mapDepth);//一気にメモリーを確保
-	//Tile初期化
-	for (int z = 0; z < m_mapDepth; z++) 
-	{
-		for (int x = 0; x < m_mapWidth; x++) 
-		{
-			int index = z * m_mapWidth + x;//1次元配列のインデックス計算
-			Tile& currentTile = m_grid[index];//参照取得
-			// グリッド上の位置をセット
-			currentTile.gridX = x;
-			currentTile.gridZ = z;
 
-
-			currentTile.type = TileType::FLOOR;
-			currentTile.isWalkable = true;
-			std::unique_ptr<MapObject> floorObj = std::make_unique<MapObject>(context);
-			floorObj->Init(MapModelType::FLOOR, GetWorldPosition(x, z));
-			m_Scene->AddObject(std::move(floorObj));
-		
-		}
-	}
 
 	m_tileRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("floor_mesh");
 	m_rangeRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("range_panel_mesh");
@@ -103,15 +92,21 @@ bool MapManager::IsWalkable(int gridX, int gridZ) const
 	const Tile* targetTile = GetTile(gridX, gridZ);
 
 	if (targetTile == nullptr) { return false; }//マップの境界外
-
-	if (targetTile->type == TileType::WALL) { return false; }//壁Tile
-
-	if (targetTile->type == TileType::TRAP_HOLE) { return false; }//落とし穴Tile
-
+	//Unitの占有検査
 	if (targetTile->occupant != nullptr) {
 		return false;
 	}
 
+	//  静的オブジェクト（障害物・構造物）のチェック
+	// ターゲットとなるタイルに壁やオブジェクトが存在するかを確認
+	if (targetTile->structure != nullptr) {
+
+		// オブジェクトの通行可能フラグ（IsWalkable）を確認
+		if (!targetTile->structure->IsWalkable()) {
+			// 壁などの通行不可能な構造物がある場合、移動不可（false）を返す
+			return false;
+		}		
+	}
 	return true;
 }
 
@@ -179,6 +174,13 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int g
 				bool isWalkable = IsWalkable(nextX, nextZ);
 				if (!isWalkable) { continue; }//通過できないならスキップ
 				
+				// --- AI専用：トラップがある場合は通行不可能とみなす ---
+				// ターゲットとなるタイルに構造物があり、かつそれが「トラップ（地刺）」であるか判定
+				if (nextTile->structure && nextTile->structure->GetType() == MapModelType::TRAP) {
+					// プレイヤーとは異なり、AIはトラップを回避するため経路探索の対象から外す
+					continue;
+				}
+
 				//Unit検査
 				if (nextTile->occupant!=nullptr) 
 				{	
@@ -315,5 +317,223 @@ void MapManager::ClearOccupants()
 	// 全グリッドを走査し、占有者（ユニット参照）をクリアする。
 	for (auto& tile : m_grid) {
 		tile.occupant = nullptr;
+	}
+}
+
+// CSVデータのパース処理
+std::vector<std::vector<std::string>> MapManager::ParseCSV(const std::string& filePath) {
+	// 解析後のデータを格納する2次元ベクトル
+	std::vector<std::vector<std::string>> grid;
+
+	// ファイルストリームを開く
+	std::ifstream file(filePath);
+
+	// ファイルのオープンに失敗した場合のエラー処理
+	if (!file.is_open()) {
+		std::cerr << "[Error] Failed to open CSV: " << filePath << std::endl;
+		return grid;
+	}
+
+	std::string line;
+	// ファイルの終端に達するまで、1行ずつ読み込みを繰り返す
+	// (file から 1行取り出し、変数 line に格納する)
+	while (std::getline(file, line)) {
+
+		// 現在処理している行のセルデータを格納するための、一時的な配列（1次元ベクトル）
+		std::vector<std::string> row;
+
+		// 読み込んだ 1行の文字列(line)を、ストリームとして扱うための変換
+		// これにより、文字列をファイルと同じように「流し込み」や「区切り読み」ができるようになる
+		std::stringstream ss(line);
+
+		// 分割された個々のセル（カンマ間のデータ）を一時的に保持する変数
+		std::string cell;
+
+		// カンマ（,）を区切り文字として各セルを抽出
+		while (std::getline(ss, cell, ',')) {
+			// --- セル内の不要な空白文字（スペース、タブ、改行等）を除去（トリミング） ---
+
+			// 先頭の空白を削除
+			// (スペース ' ', タブ '\t', 回車 '\r', 改行 '\n' 以外の文字を探す)
+			cell.erase(0, cell.find_first_not_of(" \t\r\n"));
+			// 末尾の空白を削除
+			cell.erase(cell.find_last_not_of(" \t\r\n") + 1);
+
+			// クリーニング済みのデータを現在の行に追加
+			row.push_back(cell);
+		}
+		// 完成した行をグリッドデータに追加
+		grid.push_back(row);
+	}
+
+	// 解析結果を返す
+	return grid;
+}
+
+void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
+	// 1. 既存データのクリーンアップ
+	// メモリリークを防ぐため、新しいレベルを読み込む前に以前のオブジェクトとグリッドを破棄する
+	m_mapObjects.clear();
+	m_grid.clear();
+
+	// 2. CSVファイルの解析（パース）
+	auto csvData = ParseCSV(csvPath);
+	if (csvData.empty()) return; // データが空、または読み込み失敗時は中断
+
+	// csvData の要素数（外側の vector）は「行数」であり、マップの「奥行き（Z軸）」に対応する
+	m_mapDepth = (int)csvData.size();
+
+	// csvData[0]（最初の行）の要素数は「列数」であり、マップの「幅（X軸）」に対応する
+	// ※全ての行が同じ列数であることを前提としている
+	m_mapWidth = (int)csvData[0].size();
+
+
+	// タイル座標をワールド座標に変換するためのオフセット計算
+	// マップの中心が (0, 0, 0) に来るように調整
+	m_tileSize = 1.0f;
+	m_tileOffsets.x = 0.5f * -(float(GetMapWidth()) * m_tileSize);
+	m_tileOffsets.y = 0.0f;
+	m_tileOffsets.z = 0.5f * -(float(GetMapDepth()) * m_tileSize);
+
+	// 一次元配列としてグリッドデータをリサイズ
+	m_grid.resize(m_mapWidth * m_mapDepth);
+
+	// CSV解析ループに入る前に、全グリッドを確実に初期化する。
+	// CSVの行が短い場合などに発生する「未初期化タイル」を防ぐため。
+	for (int i = 0; i < m_grid.size(); ++i) {
+		m_grid[i].gridX = i % m_mapWidth;
+		m_grid[i].gridZ = i / m_mapWidth;
+		m_grid[i].type = TileType::FLOOR;
+		m_grid[i].isWalkable = true;
+		m_grid[i].occupant = nullptr;   // 安全化
+		m_grid[i].structure = nullptr;  // 安全化
+	}
+
+	// ユニット（Player, Enemy, Ally）は、床（MapObject）が全て追加された「後」にSceneに追加する。
+	// これにより、GameSceneの描画ループで「床 -> ユニット」の順になり、
+	// 残像（Ghost）やUIが床に隠れる問題（Z-Fighting/Occlusion）が解決する。
+	std::vector<std::unique_ptr<GameObject>> unitsToSpawn;
+
+	// 3. マップオブジェクトの生成
+	// 外側のループが Z軸（行）、内側のループが X軸（列）に対応
+	for (int z = 0; z < m_mapDepth; z++) {
+
+		// --- CSVの行とゲーム内Z座標の反転処理 ---
+		// z=0 (マップの下端) の時、CSVの最終行を読み込む
+		// z=max (マップの上端) の時、CSVの第0行を読み込む
+
+		int csvRowIndex = (m_mapDepth - 1) - z;
+		for (int x = 0; x < m_mapWidth; x++) {
+
+			// 行の長さが足りない場合の安全策
+			if (x >= csvData[csvRowIndex].size()) continue;
+
+			// 二次元座標 (x, z) を一次元配列のインデックスに変換
+			int index = z * m_mapWidth + x;
+			Tile& tile = m_grid[index];
+			tile.gridX = x;
+			tile.gridZ = z;
+			tile.type = TileType::FLOOR; // デフォルトは床
+			tile.isWalkable = true;      // デフォルトは通行可能
+			tile.occupant = nullptr;
+			tile.structure = nullptr;
+
+			// CSVのセルから識別子（トークン）を取得し、ワールド座標を計算
+			std::string token = csvData[csvRowIndex][x];
+			Vector3 worldPos = GetWorldPosition(x, z);
+			// 床オブジェクトの生成（全タイル共通）
+			auto floorObj = std::make_unique<MapObject>(context);
+			floorObj->Init(MapModelType::FLOOR, worldPos);
+			if (m_Scene) m_Scene->AddObject(std::move(floorObj));
+
+			// 1. 静的オブジェクト（構造物）の生成判定
+			MapModelType propType = MapModelType::FLOOR; // デフォルトは床（なし）
+			bool isTrap = false; // トラップ判定用フラグ
+
+			// トークンに基づき、生成するオブジェクトの種類を判別
+			if (token == "W")                propType = MapModelType::WALL;        // テスト用の壁
+			else if (token == "W_Y_SOFA")    propType = MapModelType::PROP_SOFA_YELLOW; // 黄色のソファ
+			else if (token == "W_W_SOFA")    propType = MapModelType::PROP_SOFA_WHITE;  // 白のソファ
+			else if (token == "W_CATTOWER")  propType = MapModelType::PROP_CATTOWER;    // キャットタワー
+			else if (token == "W_TABLE")     propType = MapModelType::PROP_TABLE;       // テーブル
+			else if (token == "W_BOOKSHELF") propType = MapModelType::PROP_BOOKSHELF;   // 本棚
+			else if (token == "T") { propType = MapModelType::TRAP; isTrap = true; } // トラップ（地刺）
+
+			// オブジェクトが設定された場合（床以外）の生成処理
+			if (propType != MapModelType::FLOOR) {
+				if (isTrap) {
+					// トラップクラスとしてインスタンス化
+					auto trap = std::make_unique<Trap>(context);
+					trap->Init(propType, worldPos);
+					tile.structure = trap.get(); // タイルに構造物として登録
+					if (m_Scene) m_Scene->AddObject(std::move(trap)); // シーンへ所有権を移譲
+				}
+				else {
+					// 通常のプロップ（静的物件）としてインスタンス化
+					auto prop = std::make_unique<Prop>(context);
+					prop->Init(propType, worldPos);
+					tile.structure = prop.get();
+					if (m_Scene) m_Scene->AddObject(std::move(prop));
+				}
+			}
+
+			// 2. 動的ユニット（占有者）の生成および配置
+			else if (token == "P") {
+				// もしプレイヤーが未生成なら、新規に生成
+				Player* pPlayer = context->GetPlayer();
+				if (!pPlayer) {
+					auto newPlayer = std::make_unique<Player>(context);
+					newPlayer->Init();
+					pPlayer = newPlayer.get();
+					context->SetPlayer(pPlayer); 
+					// 後で追加するためにリストへ
+					unitsToSpawn.push_back(std::move(newPlayer));
+				}
+
+				// 位置を設定
+				pPlayer->SetGridPosition(x, z);
+				pPlayer->setPosition(worldPos);
+
+				// 初期化後のワールド行列更新
+				pPlayer->UpdateWorldMatrix();
+
+				tile.occupant = pPlayer;
+			}
+			else if (token == "A") {
+				// 味方キャラクター（Ally）の生成
+				auto ally = std::make_unique<Ally>(context);
+				ally->Init();
+				ally->SetGridPosition(x, z);
+				ally->setPosition(worldPos);
+				ally->UpdateWorldMatrix();
+				tile.occupant = ally.get();
+				context->SetAlly(ally.get()); // グローバルな味方情報として登録
+				// 後で追加するためにリストへ
+				unitsToSpawn.push_back(std::move(ally));
+			}
+			else if (token[0] == 'E') { // トークンの先頭が 'E' の場合は敵とみなす (E1, E2, E3...)
+				int typeID = 0;
+				// 2文字目以降をIDとして取得
+				if (token.length() > 1) typeID = std::stoi(token.substr(1));
+
+				// 敵キャラクター（Enemy）の生成
+				auto enemy = std::make_unique<Enemy>(context);
+				enemy->Init(typeID); // IDに基づいたリソース読み込み
+				enemy->SetGridPosition(x, z);
+				enemy->setPosition(worldPos);
+				enemy->UpdateWorldMatrix();
+				tile.occupant = enemy.get();
+
+				// EnemyManagerに登録して管理下に置く
+				if (context->GetEnemyManager()) context->GetEnemyManager()->RegisterEnemy(enemy.get());
+				// 後で追加するためにリストへ
+				unitsToSpawn.push_back(std::move(enemy));
+			}
+		}
+	}
+	if (m_Scene) {
+		for (auto& unitObj : unitsToSpawn) {
+			m_Scene->AddObject(std::move(unitObj));
+		}
 	}
 }
