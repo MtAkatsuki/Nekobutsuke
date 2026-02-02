@@ -30,7 +30,7 @@ void HPBar::Draw(const Vector3& worldPos, int currentHP, int maxHP, BarType type
 
     // 座標変換(3D -> 2D)
     Vector3 drawPos = worldPos;
-	drawPos.y += 1.1f; // 高さ調整、ユニットの足元から少し上にオフセット
+	drawPos.y -= 0.1f; // 高さ調整、ユニットの足元から少し上にオフセット
 
     float screenW = (float)Application::GetWidth();
     float screenH = (float)Application::GetHeight();

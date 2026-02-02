@@ -59,7 +59,7 @@ public:
 	void StartSlideAnimation(const Vector3& targetPos);
 	bool UpdateSlideAnimation(uint64_t dt);
 	//HP Barの描画
-	void DrawUI();
+	virtual void DrawUI();
 
 	// --- 共通モデル描画メソッド ---
 	// 子クラスの OnDraw 内で呼び出し、キャラ本体の描画を実行する

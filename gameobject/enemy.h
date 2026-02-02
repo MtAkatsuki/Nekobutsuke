@@ -8,6 +8,7 @@
 #include	"../system/CShader.h"
 #include	"../system/IScene.h"
 #include    "../manager/TurnManager.h"
+#include	"../ui/EnemyActionUI.h"
 
 class player;
 
@@ -35,6 +36,7 @@ public:
 
 	void EnemyStartAction();
 	void SetDisplayOrder(int order);
+	virtual void DrawUI() override;
 	bool IsIdle() const { return m_state == EnemyState::IDLE; }
 	void ResetCharge() { 
 		m_isCharging = false; 
@@ -65,6 +67,7 @@ private:
 	CStaticMesh*			m_EnemyMesh;
 	CStaticMeshRenderer*	m_EnemyMeshrenderer;
 	CShader*				m_EnemyShader;
+	std::unique_ptr<EnemyActionUI> m_actionUI;
 
 	EnemyState m_state = EnemyState::IDLE;
 

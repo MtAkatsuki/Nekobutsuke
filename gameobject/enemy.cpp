@@ -96,6 +96,9 @@ void Enemy::Init(int sequenceNumber)
 	auto* backR = MeshManager::getRenderer<CStaticMeshRenderer>(backName);
 	SetModelRenderers(frontR, backR);
 
+	//行動順番UIの初期化
+	m_actionUI = std::make_unique<EnemyActionUI>();
+	m_actionUI->Init(m_context);
 	
 	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_srt.rot = Vector3(0, 0, 0);
@@ -184,7 +187,10 @@ void Enemy::Update(uint64_t dt) {
 		ExecuteAI();
 		m_isMyTurn = false;
 	}
-
+	//行動順番UIの更新
+	if (m_actionUI) {
+		m_actionUI->Update(deltaSeconds);
+	}
 
 	switch (m_state)
 	{
@@ -576,12 +582,6 @@ void Enemy::onMoveFinished()
 	EnemyEndAction();
 }
 
-void Enemy::SetDisplayOrder(int order)
-{
-	m_displayOrder = order;
-	//実装待ち
-}
-
 void Enemy::StartCharge(Unit* target) {
 
 	
@@ -758,3 +758,22 @@ void Enemy::DeathFlyingUpdate(float deltaSeconds)
 		return;
 }
 
+void Enemy::SetDisplayOrder(int order)
+{
+	m_displayOrder = order;
+}
+
+void Enemy::DrawUI() {
+	// 1. まず基底クラスのメソッドを呼び出し、HPバーを描画する
+	Unit::DrawUI();
+
+	// 2. 既に死亡している（画面外への吹き飛び中など）場合は、
+	//    基本的にUIを表示しない（仕様に応じて変更可能）
+	if (m_currentHP <= 0) return;
+
+	// 3. 行動順を示す数字を描画
+	if (m_actionUI) {
+		// 現在の座標と表示順（オーダー）を渡して描画
+		m_actionUI->Draw(m_srt.pos, m_displayOrder);
+	}
+}

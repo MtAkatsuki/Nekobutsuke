@@ -239,6 +239,7 @@ DirectXTK.lib
     <ClCompile Include="system\utility.cpp" />
     <ClCompile Include="ui\DamageNumberManager.cpp" />
     <ClCompile Include="ui\DialogueUI.cpp" />
+    <ClCompile Include="ui\EnemyActionUI.cpp" />
     <ClCompile Include="ui\GameUIManager.cpp" />
     <ClCompile Include="ui\HPBar.cpp" />
     <ClCompile Include="utility\ScreenToWorld.cpp" />
@@ -334,6 +335,7 @@ DirectXTK.lib
     <ClInclude Include="system\utility.h" />
     <ClInclude Include="ui\DamageNumberManager.h" />
     <ClInclude Include="ui\DialogueUI.h" />
+    <ClInclude Include="ui\EnemyActionUI.h" />
     <ClInclude Include="ui\GameUIManager.h" />
     <ClInclude Include="ui\HPBar.h" />
     <ClInclude Include="ui\TurnCounter.h" />
