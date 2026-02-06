@@ -184,6 +184,8 @@ DirectXTK.lib
     <ClCompile Include="gameobject\Trap.cpp" />
     <ClCompile Include="gameobject\Unit.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="manager\AudioManager.cpp" />
+    <ClCompile Include="manager\EffectManager.cpp" />
     <ClCompile Include="manager\EnemyManager.cpp" />
     <ClCompile Include="manager\GameContext.cpp" />
     <ClCompile Include="manager\MapManager.cpp" />
@@ -260,6 +262,8 @@ DirectXTK.lib
     <ClInclude Include="gameobject\Trap.h" />
     <ClInclude Include="gameobject\Unit.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="manager\AudioManager.h" />
+    <ClInclude Include="manager\EffectManager.h" />
     <ClInclude Include="manager\EnemyManager.h" />
     <ClInclude Include="manager\GameContext.h" />
     <ClInclude Include="manager\MapManager.h" />

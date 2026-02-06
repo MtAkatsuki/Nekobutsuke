@@ -12,6 +12,7 @@ class DamageNumberManager;
 class GameUIManager;
 class DialogueUI;
 class Camera;
+class EffectManager;
 
 
 class GameContext
@@ -22,6 +23,7 @@ public:
 	MapManager* GetMapManager();
 	TurnManager* GetTurnManager();
 	Camera* GetCamera();
+	EffectManager* GetEffectManager();
 	
 	// ’‡ŠÔ‚ÌSet‚ÆGet‚Ì’Ç‰Á
 	void SetAlly(Ally* ally);
@@ -48,6 +50,7 @@ private:
 	std::unique_ptr<Camera> m_camera;
 	std::unique_ptr<GameUIManager> m_gameUIManager;
 	std::unique_ptr<DialogueUI> m_dialogueUI;
+	std::unique_ptr<EffectManager> m_effectManager;
 	Player* m_player = nullptr;
 	Ally* m_ally = nullptr;
 };

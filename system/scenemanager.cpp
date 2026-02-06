@@ -5,6 +5,7 @@
 #include	"../gameobject/player.h"
 #include	"../gameobject/enemy.h"
 #include	"../system/DebugUI.h"
+#include "../manager/AudioManager.h"
 #include	<iostream>
 
 SceneManager::SceneManager() = default;
@@ -13,6 +14,8 @@ void SceneManager::Init()
 {
 	m_context = std::make_unique<GameContext>();
 	m_context->Init();
+
+	AudioManager::GetInstance().Init();
 }
 
 SceneManager::~SceneManager() { Dispose(); }
@@ -51,6 +54,11 @@ void SceneManager::Draw(uint64_t deltatime)
 
 void SceneManager::Update(uint64_t deltatime)
 {
+	float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
+
+	// BGMXV
+	AudioManager::GetInstance().Update(deltaSeconds);
+
 	if (m_transition) 
 	{
 		m_transition->update(deltatime);

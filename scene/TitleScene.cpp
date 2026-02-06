@@ -3,6 +3,7 @@
 #include "../system/CDirectInput.h"
 #include "../system/scenemanager.h"
 #include "../system/SceneClassFactory.h"
+#include "../manager/AudioManager.h"
 /**
  * @brief タイトルシーンのコンストラクタ
  *
@@ -116,6 +117,11 @@ void TitleScene::Init()
     }
 
     m_blinkTimer = 0.0f;
+
+    // タイトルBGMの再生
+    // loop = true (通常、タイトル曲はループ再生させる)
+    // fadeTime = 1.0f (1秒かけてフェードイン)
+    AudioManager::GetInstance().PlayBGM("Title", true, 1.0f);
 }
 
 /**

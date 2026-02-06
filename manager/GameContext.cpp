@@ -5,6 +5,7 @@
 #include "../ui/GameUIManager.h"
 #include "../ui/DialogueUI.h"
 #include "../gameobject/player.h" 
+#include "../manager/EffectManager.h"
 
 GameContext::GameContext() = default;
 GameContext::~GameContext() = default;
@@ -25,6 +26,9 @@ void GameContext::Init() {
 
     m_dialogueUI = std::make_unique<DialogueUI>();
     m_dialogueUI->Init(this);
+
+    m_effectManager = std::make_unique<EffectManager>();
+    m_effectManager->Init(this);
 
     m_camera = std::make_unique<Camera>(
         Vector3(0.0f, 10.0f, -20.0f), 
@@ -52,6 +56,9 @@ TurnState GameContext::GetCurrentTurnState() const {
 Camera* GameContext::GetCamera() {
     return m_camera.get();
 }
+
+EffectManager* GameContext::GetEffectManager() {
+    return m_effectManager.get(); }
 
 Ally* GameContext::GetAlly() {
     return m_ally;

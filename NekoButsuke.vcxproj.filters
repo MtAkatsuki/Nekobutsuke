@@ -252,6 +252,15 @@
     <ClCompile Include="gameobject\Trap.cpp">
       <Filter>ソース ファイル\gameobject</Filter>
     </ClCompile>
+    <ClCompile Include="ui\EnemyActionUI.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="manager\AudioManager.cpp">
+      <Filter>ソース ファイル\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="manager\EffectManager.cpp">
+      <Filter>ソース ファイル\manager</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
@@ -535,6 +544,15 @@
     </ClInclude>
     <ClInclude Include="gameobject\Trap.h">
       <Filter>ソース ファイル\gameobject</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\EnemyActionUI.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="manager\AudioManager.h">
+      <Filter>ソース ファイル\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="manager\EffectManager.h">
+      <Filter>ソース ファイル\manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

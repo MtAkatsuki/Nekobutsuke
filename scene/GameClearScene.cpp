@@ -4,6 +4,7 @@
 #include "../system/scenemanager.h"
 #include "GameClearScene.h"
 #include "../system/SceneClassFactory.h"
+#include "../manager/AudioManager.h"
 
 /**
  * @brief タイトルシーンのコンストラクタ
@@ -84,6 +85,10 @@ void GameClearScene::Init()
 
     //入力遅延タイマーを初期化
     m_inputDelayTimer = 0.0f;
+
+    //ステージクリアBGMの再生
+    // loop = false (ループなし。一度のみ再生して終了)
+    AudioManager::GetInstance().PlayBGM("Clear", false, 1.0f);
 
     if (m_image) {
         std::cerr << "=== GameClearScene m_image Created Successfully ===" << std::endl;

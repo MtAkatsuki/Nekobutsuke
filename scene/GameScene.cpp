@@ -13,6 +13,7 @@
 #include "../ui/DialogueUI.h"
 #include "../system/scenemanager.h"
 #include "../system//FadeTransition.h"
+#include "../manager/AudioManager.h"
 #include <stdio.h> // for sprintf_s
 #include <iostream>
 
@@ -75,6 +76,10 @@ void GameScene::Init()
 	m_camera->SetLookat(lookat);
 	m_camera->SetUP(upvector);
 
+	// [追加] ゲーム本編BGMの再生
+	// loop = true (ループ再生)
+	// fadeTime = 2.0f (シーンのフェードイン時間に合わせる)
+	AudioManager::GetInstance().PlayBGM("Game", true, 2.0f);
 
 	// リソースを読み込む
 	std::cerr << "Loading Resources..." << std::endl;
@@ -89,6 +94,7 @@ void GameScene::Init()
 	else {
 		std::cerr << "   [GameScene] Shader OK." << std::endl;
 	}
+
 
 	// MapManager初期化
 
