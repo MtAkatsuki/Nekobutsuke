@@ -23,8 +23,12 @@ public:
 
 	void UpdateWorldMatrix() 
 	{
+		Matrix4x4 rotationMatrix = Matrix4x4::CreateRotationZ(m_srt.rot.z)
+			* Matrix4x4::CreateRotationX(m_srt.rot.x)
+			* Matrix4x4::CreateRotationY(m_srt.rot.y);
+
 		m_WorldMatrix = Matrix4x4::CreateScale(m_srt.scale)
-			* Matrix4x4::CreateRotationY(m_srt.rot.y)
+			* rotationMatrix
 			* Matrix4x4::CreateTranslation(m_srt.pos);
 	}
 

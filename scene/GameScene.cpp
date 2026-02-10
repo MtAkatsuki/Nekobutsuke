@@ -14,6 +14,7 @@
 #include "../system/scenemanager.h"
 #include "../system//FadeTransition.h"
 #include "../manager/AudioManager.h"
+#include "../manager/EffectManager.h"
 #include <stdio.h> // for sprintf_s
 #include <iostream>
 
@@ -311,6 +312,12 @@ void GameScene::update(uint64_t deltatime)
 		m_context->GetDialogueUI()->Update(deltatime);
 	}
 
+	if (m_context->GetEffectManager()) {
+		m_context->GetEffectManager()->Update(deltaSeconds);
+	}
+
+	AudioManager::GetInstance().Update(deltaSeconds);
+
 	//敵の更新
 	m_context->GetEnemyManager()->Update(deltatime);
 	//ターン変更チェック及び処理
@@ -381,6 +388,10 @@ void GameScene::draw(uint64_t deltatime)
 		m_damageNumberManager->Draw();
 	}
 
+	if (m_context->GetEffectManager()) {
+		m_context->GetEffectManager()->Draw();
+	}
+
 	if (m_gameUIManager) {
 		m_gameUIManager->Draw();
 	}
@@ -392,6 +403,8 @@ void GameScene::draw(uint64_t deltatime)
 	if (m_dialogueUI) {
 		m_dialogueUI->Draw();
 	}
+
+
 
 	if (m_turnCounter) m_turnCounter->Draw();
 
@@ -437,6 +450,10 @@ void GameScene::dispose()
 	if (m_context) {
 		m_context->SetPlayer(nullptr);
 		m_context->SetAlly(nullptr);
+	}
+
+	if (m_context->GetEffectManager()) {
+		m_context->GetEffectManager()->Clear();
 	}
 
 	DebugUI::ClearDebugFunction();

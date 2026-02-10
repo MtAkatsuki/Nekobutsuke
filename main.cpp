@@ -10,7 +10,7 @@ int main(void)
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #else
     HWND consoleWindow = GetConsoleWindow(); // コンソールウィンドウのハンドルを取得
-    ShowWindow(consoleWindow, SW_HIDE);     // コンソールウィンドウを非表示にする
+    ShowWindow(consoleWindow, SW_SHOWNORMAL);     // コンソールウィンドウを非表示にする
 #endif//defined(DEBUG) || defined(_DEBUG)
 
     HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);

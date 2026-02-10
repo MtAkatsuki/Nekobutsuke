@@ -37,7 +37,12 @@ void Trap::Init(MapModelType type, Vector3 position)
 
     m_srt.rot.x = 0.0f;
 
-    m_srt.scale = Vector3((float)m_sizeX*0.9f, visualHeight*0.9f, 0.9f);
+    float pixelScale = roundf(m_sizeX);
+    m_srt.scale = Vector3(
+        pixelScale,
+        roundf(visualHeight),
+        1.0f
+    );
 
     m_srt.pos = position;
 

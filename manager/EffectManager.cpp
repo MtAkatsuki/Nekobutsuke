@@ -75,6 +75,10 @@ void EffectManager::Update(float dt) {
 }
 
 void EffectManager::Draw() {
+
+    Renderer::SetBlendState(BS_ALPHABLEND);
+    Renderer::SetDepthEnable(false);
+
     for (const auto& p : m_particles) {
         if (p.active && p.textureIndex < m_textures.size()) {
             // 簡易的なフェードアウト (時間の経過に合わせてスケールを縮小)
@@ -87,6 +91,9 @@ void EffectManager::Draw() {
             );
         }
     }
+
+    Renderer::SetDepthEnable(true);
+    Renderer::SetBlendState(BS_NONE);
 }
 
 void EffectManager::Clear() {

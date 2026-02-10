@@ -24,7 +24,7 @@ void AudioManager::Init() {
         m_soundEffects["Game"] = std::make_unique<DirectX::SoundEffect>(m_audEngine.get(), L"assets/sound/bgm_game.wav");
         m_soundEffects["Clear"] = std::make_unique<DirectX::SoundEffect>(m_audEngine.get(), L"assets/sound/bgm_clear.wav");
         m_soundEffects["Over"] = std::make_unique<DirectX::SoundEffect>(m_audEngine.get(), L"assets/sound/bgm_over.wav");
-
+        m_soundEffects["DigSE"] = std::make_unique<DirectX::SoundEffect>(m_audEngine.get(), L"assets/sound/DigSE.wav");
         std::cerr << "[AudioManager] Audio resources loaded successfully." << std::endl;
     }
     catch (...) {
@@ -153,7 +153,7 @@ AudioManager::~AudioManager() {
 void AudioManager::LoadSE(const std::string& name, const std::wstring& path) {
     if (!m_audEngine) return;
     try {
-        m_seMap[name] = std::make_unique<DirectX::SoundEffect>(m_audEngine.get(), path.c_str());
+        m_soundEffects[name] = std::make_unique<DirectX::SoundEffect>(m_audEngine.get(), path.c_str());
         std::cout << "[AudioManager] SE Loaded: " << name << std::endl;
     }
     catch (...) {
@@ -163,9 +163,13 @@ void AudioManager::LoadSE(const std::string& name, const std::wstring& path) {
 }
 
 void AudioManager::PlaySE(const std::string& name, float volume, float pitch, float pan) {
-    if (!m_audEngine) return;
-    auto it = m_seMap.find(name);
-    if (it != m_seMap.end()) {
+    if (!m_audEngine) {
+        std::cerr << "[AudioManager] Error: Engine is null!" << std::endl;
+        return;
+    }
+    auto it = m_soundEffects.find(name);
+
+    if (it != m_soundEffects.end()) {
         // Playメソッドは Fire-and-forget 形式のため、短い効果音に適している
         it->second->Play(volume, pitch, pan);
         /*Pitch（ピッチ / 音高）
@@ -183,5 +187,15 @@ void AudioManager::PlaySE(const std::string& name, float volume, float pitch, fl
         pan = -1.0f：左チャンネルのみから再生（完全に左）。
         pan = 0.0f：左右均等に再生（センター定位）。
         pan = +1.0f：右チャンネルのみから再生（完全に右）。*/
+    }
+
+    else {
+        std::cerr << "[AudioManager] ERROR: SE Not Found in map: " << name << std::endl;
+
+        std::cerr << "   Current loaded sounds: ";
+        for (const auto& pair : m_soundEffects) {
+            std::cerr << pair.first << ", ";
+        }
+        std::cerr << std::endl;
     }
 }

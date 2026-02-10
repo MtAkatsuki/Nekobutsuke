@@ -18,6 +18,7 @@ public:
     void TakeDamage(int damage, Unit* attacker)override;
 
     virtual void StartTurn() override;
+    void OnTurnChanged(TurnState state) override;
 
 private:
     CShader* m_shader = nullptr;

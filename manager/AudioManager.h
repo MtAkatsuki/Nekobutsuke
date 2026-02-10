@@ -37,6 +37,11 @@ public:
 	void PlaySE(const std::string& name, float volume = 1.0f, float pitch = 0.0f, float pan = 0.0f);
 
 private:
+	AudioManager() = default;
+	~AudioManager();
+	AudioManager(const AudioManager&) = delete;
+	AudioManager& operator=(const AudioManager&) = delete;
+
 	//アセット保存用
 	std::unique_ptr<DirectX::AudioEngine> m_audEngine;
 	std::map<std::string, std::unique_ptr<DirectX::SoundEffect>> m_soundEffects;
@@ -56,6 +61,4 @@ private:
 
 	// 音量設定
 	const float MAX_VOLUME = 0.5f; // 最大音量（音割れや騒音防止のため）
-	// SE再生用
-	std::map<std::string, std::unique_ptr<DirectX::SoundEffect>> m_seMap;
 };

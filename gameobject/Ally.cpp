@@ -47,6 +47,7 @@ void Ally::Init()
     m_srt.scale = Vector3(-1.0f, 1.0f, 1.0f);
     SetFacing(Direction::South);
     UpdateWorldMatrix();
+
 }
 
 void Ally::TakeDamage(int damage, Unit* attacker) {
@@ -57,6 +58,13 @@ void Ally::Update(uint64_t deltatime)
 {
     float dt = static_cast<float>(deltatime) / 1000.0f;
     UpdateFlipAnimation(dt);
+	// フリップ中は他のアニメーションを更新しない
+    if (m_isFlipping)
+    {
+        UpdateWorldMatrix();
+        return;
+    }
+
     if (m_isDigging) {
         UpdateDiggingAnimation(dt);
     }
@@ -79,12 +87,25 @@ void Ally::OnDraw(uint64_t deltatime)
 }
 
 void Ally::StartTurn() {
+    if (m_currentHP <= 0) return;
 	// ターン開始時、採掘アニメーション実行する
     std::cout << "[Ally] Start Turn: Start Digging!" << std::endl;
     m_isDigging = true;
     m_digTimer = 0.0f;
     m_digCount = 0;
     m_hasTriggeredEffect = false;
+	// リセット姿勢
+    m_srt.rot.z = 0.0f;
+}
+// TurnStateの変更通知を受け取る
+void Ally::OnTurnChanged(TurnState state)
+{
+
+    if (state == TurnState::PlayerPhase)
+    {
+        std::cout << "[Ally] It's PlayerPhase! Triggering StartTurn." << std::endl;
+        StartTurn();
+    }
 }
 
 void Ally::UpdateDiggingAnimation(float dt) {
@@ -101,14 +122,15 @@ void Ally::UpdateDiggingAnimation(float dt) {
     // 「ヒット（叩いた瞬間）」の判定：
     // 簡易ロジック：角度が 0.4 を超えた（最大傾斜に近い）かつ本周期で未処理の場合
     if (angle > 0.4f && !m_hasTriggeredEffect) {
+        std::cout << "[Ally] DEBUG: Triggering Dig Effect!" << std::endl;
         // 効果音（SE）の再生
-        AudioManager::GetInstance().PlaySE("Dig", 0.6f);
+        AudioManager::GetInstance().PlaySE("DigSE", 2.6f);
 
         // エフェクト（足元）の発生
         if (m_context->GetEffectManager()) {
             Vector3 footPos = m_srt.pos;
             // ツルハシの着弾点に合わせてオフセットを調整
-            footPos.x += 0.5f;
+            footPos.x -= 0.5f;
             m_context->GetEffectManager()->SpawnRubble(footPos, 3);
         }
 
