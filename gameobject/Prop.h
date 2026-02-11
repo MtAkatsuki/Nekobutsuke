@@ -9,6 +9,8 @@ public:
 	// Prop（障害物）は通行不可
     bool IsWalkable() const override { return false; }
 
+    void Update(uint64_t delta) override;
+
     void Init(MapModelType type, Vector3 position) override;
     void OnDraw(uint64_t delta) override;
     // 家具の占有サイズを取得（MapManagerでのタイル埋め立て用）

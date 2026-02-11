@@ -497,6 +497,10 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				// オブジェクトの初期化（計算した中心座標を適用）
 				newObj->Init(propType, centerPos);
 
+				// 家具の基準グリッド座標を設定
+				// これにより、Prop::Update 内でグリッドベースの遮蔽計算が可能になります
+				newObj->SetGridPosition(x, z);
+
 				// 占有するすべてのタイルに対して構造物（structure）情報を登録
 				// ※所有権移譲前に生ポインタを取得しておく
 				MapObject* rawPtr = newObj.get();

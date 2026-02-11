@@ -4,6 +4,7 @@
 #include "../manager/TurnManager.h"
 #include "../enum class/TurnState.h"
 #include "../ui/DamageNumberManager.h"
+#include "../manager/EffectManager.h"
 
 Unit::Unit(GameContext* context) :GameObject(context) {
 	if (m_context && m_context->GetTurnManager()) {
@@ -30,6 +31,19 @@ void Unit::TakeDamage(int damage, Unit* attacker)
 {
 	if (damage < 0) return;
 	m_currentHP = std::max(0, m_currentHP - damage);
+
+	// [新規追加] ヒットエフェクトの再生
+	if (m_context && m_context->GetEffectManager()) {
+		Vector3 hitPos = m_srt.pos;
+		hitPos.y += 0.8f; // 胸や頭の位置に表示されるよう、少し位置を上げる
+
+		// 完全に重なるのを避けるため、わずかにランダムなオフセットを加える
+		hitPos.x += ((rand() % 10) / 10.0f - 0.5f) * 0.3f;
+		hitPos.z += ((rand() % 10) / 10.0f - 0.5f) * 0.3f;
+
+		m_context->GetEffectManager()->SpawnHitEffect(hitPos);
+	}
+
 	if (m_context->GetDamageManager()) {
 		Vector3 headPos = m_srt.pos;
 		headPos.y += 1.0f;

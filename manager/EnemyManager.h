@@ -31,6 +31,8 @@ public:
     bool IsAnyEnemyDying() const;
     bool IsAnyEnemyAnimating() const;
     void ClearAll();
+
+    const std::vector<Enemy*>& GetAllEnemies() const { return m_enemies; }
 private:
     void ResortAndRenumber();
 

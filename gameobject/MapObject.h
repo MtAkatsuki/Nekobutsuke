@@ -21,7 +21,7 @@ class MapObject : public GameObject
 {
 public:
 	MapObject(GameContext* context);
-	~MapObject() {}
+	virtual ~MapObject() {}
 
 	void init() override {}
 	void dispose() override {}
@@ -37,8 +37,26 @@ public:
 	//オブジェクトの種類を取得(罠判断用)
 	MapModelType GetType() const { return m_type; }
 
+	//  基準となるグリッド座標の設定
+	void SetGridPosition(int x, int z) {
+		m_gridX = x;
+		m_gridZ = z;
+	}
+	// グリッド座標の取得
+	int GetGridX() const { return m_gridX; }
+	int GetGridZ() const { return m_gridZ; }
+
+
 protected:
 	CStaticMeshRenderer* m_renderer;
 	MapModelType m_type = MapModelType::FLOOR;
 	bool m_isWalkable = true;
+
+	// 透明度制御用変数
+	float m_currentAlpha = 1.0f; // 現在の透明度
+	float m_targetAlpha = 1.0f;  // 目標とする透明度
+
+	// グリッド座標
+	int m_gridX = 0;
+	int m_gridZ = 0;
 };

@@ -1,6 +1,10 @@
 #include "Prop.h"
 #include "../system/meshmanager.h"
 #include "../manager/GameContext.h"
+#include "../gameobject/player.h"      
+#include "../gameobject/Ally.h"        
+#include "../manager/EnemyManager.h"   
+#include "../gameobject/enemy.h"
 
 void Prop::Init(MapModelType type, Vector3 position) {
     // 1. 基本的な初期化と占有サイズ（マス数）の取得
@@ -46,8 +50,8 @@ void Prop::Init(MapModelType type, Vector3 position) {
 
     // 座標：Zファイティング防止のためY軸を微調整
     m_srt.pos = position;
-    m_srt.pos.y += 0.01f;
-    m_srt.pos.z -= 0.6f;
+    m_srt.pos.y += 0.1f;
+    m_srt.pos.z -= 0.7f;
 
     // ワールド行列の更新
     UpdateWorldMatrix();
@@ -69,12 +73,73 @@ void Prop::OnDraw(uint64_t delta)
         MATERIAL m = mat->GetData();
         m.TextureEnable = TRUE;
         m.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
-        m.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+        m.Diffuse = Color(1.0f, 1.0f, 1.0f, m_currentAlpha);
         mat->SetMaterial(m);  
     }
 
     m_renderer->Draw();
     Renderer::SetBlendState(BS_NONE);
+}
+
+// タイルインデックスに基づく遮蔽検知
+void Prop::Update(uint64_t delta) {
+    if (!m_context) return;
+    float dt = (float)delta / 1000.0f;
+
+    // 1. 全ての生存しているユニットを取得
+    std::vector<Unit*> unitsToCheck;
+    if (m_context->GetPlayer()) unitsToCheck.push_back(m_context->GetPlayer());
+    if (m_context->GetAlly()) unitsToCheck.push_back(m_context->GetAlly());
+
+    if (m_context->GetEnemyManager()) {
+        const auto& enemies = m_context->GetEnemyManager()->GetAllEnemies();
+        for (auto* e : enemies) {
+            if (e && !e->IsDead()) unitsToCheck.push_back(e);
+        }
+    }
+
+    // 2. 遮蔽検知ロジック (グリッドベース)
+    bool isOccluding = false;
+
+    // オブジェクトが占有するグリッド範囲
+    // X軸範囲: [BaseX, BaseX + SizeX - 1]
+    // Z軸範囲: [BaseZ, BaseZ + SizeZ - 1]
+    int propMinX = m_gridX;
+    int propMaxX = m_gridX + m_sizeX - 1;
+    int propMaxZ = m_gridZ + m_sizeZ - 1;
+
+    // 遮蔽判定の最大延長距離
+    // オブジェクト自身の範囲、および真後ろ 2マス以内にいるユニットのみ透明化をトリガーする
+    // 2マスを超えると、距離が十分離れていると判断し、透明化は不要とする
+    int occlusionLimitZ = propMaxZ + 1;
+
+    for (const auto* unit : unitsToCheck) {
+        if (!unit) continue;
+
+        int unitX = unit->GetUnitGridX();
+        int unitZ = unit->GetUnitGridZ();
+
+        // 判定条件：
+        // 1. X軸の重なり
+        // 2. Z軸の遮蔽：ユニット Z >= オブジェクト基準 Z
+        // 3. [新規追加] Z軸の距離制限：ユニット Z <= 制限距離
+        if (unitX >= propMinX && unitX <= propMaxX &&
+            unitZ >= m_gridZ && unitZ <= occlusionLimitZ)  // 距離の上限を追加
+        {
+            isOccluding = true;
+            break;
+        }
+    }
+
+    // 3. 目標透明度の設定
+    m_targetAlpha = isOccluding ? 0.7f : 1.0f;
+
+    // 4. 滑らかな遷移（フェード）
+    float speed = 5.0f;
+    m_currentAlpha += (m_targetAlpha - m_currentAlpha) * speed * dt;
+
+    // 行列の更新
+    UpdateWorldMatrix();
 }
 
 void Prop::GetDimensions(MapModelType type, int& outW, int& outD) {
