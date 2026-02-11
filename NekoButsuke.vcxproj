@@ -244,6 +244,7 @@ DirectXTK.lib
     <ClCompile Include="ui\EnemyActionUI.cpp" />
     <ClCompile Include="ui\GameUIManager.cpp" />
     <ClCompile Include="ui\HPBar.cpp" />
+    <ClCompile Include="ui\TutorialUI.cpp" />
     <ClCompile Include="utility\ScreenToWorld.cpp" />
     <ClCompile Include="utility\terrain.cpp" />
     <ClCompile Include="utility\WorldToScreen.cpp" />
@@ -344,6 +345,7 @@ DirectXTK.lib
     <ClInclude Include="ui\HPBar.h" />
     <ClInclude Include="ui\TurnCounter.h" />
     <ClInclude Include="ui\TurnCutin.h" />
+    <ClInclude Include="ui\TutorialUI.h" />
     <ClInclude Include="utility\ScreenToWorld.h" />
     <ClInclude Include="utility\WorldToScreen.h" />
   </ItemGroup>

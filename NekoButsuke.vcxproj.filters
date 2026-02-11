@@ -261,6 +261,9 @@
     <ClCompile Include="manager\EffectManager.cpp">
       <Filter>ソース ファイル\manager</Filter>
     </ClCompile>
+    <ClCompile Include="ui\TutorialUI.cpp">
+      <Filter>ソース ファイル\ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
@@ -553,6 +556,9 @@
     </ClInclude>
     <ClInclude Include="manager\EffectManager.h">
       <Filter>ソース ファイル\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\TutorialUI.h">
+      <Filter>ソース ファイル\ui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

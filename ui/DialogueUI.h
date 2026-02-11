@@ -12,7 +12,7 @@ public:
 	void Update(uint64_t delta);
 	void Draw();
 	//助けを求める「吹き出し」の表示機能
-	void ShowDialogue(const Vector3& targetWorldPos, float duration = 2.0f);
+	void ShowDialogue(const Vector3& targetWorldPos, float duration = 3.0f);
 
 private:
 	GameContext* m_context = nullptr;

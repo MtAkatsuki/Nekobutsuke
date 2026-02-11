@@ -13,6 +13,7 @@
 #include "../gameobject/Ally.h"
 #include "../ui/TurnCutin.h"
 #include "../ui/TurnCounter.h"
+#include "../ui/TutorialUI.h"
 #include "Background.h"
 
 class GameContext;
@@ -159,6 +160,8 @@ private:
 	std::unique_ptr<TurnCutin> m_turnCutin;
 	// ターンカウンター
 	std::unique_ptr<TurnCounter> m_turnCounter;
+	// チュートリアルUI
+	std::unique_ptr<TutorialUI> m_tutorialUI;
 
 
 	bool m_enableDebugCamera = true;

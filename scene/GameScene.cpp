@@ -133,6 +133,9 @@ void GameScene::Init()
 	//勝利条件のカウンター
 	m_turnCounter = std::make_unique<TurnCounter>();
 	m_turnCounter->Init();
+	//チュートリアルUI初期化
+	m_tutorialUI = std::make_unique<TutorialUI>();
+	m_tutorialUI->Init();
 	// 吹き出しUI取得
 	m_dialogueUI = m_context->GetDialogueUI();
 	// ダメージ数字管理取得
@@ -254,6 +257,18 @@ void GameScene::update(uint64_t deltatime)
 		// FadeInを一秒待ち
 		if (m_startDelayTimer >= START_WAIT_TIME)
 		{
+
+			// チュートリアルロジックの挿入ポイント
+			// チュートリアルUIが存在し、かつ再生が完了していない場合
+			if (m_tutorialUI && !m_tutorialUI->IsAllFinished())
+			{
+				// チュートリアルUIの更新（拡縮アニメーション、入力検知などを処理）
+				m_tutorialUI->Update(deltaSeconds);
+
+				// 背景のみを更新し、ゲームのメインロジックには進まない
+				if (m_background) m_background->Update(deltatime);
+				return;
+			}
 			m_isGameStarted = true;
 
 			//PlayerTurnアニメーション始まる
@@ -407,6 +422,12 @@ void GameScene::draw(uint64_t deltatime)
 
 
 	if (m_turnCounter) m_turnCounter->Draw();
+
+	// チュートリアルUIの描画
+	// 全ての要素の後に描画することで最前面に表示し、かつゲームが正式に開始されていない場合のみ描画する
+	if (m_tutorialUI && !m_isGameStarted) {
+		m_tutorialUI->Draw();
+	}
 
 	Renderer::SetDepthEnable(true);
 }
