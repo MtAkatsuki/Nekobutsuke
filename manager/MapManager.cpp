@@ -49,6 +49,12 @@ Vector3 MapManager::GetWorldPosition(int gridX, int gridZ) const
 	worldX = m_tileOffsets.x + worldX + (m_tileSize / 2.0f);
 	worldZ = m_tileOffsets.z + worldZ + (m_tileSize / 2.0f);
 
+	// グローバルな視覚的オフセット (Visual Offset) の追加
+	// Z軸の負の方向（カメラ方向）へオフセットさせ、物体をマスの手前側に寄せる
+
+	float visualZOffset = -0.3f;
+	worldZ += visualZOffset;
+
 	return Vector3(worldX, worldY, worldZ);
 }
 
@@ -110,7 +116,7 @@ bool MapManager::IsWalkable(int gridX, int gridZ) const
 	return true;
 }
 
-std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int goalZ)
+std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int goalZ, bool ignoreTraps)
 {
 	//境界とスタットポイントの検査
 	Tile* startTile = GetTile(startX, startZ);
@@ -174,12 +180,16 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int g
 				bool isWalkable = IsWalkable(nextX, nextZ);
 				if (!isWalkable) { continue; }//通過できないならスキップ
 				
-				// --- AI専用：トラップがある場合は通行不可能とみなす ---
-				// ターゲットとなるタイルに構造物があり、かつそれが「トラップ（地刺）」であるか判定
-				if (nextTile->structure && nextTile->structure->GetType() == MapModelType::TRAP) {
-					// プレイヤーとは異なり、AIはトラップを回避するため経路探索の対象から外す
-					continue;
+				// AI専用ロジックをパラメータで制御
+				// ignoreTraps が false（AIの場合）：TRAP（トラップ）を進入不可（通行禁止）として扱う
+				// ignoreTraps が true（プレイヤーの場合）：トラップを無視して通行可能とする
+				if (!ignoreTraps) {
+					if (nextTile->structure && nextTile->structure->GetType() == MapModelType::TRAP) {
+						// トラップがあるタイルはスキップ（経路候補から除外）
+						continue;
+					}
 				}
+
 
 				//Unit検査
 				if (nextTile->occupant!=nullptr) 
@@ -432,7 +442,14 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 			Tile* currentTile = GetTile(x, z);
 			Vector3 worldPos = GetWorldPosition(x, z);
 
-
+			// --- DEBUG LOG START ---
+					// 最初の数マスだけログを出して、Z座標が正しく -0.9 されているか確認する
+			if (z == 0 && x < 3) {
+				std::cout << "[Tile " << x << "," << z << "] WorldZ: " << worldPos.z
+					<< " (Expect offset -0.9 included)" << std::endl;
+			}
+			// --- DEBUG LOG END ---
+			// 
 			// すべてのタイルに共通の「床（Floor）」を先に生成
 			auto floorObj = std::make_unique<MapObject>(context);
 			floorObj->Init(MapModelType::FLOOR, worldPos);
@@ -494,6 +511,14 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				centerPos.x += offsetX;
 				centerPos.z += offsetZ;
 
+				// --- DEBUG LOG FOR PROP ---
+				// 家具生成時の座標を確認
+				if (isTrap || propType == MapModelType::PROP_TABLE) {
+					std::cout << "[PROP/TRAP] Created at " << x << "," << z
+						<< " CenterZ: " << centerPos.z << std::endl;
+				}
+				// -------------------------
+				// 
 				// オブジェクトの初期化（計算した中心座標を適用）
 				newObj->Init(propType, centerPos);
 
@@ -546,6 +571,9 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				pPlayer->UpdateWorldMatrix();
 
 				currentTile->occupant = pPlayer;
+
+				// Playerの位置ログ
+				std::cout << "[PLAYER] Spawn Z: " << worldPos.z << std::endl;
 			}
 			else if (token == "A") {
 				// 味方キャラクター（Ally）の生成

@@ -60,7 +60,7 @@ public:
 	//マンハッタン距離計算
 	int CalculateDistance(int x1, int z1, int x2, int z2)const { return std::abs(x1 - x2) + std::abs(z1 - z2); }
 	//幅優先探索breadth first search
-	std::vector<Tile*> FindPaths(int startX, int startZ, int goalX,int goalZ);
+	std::vector<Tile*> FindPaths(int startX, int startZ, int goalX,int goalZ, bool ignoreTraps = false);
 	//BFSで到達可能なタイルを取得
 	std::vector<Tile*> GetReachableTiles(int startX, int startZ, int maxSteps);
 	//移動範囲のタイルを色付きで描画

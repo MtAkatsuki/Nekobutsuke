@@ -51,7 +51,7 @@ void Prop::Init(MapModelType type, Vector3 position) {
     // 座標：Zファイティング防止のためY軸を微調整
     m_srt.pos = position;
     m_srt.pos.y += 0.1f;
-    m_srt.pos.z -= 0.7f;
+    m_srt.pos.z -= 0.6f;
 
     // ワールド行列の更新
     UpdateWorldMatrix();

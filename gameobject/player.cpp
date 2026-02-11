@@ -302,8 +302,23 @@ float Player::CalculateCornerRotation(int dx1, int dz1, int dx2, int dz2) {
 }
 //移動パスの描画
 void Player::DrawPathLine() {
-	//スタートポイントは描画しない
+	// スタートポイントは描画しない
 	if (m_currentPath.empty()) return;
+
+	// 目的地が危険（トラップ）かどうかをチェック
+	bool isDanger = false;
+	if (!m_currentPath.empty()) {
+		Tile* destTile = m_currentPath.back();
+		if (destTile && destTile->structure && destTile->structure->GetType() == MapModelType::TRAP) {
+			isDanger = true;
+		}
+	}
+
+	// カラー定義
+	Color normalColor(1.0f, 1.0f, 1.0f, 1.0f); // 白色（通常時）
+	Color dangerColor(1.0f, 0.0f, 0.0f, 1.0f); // 赤色（危険時）
+	Color targetColor = isDanger ? dangerColor : normalColor;
+
 	//startTileを取得
 	Tile* startTile = m_context->GetMapManager()->GetTile(m_startGridX, m_startGridZ);
 	//スタートポイントので、i=1から
@@ -376,7 +391,23 @@ void Player::DrawPathLine() {
 				* Matrix4x4::CreateTranslation(pos);
 
 			Renderer::SetWorldMatrix(&world);
-			rendererToUse->Draw();
+			// 一時的なマテリアル色の変更
+			if (auto* mat = rendererToUse->GetMaterial(0)) {
+				MATERIAL original = mat->GetData();
+				MATERIAL temp = original;
+				temp.Diffuse = targetColor; // 色を適用（白または赤）
+				mat->SetMaterial(temp);
+
+				rendererToUse->Draw();
+
+				// マテリアルを復元 (次のフレームで再設定されますが、状態をクリーンに保つための良い習慣です)
+				mat->SetMaterial(original);
+			}
+			else {
+				// マテリアルが取得できない場合は通常通り描画
+				rendererToUse->Draw();
+			}
+
 		}
 	}
 }
@@ -677,7 +708,7 @@ void Player::HandleMoveInput(float dt) {
 				m_previewGridZ = nextZ;
 				m_inputCooldown = 0.15f;
 				// ルートの更新：startからpreviewまで
-				std::vector<Tile*> path = m_context->GetMapManager()->FindPaths(m_startGridX, m_startGridZ, m_previewGridX, m_previewGridZ);
+				std::vector<Tile*> path = m_context->GetMapManager()->FindPaths(m_startGridX, m_startGridZ, m_previewGridX, m_previewGridZ,true);
 
 				m_currentPath.clear();
 

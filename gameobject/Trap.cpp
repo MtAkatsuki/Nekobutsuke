@@ -20,11 +20,11 @@ void Trap::Init(MapModelType type, Vector3 position)
     // ==========================================================
 
 
-    m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("prop_plane_mesh");
+    m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("trap_plane_mesh");
 
     if (!m_renderer) {
         OutputDebugStringA("[Prop] Warning: range_panel_mesh not found, using floor_mesh.\n");
-        m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("floor_mesh");
+        m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("prop_plane_mesh");
     }
 
 
@@ -40,15 +40,14 @@ void Trap::Init(MapModelType type, Vector3 position)
     float pixelScale = roundf(m_sizeX);
     m_srt.scale = Vector3(
         pixelScale,
-        roundf(visualHeight),
+        visualHeight,
         1.0f
     );
 
     m_srt.pos = position;
 
     m_srt.pos.x += 0.05f;
-    m_srt.pos.y += 0.01f;
-    m_srt.pos.z -= 0.5f;
+    m_srt.pos.y += 0.06f;
 
     // [アニメーション用] 初期スケールを保存
     m_initialScale = m_srt.scale;

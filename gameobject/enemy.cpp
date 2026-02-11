@@ -388,7 +388,7 @@ void Enemy::ExecuteAI()
 	{
 		std::cout << "[AI] Pathfinding..." << std::endl;
 		MapManager* map = m_context->GetMapManager();
-		auto path = map->FindPaths(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ());
+		auto path = map->FindPaths(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ(),false);
 		//Œ©‚Â‚©‚Á‚½“¹‚Ì’·‚³‚ÆˆÚ“®—Í‚ð”äŠr‚·‚éA‚»‚µ‚ÄˆÚ“®—Í‚Æ“¯‚¶’·‚³‚É‚È‚é
 		if (path.size() > m_currentMovePoints) 
 		{

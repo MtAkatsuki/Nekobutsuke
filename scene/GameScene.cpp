@@ -567,6 +567,25 @@ void GameScene::resourceLoader()
 			MeshManager::RegisterMeshRenderer("prop_plane_mesh", std::move(srender_prop));
 		}
 	
+	// トラプト用平面メッシュ読み込み
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+
+		mesh->Load("assets/model/obj/trap_plane.obj", "assets/model/obj/");
+
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+
+		if (auto* mat = renderer->GetMaterial(0)) {
+			MATERIAL m = mat->GetData();
+			m.Diffuse = Color(1, 1, 1, 1);
+			m.TextureEnable = FALSE;
+			mat->SetMaterial(m);
+		}
+
+		MeshManager::RegisterMesh<CStaticMesh>("trap_plane_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("trap_plane_mesh", std::move(renderer));
+	}
 }
 
 void GameScene::drawGridDebugText()
