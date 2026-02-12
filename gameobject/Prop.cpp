@@ -50,8 +50,11 @@ void Prop::Init(MapModelType type, Vector3 position) {
 
     // 座標：Zファイティング防止のためY軸を微調整
     m_srt.pos = position;
-    m_srt.pos.y += 0.1f;
+    m_srt.pos.y += 0.06f;
     m_srt.pos.z -= 0.6f;
+
+    float propAngleX = 25.0f * (3.14159265f / 180.0f); // ラジアンに変換
+    m_srt.rot.x += propAngleX;
 
     // ワールド行列の更新
     UpdateWorldMatrix();

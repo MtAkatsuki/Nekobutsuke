@@ -46,8 +46,9 @@ void Trap::Init(MapModelType type, Vector3 position)
 
     m_srt.pos = position;
 
-    m_srt.pos.x += 0.05f;
-    m_srt.pos.y += 0.06f;
+    m_srt.pos.y += 0.4f;
+	float trapAngleX = 30.0f * (3.14159265f / 180.0f); // ラジアンに変換
+    m_srt.rot.x -= trapAngleX;
 
     // [アニメーション用] 初期スケールを保存
     m_initialScale = m_srt.scale;
