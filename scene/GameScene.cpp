@@ -285,6 +285,11 @@ void GameScene::update(uint64_t deltatime)
 	//背景の更新
 	if (m_background) m_background->Update(deltatime);
 
+	//ダメージ数字の更新
+	if (m_damageNumberManager) {
+		m_damageNumberManager->Update(deltatime);
+	}
+
 	//TurnAnimation進行中は他の更新処理をスキップ
 	if (m_turnCutin && m_turnCutin->IsAnimating()) {
 		m_turnCutin->Update(deltatime);
@@ -299,10 +304,7 @@ void GameScene::update(uint64_t deltatime)
 		obj->Update(deltatime);
 	}
 
-	//ダメージ数字の更新
-	if (m_damageNumberManager) {
-		m_damageNumberManager->Update(deltatime);
-	}
+
 
 	if (m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase) {
 		if (m_turnCutin && !m_turnCutin->IsAnimating()) {
@@ -372,7 +374,7 @@ void GameScene::draw(uint64_t deltatime)
 	//2D描画処理
 	//Zバッファを無効化し、ブレンディングを有効化することで、UIが最前面に描画されるようにする
 	Renderer::SetDepthEnable(false);//Zバッファ無効化
-	Renderer::SetBlendState(BS_ALPHABLEND);//混色
+	//Renderer::SetBlendState(BS_ALPHABLEND);//混色
 
 	if (m_tileShader) {
 		m_tileShader->SetGPU();
@@ -399,13 +401,15 @@ void GameScene::draw(uint64_t deltatime)
 		}
 	}
 
+	if (m_context->GetEffectManager()) {
+		m_context->GetEffectManager()->Draw();
+	}
+
 	if (m_damageNumberManager) {
 		m_damageNumberManager->Draw();
 	}
 
-	if (m_context->GetEffectManager()) {
-		m_context->GetEffectManager()->Draw();
-	}
+
 
 	if (m_gameUIManager) {
 		m_gameUIManager->Draw();

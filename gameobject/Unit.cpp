@@ -112,13 +112,14 @@ void Unit::StartAttackAnimation(const Vector3& targetPos) {
 
 	SetFacingFromVector(dir);
 }
-
+//
 bool Unit::UpdateAttackAnimation(float dt, std::function<void()> onImpact) 
 {
 	
 	float deltaSeconds = dt / 1000.0f;//秒の変換
 	m_animTimer += deltaSeconds;
-	//ダメージのコールバック
+	//ダメージのコールバック、衝突瞬間を合わせる
+	//攻撃受け側からコールバックCallBack
 	if (!m_animHasHit && m_animTimer >= TIME_IMPACT) 
 	{
 		m_animHasHit = true;
@@ -126,16 +127,18 @@ bool Unit::UpdateAttackAnimation(float dt, std::function<void()> onImpact)
 	}
 
 	bool isFinished = false;
-
+	//rush　フェイス１、線形補間Lerpでスムーズに衝突点（m_animLungePos）に向かう
 	if (m_animTimer < TIME_LUNGE)
 	{
 		float t = m_animTimer / TIME_LUNGE;
 		m_srt.pos = Vector3::Lerp(m_animStartPos, m_animLungePos, t);
 	}
+	//stop フェイス２、衝突するときの止まり感を出す
 	else if (m_animTimer < TIME_RETURN) 
 	{
 		m_srt.pos = m_animLungePos;//ぶつかってるように停止する
 	}
+	//return フェイス３、元の位置に戻る
 	else if (m_animTimer < TIME_END) 
 	{
 		float t = (m_animTimer - TIME_RETURN) / (TIME_END - TIME_RETURN);

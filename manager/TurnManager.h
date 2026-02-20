@@ -12,10 +12,7 @@ public:
 	void RegisterObserver(TurnCallBack callback) {
 		callbacksList.push_back(callback);
 	}
-	//二度目プレーヤーするための処理
-	void ClearObservers() {
-		callbacksList.clear();
-	}
+
 	//敵とプレーヤー行動終わるならSetState
 	void SetState(TurnState newState) {
 		currentState = newState;
@@ -35,6 +32,10 @@ public:
 		return currentState;
 	}
 
+	//二度目プレーヤーするための処理
+	void ClearObservers() {
+		callbacksList.clear();
+	}
 private:
 	TurnState currentState = TurnState::PlayerPhase;
 

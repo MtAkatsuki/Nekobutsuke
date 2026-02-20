@@ -90,8 +90,9 @@ void Player::Init() {
 	SetFacing(Direction::South);
 	m_srt.rot.y = m_targetRot.y;
 	 
-	m_currentMovePoints = 4;
-	m_maxMovePoints = 4;
+
+	m_maxMovePoints = 3;
+	m_currentMovePoints = m_maxMovePoints;
 	m_maxHP = 5;
 	m_currentHP = 5;
 
@@ -217,7 +218,7 @@ void Player::OnDraw(uint64_t dt) {
 		DrawAttackWarning();
 	}
 		//プレーヤー本体は透明の部分あるため
-		Renderer::SetBlendState(BS_ALPHABLEND);
+		//Renderer::SetBlendState(BS_ALPHABLEND);
 
 		Renderer::SetDepthEnable(true);
 
@@ -226,7 +227,7 @@ void Player::OnDraw(uint64_t dt) {
 		/*m_PlayerMeshrenderer->Draw();*/
 		DrawModel();
 		
-		Renderer::SetBlendState(BS_NONE);
+		/*Renderer::SetBlendState(BS_NONE);*/
 
 }
 //スタート点の半透明残影
@@ -246,11 +247,11 @@ void Player::DrawGhost() {
 	gray.Diffuse = Color(1.0f, 1.0f, 1.0f, 0.6f); //灰色半透明
 	mtrl->SetMaterial(gray);
 
-	Renderer::SetBlendState(BS_ALPHABLEND);
+	//Renderer::SetBlendState(BS_ALPHABLEND);
 	Renderer::SetDepthEnable(false);
 	m_frontRenderer->Draw();
 	Renderer::SetDepthEnable(true);
-	Renderer::SetBlendState(BS_NONE);
+	//Renderer::SetBlendState(BS_NONE);
 
 	
 

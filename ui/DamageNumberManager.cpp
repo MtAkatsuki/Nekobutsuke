@@ -31,8 +31,8 @@ void DamageNumberManager::SpawnDamage(Vector3 position, int damage) {
     dmg.timer = 0.0f;
 
     dmg.timePhase1 = 0.1f;
-    dmg.timePhase2 = 0.2f;
-    dmg.totalTime = 0.3f;
+    dmg.timePhase2 = 0.3f;
+    dmg.totalTime = 0.5f;
 
     m_activeNumbers.push_back(dmg);
 }
@@ -78,12 +78,12 @@ void DamageNumberManager::Draw() {
         if (dmg.timer < dmg.timePhase1) {
             float t = dmg.timer / dmg.timePhase1;
             t = 1.0f - pow(1.0f - t, 2.0f); // EaseOut Quad
-            currentScale = std::lerp(0.0f, 1.0f, t);
+            currentScale = std::lerp(0.0f, 1.5f, t);
             currentAlpha = std::lerp(0.0f, 1.0f, t);
         }
         // Phase 2: Wait
         else if (dmg.timer < dmg.timePhase2) {
-            currentScale = 1.0f;
+            currentScale = 1.5f;
             currentAlpha = 1.0f;
         }
         // Phase 3: Fade Out (EaseIn)
@@ -91,7 +91,7 @@ void DamageNumberManager::Draw() {
             float fadeOutDuration = dmg.totalTime - dmg.timePhase2;
             float t = (dmg.timer - dmg.timePhase2) / fadeOutDuration;
             t = pow(t, 2.0f); // EaseIn Quad
-            currentScale = std::lerp(1.0f, 0.0f, t);
+            currentScale = std::lerp(1.5f, 0.0f, t);
             currentAlpha = std::lerp(1.0f, 0.0f, t);
         }
 

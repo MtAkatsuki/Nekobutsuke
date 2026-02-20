@@ -297,9 +297,9 @@ void Enemy::OnDraw(uint64_t dt){
 		}
 
 		//プレーヤー本体は透明の部分あるため
-		Renderer::SetBlendState(BS_ALPHABLEND);
+		/*Renderer::SetBlendState(BS_ALPHABLEND);*/
 		DrawModel();// 基底クラスの描画メソッドを呼び出す
-		Renderer::SetBlendState(BS_NONE);
+	/*	Renderer::SetBlendState(BS_NONE);*/
 	
 	}
 }

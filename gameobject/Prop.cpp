@@ -135,7 +135,7 @@ void Prop::Update(uint64_t delta) {
     }
 
     // 3. 目標透明度の設定
-    m_targetAlpha = isOccluding ? 0.7f : 1.0f;
+    m_targetAlpha = isOccluding ? 0.4f : 1.0f;
 
     // 4. 滑らかな遷移（フェード）
     float speed = 5.0f;

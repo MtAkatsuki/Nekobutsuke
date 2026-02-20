@@ -65,12 +65,12 @@ Vector3 MapManager::GetWorldPosition(const Tile& tile) const
 }
 
 //Tileの記号を取得する
-const Tile* MapManager::GetTile (int gridX, int gridZ)const
+const Tile* MapManager::GetTile(int gridX, int gridZ)const
 {
-	if(gridX < 0 || gridX >= m_mapWidth || gridZ < 0 || gridZ >= m_mapDepth) {
+	if (gridX < 0 || gridX >= m_mapWidth || gridZ < 0 || gridZ >= m_mapDepth) {
 		return nullptr;
 	}
-	
+
 	int index = gridZ * m_mapWidth + gridX;
 	return &m_grid[index];
 
@@ -111,12 +111,12 @@ bool MapManager::IsWalkable(int gridX, int gridZ) const
 		if (!targetTile->structure->IsWalkable()) {
 			// 壁などの通行不可能な構造物がある場合、移動不可（false）を返す
 			return false;
-		}		
+		}
 	}
 	return true;
 }
 
-std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int goalZ, bool ignoreTraps)
+std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX, int goalZ, bool ignoreTraps)
 {
 	//境界とスタットポイントの検査
 	Tile* startTile = GetTile(startX, startZ);
@@ -142,7 +142,7 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int g
 	bool foundPath = false;
 
 	//BFS探索ループ
-	while (!frontier.empty()) 
+	while (!frontier.empty())
 	{
 		Tile* currentTile = frontier.front();//キューの先頭を取得
 		frontier.pop();//キューの先頭を削除(探索したTileを削除)
@@ -151,13 +151,13 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int g
 		int currentDistance = CalculateDistance(currentTile->gridX, currentTile->gridZ, goalX, goalZ);
 
 		//もしcurrentTileは前のbestTileより近いなら、bestTileを更新
-		if(currentDistance < minDistance)
+		if (currentDistance < minDistance)
 		{
 			minDistance = currentDistance;//一番近い距離を今の距離に更新、次はまた新しいのcurrentDistanceを比較
 			bestTile = currentTile;//bestTileを今到達したcurrentTileに更新
 		}
 		//ゴールに到達したら探索終了
-		if (currentTile == goalTile) 
+		if (currentTile == goalTile)
 		{
 			foundPath = true;
 			bestTile = currentTile;//bestTileをゴールに設定(最後に見つかったTile)
@@ -168,18 +168,18 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int g
 		int dx[] = { -1, 1, 0, 0 };
 		int dz[] = { 0, 0, -1, 1 };
 
-		for(int i=0;i<4;i++) 
+		for (int i = 0; i < 4; i++)
 		{
 			int nextX = currentTile->gridX + dx[i];
 			int nextZ = currentTile->gridZ + dz[i];
 			Tile* nextTile = GetTile(nextX, nextZ);
 			//GetTileがnullptrを返すか、通過できないTile、すでに調査したTileはスキップ(came_from.count == 0)
-			if (nextTile && cameFrom.find(nextTile) == cameFrom.end()) 
+			if (nextTile && cameFrom.find(nextTile) == cameFrom.end())
 			{
 				//地形検査
 				bool isWalkable = IsWalkable(nextX, nextZ);
 				if (!isWalkable) { continue; }//通過できないならスキップ
-				
+
 				// AI専用ロジックをパラメータで制御
 				// ignoreTraps が false（AIの場合）：TRAP（トラップ）を進入不可（通行禁止）として扱う
 				// ignoreTraps が true（プレイヤーの場合）：トラップを無視して通行可能とする
@@ -192,10 +192,10 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int g
 
 
 				//Unit検査
-				if (nextTile->occupant!=nullptr) 
-				{	
+				if (nextTile->occupant != nullptr)
+				{
 					//特殊ケース:ゴールTileは通過できなくても追加、後でゴールの隣接Tileを取得するために
-					if(nextTile!= goalTile)	{continue;}		
+					if (nextTile != goalTile) { continue; }
 				}
 				frontier.push(nextTile);//ゴールでもキューに追加
 				cameFrom[nextTile] = currentTile;//前のTileを記録
@@ -210,7 +210,7 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int g
 	Tile* currentTile = bestTile;
 
 	//実行できるゴールがある時、cameFromに保存されたTileをpathに追加
-	while (currentTile != startTile) 
+	while (currentTile != startTile)
 	{
 		path.push_back(currentTile);//unordered_mapは順番がないので、vectorに入れて後でreverseする
 		currentTile = cameFrom[currentTile];//元のcurrentTileをpathに入れた後、前のTileに更新、ループで繰り返し
@@ -219,9 +219,9 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int g
 	std::reverse(path.begin(), path.end());//pathを逆順にする、スタットポイントからゴールまでの順番に
 
 	//最後はゴールTileの隣接Tileを取得するために、ゴールTileをpathから削除
-	if (foundPath && !path.empty()) 
+	if (foundPath && !path.empty())
 	{
-		if (path.back() == goalTile) 
+		if (path.back() == goalTile)
 		{
 			path.pop_back();//ゴールTileをpathから削除、移動先として含めない
 		}
@@ -231,7 +231,7 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX,int g
 }
 
 //移動範囲のタイルを取得(BFS)-スタート点の引数を渡す
-std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int maxSteps) 
+std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int maxSteps)
 {
 	std::vector<Tile*> reachables;
 	Tile* startTile = GetTile(startX, startZ);
@@ -255,12 +255,12 @@ std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int max
 		//最大ステップ数に達したらスキップ、以降の隣接タイルは追加しない
 		// (Tile自身はすでに前回のループで追加された)
 		//次のq.front()実行する
-		if (dist >= maxSteps) continue; 
+		if (dist >= maxSteps) continue;
 
 		int dx[] = { -1, 1, 0, 0 };
 		int dz[] = { 0, 0, -1, 1 };
 
-		for (int i = 0; i < 4; i++) 
+		for (int i = 0; i < 4; i++)
 		{
 			int nx = current->gridX + dx[i];
 			int nz = current->gridZ + dz[i];
@@ -277,20 +277,20 @@ std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int max
 						break;
 					}
 				}
-				if (!isVisited) 
+				if (!isVisited)
 				{
 					visited.push_back(next);
 					reachables.push_back(next);
 					q.push({ next,dist + 1 });//ここで次検査する必要なTileをキューに追加(1->4->4*3->...)
 				}
 			}
-		}		
+		}
 	}
 	return reachables;
 }
 
 //移動範囲のタイルを色付きで描画
-void MapManager::DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX::SimpleMath::Color& color) 
+void MapManager::DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX::SimpleMath::Color& color)
 {
 	if (tiles.empty() || !m_rangeRenderer) { return; }
 	//マテリアル取得
@@ -307,7 +307,7 @@ void MapManager::DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX
 	mtrl->SetMaterial(temp);
 
 	//各タイルを描画
-	for (Tile* t : tiles) 
+	for (Tile* t : tiles)
 	{
 		Vector3 pos = GetWorldPosition(t->gridX, t->gridZ);
 		pos.y += 0.05f;//少し浮かせて描画
@@ -426,12 +426,23 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 
 	// 3. マップオブジェクトの生成
 	// 外側のループが Z軸（行）、内側のループが X軸（列）に対応
+
+	//フェイス１：まずは全部のフロアーを生成、描画リストの再前端にある
 	for (int z = 0; z < m_mapDepth; z++) {
 
 		// --- CSVの行とゲーム内Z座標の反転処理 ---
 		// z=0 (マップの下端) の時、CSVの最終行を読み込む
 		// z=max (マップの上端) の時、CSVの第0行を読み込む
 
+		for (int x = 0; x < m_mapWidth; x++) {
+			auto floorObj = std::make_unique<MapObject>(context);
+			floorObj->Init(MapModelType::FLOOR, GetWorldPosition(x, z));
+			if (m_Scene) m_Scene->AddObject(std::move(floorObj));
+		}
+	}
+
+	// フェイス２：家具と障害物を生成
+	for (int z = 0; z < m_mapDepth; z++) {
 		int csvRowIndex = (m_mapDepth - 1) - z;
 		for (int x = 0; x < m_mapWidth; x++) {
 
@@ -441,19 +452,6 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 			// 現在のセル（タイル）を取得
 			Tile* currentTile = GetTile(x, z);
 			Vector3 worldPos = GetWorldPosition(x, z);
-
-			// --- DEBUG LOG START ---
-					// 最初の数マスだけログを出して、Z座標が正しく -0.9 されているか確認する
-			if (z == 0 && x < 3) {
-				std::cout << "[Tile " << x << "," << z << "] WorldZ: " << worldPos.z
-					<< " (Expect offset -0.9 included)" << std::endl;
-			}
-			// --- DEBUG LOG END ---
-			// 
-			// すべてのタイルに共通の「床（Floor）」を先に生成
-			auto floorObj = std::make_unique<MapObject>(context);
-			floorObj->Init(MapModelType::FLOOR, worldPos);
-			if (m_Scene) m_Scene->AddObject(std::move(floorObj)); // シーンへ所有権を移譲
 
 
 			// === [重要ロジック 1]：先着優先（オーバーラップ防止） ===
@@ -547,18 +545,27 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				// シーンマネージャーへ登録（所有権の移動）
 				if (m_Scene) m_Scene->AddObject(std::move(newObj));
 			}
-		
-	
+		}
+	}
 
-			// 2. 動的ユニット（占有者）の生成および配置
-			else if (token == "P") {
+
+
+
+	// 2. 動的ユニット（Player/Enemy/Ally）の生成および配置
+	for (int z = 0; z < m_mapDepth; z++) {
+		int csvRowIndex = (m_mapDepth - 1) - z;
+		for (int x = 0; x < m_mapWidth; x++) {
+			std::string token = csvData[csvRowIndex][x];
+			Vector3 worldPos = GetWorldPosition(x, z);
+
+			if (token == "P") {
 				// もしプレイヤーが未生成なら、新規に生成
 				Player* pPlayer = context->GetPlayer();
 				if (!pPlayer) {
 					auto newPlayer = std::make_unique<Player>(context);
 					newPlayer->Init();
 					pPlayer = newPlayer.get();
-					context->SetPlayer(pPlayer); 
+					context->SetPlayer(pPlayer);
 					// 後で追加するためにリストへ
 					unitsToSpawn.push_back(std::move(newPlayer));
 				}
@@ -570,7 +577,7 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				// 初期化後のワールド行列更新
 				pPlayer->UpdateWorldMatrix();
 
-				currentTile->occupant = pPlayer;
+				GetTile(x, z)->occupant = pPlayer;
 
 				// Playerの位置ログ
 				std::cout << "[PLAYER] Spawn Z: " << worldPos.z << std::endl;
@@ -582,7 +589,7 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				ally->SetGridPosition(x, z);
 				ally->setPosition(worldPos);
 				ally->UpdateWorldMatrix();
-				currentTile->occupant = ally.get();
+				GetTile(x, z)->occupant = ally.get();
 				context->SetAlly(ally.get()); // グローバルな味方情報として登録
 				// 後で追加するためにリストへ
 				unitsToSpawn.push_back(std::move(ally));
@@ -598,7 +605,7 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 				enemy->SetGridPosition(x, z);
 				enemy->setPosition(worldPos);
 				enemy->UpdateWorldMatrix();
-				currentTile->occupant = enemy.get();
+				GetTile(x, z)->occupant = enemy.get();
 
 				// EnemyManagerに登録して管理下に置く
 				if (context->GetEnemyManager()) context->GetEnemyManager()->RegisterEnemy(enemy.get());
