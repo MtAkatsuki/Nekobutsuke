@@ -83,7 +83,7 @@ void EnemyActionUI::Draw(const Vector3& worldPos, int order) {
     // スクリーン座標の計算
     // 数字をHPバーの上方に表示（HPバーのオフセット y+1.1f を考慮し y+1.6f に設定）
     Vector3 uiPos = worldPos;
-    uiPos.y += 1.2f;
+    uiPos.y += 1.4f;
     uiPos.x += 0.1f;
 
     float screenW = (float)Application::GetWidth();

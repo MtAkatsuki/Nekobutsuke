@@ -59,6 +59,8 @@ void GameUIManager::Init(GameContext* context) {
     }
 
     m_isGuideActive = false;
+
+    m_pActiveArrow = std::make_unique<CSprite>(53, 66, "assets/texture/ui/ui_arrow_down.png");
 }
 
 void GameUIManager::LoadSprite(std::vector<MenuOption>& list, const std::string& path, float w, float h) {
@@ -103,6 +105,12 @@ void GameUIManager::Update(uint64_t dt) {
     if (m_isGuideActive) {
         UpdateGuideUI(deltaSeconds);
     }
+
+    if (m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase) {
+        m_arrowTimer += deltaSeconds;
+        // 単振動アニメション
+        m_arrowHoverY = sinf(m_arrowTimer * 3.0f) * 10.0f;
+    }
 }
 // メニューの描画(プレイヤー位置に基づきて)
 void GameUIManager::Draw() {
@@ -121,6 +129,25 @@ void GameUIManager::Draw() {
 
     float screenW = (float)Application::GetWidth();
     float screenH = (float)Application::GetHeight();
+
+    //プレイヤー頭上の矢印描画(プレイヤーのターンのみ)
+        if (m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase) {
+            // 矢印の世界座標（頭上2.0f程度に配置）
+            Vector3 arrowWorldPos = player->getSRT().pos;
+            arrowWorldPos.y += 1.5f;
+            arrowWorldPos.x += 0.2f;
+
+            Vector2 arrowScreenPos = WorldToScreen(arrowWorldPos, camera->GetViewMatrix(), camera->GetProjMatrix(), screenW, screenH);
+
+            // 画面内判定
+            if (arrowScreenPos.x > -50 && arrowScreenPos.x < screenW + 50 &&
+                arrowScreenPos.y > -50 && arrowScreenPos.y < screenH + 50) {
+
+                // Updateで計算した m_arrowHoverY を適用
+				Vector3 arrowPos(arrowScreenPos.x, arrowScreenPos.y + m_arrowHoverY, 0);
+				m_pActiveArrow->Draw(Vector3(1.0f, 1.0f, 1.0f), Vector3(0, 0, 0), arrowPos);
+            }
+        }
     // ワールド座標をスクリーン座標に変換
     Vector2 screenPos = WorldToScreen(headPos, camera->GetViewMatrix(), camera->GetProjMatrix(), screenW, screenH);
     // 画面外なら描画しない
@@ -135,6 +162,8 @@ void GameUIManager::Draw() {
     else if (m_currentType == MenuType::Attack) {
         DrawMenuGroup(m_attackMenuOptions, startX, startY);
     }
+
+
 }
 // メニューグループの描画(メニュー内部の位置)
 void GameUIManager::DrawMenuGroup(std::vector<MenuOption>& list, float startX, float startY) {

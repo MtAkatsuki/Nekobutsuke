@@ -92,4 +92,8 @@ private:
 	void DrawGuideUI();
 	// ガイドUIの更新
 	void UpdateGuideUI(float dt);
+	//プレイヤー矢印用
+	std::unique_ptr<CSprite> m_pActiveArrow;
+	float m_arrowTimer = 0.0f;
+	float m_arrowHoverY = 0.0f;
 };
