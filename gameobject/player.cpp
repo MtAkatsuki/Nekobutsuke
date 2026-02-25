@@ -118,20 +118,13 @@ void Player::Update(uint64_t dt) {
 		if (m_nextState == PlayerState::MOVE_SELECT) {
 			SwitchToMoveSelect();
 		}
-		else if (m_nextState == PlayerState::MENU_ATTACK) {
-			SwitchToAttackMenu();
+		else if (m_nextState == PlayerState::ATTACK_DIR_SELECT) {
+			SwitchToAttackDirSelect(AttackType::Push);
 		}
 		else if (m_nextState == PlayerState::WAITING) {
 			EndTurn();
 		}
 		//安全おため、もう一回リセット
-		m_nextState = m_state;
-	}
-	// 攻撃メニュー状態の場合
-	else if (m_state == PlayerState::MENU_ATTACK && m_nextState != PlayerState::MENU_ATTACK) {
-		if (m_nextState == PlayerState::ATTACK_DIR_SELECT) {
-			SwitchToAttackDirSelect(m_selectedAttackType);
-		}
 		m_nextState = m_state;
 	}
 
@@ -167,9 +160,6 @@ void Player::Update(uint64_t dt) {
 			//メインメニューに切り替え
 			SwitchToMenuMain();
 		}
-		break;
-	case PlayerState::MENU_ATTACK:
-		HandleAttackMenuInput();
 		break;
 	case PlayerState::ATTACK_DIR_SELECT:
 		HandleAttackDirInput(deltaSeconds);
@@ -617,19 +607,7 @@ void Player::SwitchToMoveSelect() {
 	m_moveRangeTiles = m_context->GetMapManager()->GetReachableTiles(m_gridX, m_gridZ, m_currentMovePoints);
 	m_currentPath.clear();
 }
-// 攻撃メニューに切り替え
-void Player::SwitchToAttackMenu() {
-	m_state = PlayerState::MENU_ATTACK;
-	m_nextState = PlayerState::MENU_ATTACK;
-	m_context->GetUIManager()->OpenAttackMenu();
-	// 移動モード：Escだけ
-	m_context->GetUIManager()->ShowGuideUI(
-		m_srt.pos,
-		false,      // No Arrows
-		false,      // No Enter
-		true        // Show Esc
-	);
-}
+
 // 攻撃方向選択状態に切り替え
 void Player::SwitchToAttackDirSelect(AttackType type) {
 	m_selectedAttackType = type;
@@ -657,7 +635,7 @@ void Player::HandleMenuInput() {
 	}
 	else if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_K)) {
 		m_context->GetUIManager()->TriggerSelectAnim(1);
-		m_nextState = PlayerState::MENU_ATTACK;
+		m_nextState = PlayerState::ATTACK_DIR_SELECT;
 	}
 	else if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_L)) {
 		m_context->GetUIManager()->TriggerSelectAnim(2);
@@ -738,27 +716,10 @@ void Player::HandleMoveInput(float dt) {
 	}
 }
 
-void Player::HandleAttackMenuInput() {
-	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_J)) {
-		m_context->GetUIManager()->TriggerSelectAnim(0);
-		SwitchToAttackDirSelect(AttackType::Normal);
-		m_nextState = PlayerState::ATTACK_DIR_SELECT;
-	}
-	else if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_K)) {
-		m_context->GetUIManager()->TriggerSelectAnim(1);
-		SwitchToAttackDirSelect(AttackType::Push);
-		m_nextState = PlayerState::ATTACK_DIR_SELECT;
-	}
-	else if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_ESCAPE)) {
-		m_context->GetUIManager()->HideGuideUI();
-		//攻撃メニューからメインメニューに戻る
-		SwitchToMenuMain();
-	}
-}
 
 void Player::HandleAttackDirInput(float dt) {
 	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_ESCAPE)) {
-		SwitchToAttackMenu();
+		SwitchToMenuMain();
 		return;
 	}
 

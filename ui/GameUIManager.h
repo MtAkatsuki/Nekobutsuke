@@ -29,7 +29,6 @@ public:
 	void Draw();
 	// メニュー状態コントロール
 	void OpenMainMenu();
-	void OpenAttackMenu();
 	void CloseMenu();
 	void SetMoveOptionEnabled(bool enabled);
 	//メニュー選択確定のアニメーション開始
@@ -55,7 +54,6 @@ private:
 	bool m_isMoveEnabled = true;
 
 	std::vector<MenuOption> m_mainMenuOptions;//0:移動、1:攻撃、2:終了
-	std::vector<MenuOption> m_attackMenuOptions;//0:普通攻撃、1:プッシュ
 
 	float m_animTimer = 0.0f;//アニメーションタイマー
 	int m_selectedIndex = -1;//選択されたメニューオプションのインデックス

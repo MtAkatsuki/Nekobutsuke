@@ -62,7 +62,7 @@ void GameScene::Init()
 
 	float azimuth = 1.58f;
 	float elevation = -1.08f;
-	float radius = 9.65f;
+	float radius = 25.0f;
 	Vector3 lookat(0, 0, 0);
 
 	CPolor3D polor(radius, elevation, azimuth);

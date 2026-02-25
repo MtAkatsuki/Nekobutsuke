@@ -15,9 +15,6 @@ void GameUIManager::Init(GameContext* context) {
     LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_attack.png", 140, 35);
     LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_end.png", 140, 35);
 
-    LoadSprite(m_attackMenuOptions, "assets/texture/ui/ui_text_sub_normal.png", 140, 35);
-    LoadSprite(m_attackMenuOptions, "assets/texture/ui/ui_text_sub_push.png", 140, 35);
-
     m_escHintSprite = std::make_unique<CSprite>(197, 43.5, "assets/texture/ui/ui_text_cancel.png");
     m_enterHintSprite = std::make_unique<CSprite>(197, 42.5, "assets/texture/ui/ui_text_enter.png");
 
@@ -79,7 +76,6 @@ void GameUIManager::Update(uint64_t dt) {
 		//アップデート用のメニューリストを取得
         std::vector<MenuOption>* targetListPtr = nullptr;
         if (m_currentType == MenuType::Main) targetListPtr = &m_mainMenuOptions;
-        else if (m_currentType == MenuType::Attack) targetListPtr = &m_attackMenuOptions;
 
         if (targetListPtr) {
             std::vector<MenuOption>& currentList = *targetListPtr;
@@ -159,9 +155,6 @@ void GameUIManager::Draw() {
     if (m_currentType == MenuType::Main) {
         DrawMenuGroup(m_mainMenuOptions, startX, startY);
     }
-    else if (m_currentType == MenuType::Attack) {
-        DrawMenuGroup(m_attackMenuOptions, startX, startY);
-    }
 
 
 }
@@ -198,14 +191,6 @@ void GameUIManager::OpenMainMenu() {
     m_selectedIndex = m_isMoveEnabled ? 0 : 1;
 }
 
-// 攻撃メニューを開く及び初期化
-void GameUIManager::OpenAttackMenu() {
-    m_currentType = MenuType::Attack;
-    m_animTimer = 0.0f;
-    for (auto& opt : m_attackMenuOptions)
-    { opt.isVisible = true; opt.currentScale = Vector3(1, 1, 1); }
-}
-
 void GameUIManager::CloseMenu() {
     m_currentType = MenuType::None;
 }
@@ -232,10 +217,6 @@ void GameUIManager::Clear()
 
     // すべてのメニューを不可視にする
     for (auto& opt : m_mainMenuOptions) {
-        opt.isVisible = false;
-        opt.currentScale = Vector3(1, 1, 1);
-    }
-    for (auto& opt : m_attackMenuOptions) {
         opt.isVisible = false;
         opt.currentScale = Vector3(1, 1, 1);
     }

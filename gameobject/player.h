@@ -15,7 +15,6 @@ enum class PlayerState {
 	MENU_MAIN,          // メインメニュー (J/K/Space)
 	MOVE_SELECT,        // 移動操作中 (WASDで)
 	ANIM_MOVE,          // 移動アニメション中
-	MENU_ATTACK,        // 攻撃メニュー (1/2)
 	ATTACK_DIR_SELECT,  // 攻撃方向選択中 (WASDで)
 	ANIM_ATTACK,        // 攻撃アニメション中
 	WAITING             
@@ -63,14 +62,12 @@ private:
 	//状態遷移関数
 	void SwitchToMenuMain();
 	void SwitchToMoveSelect();
-	void SwitchToAttackMenu();
 	void SwitchToAttackDirSelect(AttackType type);
 	void ExecuteMove();
 	void ExecuteAttack();
 	//入力処理関数
 	void HandleMenuInput();
 	void HandleMoveInput(float dt);
-	void HandleAttackMenuInput();
 	void HandleAttackDirInput(float dt);
 	//描画補助関数
 	void DrawGhost();       // スタートポイントのプレーヤーのゴーストを描画

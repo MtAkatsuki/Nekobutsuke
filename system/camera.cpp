@@ -35,7 +35,7 @@ void Camera::Draw()
 	Renderer::SetViewMatrix(&m_viewmtx);
 
 	//プロジェクション行列の生成
-	constexpr float fieldOfView = DirectX::XMConvertToRadians(45.0f);    // 視野角
+	constexpr float fieldOfView = DirectX::XMConvertToRadians(15.0f);    // 視野角
 	
 	float aspectRatio = static_cast<float>(Application::GetWidth()) / static_cast<float>(Application::GetHeight());	// アスペクト比	
 	float nearPlane = 0.1f;       // ニアクリップ
