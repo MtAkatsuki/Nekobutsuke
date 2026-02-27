@@ -137,4 +137,7 @@ private:
 	float CalculateCornerRotation(int dx1, int dz1, int dx2, int dz2);
 	// 次のメニュー状態(アニメション実行を確保するため)
 	PlayerState m_nextState = PlayerState::WAITING;
+
+	//プレーヤーカメラフェイス２用のフラグ
+	bool m_isZoomedIn = false;
 };

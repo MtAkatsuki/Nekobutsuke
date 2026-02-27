@@ -60,22 +60,13 @@ void GameScene::Init()
 	std::cerr << "=== GameScene::Init Start ===" << std::endl;
 	// カメラ(3D)の初期化
 
-	float azimuth = 1.58f;
-	float elevation = -1.08f;
-	float radius = 25.0f;
-	Vector3 lookat(0, 0, 0);
-
-	CPolor3D polor(radius, elevation, azimuth);
-	Vector3 cpos = polor.ToCartesian();
-	//位置計算
-	CPolor3D polorup(1.0f, elevation + PI / 2.0f, azimuth);
-	Vector3 upvector = polorup.ToCartesian();
-	//上方のベクトルを計算
-	std::cerr << "   [GameScene] Creating Camera..." << std::endl;
 	m_camera = m_context->GetCamera();
-	m_camera->SetPosition(cpos + lookat);
-	m_camera->SetLookat(lookat);
-	m_camera->SetUP(upvector);
+	m_camera->ForceSetPolar(Camera::BASE_RADIUS, Camera::BASE_AZIMUTH, Camera::BASE_ELEVATION);
+	// 注視点をマップの中心に向ける（座標を直接指定するか、マップ中心用の定数を作成することも可能）
+	m_camera->SetLookat(Vector3(5.0f, 0.0f, 5.0f));  
+	// 境界制限定数を使用して境界を設定
+	m_camera->SetBounds(Camera::BOUND_MIN_X, Camera::BOUND_MAX_X, Camera::BOUND_MIN_Z, Camera::BOUND_MAX_Z);
+	m_camera->SetState(CameraState::BaseView);
 
 	// [追加] ゲーム本編BGMの再生
 	// loop = true (ループ再生)
@@ -123,11 +114,19 @@ void GameScene::Init()
 	m_context->GetTurnManager()->RegisterObserver([this](TurnState state) {
 		if (state == TurnState::PlayerPhase) {
 			m_turnCutin->PlayCutinAnimation("Player Phase");
+			// 【フェーズ1】プレイヤーのターン開始。UIアニメーション再生中に、カメラをプレイヤーへ向けてスムーズに移動させる
+			if (m_player) {
+				m_camera->SetState(CameraState::Tracking);
+				m_camera->SetTargetLookAt(m_player->getSRT().pos);
+			}
 		}
 		else if (state == TurnState::EnemyPhase) {
 			m_turnCutin->PlayCutinAnimation("Enemy Phase");
-
 			m_context->GetEnemyManager()->StartEnemyPhase();
+			// 【敵ターン】追跡を解除し、全体俯瞰視点（BaseView）へスムーズに戻す
+			m_camera->SetState(CameraState::BaseView);
+			m_camera->SetTargetRadius(Camera::BASE_RADIUS);
+			m_camera->SetTargetRadius(30.0f);
 		}
 		});
 	//勝利条件のカウンター
@@ -249,6 +248,12 @@ void GameScene::debugUICamera() {
 void GameScene::update(uint64_t deltatime)
 {	
 	float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
+	// === 最優先でカメラを更新 ===
+	// UI Cutin（カットイン）によって後続の更新がブロックされた場合でも、
+	// カメラがフェーズ1の移動を継続できるようにここで更新を行う
+	if (m_camera) {
+		m_camera->Update(deltaSeconds);
+	}
 
 	if (!m_isGameStarted)
 	{

@@ -109,6 +109,14 @@ void Player::Update(uint64_t dt) {
 	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 	if (m_context->GetUIManager()->IsAnimating()) {return;}
 
+	// 【フェーズ2】：UIアニメーション終了後、最初のUpdateにてカメラのズームイン（接近）を開始
+	if (!m_isZoomedIn) {
+		m_isZoomedIn = true;
+		if (m_context && m_context->GetCamera()) {
+			m_context->GetCamera()->SetTargetRadius(15.0f); // ズームイン（接近）
+		}
+	}
+
 	// 基底クラスの反転（フリップ）アニメーション処理を実行
 	UpdateFlipAnimation(deltaSeconds);
 
@@ -141,6 +149,11 @@ void Player::Update(uint64_t dt) {
 		UpdateWorldMatrix();
 		break;
 	case PlayerState::ANIM_MOVE:
+
+		// 【追跡】：移動アニメーション中、プレイヤーを継続的に追従する
+		if (m_context && m_context->GetCamera()->GetState() == CameraState::Tracking) {
+			m_context->GetCamera()->SetTargetLookAt(m_srt.pos);
+		}
 
 		if (UpdatePathMovement(deltaSeconds)) {
 			
@@ -472,6 +485,8 @@ void Player::StartTurn()
 	//移動メニューを使えるとする
 	m_hasMoved = false; 
 	m_context->GetUIManager()->SetMoveOptionEnabled(true);
+	// ターン開始を記録し、フェーズ2のズームイン（拡大）実行を準備
+	m_isZoomedIn = false;
 
 	//スタートポイントを保存
 	m_startGridX = m_gridX;
@@ -572,6 +587,12 @@ void Player::SwitchToMenuMain() {
 	m_state = PlayerState::MENU_MAIN;
 	m_nextState = PlayerState::MENU_MAIN;
 
+	// 【カメラ帰還】：メインメニューに戻る際、プレイヤーの追跡を再開
+	if (m_context && m_context->GetCamera()) {
+		m_context->GetCamera()->SetState(CameraState::Tracking);
+		m_context->GetCamera()->SetTargetLookAt(m_srt.pos);
+	}
+
 	// もし既に移動していたら、移動オプションを無効化
 	if (m_hasMoved) {
 		m_context->GetUIManager()->SetMoveOptionEnabled(false);
@@ -624,6 +645,14 @@ void Player::SwitchToAttackDirSelect(AttackType type) {
 		true,       // Show Enter
 		true        // Show Esc
 	);
+	// 【戦闘カメラ演出】：攻撃方向の選択時、カメラを攻撃方向へ少し前進（オフセット）させる
+	if (m_context && m_context->GetCamera()) {
+		m_context->GetCamera()->SetState(CameraState::ActionFocus);
+		DirOffset offset = DirOffset::From(m_attackDir);
+		// 攻撃方向へ 1.5 マス分オフセットさせた位置をターゲットにする
+		Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 1.5f;
+		m_context->GetCamera()->SetTargetLookAt(targetPos);
+	}
 }
 
 //メニュー操作入力処理
@@ -705,6 +734,10 @@ void Player::HandleMoveInput(float dt) {
 				// 向きの更新
 				Vector3 dirVec((float)dx, 0, (float)dz);
 				SetFacingFromVector(dirVec);
+
+				// 【カーソル移動】：カメラの目標注視点をカーソルのプレビュー位置に更新
+				Vector3 previewPos = m_context->GetMapManager()->GetWorldPosition(m_previewGridX, m_previewGridZ);
+				m_context->GetCamera()->SetTargetLookAt(previewPos);
 			}
 		}
 	}
@@ -734,6 +767,13 @@ void Player::HandleAttackDirInput(float dt) {
 		// モデルの向きを攻撃方向に更新
 		DirOffset offset = DirOffset::From(m_attackDir);
 		SetFacingFromVector(Vector3((float)offset.x, 0, (float)offset.z));
+
+		// 【戦闘カメラの更新】：方向変更に合わせてカメラのオフセットを更新
+		if (m_context && m_context->GetCamera()) {
+			DirOffset offset = DirOffset::From(m_attackDir);
+			Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 1.5f;
+			m_context->GetCamera()->SetTargetLookAt(targetPos);
+		}
 	}
 
 	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_RETURN)) {
