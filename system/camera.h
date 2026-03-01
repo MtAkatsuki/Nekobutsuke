@@ -92,15 +92,19 @@ public:
 	float GetBoundMinZ() const { return m_minZ; }
 	float GetBoundMaxZ() const { return m_maxZ; }
 
+	static void SaveConfig();
+	static void LoadConfig();
+
 public:
 	// ==========================================
 	// カメラ制御パラメータ定数
 	// ==========================================
 	static constexpr float TUTORIAL_RADIUS = 45.0f;
 	static constexpr float BASE_RADIUS = 30.0f;
-	static constexpr float ZOOM_RADIUS = 23.0f;
-	static constexpr float BASE_AZIMUTH = 1.58f;
-	static constexpr float BASE_ELEVATION = -1.08f;
+	// 【変更】：constexpr を削除し inline を追加。実行時の変更を可能にする
+	static inline float ZOOM_RADIUS = 25.0f;
+	static inline float BASE_AZIMUTH = 1.58f;
+	static inline float BASE_ELEVATION = -1.08f;
 	static constexpr float CAMERA_LERP_SPEED = 5.0f;
 
 	// ====== シーン中心座標定数 ======
@@ -109,5 +113,6 @@ public:
 	static constexpr float SCENE_CENTER_Z = 0.0f;
 
 	// ====== 動的境界のエッジバッファ（パディング）定数 ======
-	static constexpr float BOUND_PADDING = -3.0f;
+	// 【変更】：constexpr を削除し inline を追加。実行時の変更を可能にする
+	static inline float BOUND_PADDING = -2.0f;
 };

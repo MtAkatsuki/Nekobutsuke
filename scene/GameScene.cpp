@@ -101,33 +101,12 @@ void GameScene::Init()
 	std::cerr << "   [GameScene] MapManager OK." << std::endl;
 	m_MapManager->LoadLevel("assets/level/level_01.csv", m_context);
 
+	Camera::LoadConfig();
+	RecalculateCameraBounds();
+
 	// ====== カメラ境界の動的計算と設定 ======
-	const auto& allTiles = m_MapManager->GetAllTiles();
-	if (!allTiles.empty()) {
-		float minX = 99999.0f, maxX = -99999.0f;
-		float minZ = 99999.0f, maxZ = -99999.0f;
-
-		// 全タイルの世界座標を走査し、極値（最小・最大）を特定する
-		for (const auto& tile : allTiles) {
-			Vector3 pos = m_MapManager->GetWorldPosition(tile);
-			if (pos.x < minX) minX = pos.x;
-			if (pos.x > maxX) maxX = pos.x;
-			if (pos.z < minZ) minZ = pos.z;
-			if (pos.z > maxZ) maxZ = pos.z;
-		}
-
-		// エッジバッファ（パディング）の設定
-		// キャラが画面の中心から外れてしまうため、ここでは 3.0f（3ユニット分）の余裕を持たせる
-		float padding = 1.0f;
-		m_camera->SetBounds(
-			minX - Camera::BOUND_PADDING,
-			maxX + Camera::BOUND_PADDING,
-			minZ - Camera::BOUND_PADDING,
-			maxZ + Camera::BOUND_PADDING
-		);
-
-		std::cerr << "   [GameScene] Camera Bounds Auto-Calculated." << std::endl;
-	}
+	RecalculateCameraBounds();
+	std::cerr << "   [GameScene] Camera Bounds Auto-Calculated." << std::endl;
 
 
 	// 背景
@@ -178,9 +157,9 @@ void GameScene::Init()
 	m_gameUIManager = m_context->GetUIManager();
 
 	std::cerr << "   [GameScene] Registering DebugUI..." << std::endl;
-	//DebugUI::RedistDebugFunction([this]() {
-	//	debugUICamera();
-	//	});
+	DebugUI::RedistDebugFunction([this]() {
+		debugUICamera();
+		});
 
 	DebugUI::RedistDebugFunction([this]() {
 		drawGridDebugText();
@@ -209,67 +188,53 @@ void GameScene::Init()
 void GameScene::debugUICamera() {
 	if (!m_enableDebugCamera) return;
 
-	ImGui::Begin("Debug Camera");
+	ImGui::Begin("Player Camera Tuning");
 
-
-	static const char* mode_names[] = { "Orbit", "Free" };
-	static int mode_index = static_cast<int>(m_cameraDebugMode);
-	if (ImGui::Combo("Camera Mode", &mode_index, mode_names, IM_ARRAYSIZE(mode_names))) {
-		m_cameraDebugMode = static_cast<CameraDebugMode>(mode_index);
+	// 1. 現在がプレイヤーターン（操作フェーズ）かチェック
+	bool isPlayerPhase = false;
+	if (m_context && m_context->GetTurnManager()) {
+		isPlayerPhase = (m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase);
 	}
 
-	Vector3 lookatpos = m_camera->GetLookat(); 
-
-	if (m_cameraDebugMode == CameraDebugMode::Orbit) {
-		static float azimuth = 1.58f;
-		static float elevation = -1.08f;
-		static float radius = 9.65f;
-
-		ImGui::DragFloat("Azimuth", &azimuth, 0.01f, -PI, PI, "%.4f");
-		ImGui::DragFloat("Elevation", &elevation, 0.01f, -PI / 2.0f + 0.01f, PI / 2.0f - 0.01f, "%.4f");
-		ImGui::DragFloat("Radius", &radius, 0.1f, 0.5f, 25.0f, "%.3f");
-
-		
-		CPolor3D polor(radius, elevation, azimuth);
-		Vector3 cpos = polor.ToCartesian();
-
-		CPolor3D polorup(1.0f, elevation + PI / 2.0f, azimuth);
-		Vector3 upvector = polorup.ToCartesian();
-
-		m_camera->SetPosition(cpos + lookatpos);
-		m_camera->SetLookat(lookatpos);
-		m_camera->SetUP(upvector);
+	// プレイヤーターンでない場合は、赤色の警告を表示して操作をロックする
+	if (!isPlayerPhase) {
+		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Tuning only available in Player Phase.");
+		ImGui::End();
+		return;
 	}
 
-	else if (m_cameraDebugMode == CameraDebugMode::Free) {
-		static Vector3 freePos = m_camera->GetPosition();
-		static Vector3 freeUp = m_camera->GetUP();
-		static Vector3 freeLookAt = lookatpos; 
-
-	
-		if (ImGui::IsWindowAppearing()) {
-			freePos = m_camera->GetPosition();
-			freeUp = m_camera->GetUP();
-			freeLookAt = m_camera->GetLookat();
-		}
-
-		ImGui::DragFloat3("Position", &freePos.x, 0.5f, -100.0f, 100.0f, "%.2f");
-		ImGui::DragFloat3("Look At", &freeLookAt.x, 0.5f, -100.0f, 100.0f, "%.2f");
-		ImGui::DragFloat3("Up", &freeUp.x, 0.01f, -1.0f, 1.0f, "%.3f");
-
-
-		m_camera->SetPosition(freePos);
-		m_camera->SetLookat(freeLookAt);
-		m_camera->SetUP(freeUp);
-	}
-
-	
-	ImGui::Separator();
+	// 2. プレイヤーターン中：実際のカメラパラメータを読み取ってバインド
+	ImGui::Text("Action Camera Parameters");
 	ImGui::Separator();
 
-	ImGui::SliderFloat3("Near Point", &m_nearpoint.x, -10000.0f, 10000.0f);
-	ImGui::SliderFloat3("Far Point", &m_farpoint.x, -10000.0f, 10000.0f);
-	ImGui::SliderFloat3("Pickup Pos", &m_pickuppos.x, -10000.0f, 10000.0f);
+	bool changed = false;
+
+	// Camera クラスのグローバル inline 変数に直接バインド
+	if (ImGui::SliderFloat("Zoom Radius", &Camera::ZOOM_RADIUS, 10.0f, 50.0f, "%.1f")) changed = true;
+	if (ImGui::SliderFloat("Azimuth", &Camera::BASE_AZIMUTH, -3.14159f, 3.14159f, "%.4f")) changed = true;
+	if (ImGui::SliderFloat("Elevation", &Camera::BASE_ELEVATION, -1.5f, 1.5f, "%.4f")) changed = true;
+
+	// 3. コアメカニズム：パラメータが変更されたら、新しい値をカメラの【目標値 (Target)】に設定
+	// これにより、瞬時に切り替わるのではなく Update() 内の Lerp によってスムーズに遷移する
+	if (changed && m_camera) {
+		m_camera->SetTargetRadius(Camera::ZOOM_RADIUS);
+		m_camera->SetTargetAzimuth(Camera::BASE_AZIMUTH);
+		m_camera->SetTargetElevation(Camera::BASE_ELEVATION);
+	}
+
+	ImGui::Separator();
+
+	// 境界（バウンディングボックス）のパディング設定もこのパネルで一括管理
+	if (ImGui::SliderFloat("Bound Padding", &Camera::BOUND_PADDING, -10.0f, 10.0f, "%.1f")) {
+		// リアルタイムで境界を再計算し、デバッグ表示を更新
+		RecalculateCameraBounds();
+	}
+
+	ImGui::Spacing();
+	// 4. 設定をローカルの INI ファイルに一括保存
+	if (ImGui::Button("Save Config to Local", ImVec2(-1, 30))) {
+		Camera::SaveConfig();
+	}
 
 	ImGui::End();
 }
@@ -834,5 +799,31 @@ void GameScene::TurnChangeCheck()
 				tm->SetState(TurnState::PlayerPhase);
 			}
 		}
+	}
+}
+
+void GameScene::RecalculateCameraBounds()
+{
+	if (!m_MapManager || !m_camera) return;
+
+	const auto& allTiles = m_MapManager->GetAllTiles();
+	if (!allTiles.empty()) {
+		float minX = 99999.0f, maxX = -99999.0f;
+		float minZ = 99999.0f, maxZ = -99999.0f;
+
+		for (const auto& tile : allTiles) {
+			Vector3 pos = m_MapManager->GetWorldPosition(tile);
+			if (pos.x < minX) minX = pos.x;
+			if (pos.x > maxX) maxX = pos.x;
+			if (pos.z < minZ) minZ = pos.z;
+			if (pos.z > maxZ) maxZ = pos.z;
+		}
+
+		m_camera->SetBounds(
+			minX - Camera::BOUND_PADDING,
+			maxX + Camera::BOUND_PADDING,
+			minZ - Camera::BOUND_PADDING,
+			maxZ + Camera::BOUND_PADDING
+		);
 	}
 }

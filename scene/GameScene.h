@@ -24,12 +24,6 @@ class GameUIManager;
 class DamageNumberManager;
 class DialogueUI;
 
-//enum class CameraMode 
-//{	
-//	FPS,
-//	TopDown
-//};
-
 enum class CameraDebugMode {
 	Orbit,
 	Free
@@ -194,6 +188,8 @@ private:
 
 	private:
 		void TurnChangeCheck();
+		// ====== カメラ境界の再計算メソッド ======
+		void RecalculateCameraBounds();
 
 
 };
