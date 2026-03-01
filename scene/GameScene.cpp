@@ -61,12 +61,18 @@ void GameScene::Init()
 	// カメラ(3D)の初期化
 
 	m_camera = m_context->GetCamera();
-	m_camera->ForceSetPolar(Camera::BASE_RADIUS, Camera::BASE_AZIMUTH, Camera::BASE_ELEVATION);
+
+	m_camera->ForceSetPolar(Camera::TUTORIAL_RADIUS, Camera::BASE_AZIMUTH, Camera::BASE_ELEVATION);
 	// 注視点をマップの中心に向ける（座標を直接指定するか、マップ中心用の定数を作成することも可能）
-	m_camera->SetLookat(Vector3(5.0f, 0.0f, 5.0f));  
-	// 境界制限定数を使用して境界を設定
-	m_camera->SetBounds(Camera::BOUND_MIN_X, Camera::BOUND_MAX_X, Camera::BOUND_MIN_Z, Camera::BOUND_MAX_Z);
+	m_camera->SetLookAtCenter();
+
 	m_camera->SetState(CameraState::BaseView);
+
+	// ====== 強制的に一度更新し、カメラの正しい物理位置を即座に算出させる ======
+	m_camera->Update(1.0f);
+
+
+	
 
 	// [追加] ゲーム本編BGMの再生
 	// loop = true (ループ再生)
@@ -94,6 +100,35 @@ void GameScene::Init()
 	m_MapManager->Init(m_context);
 	std::cerr << "   [GameScene] MapManager OK." << std::endl;
 	m_MapManager->LoadLevel("assets/level/level_01.csv", m_context);
+
+	// ====== カメラ境界の動的計算と設定 ======
+	const auto& allTiles = m_MapManager->GetAllTiles();
+	if (!allTiles.empty()) {
+		float minX = 99999.0f, maxX = -99999.0f;
+		float minZ = 99999.0f, maxZ = -99999.0f;
+
+		// 全タイルの世界座標を走査し、極値（最小・最大）を特定する
+		for (const auto& tile : allTiles) {
+			Vector3 pos = m_MapManager->GetWorldPosition(tile);
+			if (pos.x < minX) minX = pos.x;
+			if (pos.x > maxX) maxX = pos.x;
+			if (pos.z < minZ) minZ = pos.z;
+			if (pos.z > maxZ) maxZ = pos.z;
+		}
+
+		// エッジバッファ（パディング）の設定
+		// キャラが画面の中心から外れてしまうため、ここでは 3.0f（3ユニット分）の余裕を持たせる
+		float padding = 1.0f;
+		m_camera->SetBounds(
+			minX - Camera::BOUND_PADDING,
+			maxX + Camera::BOUND_PADDING,
+			minZ - Camera::BOUND_PADDING,
+			maxZ + Camera::BOUND_PADDING
+		);
+
+		std::cerr << "   [GameScene] Camera Bounds Auto-Calculated." << std::endl;
+	}
+
 
 	// 背景
 	m_background = std::make_unique<Background>();
@@ -125,8 +160,8 @@ void GameScene::Init()
 			m_context->GetEnemyManager()->StartEnemyPhase();
 			// 【敵ターン】追跡を解除し、全体俯瞰視点（BaseView）へスムーズに戻す
 			m_camera->SetState(CameraState::BaseView);
+			m_camera->SetTargetToCenter();
 			m_camera->SetTargetRadius(Camera::BASE_RADIUS);
-			m_camera->SetTargetRadius(30.0f);
 		}
 		});
 	//勝利条件のカウンター
@@ -147,9 +182,9 @@ void GameScene::Init()
 	//	debugUICamera();
 	//	});
 
-	//DebugUI::RedistDebugFunction([this]() {
-	//	drawGridDebugText();
-	//	});
+	DebugUI::RedistDebugFunction([this]() {
+		drawGridDebugText();
+		});
 
 
 
@@ -275,6 +310,10 @@ void GameScene::update(uint64_t deltatime)
 				return;
 			}
 			m_isGameStarted = true;
+			// チュートリアル終了。画面をスムーズに基本の注視距離までズームインさせる
+			if (m_camera) {
+				m_camera->SetTargetRadius(Camera::BASE_RADIUS);
+			}
 
 			//PlayerTurnアニメーション始まる
 			if (m_context->GetTurnManager()) {
@@ -602,7 +641,7 @@ void GameScene::drawGridDebugText()
 	if (!m_MapManager) return;
 // ImGuiの「背景キャンバス」を取得
 // これにより、全てのImGuiウィンドウの「裏側」（つまりゲーム画面上）に描画が可能になる
-	ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+	ImDrawList* drawList = ImGui::GetForegroundDrawList();
 
 	const auto& allTiles = m_MapManager->GetAllTiles();
 	// タイル数を検査する
@@ -625,9 +664,33 @@ void GameScene::drawGridDebugText()
 		}
 
 		char textBuf[32];
-		sprintf_s(textBuf, sizeof(textBuf), "[%d,%d]", tile.gridX, tile.gridZ);
-		drawList->AddText(ImVec2(screenPos.x, screenPos.y), IM_COL32(255, 255, 0, 255), textBuf);
+		sprintf_s(textBuf, sizeof(textBuf), "[%d,%d]\n(%.1f, %.1f, %.1f)",
+			tile.gridX, tile.gridZ,
+			worldPos.x, worldPos.y, worldPos.z);
+		drawList->AddText(ImVec2(screenPos.x, screenPos.y), IM_COL32(255, 0, 0, 255), textBuf);
 	}
+
+	// ====== 【新規】赤色のカメラ境界線 (Camera Bounds) を描画 ======
+	Vector3 p1(m_camera->GetBoundMinX(), 0.1f, m_camera->GetBoundMinZ());
+	Vector3 p2(m_camera->GetBoundMaxX(), 0.1f, m_camera->GetBoundMinZ());
+	Vector3 p3(m_camera->GetBoundMaxX(), 0.1f, m_camera->GetBoundMaxZ());
+	Vector3 p4(m_camera->GetBoundMinX(), 0.1f, m_camera->GetBoundMaxZ());
+
+	// ワールド座標からスクリーン座標へ変換
+	Vector2 s1 = WorldToScreen(p1, view, proj, screenWidth, screenHeight);
+	Vector2 s2 = WorldToScreen(p2, view, proj, screenWidth, screenHeight);
+	Vector2 s3 = WorldToScreen(p3, view, proj, screenWidth, screenHeight);
+	Vector2 s4 = WorldToScreen(p4, view, proj, screenWidth, screenHeight);
+
+	ImU32 boundCol = IM_COL32(255, 0, 0, 255); // 赤色
+	drawList->AddLine(ImVec2(s1.x, s1.y), ImVec2(s2.x, s2.y), boundCol, 2.0f);
+	drawList->AddLine(ImVec2(s2.x, s2.y), ImVec2(s3.x, s3.y), boundCol, 2.0f);
+	drawList->AddLine(ImVec2(s3.x, s3.y), ImVec2(s4.x, s4.y), boundCol, 2.0f);
+	drawList->AddLine(ImVec2(s4.x, s4.y), ImVec2(s1.x, s1.y), boundCol, 2.0f);
+
+	// 境界ラベルの描画
+	drawList->AddText(ImVec2(s1.x, s1.y), boundCol, "BOUND MIN");
+	drawList->AddText(ImVec2(s3.x, s3.y), boundCol, "BOUND MAX");
 }
 
 void GameScene::SetGameContext(GameContext* context){

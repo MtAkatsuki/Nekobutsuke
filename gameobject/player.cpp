@@ -113,7 +113,7 @@ void Player::Update(uint64_t dt) {
 	if (!m_isZoomedIn) {
 		m_isZoomedIn = true;
 		if (m_context && m_context->GetCamera()) {
-			m_context->GetCamera()->SetTargetRadius(15.0f); // ズームイン（接近）
+			m_context->GetCamera()->SetTargetRadius(Camera::ZOOM_RADIUS); // ズームイン（接近）
 		}
 	}
 
@@ -759,10 +759,10 @@ void Player::HandleAttackDirInput(float dt) {
 	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
 	else {
 		// WASDで攻撃方向選択
-		if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_W)) m_attackDir = Direction::North;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_S)) m_attackDir = Direction::South;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_A)) m_attackDir = Direction::West;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_D)) m_attackDir = Direction::East;
+		if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_W) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_UP)) m_attackDir = Direction::North;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_S) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_DOWN)) m_attackDir = Direction::South;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_A) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_LEFT)) m_attackDir = Direction::West;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_D) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_RIGHT)) m_attackDir = Direction::East;
 
 		// モデルの向きを攻撃方向に更新
 		DirOffset offset = DirOffset::From(m_attackDir);
@@ -771,7 +771,7 @@ void Player::HandleAttackDirInput(float dt) {
 		// 【戦闘カメラの更新】：方向変更に合わせてカメラのオフセットを更新
 		if (m_context && m_context->GetCamera()) {
 			DirOffset offset = DirOffset::From(m_attackDir);
-			Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 1.5f;
+			Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 2.5f;
 			m_context->GetCamera()->SetTargetLookAt(targetPos);
 		}
 	}
@@ -807,53 +807,4 @@ void Player::ExecuteAttack() {
 
 	m_state = PlayerState::ANIM_ATTACK;
 }
-
-////プレーヤーモデルの向き更新
-//void Player::UpdatePaperOrientation() {
-//	// 突然の変化を防ぐため、lastScaleXで最後の左右向きを記憶
-//	// 初期化は 1.0f (右向き)
-//	static float lastScaleX = 1.0f;
-//
-//	float targetRotY = 0.0f;     // 0 = 正面, π = 背後
-//	float targetScaleX = 1.0f;   // 1 = 右向き, -1 = 左向き（ミラー）
-//
-//	//現在の方向を決定
-//	//攻撃方向選択中は攻撃方向を優先
-//	Direction currentDir = m_facing;
-//	if (m_state == PlayerState::ATTACK_DIR_SELECT) {
-//		currentDir = m_attackDir;
-//	}
-//
-//	// 方向に基づいて回転とスケールを設定
-//	switch (currentDir) {
-//	case Direction::North: //上向き (+Z) -> 背面
-//		targetRotY = 3.14159f;     // 180度（背面）
-//		targetScaleX = lastScaleX; // 左右は維持
-//		break;
-//
-//	case Direction::South: // 下向き(-Z) ->正面
-//		targetRotY = 0.0f;         // 正面
-//		targetScaleX = lastScaleX; // 左右は維持
-//		break;
-//
-//	case Direction::East:  // 右向き (+X) -> 正面 + 右向き
-//		targetRotY = 0.0f;
-//		targetScaleX = 1.0f;
-//		lastScaleX = 1.0f; // 更新臨時データ
-//		break;
-//
-//	case Direction::West:  // 左向き (-X) -> 正面 + 左向き（ミラー）
-//		targetRotY = 0.0f;
-//		targetScaleX = -1.0f;
-//		lastScaleX = -1.0f; // 更新臨時データ
-//		break;
-//	}
-//
-//	// 回転の適用
-//	m_srt.rot.y = targetRotY;
-//
-//	// スケールの適用
-//	m_srt.scale.x = targetScaleX;
-//
-//}
 

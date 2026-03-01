@@ -24,7 +24,11 @@ public:
     static void BeginFrame(); 
     static void Draw();       
     static void EndFrame();
+
+    static bool IsVisible() { return s_isVisible; }
+    static void Toggle() { s_isVisible = !s_isVisible; }
 private:
     static std::vector<std::function<void(void)>> m_debugfunction;
+    static bool s_isVisible;
 };
 

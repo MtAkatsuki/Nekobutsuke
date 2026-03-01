@@ -72,26 +72,42 @@ public:
 	void SetState(CameraState state) { m_state = state; }
 	CameraState GetState() const { return m_state; }
 
-	// ゲッター (現状維持)
+	// ====== 注視点をシーンの中心に即座に合わせる ======
+	void SetLookAtCenter() {
+		SetLookat(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z));
+	}
+	// ====== 目標注視点をシーンの中心へスムーズに移動させる ======
+	void SetTargetToCenter() {
+		SetTargetLookAt(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z));
+	}
+
+	// ゲッター 
 	Matrix4x4 GetViewMatrix() const { return m_viewmtx; }
 	Matrix4x4 GetProjMatrix() const { return m_projmtx; }
 	Vector3 GetPosition() const { return m_position; }
 	Vector3 GetLookat() const { return m_lookat; }
 	Vector3 GetUP() const { return m_up; }
+	float GetBoundMinX() const { return m_minX; }
+	float GetBoundMaxX() const { return m_maxX; }
+	float GetBoundMinZ() const { return m_minZ; }
+	float GetBoundMaxZ() const { return m_maxZ; }
 
 public:
 	// ==========================================
 	// カメラ制御パラメータ定数
 	// ==========================================
+	static constexpr float TUTORIAL_RADIUS = 45.0f;
 	static constexpr float BASE_RADIUS = 30.0f;
-	static constexpr float ZOOM_RADIUS = 15.0f;
+	static constexpr float ZOOM_RADIUS = 23.0f;
 	static constexpr float BASE_AZIMUTH = 1.58f;
 	static constexpr float BASE_ELEVATION = -1.08f;
 	static constexpr float CAMERA_LERP_SPEED = 5.0f;
 
-	// カメラ境界制限（バウンディングボックス）定数
-	static constexpr float BOUND_MIN_X = -1.0f;
-	static constexpr float BOUND_MAX_X = 11.0f;
-	static constexpr float BOUND_MIN_Z = -1.0f;
-	static constexpr float BOUND_MAX_Z = 11.0f;
+	// ====== シーン中心座標定数 ======
+	static constexpr float SCENE_CENTER_X = 0.0f;
+	static constexpr float SCENE_CENTER_Y = 0.0f;
+	static constexpr float SCENE_CENTER_Z = 0.0f;
+
+	// ====== 動的境界のエッジバッファ（パディング）定数 ======
+	static constexpr float BOUND_PADDING = -3.0f;
 };

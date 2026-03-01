@@ -30,11 +30,7 @@ void GameContext::Init() {
     m_effectManager = std::make_unique<EffectManager>();
     m_effectManager->Init(this);
 
-    m_camera = std::make_unique<Camera>(
-        Vector3(0.0f, 10.0f, -20.0f), 
-        Vector3(0.0f, 0.0f, 0.0f),     
-        Vector3(0.0f, 1.0f, 0.0f)    
-    );
+    m_camera = std::make_unique<Camera>();
 }
 
 MapManager* GameContext::GetMapManager() {

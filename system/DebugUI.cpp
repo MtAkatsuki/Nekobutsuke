@@ -1,6 +1,7 @@
 #include "DebugUI.h"
 
 std::vector<std::function<void(void)>> DebugUI::m_debugfunction;
+bool DebugUI::s_isVisible = false;
 
 void DebugUI::Init(ID3D11Device* device, ID3D11DeviceContext* context) 
 {

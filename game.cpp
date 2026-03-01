@@ -60,8 +60,14 @@ void gameupdate(uint64_t deltatime)
 
 void gamedraw(uint64_t deltatime)
 {
-	//ImGui フレームを開始
-	/*DebugUI::BeginFrame();*/
+	// F3 キーが押された時、ImGui の表示状態を切り替える
+	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_F4)) {
+		DebugUI::Toggle();
+	}
+
+	if (DebugUI::IsVisible()) {
+		DebugUI::BeginFrame();
+	}
 
 	// レンダリング前処理
 	Renderer::Begin();
@@ -69,10 +75,13 @@ void gamedraw(uint64_t deltatime)
 	// シーンマネージャの描画
 	SceneManager::GetInstance().Draw(deltatime);
 
-	//// デバッグUIの描画
-	//DebugUI::Draw();
-	////ImGui の描画データを GPU に送信
-	//DebugUI::EndFrame();
+	if (DebugUI::IsVisible()) {
+		// デバッグUIの描画
+		DebugUI::Draw();   
+		//ImGui の描画データを GPU に送信
+		DebugUI::EndFrame();
+	}
+
 
 	// レンダリング後処理
 	Renderer::End();
@@ -81,7 +90,7 @@ void gamedraw(uint64_t deltatime)
 void gamedispose()
 {
 	//// デバッグUIの終了処理
-	//DebugUI::DisposeUI();
+	DebugUI::DisposeUI();
 
 	// シーンマネージャの終了処理
 	SceneManager::GetInstance().Dispose();
