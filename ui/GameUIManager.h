@@ -47,6 +47,9 @@ public:
 	// ガイドUIの非表示
 	void HideGuideUI();
 
+public:
+	void SetAttackOptionEnabled(bool enabled); // AttackMenuセッター
+
 private:
 	GameContext* m_context = nullptr;
 	MenuType m_currentType = MenuType::None;
@@ -94,4 +97,6 @@ private:
 	std::unique_ptr<CSprite> m_pActiveArrow;
 	float m_arrowTimer = 0.0f;
 	float m_arrowHoverY = 0.0f;
+
+	bool m_isAttackEnabled = true; // 攻撃メニューの有効状態
 };

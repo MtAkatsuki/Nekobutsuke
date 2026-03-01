@@ -39,10 +39,6 @@ public:
 	void Init();
 
 
-	// 動きのパラメータ
-	//const float VALUE_ROTATE_MODEL = PI * 0.02f;			// 回転速度
-	//const float RATE_ROTATE_MODEL = 0.40f;					// 回転慣性係数
-	//const float RATE_MOVE_MODEL = 0.20f;					// 移動慣性係数
 
 
 	void playerResourceLoader();
@@ -51,12 +47,14 @@ public:
 
 	void HandleInput();
 	void AttackInput();
-	/*void CameraModeInput();*/
+
 	PlayerState GetState() const { return m_state; }
 
 	int GetPreviewGridX() const { return m_previewGridX; }
 	int GetPreviewGridZ() const { return m_previewGridZ; }
 
+	// 攻撃距離を定数パラメータ化 (例: 1マス)
+	const int ATTACK_RANGE = 1;
 
 private:
 	//状態遷移関数
@@ -88,7 +86,7 @@ private:
 	void UpdatePathToPrivew();//スタート点からゴールまでのルート
 
 	bool UpdatePathMovement(float dt);
-	/*void UpdatePaperOrientation();*/
+
 
 
 private:
@@ -140,4 +138,7 @@ private:
 
 	//プレーヤーカメラフェイス２用のフラグ
 	bool m_isZoomedIn = false;
+
+	bool m_isWaitingTurnStart = false; // ターン開始時のUIカットイン待ちフラグ
+	bool m_canAttack = false;          // 攻撃可能な敵が範囲内にいるか
 };

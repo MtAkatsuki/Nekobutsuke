@@ -83,6 +83,10 @@ void GameUIManager::Update(uint64_t dt) {
                 if (i == 0 && !m_isMoveEnabled) 
                 { currentList[i].isVisible = false; continue; }
 
+                // 攻撃メニューが無効な場合はスキップして非表示にする
+                if (i == 1 && !m_isAttackEnabled)
+                { currentList[i].isVisible = false; continue; }
+
                 if (i == m_selectedIndex) {
                     // 選択したメニューオプションを拡大
                     float t = 1.0f - (m_animTimer / ANIM_DURATION); // 時間比例を計算、0 -> 1
@@ -182,13 +186,24 @@ void GameUIManager::OpenMainMenu() {
         if (i == 0) {
             m_mainMenuOptions[i].isVisible = m_isMoveEnabled;
         }
+        else if (i == 1) { // 攻撃メニューの表示状態を反映
+            m_mainMenuOptions[i].isVisible = m_isAttackEnabled;
+        }
         else {
             m_mainMenuOptions[i].isVisible = true;
         }
     }
 
-	// もし移動メニューが禁止しているなら、最初の選択肢を攻撃に設定
-    m_selectedIndex = m_isMoveEnabled ? 0 : 1;
+    // 一番最初にフォーカスされるメニューを動的に調整
+    if (m_isMoveEnabled) {
+        m_selectedIndex = 0;
+    }
+    else if (m_isAttackEnabled) {
+        m_selectedIndex = 1;
+    }
+    else {
+        m_selectedIndex = 2; // 移動も攻撃もできなければ「待機(終了)」を選択
+    }
 }
 
 void GameUIManager::CloseMenu() {
@@ -367,5 +382,12 @@ void GameUIManager::DrawGuideUI() {
             // 回転なしで描画
             arrow.sprite->Draw(Vector3(scale, scale, 1.0f), Vector3(0, 0, 0), drawPos);
         }
+    }
+}
+// 攻撃オプションの有効/無効を設定
+void GameUIManager::SetAttackOptionEnabled(bool enabled) {
+    m_isAttackEnabled = enabled;
+	if (!m_mainMenuOptions.empty() && m_mainMenuOptions.size() > 1) {// 安全にインデックス1をチェック
+        m_mainMenuOptions[1].isVisible = enabled;
     }
 }

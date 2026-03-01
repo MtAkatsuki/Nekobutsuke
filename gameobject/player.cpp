@@ -109,6 +109,12 @@ void Player::Update(uint64_t dt) {
 	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 	if (m_context->GetUIManager()->IsAnimating()) {return;}
 
+	// UIアニメーションが終わり、プレイヤーのUpdateが再開された最初のフレームでメニューを開く
+	if (m_isWaitingTurnStart) {
+		m_isWaitingTurnStart = false;
+		SwitchToMenuMain();
+	}
+
 	// 【フェーズ2】：UIアニメーション終了後、最初のUpdateにてカメラのズームイン（接近）を開始
 	if (!m_isZoomedIn) {
 		m_isZoomedIn = true;
@@ -484,7 +490,7 @@ void Player::StartTurn()
 	ResetMovePoints();
 	//移動メニューを使えるとする
 	m_hasMoved = false; 
-	m_context->GetUIManager()->SetMoveOptionEnabled(true);
+	
 	// ターン開始を記録し、フェーズ2のズームイン（拡大）実行を準備
 	m_isZoomedIn = false;
 
@@ -493,8 +499,9 @@ void Player::StartTurn()
 	m_startGridZ = m_gridZ;
 	m_previewGridX = m_gridX;
 	m_previewGridZ = m_gridZ;
-	//メインメニューに切り替え
-	SwitchToMenuMain();
+	// すぐに SwitchToMenuMain() を呼ばず、アニメーション待ち状態にする
+	m_state = PlayerState::WAITING;
+	m_isWaitingTurnStart = true;
 }
 void Player::EndTurn()
 {
@@ -600,6 +607,24 @@ void Player::SwitchToMenuMain() {
 	else {
 		m_context->GetUIManager()->SetMoveOptionEnabled(true);
 	}
+
+	// 攻撃範囲内に敵がいるかどうかのチェック
+	m_canAttack = false;
+	int dx[] = { 0, 0, -1, 1 };
+	int dz[] = { 1, -1, 0, 0 };
+	for (int i = 0; i < 4; ++i) {
+		for (int r = 1; r <= ATTACK_RANGE; ++r) {
+			Tile* t = m_context->GetMapManager()->GetTile(m_gridX + dx[i] * r, m_gridZ + dz[i] * r);
+			if (t && t->occupant && t->occupant->GetTeam() == Team::Enemy) {
+				m_canAttack = true;
+				break; // 敵が1体でも見つかればこの方向のチェックは完了
+			}
+		}
+		if (m_canAttack) break; // 敵が見つかっていれば全チェック終了
+	}
+
+	m_context->GetUIManager()->SetAttackOptionEnabled(m_canAttack);
+
 	m_context->GetUIManager()->HideGuideUI();
 	m_context->GetUIManager()->OpenMainMenu();
 
@@ -662,7 +687,8 @@ void Player::HandleMenuInput() {
 		m_context->GetUIManager()->TriggerSelectAnim(0);
 		m_nextState = PlayerState::MOVE_SELECT;
 	}
-	else if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_K)) {
+	// 【変更】攻撃可能な場合のみKキーの入力を受け付ける
+	else if (m_canAttack && CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_K)) {
 		m_context->GetUIManager()->TriggerSelectAnim(1);
 		m_nextState = PlayerState::ATTACK_DIR_SELECT;
 	}
