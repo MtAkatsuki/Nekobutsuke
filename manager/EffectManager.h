@@ -40,6 +40,9 @@ public:
     // ヒットエフェクトの生成
     void SpawnHitEffect(const Vector3& worldPos);
 
+    // 静的プレビュー用のヒットエフェクト（攻撃プレビュー時に使用）
+    void DrawStaticHitPreview(const Vector3& worldPos);
+
 private:
     GameContext* m_context = nullptr;
     // プリロードされた4種類の瓦礫テクスチャ

@@ -45,7 +45,8 @@ public:
 	void OnPushed(Direction pushDir);//プッシュ受け
 	virtual void TakeDamage(int damage, Unit* attacker)override;
 	bool IsDeadFlying() const { return m_state == EnemyState::DEAD_FLYING; }//死亡飛翔中か
-
+	// ノックバック（押し出し）のプレビューUIを描画
+	void DrawPushPreview(Direction pushDir);
 
 private:
 	
@@ -67,6 +68,8 @@ private:
 	CStaticMesh*			m_EnemyMesh;
 	CStaticMeshRenderer*	m_EnemyMeshrenderer;
 	CShader*				m_EnemyShader;
+	CStaticMeshRenderer* m_pushArrowRenderer = nullptr;
+	CStaticMeshRenderer* m_attackArrowRenderer = nullptr;
 	std::unique_ptr<EnemyActionUI> m_actionUI;
 
 	EnemyState m_state = EnemyState::IDLE;

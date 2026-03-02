@@ -170,3 +170,39 @@ void EffectManager::Draw() {
 void EffectManager::Clear() {
     m_particles.clear();
 }
+
+void EffectManager::DrawStaticHitPreview(const Vector3& worldPos) {
+    if (!m_context || !m_context->GetCamera()) return;
+
+    Camera* cam = m_context->GetCamera();
+    float sw = (float)Application::GetWidth();
+    float sh = (float)Application::GetHeight();
+
+    // スクリーン座標に変換
+    Vector2 screenPos = WorldToScreen(worldPos, cam->GetViewMatrix(), cam->GetProjMatrix(), sw, sh);
+
+    // 画面外のカリング（描画除外）処理
+    if (screenPos.x < -100 || screenPos.x > sw + 100 || screenPos.y < -100 || screenPos.y > sh + 100) return;
+
+    // ヒットエフェクト用テクスチャがロード済みか確認（hit_effect.png はインデックス 4）
+    if (m_textures.size() > 4 && m_textures[4]) {
+        Renderer::SetBlendState(BS_ALPHABLEND);
+        Renderer::SetDepthEnable(false); // 最前面に表示するためデプスバッファを無効化
+
+        MATERIAL mtrl;
+        // 半透明の黄色に設定し、警告としての衝突をシミュレート
+        mtrl.Diffuse = Color(1.0f, 1.0f, 0.0f, 0.6f);
+        mtrl.TextureEnable = true;
+        m_textures[4]->ModifyMtrl(mtrl);
+
+        // 静的描画、スケールは 0.5 に設定
+        m_textures[4]->Draw(
+            Vector3(0.5f, 0.5f, 1.0f),
+            Vector3(0, 0, 0),
+            Vector3(screenPos.x, screenPos.y, 0)
+        );
+
+        Renderer::SetDepthEnable(true); // デプスバッファを元に戻す
+        Renderer::SetBlendState(BS_NONE);
+    }
+}

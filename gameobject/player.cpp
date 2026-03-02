@@ -442,6 +442,14 @@ void Player::DrawAttackWarning() {
 	if (target) {
 		std::vector<Tile*> one{ target };
 		m_context->GetMapManager()->DrawColoredTiles(one, Color(1.0f, 0.0f, 0.0f, 0.6f)); // 明るい赤
+
+		// === 敵のノックバックUIプレビューをトリガー ===
+		// 現在の攻撃タイプが Push であり、かつ対象マスに敵が立っている場合
+		if (m_selectedAttackType == AttackType::Push && target->occupant && target->occupant->GetTeam() == Team::Enemy) {
+			Enemy* enemy = dynamic_cast<Enemy*>(target->occupant);
+			if (enemy) {
+				// プレイヤーの現在の攻撃方向を敵に渡し、ノックバック指示矢印を描画する
+				enemy->DrawPushPreview(m_attackDir);
 	}
 
 	Renderer::SetDepthEnable(true);
