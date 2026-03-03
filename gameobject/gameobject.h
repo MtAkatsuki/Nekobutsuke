@@ -32,11 +32,36 @@ public:
 			* Matrix4x4::CreateTranslation(m_srt.pos);
 	}
 
-	void Draw(uint64_t delta) { 
+	// 描画順：3. 床面ヒント UI レイヤー (地面に接地)
+	void DrawFloorUI(uint64_t delta) {
+		Renderer::SetWorldMatrix(&m_WorldMatrix);
+		OnDrawFloorUI(delta);
+	}
+
+	// 描画順：5.1 不透明エンティティレイヤー
+	void Draw(uint64_t delta) {
 		Renderer::SetWorldMatrix(&m_WorldMatrix);
 		OnDraw(delta);
-
 	};
+
+
+	// 描画順：5.3 半透明エンティティレイヤー (残像など)
+	void DrawTransparent(uint64_t delta) {
+		Renderer::SetWorldMatrix(&m_WorldMatrix);
+		OnDrawTransparent(delta);
+	}
+
+	// 描画順：6. 攻撃プレビューヒントレイヤー (浮遊・デプス無視)
+	void DrawOverlay(uint64_t delta) {
+		Renderer::SetWorldMatrix(&m_WorldMatrix);
+		OnDrawOverlay(delta);
+	}
+
+	// 浮遊UI、矢印、パスなどのOverlay（オーバーレイ）要素専用の描画メソッド
+	void DrawOverlayLayer(uint64_t delta) {
+		Renderer::SetWorldMatrix(&m_WorldMatrix);
+		OnDrawOverlay(delta);
+	}
 
 	virtual void init() = 0;
 	virtual void dispose() = 0;
@@ -59,7 +84,12 @@ public:
 protected:
 	SRT		m_srt{};
 	Matrix4x4 m_WorldMatrix;
+
+	virtual void OnDrawFloorUI(uint64_t delta) {};
 	virtual void OnDraw(uint64_t delta) {};
+	virtual void OnDrawTransparent(uint64_t delta) {};
+	virtual void OnDrawOverlay(uint64_t delta) {};
+
 	GameContext* m_context;
 	bool m_isDead = false;
 };

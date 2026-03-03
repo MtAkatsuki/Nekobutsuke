@@ -127,44 +127,34 @@ void EffectManager::Update(float dt) {
         [](const EffectParticle& p) { return !p.active; }), m_particles.end());
 }
 
-void EffectManager::Draw() {
-
-    Renderer::SetBlendState(BS_ALPHABLEND);
-    Renderer::SetDepthEnable(false);
-
+void EffectManager::DrawRubble() {
     for (const auto& p : m_particles) {
-        if (p.active && p.textureIndex < m_textures.size()) {
-
-            // [修正] 瓦礫のみ寿命に応じてフェードアウトし、ヒットエフェクトは終了まで不透明を維持（または手動制御）
-            float fadeAlpha = 1.0f;
-            if (p.type == ParticleType::RUBBLE) {
-                fadeAlpha = p.lifeTime / p.maxLifeTime;
-            }
-            else {
-                fadeAlpha = 1.0f; // ヒットエフェクトは全行程で不透明、または終了直前にフェードアウトさせる
-            }
-
-            // マテリアルの透明度を設定
+        if (p.active && p.type == ParticleType::RUBBLE && p.textureIndex < m_textures.size()) {
+            float fadeAlpha = p.lifeTime / p.maxLifeTime;
             MATERIAL mtrl;
             mtrl.Diffuse = Color(1, 1, 1, fadeAlpha);
             mtrl.TextureEnable = true;
-            m_textures[p.textureIndex]->ModifyMtrl(mtrl); 
-
-            float drawScale = p.scale;
-            if (p.type == ParticleType::RUBBLE) {
-                drawScale = p.scale * (p.lifeTime); // 既存ロジック：縮小させることで消失を表現
-            }
-
+            m_textures[p.textureIndex]->ModifyMtrl(mtrl);
+            float drawScale = p.scale * (p.lifeTime);
             m_textures[p.textureIndex]->Draw(
-                Vector3(drawScale, drawScale, 1.0f),  // スケール
-                Vector3(0, 0, p.rotation),           // 回転
-                Vector3(p.pos.x, p.pos.y, 0)          // 座標
+                Vector3(drawScale, drawScale, 1.0f), Vector3(0, 0, p.rotation), Vector3(p.pos.x, p.pos.y, 0)
             );
         }
     }
+}
 
-    Renderer::SetDepthEnable(true);
-    Renderer::SetBlendState(BS_NONE);
+void EffectManager::DrawHitEffects() {
+    for (const auto& p : m_particles) {
+        if (p.active && p.type == ParticleType::HIT_EFFECT && p.textureIndex < m_textures.size()) {
+            MATERIAL mtrl;
+            mtrl.Diffuse = Color(1, 1, 1, 1.0f);
+            mtrl.TextureEnable = true;
+            m_textures[p.textureIndex]->ModifyMtrl(mtrl);
+            m_textures[p.textureIndex]->Draw(
+                Vector3(p.scale, p.scale, 1.0f), Vector3(0, 0, p.rotation), Vector3(p.pos.x, p.pos.y, 0)
+            );
+        }
+    }
 }
 
 void EffectManager::Clear() {
@@ -186,8 +176,6 @@ void EffectManager::DrawStaticHitPreview(const Vector3& worldPos) {
 
     // ヒットエフェクト用テクスチャがロード済みか確認（hit_effect.png はインデックス 4）
     if (m_textures.size() > 4 && m_textures[4]) {
-        Renderer::SetBlendState(BS_ALPHABLEND);
-        Renderer::SetDepthEnable(false); // 最前面に表示するためデプスバッファを無効化
 
         MATERIAL mtrl;
         // 半透明の黄色に設定し、警告としての衝突をシミュレート
@@ -201,8 +189,5 @@ void EffectManager::DrawStaticHitPreview(const Vector3& worldPos) {
             Vector3(0, 0, 0),
             Vector3(screenPos.x, screenPos.y, 0)
         );
-
-        Renderer::SetDepthEnable(true); // デプスバッファを元に戻す
-        Renderer::SetBlendState(BS_NONE);
     }
 }

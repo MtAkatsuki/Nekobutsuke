@@ -70,7 +70,7 @@ private:
 	//描画補助関数
 	void DrawGhost();       // スタートポイントのプレーヤーのゴーストを描画
 	void DrawPathLine();    // 移動予想ルートを描画
-	void DrawAttackWarning();// 攻撃予想範囲を描画
+	//void DrawAttackWarning();// 攻撃予想範囲を描画
 
 	void PlayerStartMoveTo(int targetX, int targetZ);
 	virtual void StartTurn()override;
@@ -141,4 +141,12 @@ private:
 
 	bool m_isWaitingTurnStart = false; // ターン開始時のUIカットイン待ちフラグ
 	bool m_canAttack = false;          // 攻撃可能な敵が範囲内にいるか
+
+	protected:
+		virtual void OnDrawFloorUI(uint64_t delta) override;
+		virtual void OnDrawTransparent(uint64_t delta) override;
+		virtual void OnDrawOverlay(uint64_t delta) override;
+
+		void DrawAttackWarningFloor();
+		void DrawAttackWarningOverlay();
 };

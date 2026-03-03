@@ -201,44 +201,43 @@ void Player::Update(uint64_t dt) {
 	UpdateWorldMatrix();
 }
 
+// 1. エンティティレイヤー (5.1)
 void Player::OnDraw(uint64_t dt) {
-	if (m_PlayerShader != nullptr) {
-	m_PlayerShader->SetGPU();
-}	
-	//移動操作中のDraw
+	if (m_PlayerShader != nullptr) m_PlayerShader->SetGPU();
+	DrawModel(); // 3Dモデルの描画のみを行う
+}
+
+// 2. 床面 UI レイヤー (3)
+void Player::OnDrawFloorUI(uint64_t dt) {
+	if (m_PlayerShader != nullptr) m_PlayerShader->SetGPU();
+
 	if (m_state == PlayerState::MOVE_SELECT) {
-		
-
-		//移動範囲の緑タイル
-		Renderer::SetBlendState(BS_ALPHABLEND);
-		Renderer::SetDepthEnable(true);
+		// 移動範囲タイルの描画
 		m_context->GetMapManager()->DrawColoredTiles(m_moveRangeTiles, Color(0, 1, 0, 0.4f));
-
-		//移動ルート
-		DrawPathLine();
-
-		//スタート点の灰色残影
-		DrawGhost();
-
-		Renderer::SetDepthEnable(true);
-		Renderer::SetBlendState(BS_NONE);
+		DrawPathLine(); // ルート矢印
 	}
 	else if (m_state == PlayerState::ATTACK_DIR_SELECT) {
-		DrawAttackWarning();
+		DrawAttackWarningFloor(); // 赤い警告エリア（床面）
 	}
-		//プレーヤー本体は透明の部分あるため
-		//Renderer::SetBlendState(BS_ALPHABLEND);
-
-		Renderer::SetDepthEnable(true);
-
-		Renderer::SetWorldMatrix(&m_WorldMatrix);
-
-		/*m_PlayerMeshrenderer->Draw();*/
-		DrawModel();
-		
-		/*Renderer::SetBlendState(BS_NONE);*/
-
 }
+
+// 3. 半透明エンティティレイヤー (5.3)
+void Player::OnDrawTransparent(uint64_t dt) {
+	if (m_state == PlayerState::MOVE_SELECT) {
+		// ゴースト（残像）の描画
+		// ※ 内部ロジックからも Renderer::SetBlendState 等のステート操作を削除し、呼び出し側に一任する
+		DrawGhost();
+	}
+}
+
+// 4. 浮遊 Overlay レイヤー (6)
+void Player::OnDrawOverlay(uint64_t dt) {
+	if (m_state == PlayerState::ATTACK_DIR_SELECT) {
+		// 攻撃プレビュー（敵のノックバック予測を含む最前面UI）を表示
+		DrawAttackWarningOverlay();
+	}
+}
+
 //スタート点の半透明残影
 void Player::DrawGhost() {
 
@@ -256,14 +255,7 @@ void Player::DrawGhost() {
 	gray.Diffuse = Color(1.0f, 1.0f, 1.0f, 0.6f); //灰色半透明
 	mtrl->SetMaterial(gray);
 
-	//Renderer::SetBlendState(BS_ALPHABLEND);
-	Renderer::SetDepthEnable(false);
 	m_frontRenderer->Draw();
-	Renderer::SetDepthEnable(true);
-	//Renderer::SetBlendState(BS_NONE);
-
-	
-
 
 	MATERIAL restore = old;
 	restore.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -422,39 +414,37 @@ void Player::DrawPathLine() {
 	}
 }
 
-void Player::DrawAttackWarning() {
+void Player::DrawAttackWarningFloor() {
 	//全て攻撃できる方向のヒントUIの描画
 	std::vector<Tile*> neighbors;
 	int dx[] = { 0, 0, -1, 1 };
-	int dz[] = { 1, -1, 0, 0 }; //四方向
+	int dz[] = { 1, -1, 0, 0 };//四方向
 	for (int i = 0; i < 4; ++i) {
 		Tile* t = m_context->GetMapManager()->GetTile(m_gridX + dx[i], m_gridZ + dz[i]);
 		if (t) neighbors.push_back(t);
 	}
-
-	Renderer::SetBlendState(BS_ALPHABLEND);
-	Renderer::SetDepthEnable(true);
-	m_context->GetMapManager()->DrawColoredTiles(neighbors, Color(1.0f, 0.0f, 0.0f, 0.1f)); // ごく薄い赤
-
+	m_context->GetMapManager()->DrawColoredTiles(neighbors, Color(1.0f, 0.0f, 0.0f, 0.1f));
 	//現在選択したタイル（攻撃方向）を描画
 	DirOffset offset = DirOffset::From(m_attackDir);
 	Tile* target = m_context->GetMapManager()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
 	if (target) {
 		std::vector<Tile*> one{ target };
-		m_context->GetMapManager()->DrawColoredTiles(one, Color(1.0f, 0.0f, 0.0f, 0.6f)); // 明るい赤
-
-		// === 敵のノックバックUIプレビューをトリガー ===
-		// 現在の攻撃タイプが Push であり、かつ対象マスに敵が立っている場合
-		if (m_selectedAttackType == AttackType::Push && target->occupant && target->occupant->GetTeam() == Team::Enemy) {
-			Enemy* enemy = dynamic_cast<Enemy*>(target->occupant);
-			if (enemy) {
-				// プレイヤーの現在の攻撃方向を敵に渡し、ノックバック指示矢印を描画する
-				enemy->DrawPushPreview(m_attackDir);
+		m_context->GetMapManager()->DrawColoredTiles(one, Color(1.0f, 0.0f, 0.0f, 0.6f));
 	}
-
-	Renderer::SetDepthEnable(true);
-	Renderer::SetBlendState(BS_NONE);
 }
+
+void Player::DrawAttackWarningOverlay() {
+	DirOffset offset = DirOffset::From(m_attackDir);
+	Tile* target = m_context->GetMapManager()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
+	// === 敵のノックバックUIプレビューをトリガー ===
+	// 現在の攻撃タイプが Push であり、かつ対象マスに敵が立っている場合
+	if (target && m_selectedAttackType == AttackType::Push && target->occupant && target->occupant->GetTeam() == Team::Enemy) {
+		Enemy* enemy = dynamic_cast<Enemy*>(target->occupant);
+		// プレイヤーの現在の攻撃方向を敵に渡し、ノックバック指示矢印を描画する
+		if (enemy) enemy->DrawPushPreview(m_attackDir);
+	}
+}
+
 
 //移動アニメション状態に切り替え
 void Player::ExecuteMove() {
@@ -841,4 +831,5 @@ void Player::ExecuteAttack() {
 
 	m_state = PlayerState::ANIM_ATTACK;
 }
+
 

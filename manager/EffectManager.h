@@ -29,7 +29,8 @@ class EffectManager {
 public:
     void Init(GameContext* context);
     void Update(float dt);
-    void Draw();
+    void DrawRubble();      // 描画順：5.2 物理粒子?
+    void DrawHitEffects();  // 描画順：7 ?害与打??
     void Clear();
 
     // 指定したワールド座標に瓦礫エフェクトを発生させる

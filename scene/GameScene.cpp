@@ -359,90 +359,105 @@ void GameScene::update(uint64_t deltatime)
  *
  * @param deltatime 前フレームからの経過時間（ミリ秒）
  */
-void GameScene::draw(uint64_t deltatime)
-{
-	//背景の描画
-	// Zバッファを無効化(Backgroundが最背面に描画されるようにする)
+void GameScene::draw(uint64_t deltatime) {
+	// === 1. 背景レイヤー (Background) ===
 	Renderer::SetDepthEnable(false);
+	if (m_background) m_background->Draw();
 
-	if (m_background) {
-		m_background->Draw();
-	}
-
+	// デプスを再度有効化し、汎用シェーダーを適用
 	Renderer::SetDepthEnable(true);
 
 	m_camera->Draw();
 
-	if (m_tileShader != nullptr){ 
-		m_tileShader->SetGPU(); }
-	
+	if (m_tileShader != nullptr) { m_tileShader->SetGPU(); }
 
+	// === 2. 画面底面（床）レイヤー (Floor) ===
 	for (const auto& obj : m_GameObjectList) {
-		obj->Draw(deltatime);
-	}
-	//2D描画処理
-	//Zバッファを無効化し、ブレンディングを有効化することで、UIが最前面に描画されるようにする
-	Renderer::SetDepthEnable(false);//Zバッファ無効化
-	//Renderer::SetBlendState(BS_ALPHABLEND);//混色
-
-	if (m_tileShader) {
-		m_tileShader->SetGPU();
-	}
-
-	// プレーヤー HPの描画
-	if (m_player) {
-		m_player->DrawUI();
-	}
-	//味方　HPの描画
-	if (m_ally && m_ally->GetHP() > 0) {
-		m_ally->DrawUI();
-	}
-
-
-	for (const auto& obj : m_GameObjectList) {
-		// GameObject ポインタを Enemy ポインタへキャスト（変換）を試みる
-		Enemy* enemy = dynamic_cast<Enemy*>(obj.get());
-
-		// キャストに成功（オブジェクトが敵である）し、かつ生存している場合のみ処理
-		if (enemy && !enemy->IsDead()) {
-			// 敵専用のUI要素（HPバーやターゲットアイコン等）を描画
-			enemy->DrawUI();
+		MapObject* mapObj = dynamic_cast<MapObject*>(obj.get());
+		if (mapObj && mapObj->GetType() == MapModelType::FLOOR) {
+			obj->Draw(deltatime);
 		}
 	}
 
-	if (m_context->GetEffectManager()) {
-		m_context->GetEffectManager()->Draw();
+	// === 3. 床面 UI レイヤー (Floor Hints) ===
+	Renderer::SetBlendState(BS_ALPHABLEND);
+	for (const auto& obj : m_GameObjectList) {
+		obj->DrawFloorUI(deltatime);
+	}
+	Renderer::SetBlendState(BS_NONE);
+	if (m_tileShader) m_tileShader->SetGPU(); // シェーダー状態を復元
+
+	// === 4. 床面特殊オブジェクトレイヤー (Trap) ===
+	for (const auto& obj : m_GameObjectList) {
+		MapObject* mapObj = dynamic_cast<MapObject*>(obj.get());
+		if (mapObj && mapObj->GetType() == MapModelType::TRAP) {
+			obj->Draw(deltatime);
+		}
 	}
 
+	// === 5. 実体エンティティレイヤー ===
+	// 5.1 不透明エンティティ (Prop, Wall, Units)
+	for (const auto& obj : m_GameObjectList) {
+		MapObject* mapObj = dynamic_cast<MapObject*>(obj.get());
+		if (mapObj) {
+			if (mapObj->GetType() != MapModelType::FLOOR && mapObj->GetType() != MapModelType::TRAP) {
+				obj->Draw(deltatime);
+			}
+		}
+		else {
+			obj->Draw(deltatime); // Player, Enemy, Ally
+		}
+	}
+
+	// 5.2 物理パーティクルエフェクト (瓦礫など。デプスによる遮蔽あり)
+	Renderer::SetBlendState(BS_ALPHABLEND);
+	if (m_context->GetEffectManager()) {
+		m_context->GetEffectManager()->DrawRubble();
+	}
+
+	// 5.3 半透明エンティティレイヤー (残像など)
+	for (const auto& obj : m_GameObjectList) {
+		obj->DrawTransparent(deltatime);
+	}
+	Renderer::SetBlendState(BS_NONE);
+
+	// === 6. 攻撃プレビューヒントレイヤー (Overlay) ===
+	Renderer::SetDepthEnable(false);   // 物理的な遮蔽を無視
+	Renderer::SetBlendState(BS_ALPHABLEND);
+	for (const auto& obj : m_GameObjectList) {
+		obj->DrawOverlay(deltatime);   // 浮遊矢印、ヒット警告エフェクトなど
+	}
+
+	// === 7. ダメージ・ヒットエフェクトレイヤー ===
+	if (m_context->GetEffectManager()) {
+		m_context->GetEffectManager()->DrawHitEffects(); // 十字閃光など
+	}
 	if (m_damageNumberManager) {
 		m_damageNumberManager->Draw();
 	}
 
-
-
-	if (m_gameUIManager) {
-		m_gameUIManager->Draw();
+	// === 8. UI (2D) インタラクションレイヤー ===
+	// このレイヤーはデプステストを無効に維持
+	// 8.1 低層 UI
+	if (m_player) m_player->DrawUI();
+	if (m_ally && m_ally->GetHP() > 0) m_ally->DrawUI();
+	for (const auto& obj : m_GameObjectList) {
+		Enemy* enemy = dynamic_cast<Enemy*>(obj.get());
+		if (enemy && !enemy->IsDead()) enemy->DrawUI();
 	}
+	if (m_dialogueUI) m_dialogueUI->Draw();
 
-	if (m_turnCutin) {
-		m_turnCutin->Draw();
-	}
-
-	if (m_dialogueUI) {
-		m_dialogueUI->Draw();
-	}
-
-
-
+	// 8.2 高層 UI
+	if (m_gameUIManager) m_gameUIManager->Draw();
 	if (m_turnCounter) m_turnCounter->Draw();
+	if (m_tutorialUI && !m_isGameStarted) m_tutorialUI->Draw();
 
-	// チュートリアルUIの描画
-	// 全ての要素の後に描画することで最前面に表示し、かつゲームが正式に開始されていない場合のみ描画する
-	if (m_tutorialUI && !m_isGameStarted) {
-		m_tutorialUI->Draw();
-	}
+	// 8.5 最前面 (カットイン演出)
+	if (m_turnCutin) m_turnCutin->Draw();
 
+	// === デフォルトの描画状態に戻す ===
 	Renderer::SetDepthEnable(true);
+	Renderer::SetBlendState(BS_NONE);
 }
 
 

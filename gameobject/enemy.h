@@ -101,4 +101,7 @@ private:
 	//ペーパーアニメーション用
 	float lastScaleX = 1.0f;
 
+protected:
+	virtual void OnDrawOverlay(uint64_t delta) override;
+	virtual void OnDrawFloorUI(uint64_t delta) override;
 };

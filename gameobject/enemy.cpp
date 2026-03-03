@@ -273,88 +273,66 @@ void Enemy::Update(uint64_t dt) {
 	UpdateWorldMatrix();
 }
 
-void Enemy::OnDraw(uint64_t dt){
-
+// 1. エンティティレイヤー (5.1)
+void Enemy::OnDraw(uint64_t dt) {
 	if (m_isCharging) {
-		// チャージ攻撃中、赤透明の攻撃予想範囲の描画処理
-		if (m_context && m_context->GetMapManager())
-		{
-			// ロックしたタイルを取得
-			Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
-
-			if (targetTile)
-			{
-				std::vector<Tile*> dangerTiles = { targetTile };
-
-				//レンダリング状態を設定：アルファブレンドを有効にし、深度書き込みを無効にする（地面に隠れないように最前面に描画）
-				Renderer::SetBlendState(BS_ALPHABLEND);
-				Renderer::SetDepthEnable(true);
-
-				//赤色の警告エリアを描画 (Color: R, G, B, Alpha) -> 透明な赤色
-				m_context->GetMapManager()->DrawColoredTiles(dangerTiles, Color(1.0f, 0.0f, 0.0f, 0.7f));
-
-				// レンダリング状態を元に戻す
-				Renderer::SetDepthEnable(true);
-				Renderer::SetBlendState(BS_NONE);
-			}
-		}
+		// チャージ中のアニメーション描画
 		ChargeAnimation();
+	}
+	else {
+		if (m_EnemyShader != nullptr) m_EnemyShader->SetGPU();
+		DrawModel();
+	}
+}
 
-		// 新規：攻撃指示矢印（最前面レイヤー、最後に描画）
-		if (m_attackArrowRenderer && m_context && m_context->GetMapManager()) {
-			Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
-			Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-
-			// 自身の位置とターゲット位置の境界（中間地点）を計算
-			Vector3 arrowPos = (myPos + targetPos) * 0.5f;
-			// ノックバック矢印(0.08f)よりも少し高く設定し、重なり（描画のチラつき）を防止
-			arrowPos.y += 0.12f;
-
-			Vector3 diff = targetPos - myPos;
-			float rotY = 0.0f;
-			if (diff.x > 0.1f)      rotY = 0.0f;
-			else if (diff.x < -0.1f) rotY = PI;
-			else if (diff.z > 0.1f)  rotY = -PI / 2.0f;
-			else if (diff.z < -0.1f) rotY = PI / 2.0f;
-
-			// 攻撃矢印は視認性を高めるため少し大きく(1.2倍)表示
-			Matrix4x4 world = Matrix4x4::CreateScale(Vector3(1.2f, 1.2f, 1.2f))
-				* Matrix4x4::CreateRotationY(rotY)
-				* Matrix4x4::CreateTranslation(arrowPos);
-
-			Renderer::SetBlendState(BS_ALPHABLEND);
-			Renderer::SetDepthEnable(false); // モデルを突き抜けて最前面に表示
-
-			Renderer::SetWorldMatrix(&world);
-			if (auto* mat = m_attackArrowRenderer->GetMaterial(0)) {
-				MATERIAL old = mat->GetData();
-				MATERIAL temp = old;
-				temp.Diffuse = Color(1.0f, 0.0f, 0.0f, 0.7f); // 赤色（半透明）
-				mat->SetMaterial(temp);
-				m_attackArrowRenderer->Draw();
-				mat->SetMaterial(old); // 元のマテリアルに戻す
-			}
-			Renderer::SetDepthEnable(true);
-			Renderer::SetBlendState(BS_NONE);
+// 2. 床面 UI レイヤー (3)
+void Enemy::OnDrawFloorUI(uint64_t dt) {
+	// 敵がチャージ中の場合、ターゲットとなる床を赤くハイライトする
+	if (m_isCharging && m_context && m_context->GetMapManager()) {
+		Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
+		if (targetTile) {
+			std::vector<Tile*> dangerTiles = { targetTile };
+			m_context->GetMapManager()->DrawColoredTiles(dangerTiles, Color(1.0f, 0.0f, 0.0f, 0.7f));
 		}
 	}
-	else
-	{
-		if (m_EnemyShader != nullptr) {
-			m_EnemyShader->SetGPU();
-		}
+}
 
-		//プレーヤー本体は透明の部分あるため
-		/*Renderer::SetBlendState(BS_ALPHABLEND);*/
-		DrawModel();// 基底クラスの描画メソッドを呼び出す
-	/*	Renderer::SetBlendState(BS_NONE);*/
-	
+// 3. 浮遊 Overlay レイヤー (6)
+void Enemy::OnDrawOverlay(uint64_t dt) {
+	// 敵の攻撃意図（赤い矢印）を最前面に描画
+	if (m_isCharging && m_attackArrowRenderer && m_context && m_context->GetMapManager()) {
+		if (m_EnemyShader != nullptr) m_EnemyShader->SetGPU(); // シェーダーの有効化を確認
+
+		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
+		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+		Vector3 arrowPos = (myPos + targetPos) * 0.5f;
+		arrowPos.y += 0.12f; // Overlayレイヤー内での浮かせ具合を調整
+
+		Vector3 diff = targetPos - myPos;
+		float rotY = 0.0f;
+		if (diff.x > 0.1f)      rotY = 0.0f;
+		else if (diff.x < -0.1f) rotY = PI;
+		else if (diff.z > 0.1f)  rotY = -PI / 2.0f;
+		else if (diff.z < -0.1f) rotY = PI / 2.0f;
+
+		Matrix4x4 world = Matrix4x4::CreateScale(Vector3(1.2f, 1.2f, 1.2f)) * Matrix4x4::CreateRotationY(rotY) * Matrix4x4::CreateTranslation(arrowPos);
+
+		Renderer::SetWorldMatrix(&world);
+		if (auto* mat = m_attackArrowRenderer->GetMaterial(0)) {
+			MATERIAL old = mat->GetData();
+			MATERIAL temp = old;
+			temp.Diffuse = Color(1.0f, 0.0f, 0.0f, 0.7f); // 赤色半透明で危険を通知
+			mat->SetMaterial(temp);
+			m_attackArrowRenderer->Draw();
+			mat->SetMaterial(old);
+		}
 	}
 }
 
 void Enemy::dispose() {
 
 }
+
 
 
 void Enemy::EnemyStartAction()
@@ -861,9 +839,6 @@ void Enemy::DrawPushPreview(Direction pushDir) {
 	// 衝突時は黄色（半透明）、非衝突時は灰色（半透明）
 	Color arrowColor = isBlocked ? Color(1.0f, 1.0f, 0.0f, 0.6f) : Color(0.5f, 0.5f, 0.5f, 0.6f);
 
-	// レンダリング設定：デプステストを無効化してUIをモデルより手前に表示
-	Renderer::SetBlendState(BS_ALPHABLEND);
-	Renderer::SetDepthEnable(false);
 
 	Renderer::SetWorldMatrix(&world);
 	if (auto* mat = m_pushArrowRenderer->GetMaterial(0)) {
@@ -881,8 +856,4 @@ void Enemy::DrawPushPreview(Direction pushDir) {
 		effectPos.y += 0.8f; // ユニットの中心高さに合わせて調整
 		m_context->GetEffectManager()->DrawStaticHitPreview(effectPos);
 	}
-
-	// レンダリング状態の復元
-	Renderer::SetDepthEnable(true);
-	Renderer::SetBlendState(BS_NONE);
 }
