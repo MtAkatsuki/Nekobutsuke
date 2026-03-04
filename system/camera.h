@@ -42,6 +42,8 @@ protected:
 	Matrix4x4	m_viewmtx{};
 	Matrix4x4   m_projmtx{};
 
+	int m_dirIndexOffset = 0; // 4方向カメラ位置オフセット：0=正面左(基本), 1=正面右, 2=背面右, 3=背面左
+
 public:
 	virtual ~Camera() {}
 	Camera() = default;
@@ -92,8 +94,40 @@ public:
 	float GetBoundMinZ() const { return m_minZ; }
 	float GetBoundMaxZ() const { return m_maxZ; }
 
+	// カメラパラメータの保存と読み込み
 	static void SaveConfig();
 	static void LoadConfig();
+
+	// === 4方向カメラ回転制御 ===
+	// 順回転 (Eキー)：正面左 -> 正面右 -> 背面右 -> 背面左
+	void RotateCameraForward() {
+		m_dirIndexOffset++;
+		UpdateTargetAzimuth();
+	}
+
+	// 逆回転 (Qキー)：正面左 -> 背面左 -> 背面右 -> 正面右
+	void RotateCameraReverse() {
+		m_dirIndexOffset--;
+		UpdateTargetAzimuth();
+	}
+
+	// 基本カメラ位置(BASE_AZIMUTH)と現在のオフセット値に基づいて、目標方位角を再計算する
+	void UpdateTargetAzimuth() {
+		// 回転ごとに90度 (PI / 2) 増加する
+		// 基本カメラ位置は BASE_AZIMUTH で個別に定義されており、いつでも調整可能
+		m_targetAzimuth = BASE_AZIMUTH + (m_dirIndexOffset * (3.14159265f / 2.0f));
+	}
+
+	// 正面左側の基本カメラ位置にリセットする
+	void ResetCameraDirection() {
+		m_dirIndexOffset = 0;
+		UpdateTargetAzimuth();
+	}
+
+	// オフセット値が負数であっても、正しく 0～3 の範囲に変換されるようにする
+	// 例えば、-1 は 3 に、-2 は 2 に、-3 は 1 に変換される
+	// 最初の%4は余りを取る演算で、次の+4は負数を正数に変換するための調整、最後の%4は4方向の範囲に戻すためのもの
+	int GetNormalizedDirIndex() const { return (m_dirIndexOffset % 4 + 4) % 4; }
 
 public:
 	// ==========================================

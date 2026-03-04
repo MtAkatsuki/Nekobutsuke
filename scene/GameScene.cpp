@@ -60,6 +60,8 @@ void GameScene::Init()
 	std::cerr << "=== GameScene::Init Start ===" << std::endl;
 	// カメラ(3D)の初期化
 
+	Camera::LoadConfig();
+
 	m_camera = m_context->GetCamera();
 
 	m_camera->ForceSetPolar(Camera::TUTORIAL_RADIUS, Camera::BASE_AZIMUTH, Camera::BASE_ELEVATION);
@@ -67,6 +69,8 @@ void GameScene::Init()
 	m_camera->SetLookAtCenter();
 
 	m_camera->SetState(CameraState::BaseView);
+
+	m_camera->ResetCameraDirection();
 
 	// ====== 強制的に一度更新し、カメラの正しい物理位置を即座に算出させる ======
 	m_camera->Update(1.0f);
@@ -101,7 +105,7 @@ void GameScene::Init()
 	std::cerr << "   [GameScene] MapManager OK." << std::endl;
 	m_MapManager->LoadLevel("assets/level/level_01.csv", m_context);
 
-	Camera::LoadConfig();
+
 	RecalculateCameraBounds();
 
 	// ====== カメラ境界の動的計算と設定 ======
@@ -218,7 +222,7 @@ void GameScene::debugUICamera() {
 	// これにより、瞬時に切り替わるのではなく Update() 内の Lerp によってスムーズに遷移する
 	if (changed && m_camera) {
 		m_camera->SetTargetRadius(Camera::ZOOM_RADIUS);
-		m_camera->SetTargetAzimuth(Camera::BASE_AZIMUTH);
+		m_camera->UpdateTargetAzimuth();
 		m_camera->SetTargetElevation(Camera::BASE_ELEVATION);
 	}
 
@@ -303,6 +307,17 @@ void GameScene::update(uint64_t deltatime)
 	if (m_turnCutin && m_turnCutin->IsAnimating()) {
 		m_turnCutin->Update(deltatime);
 		return;
+	}
+
+	// === 4方向カメラ回転入力 (Q / E) ===
+	// ゲームが開始されており、かつリザルト演出中やシーン遷移中でないことを確認
+	if (m_isGameStarted && !m_isGameOverProcessing && !m_isSceneChanging) {
+		if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_Q)) {
+			if (m_camera) m_camera->RotateCameraReverse();
+		}
+		if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_E)) {
+			if (m_camera) m_camera->RotateCameraForward();
+		}
 	}
 	// UIの更新
 	if (m_gameUIManager) {

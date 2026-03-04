@@ -73,7 +73,7 @@ void Player::Init() {
 	m_srt.rot.y = m_targetRot.y;
 	 
 
-	m_maxMovePoints = 3;
+	m_maxMovePoints = 4;
 	m_currentMovePoints = m_maxMovePoints;
 	m_maxHP = 5;
 	m_currentHP = 5;
@@ -696,14 +696,49 @@ void Player::HandleMoveInput(float dt) {
 
 	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
 	else {
-		int dx = 0, dz = 0;
-		if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_W) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_UP)) 
-		  dz = 1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_S) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_DOWN)) dz = -1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_A) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_LEFT)) dx = -1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_D) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_RIGHT)) dx = 1;
+		// 1. まず、プレイヤーの「絶対スクリーン入力」 (スクリーン空間入力) を取得する
+		int inX = 0, inZ = 0;
+		if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_W) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_UP)) inZ = 1;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_S) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_DOWN)) inZ = -1;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_A) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_LEFT)) inX = -1;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_D) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_RIGHT)) inX = 1;
 
-		if (dx != 0 || dz != 0) {
+		if (inX != 0 || inZ != 0) {
+
+			// 2. カメラの現在の正規化されたインデックス (0, 1, 2, 3) を取得
+			int camDir = 0;
+			if (m_context && m_context->GetCamera()) {
+				camDir = m_context->GetCamera()->GetNormalizedDirIndex();
+			}
+
+			// 3. カメラの位置（向き）に応じて入力ベクトルを回転させる
+			// 90度回転させるごとの座標変換ルール：新しい x = 旧 z、新しい z = -旧 x
+			// (カメラが時計回りか反時計回りかによって正負が異なるため、
+			// 挙動が逆の場合は下記の inX と inZ の符号を入れ替えて調整すること)
+			int dx = 0, dz = 0;
+			switch (camDir) {
+			case 0:
+				// インデックス 0：正面左 (基本カメラ位置) 
+				dx = inX;
+				dz = inZ;
+				break;
+			case 1:
+				// インデックス 1：正面右 
+				dx = -inZ;
+				dz = inX;
+				break;
+			case 2:
+				// インデックス 2：背面右
+				dx = inX;
+				dz = inZ;
+				break;
+			case 3:
+				// インデックス 3：背面左 
+				dx = -inZ;
+				dz = inX;
+				break;
+			}
+
 			int nextX = m_previewGridX + dx;
 			int nextZ = m_previewGridZ + dz;
 
@@ -764,21 +799,61 @@ void Player::HandleAttackDirInput(float dt) {
 
 	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
 	else {
-		// WASDで攻撃方向選択
-		if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_W) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_UP)) m_attackDir = Direction::North;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_S) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_DOWN)) m_attackDir = Direction::South;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_A) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_LEFT)) m_attackDir = Direction::West;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_D) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_RIGHT)) m_attackDir = Direction::East;
+		// 1. プレイヤーの「スクリーン空間入力」を取得する
+		int inX = 0, inZ = 0;
+		if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_W) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_UP)) inZ = 1;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_S) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_DOWN)) inZ = -1;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_A) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_LEFT)) inX = -1;
+		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_D) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_RIGHT)) inX = 1;
 
-		// モデルの向きを攻撃方向に更新
-		DirOffset offset = DirOffset::From(m_attackDir);
-		SetFacingFromVector(Vector3((float)offset.x, 0, (float)offset.z));
+		if (inX != 0 || inZ != 0) {
+			// 2. カメラの正規化されたインデックスを取得
+			int camDir = 0;
+			if (m_context && m_context->GetCamera()) {
+				camDir = m_context->GetCamera()->GetNormalizedDirIndex();
+			}
 
-		// 【戦闘カメラの更新】：方向変更に合わせてカメラのオフセットを更新
-		if (m_context && m_context->GetCamera()) {
+			// 3. カメラの向きに応じて入力ベクトルを回転させる
+			int dx = 0, dz = 0;
+			switch (camDir) {
+			case 0:
+				// インデックス 0：正面左 (基本カメラ位置)
+				dx = inX;
+				dz = inZ;
+				break;
+			case 1:
+				// インデックス 1：正面右 
+				dx = -inZ;
+				dz = inX;
+				break;
+			case 2:
+				// インデックス 2：背面右
+				dx = inX;
+				dz = inZ;
+				break;
+			case 3:
+				// インデックス 3：背面左 
+				dx = -inZ;
+				dz = inX;
+				break;
+			}
+
+			// 4. 回転後のワールド座標系ベクトルを Direction 列挙型にマッピングする
+			if (dz == 1) m_attackDir = Direction::North;
+			else if (dz == -1) m_attackDir = Direction::South;
+			else if (dx == -1) m_attackDir = Direction::West;
+			else if (dx == 1) m_attackDir = Direction::East;
+
+			// モデルの向きを攻撃方向に更新
 			DirOffset offset = DirOffset::From(m_attackDir);
-			Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 2.5f;
-			m_context->GetCamera()->SetTargetLookAt(targetPos);
+			SetFacingFromVector(Vector3((float)offset.x, 0, (float)offset.z));
+
+			// 【戦闘カメラの更新】：方向変更に合わせてカメラのオフセットを更新
+			if (m_context && m_context->GetCamera()) {
+				DirOffset offset = DirOffset::From(m_attackDir);
+				Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 2.5f;
+				m_context->GetCamera()->SetTargetLookAt(targetPos);
+			}
 		}
 	}
 

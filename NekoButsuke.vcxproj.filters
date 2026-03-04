@@ -162,9 +162,6 @@
     <ClCompile Include="system\CPlane.cpp">
       <Filter>ソース ファイル\system</Filter>
     </ClCompile>
-    <ClCompile Include="utility\terrain.cpp">
-      <Filter>ソース ファイル\utility</Filter>
-    </ClCompile>
     <ClCompile Include="system\stbperlin.cpp">
       <Filter>ソース ファイル\system</Filter>
     </ClCompile>

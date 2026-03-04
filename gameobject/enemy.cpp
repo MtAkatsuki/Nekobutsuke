@@ -305,7 +305,7 @@ void Enemy::OnDrawOverlay(uint64_t dt) {
 
 		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-		Vector3 arrowPos = (myPos + targetPos) * 0.4f;
+		Vector3 arrowPos = myPos + (targetPos - myPos) * 0.35f;
 		arrowPos.y += 0.15f; // OverlayƒŒƒCƒ„[“à‚Å‚Ì•‚‚©‚¹‹ï‡‚ğ’²®
 
 		Vector3 diff = targetPos - myPos;

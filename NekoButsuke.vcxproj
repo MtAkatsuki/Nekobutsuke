@@ -246,7 +246,6 @@ DirectXTK.lib
     <ClCompile Include="ui\HPBar.cpp" />
     <ClCompile Include="ui\TutorialUI.cpp" />
     <ClCompile Include="utility\ScreenToWorld.cpp" />
-    <ClCompile Include="utility\terrain.cpp" />
     <ClCompile Include="utility\WorldToScreen.cpp" />
   </ItemGroup>
   <ItemGroup>
