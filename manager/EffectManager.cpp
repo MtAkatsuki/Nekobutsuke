@@ -179,13 +179,13 @@ void EffectManager::DrawStaticHitPreview(const Vector3& worldPos) {
 
         MATERIAL mtrl;
         // 半透明の黄色に設定し、警告としての衝突をシミュレート
-        mtrl.Diffuse = Color(1.0f, 1.0f, 0.0f, 0.6f);
+        mtrl.Diffuse = Color(1.0f, 1.0f, 0.0f, 0.7f);
         mtrl.TextureEnable = true;
         m_textures[4]->ModifyMtrl(mtrl);
 
-        // 静的描画、スケールは 0.5 に設定
+        // 静的描画、スケールは 0.7 に設定
         m_textures[4]->Draw(
-            Vector3(0.5f, 0.5f, 1.0f),
+            Vector3(0.7f, 0.7f, 1.0f),
             Vector3(0, 0, 0),
             Vector3(screenPos.x, screenPos.y, 0)
         );

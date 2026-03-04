@@ -158,10 +158,10 @@ void Enemy::Init(int sequenceNumber)
 	}
 
 	// プッシュ方向の矢印メッシュのレンダラーを取得
-	m_pushArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
+	m_pushArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_push_mesh");
 
 	// 攻撃方向の矢印メッシュのレンダラーを取得
-	m_attackArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
+	m_attackArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_attack_mesh");
 	if (!m_attackArrowRenderer) {
 		m_attackArrowRenderer = m_pushArrowRenderer;
 	}
@@ -292,7 +292,7 @@ void Enemy::OnDrawFloorUI(uint64_t dt) {
 		Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
 		if (targetTile) {
 			std::vector<Tile*> dangerTiles = { targetTile };
-			m_context->GetMapManager()->DrawColoredTiles(dangerTiles, Color(1.0f, 0.0f, 0.0f, 0.7f));
+			m_context->GetMapManager()->DrawColoredTiles(dangerTiles, Color(0.9f, 0.0f, 0.0f, 0.5f));
 		}
 	}
 }
@@ -305,8 +305,8 @@ void Enemy::OnDrawOverlay(uint64_t dt) {
 
 		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-		Vector3 arrowPos = (myPos + targetPos) * 0.5f;
-		arrowPos.y += 0.12f; // Overlayレイヤー内での浮かせ具合を調整
+		Vector3 arrowPos = (myPos + targetPos) * 0.4f;
+		arrowPos.y += 0.15f; // Overlayレイヤー内での浮かせ具合を調整
 
 		Vector3 diff = targetPos - myPos;
 		float rotY = 0.0f;
@@ -315,13 +315,13 @@ void Enemy::OnDrawOverlay(uint64_t dt) {
 		else if (diff.z > 0.1f)  rotY = -PI / 2.0f;
 		else if (diff.z < -0.1f) rotY = PI / 2.0f;
 
-		Matrix4x4 world = Matrix4x4::CreateScale(Vector3(1.2f, 1.2f, 1.2f)) * Matrix4x4::CreateRotationY(rotY) * Matrix4x4::CreateTranslation(arrowPos);
+		Matrix4x4 world = Matrix4x4::CreateScale(Vector3(0.6f, 0.6f, 0.6f)) * Matrix4x4::CreateRotationY(rotY) * Matrix4x4::CreateTranslation(arrowPos);
 
 		Renderer::SetWorldMatrix(&world);
 		if (auto* mat = m_attackArrowRenderer->GetMaterial(0)) {
 			MATERIAL old = mat->GetData();
 			MATERIAL temp = old;
-			temp.Diffuse = Color(1.0f, 0.0f, 0.0f, 0.7f); // 赤色半透明で危険を通知
+			temp.Diffuse = Color(1.0f, 0.08f, 0.57f, 0.7f); // 赤色半透明で危険を通知
 			mat->SetMaterial(temp);
 			m_attackArrowRenderer->Draw();
 			mat->SetMaterial(old);
@@ -837,7 +837,7 @@ void Enemy::DrawPushPreview(Direction pushDir) {
 		* Matrix4x4::CreateTranslation(arrowPos);
 
 	// 衝突時は黄色（半透明）、非衝突時は灰色（半透明）
-	Color arrowColor = isBlocked ? Color(1.0f, 1.0f, 0.0f, 0.6f) : Color(0.5f, 0.5f, 0.5f, 0.6f);
+	Color arrowColor = isBlocked ? Color(1.0f, 1.0f, 0.0f, 0.6f) : Color(0.5f, 0.5f, 0.5f, 0.8f);
 
 
 	Renderer::SetWorldMatrix(&world);

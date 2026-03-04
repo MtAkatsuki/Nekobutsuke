@@ -405,13 +405,13 @@ void Player::DrawAttackWarningFloor() {
 		Tile* t = m_context->GetMapManager()->GetTile(m_gridX + dx[i], m_gridZ + dz[i]);
 		if (t) neighbors.push_back(t);
 	}
-	m_context->GetMapManager()->DrawColoredTiles(neighbors, Color(1.0f, 0.0f, 0.0f, 0.1f));
+	m_context->GetMapManager()->DrawColoredTiles(neighbors, Color(0.9f, 0.0f, 0.0f, 0.5f));
 	//現在選択したタイル（攻撃方向）を描画
 	DirOffset offset = DirOffset::From(m_attackDir);
 	Tile* target = m_context->GetMapManager()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
 	if (target) {
 		std::vector<Tile*> one{ target };
-		m_context->GetMapManager()->DrawColoredTiles(one, Color(1.0f, 0.0f, 0.0f, 0.6f));
+		m_context->GetMapManager()->DrawColoredTiles(one, Color(0.9f, 0.0f, 0.0f, 0.7f));
 	}
 }
 

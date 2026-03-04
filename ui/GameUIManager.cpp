@@ -11,9 +11,9 @@ void GameUIManager::Init(GameContext* context) {
     m_context = context;
 
 
-    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_move.png", 140, 35);
-    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_attack.png", 140, 35);
-    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_end.png", 140, 35);
+    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_move.png", 168, 42);
+    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_attack.png", 168, 42);
+    LoadSprite(m_mainMenuOptions, "assets/texture/ui/ui_text_end.png", 168, 42);
 
     m_escHintSprite = std::make_unique<CSprite>(197, 43.5, "assets/texture/ui/ui_text_cancel.png");
     m_enterHintSprite = std::make_unique<CSprite>(197, 42.5, "assets/texture/ui/ui_text_enter.png");
@@ -171,7 +171,7 @@ void GameUIManager::DrawMenuGroup(std::vector<MenuOption>& list, float startX, f
         Vector3 pos(startX, startY + offsetY, 0.0f);
         opt.menuSprite->Draw(opt.currentScale, Vector3(0, 0, 0), pos);
 
-		offsetY += 40.0f; //メニューオプション間の垂直オフセット
+		offsetY += 45.0f; //メニューオプション間の垂直オフセット
     }
 }
 // メインメニューを開く及び初期化

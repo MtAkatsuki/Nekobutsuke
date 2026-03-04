@@ -615,7 +615,7 @@ void GameScene::resourceLoader()
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("trap_plane_mesh", std::move(renderer));
 	}
 
-	//パス直線
+	//プレイヤー移動パス直線
 	{
 		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
 		mesh->Load("assets/model/obj/arrow_straight.obj", "assets/model/obj/");
@@ -625,7 +625,7 @@ void GameScene::resourceLoader()
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("arrow_straight_mesh", std::move(renderer));
 	}
 
-	//パス直角
+	//プレイヤー移動パス直角
 	{
 		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
 		mesh->Load("assets/model/obj/arrow_corner.obj", "assets/model/obj/");
@@ -633,6 +633,26 @@ void GameScene::resourceLoader()
 		renderer->Init(*mesh);
 		MeshManager::RegisterMesh<CStaticMesh>("arrow_corner_mesh", std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("arrow_corner_mesh", std::move(renderer));
+	}
+
+	//敵攻撃矢印
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+		mesh->Load("assets/model/obj/arrow_attack.obj", "assets/model/obj/");
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+		MeshManager::RegisterMesh<CStaticMesh>("arrow_attack_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("arrow_attack_mesh", std::move(renderer));
+	}
+
+	//プッシュバック矢印
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+		mesh->Load("assets/model/obj/arrow_push.obj", "assets/model/obj/");
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+		MeshManager::RegisterMesh<CStaticMesh>("arrow_push_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("arrow_push_mesh", std::move(renderer));
 	}
 }
 
