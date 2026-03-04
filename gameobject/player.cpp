@@ -32,29 +32,9 @@ void Player::playerResourceLoader()
 		MeshManager::RegisterMesh<CStaticMesh>("player_back_mesh", std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("player_back_mesh", std::move(renderer));
 	}
-	//パス直線
-	{
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load("assets/model/obj/arrow_straight.obj", "assets/model/obj/");
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>("arrow_straight_mesh", std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("arrow_straight_mesh", std::move(renderer));
-	}
-
-	//パス直角
-	{
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load("assets/model/obj/arrow_corner.obj", "assets/model/obj/"); 
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>("arrow_corner_mesh", std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("arrow_corner_mesh", std::move(renderer));
-	}
 
 
-	//m_PlayerMesh = MeshManager::getMesh<CStaticMesh>("player_mesh");
-	//m_PlayerMeshrenderer = MeshManager::getRenderer<CStaticMeshRenderer>("player_mesh");
+
 	m_PlayerShader = MeshManager::getShader<CShader>("unlightshader");
 	m_PathLineRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
 	m_PathCornerRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_corner_mesh");
@@ -74,6 +54,8 @@ void Player::playerResourceLoader()
 	else {
 		std::cerr << "CRITICAL ERROR: 'lightshaderSpecular' not found! Check shader file paths." << std::endl;
 	}
+
+	printf("Init LineRenderer = %p\n", m_PathLineRenderer);
 }
 
 void Player::Init() {

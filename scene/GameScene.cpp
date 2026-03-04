@@ -614,6 +614,26 @@ void GameScene::resourceLoader()
 		MeshManager::RegisterMesh<CStaticMesh>("trap_plane_mesh", std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("trap_plane_mesh", std::move(renderer));
 	}
+
+	//パス直線
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+		mesh->Load("assets/model/obj/arrow_straight.obj", "assets/model/obj/");
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+		MeshManager::RegisterMesh<CStaticMesh>("arrow_straight_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("arrow_straight_mesh", std::move(renderer));
+	}
+
+	//パス直角
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+		mesh->Load("assets/model/obj/arrow_corner.obj", "assets/model/obj/");
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+		MeshManager::RegisterMesh<CStaticMesh>("arrow_corner_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("arrow_corner_mesh", std::move(renderer));
+	}
 }
 
 void GameScene::drawGridDebugText()
