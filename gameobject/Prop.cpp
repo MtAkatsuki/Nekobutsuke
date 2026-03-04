@@ -11,50 +11,34 @@ void Prop::Init(MapModelType type, Vector3 position) {
     MapObject::Init(type, position);
     GetDimensions(type, m_sizeX, m_sizeZ);
 
-    // 2. 物件タイプに応じたテクスチャパスの決定
-    std::string texPath = "assets/texture/furniture/effect000.png";
+    // 2. 物件タイプに応じた専用3Dメッシュの決定
+    std::string meshName = "prop_plane_mesh"; // デフォルト（エラー回避用）
     switch (type) {
-    case MapModelType::PROP_SOFA_YOKO:    texPath = "assets/texture/furniture/sofa_yoko.png"; break; // Enum名にご注意ください(H/V か YOKO/TATE か)
-    case MapModelType::PROP_SOFA_TATE:    texPath = "assets/texture/furniture/sofa_tate.png"; break;
-    case MapModelType::PROP_TABLE:     texPath = "assets/texture/furniture/table.png"; break;
-    case MapModelType::PROP_BOOKSHELF: texPath = "assets/texture/furniture/bookshelf.png"; break;
-    case MapModelType::PROP_CATTOWER:  texPath = "assets/texture/furniture/cattower.png"; break;
-    case MapModelType::WALL:           texPath = "assets/texture/effect000.png"; break;
+    case MapModelType::PROP_SOFA_YOKO: meshName = "sofa_yoko_mesh"; break;
+    case MapModelType::PROP_SOFA_TATE: meshName = "sofa_tate_mesh"; break;
+    case MapModelType::PROP_TABLE:     meshName = "table_mesh"; break;
+    case MapModelType::PROP_BOOKSHELF: meshName = "bookshelf_mesh"; break;
+    case MapModelType::PROP_CATTOWER:  meshName = "cattower_mesh"; break;
+    default: break;
     }
 
-    //  テクスチャの読み込み
-    // エラー回避のため、インスタンス作成とロードを分ける
-    m_texture = std::make_unique<CTexture>();
-    m_texture->Load(texPath);
-
-    m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("prop_plane_mesh");
+    // メッシュレンダラーの取得
+    m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>(meshName);
 
     if (!m_renderer) {
-        OutputDebugStringA("[Prop] Warning: range_panel_mesh not found, using floor_mesh.\n");
+        OutputDebugStringA("[Prop] Warning: Specific 3D mesh not found, using floor_mesh.\n");
         m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("floor_mesh");
     }
 
+    // 3. 3Dモデル用の標準トランスフォーム設定
+    // 2D画像用だったアスペクト比計算、X軸の傾き（propAngleX）、Z軸オフセット（-0.6f）はすべて削除
+    m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
+    m_srt.rot = Vector3(0.0f, 0.0f, 0.0f);
 
-    //  視覚的な高さ（スケールZ）の自動計算
-    // 画像のアスペクト比に基づき、占有幅に対して正しい見た目の高さを算出する
-    float visualHeight = 1.0f;
-    if (m_texture && m_texture->GetWidth() > 0) {
-        float ratio = (float)m_texture->GetHeight() / (float)m_texture->GetWidth();
-        visualHeight = (float)m_sizeX * ratio;
-    }
-
-    m_srt.rot.x = 0.0f;
-
-    // スケール：X軸はグリッド幅に合わせ、Z軸は計算された視覚的な高さに合わせる
-    m_srt.scale = Vector3((float)m_sizeX, visualHeight, 1.0f);
-
-    // 座標：Zファイティング防止のためY軸を微調整
+    // 座標設定 (必要に応じてY軸の微調整を残す)
     m_srt.pos = position;
-    m_srt.pos.y += 0.06f;
-    m_srt.pos.z -= 0.6f;
-
-    float propAngleX = 25.0f * (3.14159265f / 180.0f); // ラジアンに変換
-    m_srt.rot.x += propAngleX;
+    // モデルの原点が下端にある前提。もし床にめり込むなら以下の数値を調整してください。
+    // m_srt.pos.y += 0.06f; 
 
     // ワールド行列の更新
     UpdateWorldMatrix();
@@ -64,20 +48,25 @@ void Prop::OnDraw(uint64_t delta)
 {
 
     if (!m_renderer) return;
+
+    // 専用のunlightshaderを適用
+    auto shader = MeshManager::getShader<CShader>("unlightshader");
+    if (shader) {
+        shader->SetGPU();
+    }
+
     Renderer::SetBlendState(BS_ALPHABLEND);
     Renderer::SetDepthEnable(true);
     Renderer::SetWorldMatrix(&m_WorldMatrix);
 
-    if (m_texture) {
-        m_texture->SetGPU();
-    }
-
+    // 半透明（キャラクターが後ろにいる時のフェード）処理
     if (auto* mat = m_renderer->GetMaterial(0)) {
         MATERIAL m = mat->GetData();
         m.TextureEnable = TRUE;
         m.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
+        // モデル本来の色(DiffuseのRGB)を維持しつつ、Alpha(w)だけを更新
         m.Diffuse = Color(1.0f, 1.0f, 1.0f, m_currentAlpha);
-        mat->SetMaterial(m);  
+        mat->SetMaterial(m);
     }
 
     m_renderer->Draw();

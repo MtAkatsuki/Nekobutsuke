@@ -20,7 +20,7 @@ public:
 private:
 	bool m_isActivated = false; // ã©‚ª”­“®‚µ‚½‚©‚Ç‚¤‚©‚Ìƒtƒ‰ƒO
 
-    std::unique_ptr<CTexture> m_texture;
+    /*std::unique_ptr<CTexture> m_texture;*/
     int m_sizeX = 1;
     int m_sizeZ = 1;
 

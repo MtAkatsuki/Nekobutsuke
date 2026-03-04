@@ -669,6 +669,54 @@ void GameScene::resourceLoader()
 		MeshManager::RegisterMesh<CStaticMesh>("arrow_push_mesh", std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("arrow_push_mesh", std::move(renderer));
 	}
+
+	// トラップ用3Dメッシュ読み込み
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+
+		// trap_plane.obj から trap.obj に変更
+		mesh->Load("assets/model/obj/trap.obj", "assets/model/obj/");
+
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+
+		if (auto* mat = renderer->GetMaterial(0)) {
+			MATERIAL m = mat->GetData();
+			m.Diffuse = Color(1, 1, 1, 1);
+			m.TextureEnable = TRUE; // .objに付属するテクスチャを使用
+			mat->SetMaterial(m);
+		}
+
+		// 登録名を trap_mesh に変更
+		MeshManager::RegisterMesh<CStaticMesh>("trap_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("trap_mesh", std::move(renderer));
+	}
+
+	// 専用家具モデルのロード
+	const std::vector<std::pair<std::string, std::string>> propModels = {
+		{"sofa_yoko_mesh", "assets/model/obj/sofa_yoko.obj"},
+		{"cattower_mesh",  "assets/model/obj/cattower.obj"},
+		{"bookshelf_mesh", "assets/model/obj/bookshelf.obj"},
+		{"table_mesh",     "assets/model/obj/table.obj"}
+	};
+
+	for (const auto& pair : propModels) {
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+		mesh->Load(pair.second, "assets/model/obj/");
+
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+
+		if (auto* mat = renderer->GetMaterial(0)) {
+			MATERIAL m = mat->GetData();
+			m.Diffuse = Color(1, 1, 1, 1);
+			m.TextureEnable = TRUE; // モデルに付属のテクスチャを使用する
+			mat->SetMaterial(m);
+		}
+
+		MeshManager::RegisterMesh<CStaticMesh>(pair.first, std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(pair.first, std::move(renderer));
+	}
 }
 
 void GameScene::drawGridDebugText()

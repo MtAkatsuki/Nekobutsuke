@@ -135,7 +135,7 @@ void GameUIManager::Draw() {
             // 矢印の世界座標（頭上2.0f程度に配置）
             Vector3 arrowWorldPos = player->getSRT().pos;
             arrowWorldPos.y += 1.5f;
-            arrowWorldPos.x += 0.2f;
+            arrowWorldPos.x += 0.0f;
 
             Vector2 arrowScreenPos = WorldToScreen(arrowWorldPos, camera->GetViewMatrix(), camera->GetProjMatrix(), screenW, screenH);
 

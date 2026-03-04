@@ -9,46 +9,17 @@ void Trap::Init(MapModelType type, Vector3 position)
     MapObject::Init(type, position);
     GetDimensions(type, m_sizeX, m_sizeZ);
 
-    // 1. テクスチャパスの確定
-    // assets/texture/furniture/trap.png 等、トラップ専用のリソースを指定
-    std::string texPath = "assets/texture/furniture/trap.png";
-
-    // === コンストラクタ呼び出しとロードを分ける ===
-    // エラー原因：CTexture(string) というコンストラクタが存在しないため
-    m_texture = std::make_unique<CTexture>(); // 引数なしで作成
-    m_texture->Load(texPath);                 // Load関数で読み込み
-    // ==========================================================
-
-
-    m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("trap_plane_mesh");
+    m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("trap_mesh");
 
     if (!m_renderer) {
-        OutputDebugStringA("[Prop] Warning: range_panel_mesh not found, using floor_mesh.\n");
-        m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("prop_plane_mesh");
+        OutputDebugStringA("[Trap] Warning: trap_mesh not found.\n");
     }
 
-
-    // 高さの自動計算 (Scale Z)
-    float visualHeight = 1.0f;
-    if (m_texture && m_texture->GetWidth() > 0) {
-        float ratio = (float)m_texture->GetHeight() / (float)m_texture->GetWidth();
-        visualHeight = (float)m_sizeX * ratio;
-    }
-
-    m_srt.rot.x = 0.0f;
-
-    float pixelScale = roundf(m_sizeX);
-    m_srt.scale = Vector3(
-        pixelScale,
-        visualHeight,
-        1.0f
-    );
-
+    m_srt.scale = Vector3(0.5f, 0.5f, 0.5f);
+    m_srt.rot = Vector3(0.0f, 0.0f, 0.0f);
     m_srt.pos = position;
 
     m_srt.pos.y += 0.4f;
-	float trapAngleX = 30.0f * (3.14159265f / 180.0f); // ラジアンに変換
-    m_srt.rot.x -= trapAngleX;
 
     // [アニメーション用] 初期スケールを保存
     m_initialScale = m_srt.scale;
@@ -79,14 +50,16 @@ void Trap::OnDraw(uint64_t delta) {
     if (m_srt.scale.x <= 0.001f) return;
     if (!m_renderer) return;
 
+    // === unlightshader をセット ===
+    auto shader = MeshManager::getShader<CShader>("unlightshader");
+    if (shader) {
+        shader->SetGPU();
+    }
+
     Renderer::SetBlendState(BS_ALPHABLEND);
     Renderer::SetDepthEnable(true);
     Renderer::SetWorldMatrix(&m_WorldMatrix);
 
-	// テクスチャを GPU にセット
-    if (m_texture) {
-        m_texture->SetGPU();
-    }
 
 	// マテリアルの透明度をアニメーションに応じて調整
     if (auto* mat = m_renderer->GetMaterial(0)) {

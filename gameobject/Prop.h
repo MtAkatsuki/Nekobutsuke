@@ -19,7 +19,6 @@ public:
 
 private:
 
-    std::unique_ptr<CTexture> m_texture;
     int m_sizeX = 1; // 占有する幅（X軸）
     int m_sizeZ = 1; // 占有する奥行き（Z軸）
 
