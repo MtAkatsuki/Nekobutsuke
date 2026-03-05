@@ -454,6 +454,7 @@ void GameScene::draw(uint64_t deltatime) {
 	// === 8. UI (2D) インタラクションレイヤー ===
 	// このレイヤーはデプステストを無効に維持
 	// 8.1 低層 UI
+	Renderer::SetUISamplerMode(true);
 	if (m_player) m_player->DrawUI();
 	if (m_ally && m_ally->GetHP() > 0) m_ally->DrawUI();
 	for (const auto& obj : m_GameObjectList) {
@@ -469,7 +470,7 @@ void GameScene::draw(uint64_t deltatime) {
 
 	// 8.5 最前面 (カットイン演出)
 	if (m_turnCutin) m_turnCutin->Draw();
-
+	Renderer::SetUISamplerMode(false);
 	// === デフォルトの描画状態に戻す ===
 	Renderer::SetDepthEnable(true);
 	Renderer::SetBlendState(BS_NONE);

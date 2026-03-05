@@ -296,7 +296,7 @@ namespace myAssimp{
 
 						std::string texname = texturedirectory + "/" + texpath;
 
-						bool sts=texture->Load(texname);
+						bool sts=texture->Load(texname, false);
 						if (sts) {
 							g_diffuseTextures[m] = std::move(texture);
 						}

@@ -24,6 +24,7 @@ ComPtr<ID3D11DepthStencilView> Renderer::m_DepthStencilView;
 
 ComPtr<ID3D11SamplerState> Renderer::m_SamplerStateAniso;
 ComPtr<ID3D11SamplerState> Renderer::m_SamplerStatePoint;
+ComPtr<ID3D11SamplerState> Renderer::m_SamplerStateUI;
 
 
 ComPtr<ID3D11Buffer> Renderer::m_WorldBuffer;
@@ -240,6 +241,17 @@ void Renderer::Init()
     
     m_DeviceContext->VSSetConstantBuffers(4, 1, m_LightBuffer.GetAddressOf());
     m_DeviceContext->PSSetConstantBuffers(4, 1, m_LightBuffer.GetAddressOf());
+
+    // --- UI専用サンプラー ---
+    D3D11_SAMPLER_DESC uiSamplerDesc{};
+    uiSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; // リニアフィルタリングを使用し、UI拡大縮小時の滑らかさと鮮明さを両立
+    uiSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;  // エッジの溢れ（にじみ）を防止するため、UIでは通常Clampを使用
+    uiSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+    uiSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+    uiSamplerDesc.MipLODBias = 0.0f;                       // バイアス設定は一切禁止
+    uiSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    m_Device->CreateSamplerState(&uiSamplerDesc, m_SamplerStateUI.GetAddressOf());
 
 }
 
@@ -492,6 +504,17 @@ void Renderer::SetPixelArtMode(bool isPixelArt) {
     if (isPixelArt) {
         // ポイントサンプラーをバインドし、ドットの質感を維持する
         m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStatePoint.GetAddressOf());
+    }
+    else {
+        // 異方性サンプラーをバインドし、3Dテクスチャを滑らかにする
+        m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateAniso.GetAddressOf());
+    }
+}
+
+void Renderer::SetUISamplerMode(bool isUi) {
+    if (isUi) {
+        // UIサンプラーをバインド
+        m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateUI.GetAddressOf());
     }
     else {
         // 異方性サンプラーをバインドし、3Dテクスチャを滑らかにする

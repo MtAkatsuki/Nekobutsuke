@@ -58,6 +58,7 @@ void TitleScene::update(uint64_t deltatime)
  */
 void TitleScene::draw(uint64_t deltatime)
 {
+    Renderer::SetUISamplerMode(true);
     m_image->Draw(
         Vector3(1.0f, 1.0f, 1.0f),
         Vector3(0.0f, 0.0f, 0.0f),
@@ -96,6 +97,7 @@ void TitleScene::draw(uint64_t deltatime)
         Renderer::SetDepthEnable(true);
         Renderer::SetBlendState(BS_NONE);
     }
+    Renderer::SetUISamplerMode(false);
 }
 
 /**

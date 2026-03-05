@@ -18,10 +18,10 @@ class CTexture : NonCopyable
 	int m_height{};									// çÇÇ≥
 	int m_bpp{};										// BPP
 public:
-	bool Load(const std::string& filename);
+	bool Load(const std::string& filename, bool isUI);
 	bool LoadFromFemory(const unsigned char* data,int len);
 
-	bool Load(const std::u8string& filename);		// 20250711
+	bool Load(const std::u8string& filename, bool isUI);		// 20250711
 
 	void SetGPU();
 

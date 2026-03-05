@@ -53,11 +53,13 @@ void GameOverScene::update(uint64_t deltatime)
  */
 void GameOverScene::draw(uint64_t deltatime)
 {
+    Renderer::SetUISamplerMode(true);
     m_image->Draw(
         Vector3(1.0f, 1.0f, 1.0f),
         Vector3(0.0f, 0.0f, 0.0f),
         Vector3(SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f, 0.0f)
     );
+    Renderer::SetUISamplerMode(false);
 }
 
 /**

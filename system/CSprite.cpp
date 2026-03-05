@@ -47,7 +47,7 @@ void CSprite::CreateShader() {
  * @note 読み込みに失敗した場合は assert によりクラッシュします。
  */
 void CSprite::CreateTexture(const std::string& texfilename) {
-	bool sts = m_Texture.Load(texfilename);
+	bool sts = m_Texture.Load(texfilename, true);
 	assert(sts == true);
 }
 

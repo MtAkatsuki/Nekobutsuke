@@ -159,6 +159,7 @@ private:
 
     static ComPtr<ID3D11SamplerState> m_SamplerStateAniso; // 3D家具用の異方性（スムーズ）サンプラー
     static ComPtr<ID3D11SamplerState> m_SamplerStatePoint; // ピクセルアート風（シャープ）なキャラクター用のポイントサンプラー
+    static ComPtr<ID3D11SamplerState> m_SamplerStateUI;
 public:
     static void Init();
     static void Uninit();
@@ -186,4 +187,5 @@ public:
     static LIGHT GetLight();
 
     static void SetPixelArtMode(bool isPixelArt); // サンプリングモード切り替え用インターフェース
+    static void SetUISamplerMode(bool isUi);
 };

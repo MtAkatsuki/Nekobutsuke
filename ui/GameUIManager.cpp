@@ -114,6 +114,7 @@ void GameUIManager::Update(uint64_t dt) {
 }
 // メニューの描画(プレイヤー位置に基づきて)
 void GameUIManager::Draw() {
+    
 	// ガイドUIの描画
     if (m_isGuideActive) {
         DrawGuideUI();
@@ -144,7 +145,7 @@ void GameUIManager::Draw() {
                 arrowScreenPos.y > -50 && arrowScreenPos.y < screenH + 50) {
 
                 // Updateで計算した m_arrowHoverY を適用
-				Vector3 arrowPos(arrowScreenPos.x, arrowScreenPos.y + m_arrowHoverY, 0);
+				Vector3 arrowPos(round(arrowScreenPos.x), round(arrowScreenPos.y + m_arrowHoverY), 0);
 				m_pActiveArrow->Draw(Vector3(1.0f, 1.0f, 1.0f), Vector3(0, 0, 0), arrowPos);
             }
         }
@@ -159,7 +160,7 @@ void GameUIManager::Draw() {
     if (m_currentType == MenuType::Main) {
         DrawMenuGroup(m_mainMenuOptions, startX, startY);
     }
-
+    
 
 }
 // メニューグループの描画(メニュー内部の位置)

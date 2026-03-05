@@ -5,7 +5,7 @@
 #include	"renderer.h"
 
 // u8対応
-bool CTexture::Load(const std::u8string& filename)
+bool CTexture::Load(const std::u8string& filename, bool isUI)
 {
 	std::filesystem::path filepath = filename;
 	m_texname = filepath.string();  // UTF-8として保持
@@ -38,13 +38,16 @@ bool CTexture::Load(const std::u8string& filename)
 	D3D11_TEXTURE2D_DESC desc{};
 	desc.Width = m_width;
 	desc.Height = m_height;
-	desc.MipLevels = 0;
+	desc.MipLevels = isUI ? 1 : 0;
 	desc.ArraySize = 1;
 	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	desc.SampleDesc.Count = 1;
 	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	if (!isUI) {
+		desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+		desc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+	}
 
 	D3D11_SUBRESOURCE_DATA subResource{};
 	subResource.pSysMem = pixels;
@@ -69,7 +72,9 @@ bool CTexture::Load(const std::u8string& filename)
 
 	if (SUCCEEDED(hr)) {
 		
-		Renderer::GetDeviceContext()->GenerateMips(m_srv.Get());
+		if (!isUI) {
+			Renderer::GetDeviceContext()->GenerateMips(m_srv.Get());
+		}
 	}
 
 	stbi_image_free(pixels);
@@ -78,7 +83,7 @@ bool CTexture::Load(const std::u8string& filename)
 }
 
 // テクスチャをロード
-bool CTexture::Load(const std::string& filename)
+bool CTexture::Load(const std::string& filename, bool isUI)
 {
 	bool sts = true;
 
@@ -90,7 +95,7 @@ bool CTexture::Load(const std::string& filename)
 
 		// u8文字文字列に　2025/7/12 by suzuki.tomoki
 		std::u8string u8s(filename.begin(),filename.end());
-		sts =Load(u8s);
+		sts = Load(u8s, isUI);
 		if (sts == false) {
 			return false;
 		}
