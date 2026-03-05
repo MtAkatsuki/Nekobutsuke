@@ -75,7 +75,7 @@ void Ally::OnDraw(uint64_t deltatime)
 {   //Ally‚Ì•`‰æŠÖ”
     if (m_shader) m_shader->SetGPU();
 
-  
+        Renderer::SetPixelArtMode(true);
         Renderer::SetBlendState(BS_ALPHABLEND);
         Renderer::SetDepthEnable(true);
 
@@ -83,7 +83,7 @@ void Ally::OnDraw(uint64_t deltatime)
         DrawModel();
 
         Renderer::SetBlendState(BS_NONE);
- 
+        Renderer::SetPixelArtMode(false);
 }
 
 void Ally::StartTurn() {

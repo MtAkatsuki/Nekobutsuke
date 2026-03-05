@@ -22,6 +22,10 @@ ComPtr<IDXGISwapChain> Renderer::m_SwapChain;
 ComPtr<ID3D11RenderTargetView> Renderer::m_RenderTargetView;
 ComPtr<ID3D11DepthStencilView> Renderer::m_DepthStencilView;
 
+ComPtr<ID3D11SamplerState> Renderer::m_SamplerStateAniso;
+ComPtr<ID3D11SamplerState> Renderer::m_SamplerStatePoint;
+
+
 ComPtr<ID3D11Buffer> Renderer::m_WorldBuffer;
 ComPtr<ID3D11Buffer> Renderer::m_ViewBuffer;
 ComPtr<ID3D11Buffer> Renderer::m_ProjectionBuffer;
@@ -60,7 +64,7 @@ void Renderer::Init()
     swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.OutputWindow = Application::GetWindow();
-    swapChainDesc.SampleDesc.Count = 1;
+    swapChainDesc.SampleDesc.Count = 4;
     swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.Windowed = TRUE;
 
@@ -99,7 +103,7 @@ void Renderer::Init()
 
     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc{};
     depthStencilViewDesc.Format = textureDesc.Format;
-    depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
     hr = m_Device->CreateDepthStencilView(depthStencil.Get(), &depthStencilViewDesc, m_DepthStencilView.GetAddressOf());
     if (FAILED(hr)) {
         throw std::runtime_error("Failed to create depthStencilView.");
@@ -122,6 +126,7 @@ void Renderer::Init()
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
     rasterizerDesc.CullMode = D3D11_CULL_NONE;
     rasterizerDesc.DepthClipEnable = TRUE;
+    rasterizerDesc.MultisampleEnable = TRUE;
 
     ComPtr<ID3D11RasterizerState> rs;
     m_Device->CreateRasterizerState(&rasterizerDesc, rs.GetAddressOf());
@@ -179,10 +184,17 @@ void Renderer::Init()
 //    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     samplerDesc.MaxAnisotropy = 4;
     samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    samplerDesc.MipLODBias = 0.0f;
 
-    ComPtr<ID3D11SamplerState> samplerState;
-    m_Device->CreateSamplerState(&samplerDesc, samplerState.GetAddressOf());
-    m_DeviceContext->PSSetSamplers(0, 1, samplerState.GetAddressOf());
+    // 1. 3D環境専用の異方性サンプラー（Anisotropic Sampler）を作成
+    m_Device->CreateSamplerState(&samplerDesc, m_SamplerStateAniso.GetAddressOf());
+
+    samplerDesc.MipLODBias = -1.5f;
+    samplerDesc.MaxLOD = 2.0f;
+    m_Device->CreateSamplerState(&samplerDesc, m_SamplerStatePoint.GetAddressOf());
+
+    // デフォルトで3Dシーン用のサンプラーをバインド
+    m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateAniso.GetAddressOf());
 
     // --- 定数バッファ生成 ---
     D3D11_BUFFER_DESC bufferDesc{};
@@ -255,6 +267,8 @@ void Renderer::Uninit()
     m_SwapChain.Reset();
     m_DeviceContext.Reset();
     m_Device.Reset();
+    m_SamplerStateAniso.Reset();
+    m_SamplerStatePoint.Reset();
 }
 
 /**
@@ -421,7 +435,7 @@ void Renderer::DisableCulling(bool cullflag)
     rasterizerDesc.SlopeScaledDepthBias = 0.0f;
     rasterizerDesc.DepthClipEnable = TRUE;
     rasterizerDesc.ScissorEnable = FALSE;
-    rasterizerDesc.MultisampleEnable = FALSE;
+    rasterizerDesc.MultisampleEnable = TRUE;
     rasterizerDesc.AntialiasedLineEnable = FALSE;
 
     ComPtr<ID3D11RasterizerState> pRasterizerState;
@@ -471,5 +485,16 @@ void Renderer::SetDepthAllwaysWrite()
     if (SUCCEEDED(hr))
     {
         m_DeviceContext->OMSetDepthStencilState(pDepthStencilState.Get(), 0);
+    }
+}
+
+void Renderer::SetPixelArtMode(bool isPixelArt) {
+    if (isPixelArt) {
+        // ポイントサンプラーをバインドし、ドットの質感を維持する
+        m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStatePoint.GetAddressOf());
+    }
+    else {
+        // 異方性サンプラーをバインドし、3Dテクスチャを滑らかにする
+        m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateAniso.GetAddressOf());
     }
 }

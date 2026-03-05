@@ -185,8 +185,10 @@ void Player::Update(uint64_t dt) {
 
 // 1. エンティティレイヤー (5.1)
 void Player::OnDraw(uint64_t dt) {
+	Renderer::SetPixelArtMode(true);
 	if (m_PlayerShader != nullptr) m_PlayerShader->SetGPU();
 	DrawModel(); // 3Dモデルの描画のみを行う
+	Renderer::SetPixelArtMode(false);
 }
 
 // 2. 床面 UI レイヤー (3)
@@ -294,7 +296,11 @@ void Player::DrawPathLine() {
 	if (!m_currentPath.empty()) {
 		Tile* destTile = m_currentPath.back();
 		if (destTile && destTile->structure && destTile->structure->GetType() == MapModelType::TRAP) {
-			isDanger = true;
+			// 【修正】Trap ポインタにキャストし、既に発動済みかどうかを判定
+			Trap* trap = dynamic_cast<Trap*>(destTile->structure);
+			if (trap && !trap->IsActivated()) {
+				isDanger = true; // 未発動のトラップのみ、赤色の危険ルートとして表示する
+			}
 		}
 	}
 
@@ -405,13 +411,13 @@ void Player::DrawAttackWarningFloor() {
 		Tile* t = m_context->GetMapManager()->GetTile(m_gridX + dx[i], m_gridZ + dz[i]);
 		if (t) neighbors.push_back(t);
 	}
-	m_context->GetMapManager()->DrawColoredTiles(neighbors, Color(0.9f, 0.0f, 0.0f, 0.5f));
+	m_context->GetMapManager()->DrawColoredTiles(neighbors, Color(0.9f, 0.0f, 0.0f, 0.2f));
 	//現在選択したタイル（攻撃方向）を描画
 	DirOffset offset = DirOffset::From(m_attackDir);
 	Tile* target = m_context->GetMapManager()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
 	if (target) {
 		std::vector<Tile*> one{ target };
-		m_context->GetMapManager()->DrawColoredTiles(one, Color(0.9f, 0.0f, 0.0f, 0.7f));
+		m_context->GetMapManager()->DrawColoredTiles(one, Color(0.9f, 0.0f, 0.0f, 0.8f));
 	}
 }
 
@@ -729,13 +735,13 @@ void Player::HandleMoveInput(float dt) {
 				break;
 			case 2:
 				// インデックス 2：背面右
-				dx = inX;
-				dz = inZ;
+				dx = -inX;
+				dz = -inZ;
 				break;
 			case 3:
 				// インデックス 3：背面左 
-				dx = -inZ;
-				dz = inX;
+				dx = inZ;
+				dz = -inX;
 				break;
 			}
 
@@ -828,13 +834,13 @@ void Player::HandleAttackDirInput(float dt) {
 				break;
 			case 2:
 				// インデックス 2：背面右
-				dx = inX;
-				dz = inZ;
+				dx = -inX;
+				dz = -inZ;
 				break;
 			case 3:
 				// インデックス 3：背面左 
-				dx = -inZ;
-				dz = inX;
+				dx = inZ;
+				dz = -inX;
 				break;
 			}
 

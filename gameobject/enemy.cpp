@@ -280,13 +280,17 @@ void Enemy::OnDraw(uint64_t dt) {
 		ChargeAnimation();
 	}
 	else {
+		Renderer::SetPixelArtMode(true);
 		if (m_EnemyShader != nullptr) m_EnemyShader->SetGPU();
 		DrawModel();
+		Renderer::SetPixelArtMode(false);
 	}
 }
 
 // 2. 床面 UI レイヤー (3)
 void Enemy::OnDrawFloorUI(uint64_t dt) {
+	// 既に死亡している場合、UIを一切描画しない
+	if (m_currentHP <= 0) return;
 	// 敵がチャージ中の場合、ターゲットとなる床を赤くハイライトする
 	if (m_isCharging && m_context && m_context->GetMapManager()) {
 		Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
@@ -299,6 +303,8 @@ void Enemy::OnDrawFloorUI(uint64_t dt) {
 
 // 3. 浮遊 Overlay レイヤー (6)
 void Enemy::OnDrawOverlay(uint64_t dt) {
+	// 既に死亡している場合、UIを一切描画しない
+	if (m_currentHP <= 0) return;
 	// 敵の攻撃意図（赤い矢印）を最前面に描画
 	if (m_isCharging && m_attackArrowRenderer && m_context && m_context->GetMapManager()) {
 		if (m_EnemyShader != nullptr) m_EnemyShader->SetGPU(); // シェーダーの有効化を確認
@@ -447,6 +453,10 @@ void Enemy::TakeDamage(int damage, Unit* attacker)
 	{
 		std::cout << "[Debug] Enemy died! Switching to DEAD_FLYING." << std::endl;
 		m_state = EnemyState::DEAD_FLYING;
+
+		// 【新規追加】死亡時に蓄力（チャージ）状態を強制クリアし、警告UIの残存を防止する
+		m_isCharging = false;
+		m_pendingCharge = false;
 
 		//元にいる、すでに死んだ敵のタイルの占有を解除
 		if (m_context && m_context->GetMapManager()) {
@@ -822,7 +832,7 @@ void Enemy::DrawPushPreview(Direction pushDir) {
 	// 描画位置の計算：現在のグリッドと対象グリッドの境界付近に設定
 	Vector3 myPos = map->GetWorldPosition(m_gridX, m_gridZ);
 	Vector3 targetPos = map->GetWorldPosition(targetX, targetZ);
-	Vector3 arrowPos = (myPos + targetPos) * 0.5f;
+	Vector3 arrowPos = myPos + (targetPos - myPos) * 0.2f;
 	arrowPos.y += 0.08f; // 地面とのめり込み（Zファイティング）防止のためのオフセット
 
 	// 回転角の計算
@@ -832,12 +842,12 @@ void Enemy::DrawPushPreview(Direction pushDir) {
 	else if (offset.z == 1)  rotY = -PI / 2.0f;
 	else if (offset.z == -1) rotY = PI / 2.0f;
 
-	Matrix4x4 world = Matrix4x4::CreateScale(Vector3(1.0f, 1.0f, 1.0f))
+	Matrix4x4 world = Matrix4x4::CreateScale(Vector3(1.0f, 1.0f, 1.5f))
 		* Matrix4x4::CreateRotationY(rotY)
 		* Matrix4x4::CreateTranslation(arrowPos);
 
 	// 衝突時は黄色（半透明）、非衝突時は灰色（半透明）
-	Color arrowColor = isBlocked ? Color(1.0f, 1.0f, 0.0f, 0.6f) : Color(0.5f, 0.5f, 0.5f, 0.8f);
+	Color arrowColor = isBlocked ? Color(1.0f, 1.0f, 0.0f, 0.7f) : Color(0.6f, 0.6f, 0.6f, 0.9f);
 
 
 	Renderer::SetWorldMatrix(&world);

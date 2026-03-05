@@ -16,6 +16,8 @@ public:
     void OnDraw(uint64_t delta) override;
 	// 罠の占有サイズを取得（MapManagerでのタイル埋め立て用）
     static void GetDimensions(MapModelType type, int& outW, int& outD);
+    //トラップが既に発動しているかどうかの状態を取得
+    bool IsActivated() const { return m_isActivated; }
 
 private:
 	bool m_isActivated = false; // 罠が発動したかどうかのフラグ
