@@ -17,7 +17,8 @@ enum class PlayerState {
 	ANIM_MOVE,          // 移動アニメション中
 	ATTACK_DIR_SELECT,  // 攻撃方向選択中 (WASDで)
 	ANIM_ATTACK,        // 攻撃アニメション中
-	WAITING             
+	WAITING,
+	ANIM_CELEBRATE// 勝利祝賀アニメーション中
 };
 
 enum class AttackType {
@@ -55,6 +56,9 @@ public:
 
 	// 攻撃距離を定数パラメータ化 (例: 1マス)
 	const int ATTACK_RANGE = 1;
+	// 勝利祝賀アニメーション関連
+	void StartCelebration();// 勝利祝賀アニメーション開始
+	bool IsCelebrationDone() const { return m_isCelebrationDone; }// 勝利祝賀アニメーションの完了フラグ
 
 private:
 	//状態遷移関数
@@ -141,6 +145,11 @@ private:
 
 	bool m_isWaitingTurnStart = false; // ターン開始時のUIカットイン待ちフラグ
 	bool m_canAttack = false;          // 攻撃可能な敵が範囲内にいるか
+	// 勝利祝賀アニメーション用データ
+	int m_jumpCount = 0;// ジャンプの回数
+	float m_jumpTimer = 0.0f;// ジャンプの長さを制御するタイマー
+	bool m_isCelebrationDone = false;// 祝賀アニメーションの完了フラグ
+	void UpdateCelebration(float dt);// 勝利祝賀アニメーションの更新処理
 
 	protected:
 		virtual void OnDrawFloorUI(uint64_t delta) override;

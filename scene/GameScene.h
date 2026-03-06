@@ -83,10 +83,6 @@ public:
 
 
 
-	// 平行光源
-	void debugDirectionalLight();
-
-
 	// リソースを読み込む
 	void resourceLoader();
 
@@ -136,10 +132,12 @@ private:
 	FontData	m_fontdata;
 
 
-	//grassとwallのtexture
-	std::unique_ptr<CTexture> m_grassTexture = nullptr;
-	std::unique_ptr<CTexture> m_wallTexture = nullptr;
-	std::unique_ptr<CTexture> m_blockTexture = nullptr;
+	// 脱出に関連する変数を追加：
+	bool m_isEscapeActive = false;
+	int m_escapeGridX = -1;
+	int m_escapeGridZ = -1;
+	std::unique_ptr<CSprite> m_escapeMarkerSprite; // 脱出地点の浮遊UI
+	std::unique_ptr<CSprite> m_winTextSprite;      // 頭上の「WIN」UI
 
 	CShader* m_tileShader = nullptr;
 
@@ -185,12 +183,21 @@ private:
 	float m_gameOverTimer = 0.0f;
 	// 敗北待ち時間（秒）：ダメージ表示やHPゲージの減少、プレイヤーの反応時間を考慮
 	const float GAMEOVER_WAIT_DURATION = 1.0f;
+	// デバッグ用：脱出ガイドの表示切替フラグ
+	bool m_debugShowEscape = false;
+
+	// uiアニメーションタイマー
+	float m_uiAnimTimer = 0.0f;
 
 	private:
 		void TurnChangeCheck();
 		// ====== カメラ境界の再計算メソッド ======
 		void RecalculateCameraBounds();
-
+		// 脱出ガイド関連の描画メソッド
+		void DrawEscapeCube();
+		void DrawEscapeMarker();
+		// 勝利ジャンプ関連の描画メソッド
+		void DrawWinText();
 
 };
 

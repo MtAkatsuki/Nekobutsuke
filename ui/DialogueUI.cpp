@@ -8,16 +8,26 @@ void DialogueUI::Init(GameContext* context)
 {
     //context初期化
     m_context = context;
-	//「吹き出し」スパライトをロード
-	m_dialogueSprite = std::make_unique<CSprite>(370 , 112, "assets/texture/ui/ui_dialogue_help.png");
+	//スパライト初期化
+    m_dialogueHelpSprite = std::make_unique<CSprite>(370, 112, "assets/texture/ui/ui_dialogue_help.png");
+    m_dialogueEscapeSprite = std::make_unique<CSprite>(517, 156, "assets/texture/ui/ui_dialogue_escape.png");
     //初期は見えないように
     m_isVisible = false;
 }
 
-void DialogueUI::ShowDialogue(const Vector3& targetWorldPos, float duration)
+void DialogueUI::ShowDialogue(const Vector3& targetWorldPos, DialogueType type, float duration)
 {
     m_targetPos = targetWorldPos;//外部のUnitの位置
     m_targetPos.y += 1.7f; // 頭の上に表示
+
+    // タイプに応じて対応する画像を選択
+    if (type == DialogueType::Escape) {
+        m_currentSprite = m_dialogueEscapeSprite.get();
+    }
+    else {
+        m_currentSprite = m_dialogueHelpSprite.get();
+    }
+
     m_timer = duration;//timerを設定
     m_isVisible = true;//可視化
 }
@@ -25,22 +35,21 @@ void DialogueUI::ShowDialogue(const Vector3& targetWorldPos, float duration)
 void DialogueUI::Update(uint64_t dt)
 {   //Updateの前提検査
     if (!m_isVisible) return;
-    //ミリ秒を秒に
-    float deltaSeconds = static_cast<float>(dt) / 1000.0f;
-    //updateごとに表示残る時間を消す
-    m_timer -= deltaSeconds;
-    //表示時間が０以下になたら、「吹き出し」を表示しないのフラグ設置
-    //次のUpdateの時、前提検査によって、Update実行しない
-    if (m_timer <= 0.0f)
-    {
-        m_isVisible = false;
+    // タイマーが負数の場合は無限表示とし、自動で時間を減らさない
+    if (m_timer > 0.0f) {
+        float deltaSeconds = static_cast<float>(dt) / 1000.0f;
+        m_timer -= deltaSeconds;
+        if (m_timer <= 0.0f)
+        {
+            m_isVisible = false;
+        }
     }
 }
 
 void DialogueUI::Draw()
 {
     //表示のフラグ　TRUE と　スパライトあり　と　Contextあり
-    if (!m_isVisible || !m_dialogueSprite || !m_context) return;
+    if (!m_isVisible || !m_currentSprite || !m_context) return;
     //Contextからカメラ所得、保存
     //３Ｄ空間のUnit位置で2Ｄのスパライト表示するため
     Camera* cam = m_context->GetCamera();
@@ -63,8 +72,13 @@ void DialogueUI::Draw()
     Renderer::SetBlendState(BS_ALPHABLEND);
 
     // スクリーン正式描画
-    m_dialogueSprite->Draw(Vector3(0.8f, 0.8f, 0.8f), Vector3(0, 0, 0), Vector3(screenPos.x, screenPos.y, 0));
+    m_currentSprite->Draw(Vector3(0.8f, 0.8f, 0.8f), Vector3(0, 0, 0), Vector3(screenPos.x, screenPos.y, 0));
 
     Renderer::SetBlendState(BS_NONE);
     Renderer::SetDepthEnable(true);
+}
+
+void DialogueUI::HideDialogue()
+{
+    m_isVisible = false;
 }

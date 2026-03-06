@@ -18,38 +18,52 @@ public:
             m_numberSprites.push_back(std::move(sprite));
         }
         m_currentTurn = 5;
+
+        m_escapePromptSprite = std::make_unique<CSprite>(628, 269, "assets/texture/ui/escape_prompt.png");
     }
 
     void SetTurn(int turn) {
 		// 範囲は１～５に制限
-        if (turn < 1) turn = 1;
+        if (turn < 0) turn = 0;
         if (turn > 5) turn = 5;
         m_currentTurn = turn;
     }
 
     void Draw() {
 		// インデックス０がターン１、インデックス４がターン５に対応
+		// ターン数が０の場合は脱出提示画像を表示する
 		//vectorを使っているので、インデックス調整が必要
-        int index = m_currentTurn - 1;
-        if (index >= 0 && index < m_numberSprites.size()) {
+		Vector3 pos(200.0f, 50.0f, 0.0f);
+		Vector3 scale(0.8f, 0.8f, 0.8f);
 
-            // スクリーンの左上に描画
-            Vector3 pos(200.0f, 50.0f, 0.0f);
-            Vector3 scale(0.8f, 0.8f, 0.8f);
-
-            MATERIAL mtrl;
-            mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
-            mtrl.TextureEnable = TRUE; 
-            m_numberSprites[index]->ModifyMtrl(mtrl);
-
-			// indexに対応するスプライトを描画
-            m_numberSprites[index]->Draw(scale, Vector3(0, 0, 0), pos);
-        }
+		if (m_currentTurn <= 0) {
+			// ターン数が0の場合、脱出提示画像を表示する
+			if (m_escapePromptSprite) {
+				MATERIAL mtrl;
+				mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+				mtrl.TextureEnable = TRUE;
+				m_escapePromptSprite->ModifyMtrl(mtrl);
+				m_escapePromptSprite->Draw(scale, Vector3(0, 0, 0), pos);
+			}
+		}
+		else {
+			// 通常の数字表示
+			int index = m_currentTurn - 1;
+			if (index >= 0 && index < m_numberSprites.size()) {
+				MATERIAL mtrl;
+				mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+				mtrl.TextureEnable = TRUE;
+				m_numberSprites[index]->ModifyMtrl(mtrl);
+				m_numberSprites[index]->Draw(scale, Vector3(0, 0, 0), pos);
+			}
+		}
     }
 
 private:
 	// ターンカウンター用のスプライト配列
     std::vector<std::unique_ptr<CSprite>> m_numberSprites;
+
+    std::unique_ptr<CSprite> m_escapePromptSprite;
 	// 現在のターン数
     int m_currentTurn = 5;
 };

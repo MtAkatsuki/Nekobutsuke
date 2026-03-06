@@ -57,22 +57,40 @@ void Ally::TakeDamage(int damage, Unit* attacker) {
 void Ally::Update(uint64_t deltatime)
 {
     float dt = static_cast<float>(deltatime) / 1000.0f;
-    UpdateFlipAnimation(dt);
-	// フリップ中は他のアニメーションを更新しない
-    if (m_isFlipping)
-    {
-        UpdateWorldMatrix();
-        return;
+
+	// 脱出中は徐々に透明になる
+    if (m_escapeState == EscapeState::Fading && m_escapeAlpha > 0.0f) {
+        m_escapeAlpha -= dt * 1.0f;
+        if (m_escapeAlpha <= 0.0f) {
+            m_escapeAlpha = 0.0f;
+            m_escapeState = EscapeState::Done; // 完全に消失
+
+            // 占有していたタイルを解放
+            if (m_context && m_context->GetMapManager()) {
+                Tile* t = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+                if (t && t->occupant == this) {
+                    t->occupant = nullptr;
+                }
+            }
+            // 吹き出しUIを閉じる
+            if (m_context && m_context->GetDialogueUI()) {
+                m_context->GetDialogueUI()->HideDialogue();
+            }
+        }
     }
 
-    if (m_isDigging) {
-        UpdateDiggingAnimation(dt);
-    }
+    UpdateFlipAnimation(dt);
+	// フリップ中は他のアニメーションを更新しない
+    if (m_isFlipping){UpdateWorldMatrix();return;}
+
+    if (m_isDigging) {UpdateDiggingAnimation(dt);}
     UpdateWorldMatrix();
 }
 
 void Ally::OnDraw(uint64_t deltatime)
-{   //Allyの描画関数
+{   
+	if (m_escapeAlpha <= 0.0f) return; //完全に透明なら描画しない
+    //Allyの描画関数
     if (m_shader) m_shader->SetGPU();
 
         Renderer::SetPixelArtMode(true);
@@ -80,7 +98,57 @@ void Ally::OnDraw(uint64_t deltatime)
         Renderer::SetDepthEnable(true);
 
         Renderer::SetWorldMatrix(&m_WorldMatrix);
-        DrawModel();
+        // マテリアルのAlpha値を動的に変更
+        if (m_isEscaping) {
+            // --- Front マテリアルの取得と変更 ---
+            CMaterial* frontMtrl = nullptr;
+            MATERIAL oldFront;
+            if (m_frontRenderer && m_frontRenderer->GetMaterial(0)) {
+                frontMtrl = m_frontRenderer->GetMaterial(0);
+                oldFront = frontMtrl->GetData();
+                MATERIAL alphaMat = oldFront;
+                alphaMat.Diffuse = Color(1.0f, 1.0f, 1.0f, m_escapeAlpha); // 動的なAlpha値
+                frontMtrl->SetMaterial(alphaMat);
+            }
+
+            // --- Back マテリアルの取得と変更 ---
+            CMaterial* backMtrl = nullptr;
+            MATERIAL oldBack;
+            if (m_backRenderer && m_backRenderer->GetMaterial(0)) {
+                backMtrl = m_backRenderer->GetMaterial(0);
+                oldBack = backMtrl->GetData();
+                MATERIAL alphaMat = oldBack;
+                alphaMat.Diffuse = Color(1.0f, 1.0f, 1.0f, m_escapeAlpha); // 動的なAlpha値
+                backMtrl->SetMaterial(alphaMat);
+            }
+
+            // 現在の向きに応じたモデルを描画
+            DrawModel();
+
+            // --- Front マテリアルの復元 ---
+            if (frontMtrl) {
+                MATERIAL restore = oldFront;
+                restore.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+                restore.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
+                restore.Emission = Color(0.1f, 0.1f, 0.1f, 1.0f);
+                restore.TextureEnable = TRUE;
+                frontMtrl->SetMaterial(restore);
+            }
+
+            // --- Back マテリアルの復元 ---
+            if (backMtrl) {
+                MATERIAL restore = oldBack;
+                restore.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+                restore.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
+                restore.Emission = Color(0.1f, 0.1f, 0.1f, 1.0f);
+                restore.TextureEnable = TRUE;
+                backMtrl->SetMaterial(restore);
+            }
+        }
+        else {
+            // 通常状態はそのまま描画
+            DrawModel();
+        }
 
         Renderer::SetBlendState(BS_NONE);
         Renderer::SetPixelArtMode(false);
@@ -148,10 +216,31 @@ void Ally::UpdateDiggingAnimation(float dt) {
         // 3回掘り終わり、かつモデルがほぼ中央に戻ったタイミングで停止
         m_isDigging = false;
         m_srt.rot.z = 0.0f; // 姿勢のリセット
-        std::cout << "[Ally] Digging Finished." << std::endl;
-
-        // 必要に応じて、ここでUI表示やリザルトへのコールバックを通知
+        // ---脱出モードでの採掘完了後、フェードアウト状態へ遷移 ---
+        if (m_escapeState == EscapeState::Digging) {
+            m_escapeState = EscapeState::Fading;
+        }
     }
 
     UpdateWorldMatrix();
+}
+// 仲間が脱出する際の処理。敵からの攻撃を防止し、占有タイルを解放する。
+void Ally::TriggerEscape() {
+    if (m_isEscaping) return;
+    m_isEscaping = true;
+    m_currentHP = 0; // 敵からの攻撃を防止する
+
+    // 採掘を強制開始
+    m_isDigging = true;
+    m_digTimer = 0.0f;
+    m_digCount = 0;
+    m_hasTriggeredEffect = false;
+    m_srt.rot.z = 0.0f;
+
+    m_escapeState = EscapeState::Digging;
+
+    // 脱出ダイアログを表示（-1.0fを渡して自動消失を無効化）
+    if (m_context && m_context->GetDialogueUI()) {
+        m_context->GetDialogueUI()->ShowDialogue(m_srt.pos, DialogueType::Escape, -1.0f);
+    }
 }

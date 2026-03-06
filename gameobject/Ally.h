@@ -19,7 +19,15 @@ public:
 
     virtual void StartTurn() override;
     void OnTurnChanged(TurnState state) override;
+	// 脱出関連のの関数
+    void TriggerEscape();
+	// 脱出アニメーションが完了したかどうかを判定する関数
+    bool IsEscapeDone() const { return m_escapeState == EscapeState::Done; }
 
+    // 仲間の脱出アニメーション（掘削中、またはフェードアウト中）の状態を判定
+    bool IsEscaping() const {
+        return m_escapeState == EscapeState::Digging || m_escapeState == EscapeState::Fading;
+    }
 private:
     CShader* m_shader = nullptr;
 
@@ -32,4 +40,15 @@ private:
     const int MAX_DIG_COUNT = 3;     // 最大採掘回数
     const float DIG_SPEED = 15.0f;   // 採掘アニメーションの速度
     bool m_hasTriggeredEffect = false; // 現在の振り動作でエフェクトを発生済みかどうかの判定用
+	// 脱出関連の変数
+    bool m_isEscaping = false;
+    float m_escapeAlpha = 1.0f;
+	// 脱出の状態管理用の列挙型
+    enum class EscapeState {
+        None,
+        Digging,
+        Fading,
+        Done
+    };
+    EscapeState m_escapeState = EscapeState::None;
 };

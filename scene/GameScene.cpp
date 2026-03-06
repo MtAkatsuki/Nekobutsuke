@@ -135,7 +135,15 @@ void GameScene::Init()
 			// 【フェーズ1】プレイヤーのターン開始。UIアニメーション再生中に、カメラをプレイヤーへ向けてスムーズに移動させる
 			if (m_player) {
 				m_camera->SetState(CameraState::Tracking);
-				m_camera->SetTargetLookAt(m_player->getSRT().pos);
+
+				// 脱出ターンかつ仲間の脱出が完了していない場合、カメラを仲間に強制注視させズームインする
+				if (m_isEscapeActive && m_ally && !m_ally->IsEscapeDone()) {
+					m_camera->SetTargetLookAt(m_ally->getSRT().pos);
+					m_camera->SetTargetRadius(17.0f); // 強制注視に合わせてカメラを16.0まで接近させる
+				}
+				else {
+					m_camera->SetTargetLookAt(m_player->getSRT().pos);
+				}
 			}
 		}
 		else if (state == TurnState::EnemyPhase) {
@@ -234,6 +242,35 @@ void GameScene::debugUICamera() {
 		RecalculateCameraBounds();
 	}
 
+	// === デバッグ用：勝利アニメーションと「WIN」テキストの強制発動 ===
+	ImGui::Text("Debug Actions");
+	if (ImGui::Button("Test Win Animation & Text", ImVec2(-1, 30))) {
+		if (m_player) {
+			// プレイヤーの「お祝い状態」を直接開始
+			m_player->StartCelebration();
+
+			// 演出のテスト用にカメラのズームインも合わせて確認
+
+			if (m_camera) {
+				m_camera->SetTargetRadius(17.0f);
+				m_camera->SetState(CameraState::Tracking);
+				m_camera->SetTargetLookAt(m_player->getSRT().pos);
+			}
+
+		}
+	}
+
+	// === デバッグ用：脱出出口と指示画像の強制発動 ===
+	ImGui::Text("Debug Escape");
+	if (ImGui::Button("Test Escape Model & Text", ImVec2(-1, 30))) {
+		m_debugShowEscape = !m_debugShowEscape;
+		if (m_debugShowEscape && m_ally) {
+			m_escapeGridX = m_ally->GetUnitGridX();
+			m_escapeGridZ = m_ally->GetUnitGridZ();
+		}
+	}
+
+
 	ImGui::Spacing();
 	// 4. 設定をローカルの INI ファイルに一括保存
 	if (ImGui::Button("Save Config to Local", ImVec2(-1, 30))) {
@@ -252,6 +289,9 @@ void GameScene::debugUICamera() {
 void GameScene::update(uint64_t deltatime)
 {	
 	float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
+
+	m_uiAnimTimer += deltaSeconds;
+
 	// === 最優先でカメラを更新 ===
 	// UI Cutin（カットイン）によって後続の更新がブロックされた場合でも、
 	// カメラがフェーズ1の移動を継続できるようにここで更新を行う
@@ -323,6 +363,25 @@ void GameScene::update(uint64_t deltatime)
 	if (m_gameUIManager) {
 		m_gameUIManager->Update(deltatime);
 	}
+
+	// --- プレイヤーが脱出地点に到達したかチェック ---
+	if (m_isEscapeActive && m_player && m_ally && m_ally->IsEscapeDone()) {
+		// プレイヤーが移動を終え（MENU_MAIN状態）、かつ座標が脱出地点と一致した時
+		if (m_player->GetState() == PlayerState::MENU_MAIN &&
+			m_player->GetUnitGridX() == m_escapeGridX &&
+			m_player->GetUnitGridZ() == m_escapeGridZ) {
+
+			// --- 演出強化：プレイヤーにカメラをズームイン ---
+			if (m_camera) {
+				m_camera->SetTargetRadius(16.0f);          // ズーム距離（半径）を16まで接近させる
+				m_camera->SetState(CameraState::Tracking); // カメラ追従（トラッキング）モードを強制オン
+				m_camera->SetTargetLookAt(m_player->getSRT().pos); // 注視点をプレイヤーの座標に設定
+			}
+
+			m_player->StartCelebration();
+		}
+	}
+
 	// ゲームオブジェクトの更新（アニメション、エフェクトなど）
 	for (const auto& obj : m_GameObjectList) {
 		obj->Update(deltatime);
@@ -341,7 +400,7 @@ void GameScene::update(uint64_t deltatime)
 					Vector3 allyPos = m_ally->getSRT().pos;
 
 					// 「吹き出し」を表示
-					m_dialogueUI->ShowDialogue(allyPos);
+					m_dialogueUI->ShowDialogue(allyPos, DialogueType::Help);
 				}
 
 				m_isAllyTalked = true;
@@ -399,6 +458,7 @@ void GameScene::draw(uint64_t deltatime) {
 	for (const auto& obj : m_GameObjectList) {
 		obj->DrawFloorUI(deltatime);
 	}
+
 	Renderer::SetBlendState(BS_NONE);
 	if (m_tileShader) m_tileShader->SetGPU(); // シェーダー状態を復元
 
@@ -434,6 +494,12 @@ void GameScene::draw(uint64_t deltatime) {
 	for (const auto& obj : m_GameObjectList) {
 		obj->DrawTransparent(deltatime);
 	}
+	// 仲間の脱出（採掘・フェードアウト）が完了した後のみ、空色のマスを描画
+	bool shouldDrawEscape = (m_isEscapeActive && m_ally && m_ally->IsEscapeDone()) || m_debugShowEscape;
+
+	if (shouldDrawEscape) {
+		DrawEscapeCube();
+	}
 	Renderer::SetBlendState(BS_NONE);
 
 	// === 6. 攻撃プレビューヒントレイヤー (Overlay) ===
@@ -462,6 +528,17 @@ void GameScene::draw(uint64_t deltatime) {
 		if (enemy && !enemy->IsDead()) enemy->DrawUI();
 	}
 	if (m_dialogueUI) m_dialogueUI->Draw();
+
+
+	// --- 脱出ガイドの浮遊アイコンを描画 ---
+	if (shouldDrawEscape && m_player->GetState() != PlayerState::ANIM_CELEBRATE) {
+		DrawEscapeMarker();
+	}
+
+	// --- 勝利ジャンプ時の「WIN」画像を描画 ---
+	if (m_player && m_player->GetState() == PlayerState::ANIM_CELEBRATE) {
+		DrawWinText();
+	}
 
 	// 8.2 高層 UI
 	if (m_gameUIManager) m_gameUIManager->Draw();
@@ -718,6 +795,31 @@ void GameScene::resourceLoader()
 		MeshManager::RegisterMesh<CStaticMesh>(pair.first, std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(pair.first, std::move(renderer));
 	}
+
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+
+		mesh->Load("assets/model/obj/floor_1x1x1.obj", "assets/model/obj/");
+
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		renderer->Init(*mesh);
+
+		if (auto* mat = renderer->GetMaterial(0)) {
+			MATERIAL m = mat->GetData();
+
+			m.Diffuse = Color(135.0f / 255.0f, 206.0f / 255.0f, 250.0f / 255.0f, 0.6f);
+			m.TextureEnable = FALSE; 
+			mat->SetMaterial(m);
+		}
+
+		// escape_cube_mesh
+		MeshManager::RegisterMesh<CStaticMesh>("escape_cube_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("escape_cube_mesh", std::move(renderer));
+	}
+
+
+	m_escapeMarkerSprite = std::make_unique<CSprite>(128, 128, "assets/texture/ui/escape_marker.png");
+	m_winTextSprite = std::make_unique<CSprite>(308, 205, "assets/texture/ui/win_text.png");
 }
 
 void GameScene::drawGridDebugText()
@@ -791,7 +893,13 @@ void GameScene::CheckGameStatus(float deltaSeconds)
 	if (m_isSceneChanging) return;
 	//まずは失敗条件をチェック
 	//もしプレーヤーか味方が死んだら、失敗にします
-	bool allyDead = (m_context->GetAlly() && m_context->GetAlly()->GetHP() <= 0);
+	// 仲間が死亡（ただし、脱出状態に入っている、または脱出完了している場合は死亡とみなさない）
+	bool allyDead = false;
+	if (m_context->GetAlly()) {
+		bool hpIsZero = (m_context->GetAlly()->GetHP() <= 0);
+		bool isSafe = (m_context->GetAlly()->IsEscaping() || m_context->GetAlly()->IsEscapeDone());
+		allyDead = (hpIsZero && !isSafe);
+	}
 	bool playerDead = (m_player && m_player->GetHP() <= 0);
 	bool isGameOverCondition = (allyDead || playerDead);
 
@@ -822,8 +930,8 @@ void GameScene::CheckGameStatus(float deltaSeconds)
 	// 条件A：敵全滅
 	bool isEnemyIsAllDead = m_context->GetEnemyManager()->EnemyIsAllDead();
 
-	// 条件B：ターン０になって、脱出成功
-	bool isSurvivalWin = (m_remainingTurns <= 0);
+	// 条件B：脱出成功条件：プレイヤーの「お祝いアニメーション」が終了した状態
+	bool isSurvivalWin = (m_player && m_player->IsCelebrationDone());
 
 	// AもしくはB達成したら、勝利になる
 	bool isLogicWin = isEnemyIsAllDead || isSurvivalWin;
@@ -910,6 +1018,22 @@ void GameScene::TurnChangeCheck()
 			{
 				//敵ターン終了時、全体ターン一つ減る
 				m_remainingTurns--;
+
+				// --- 脱出トリガーロジック ---
+				if (m_remainingTurns <= 0 && !m_isEscapeActive) {
+					m_remainingTurns = 0; // 0以下に固定
+					m_isEscapeActive = true;
+
+					if (m_ally) {
+						// 脱出地点を現在の味方（ネズミ）の座標に設定
+						m_escapeGridX = m_ally->GetUnitGridX();
+						m_escapeGridZ = m_ally->GetUnitGridZ();
+						m_ally->TriggerEscape();
+
+						// 仲間の吹き出しダイアログを表示（脱出のヒントなど）
+						m_dialogueUI->ShowDialogue(m_ally->getSRT().pos, DialogueType::Escape);
+					}
+				}
 				if (m_turnCounter) m_turnCounter->SetTurn(m_remainingTurns);
 
 				// 「助けて」の「吹き出し」実行済をレセット
@@ -946,3 +1070,84 @@ void GameScene::RecalculateCameraBounds()
 		);
 	}
 }
+
+void GameScene::DrawEscapeCube() {
+	CStaticMeshRenderer* escapeCube = MeshManager::getRenderer<CStaticMeshRenderer>("escape_cube_mesh");
+	if (escapeCube) {
+		Vector3 pos = m_context->GetMapManager()->GetWorldPosition(m_escapeGridX, m_escapeGridZ);
+		pos.y += 1.05f;
+		Matrix4x4 world = Matrix4x4::CreateTranslation(pos);
+		Renderer::SetWorldMatrix(&world);
+		escapeCube->Draw();
+	}
+}
+
+void GameScene::DrawEscapeMarker() {
+	if (!m_escapeMarkerSprite) return;
+	Vector3 worldPos = m_context->GetMapManager()->GetWorldPosition(m_escapeGridX, m_escapeGridZ);
+
+	// === 正弦波を利用して上下の浮遊感を計算 ===
+	float floatSpeed = 3.0f;       // 浮遊スピード（値が大きいほど速く上下する）
+	float floatAmplitude = 0.15f;  // 浮遊の振幅（値が大きいほど上下の範囲が広がる）
+	float bobbingOffset = sinf(m_uiAnimTimer * floatSpeed) * floatAmplitude;
+
+	worldPos.x += 0.8f;
+	worldPos.y += (0.7f + bobbingOffset);
+
+	Matrix4x4 view = m_camera->GetViewMatrix();
+	Matrix4x4 proj = m_camera->GetProjMatrix();
+	Vector2 screenPos = WorldToScreen(worldPos, view, proj, Application::GetWidth(), Application::GetHeight());
+
+	// 1. マテリアル設定：テクスチャを有効化し、色をリセット
+	MATERIAL mtrl;
+	mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+	mtrl.TextureEnable = TRUE;
+	m_escapeMarkerSprite->ModifyMtrl(mtrl);
+
+	// 2. レンダリングステート：深度テストを無効化（UIを最前面に）、アルファブレンドを有効化
+	Renderer::SetDepthEnable(false);
+	Renderer::SetBlendState(BS_ALPHABLEND);
+
+	// 3. 描画
+	m_escapeMarkerSprite->Draw(Vector3(1, 1, 1), Vector3(0, 0, 0), Vector3(screenPos.x - 64, screenPos.y - 64, 0));
+
+	// 4. ステートの復元（他の3D描画に影響を与えないようにする）
+	Renderer::SetBlendState(BS_NONE);
+	Renderer::SetDepthEnable(true);
+}
+
+void GameScene::DrawWinText() {
+	if (!m_winTextSprite || !m_player || !m_context || !m_context->GetMapManager()) return;
+
+	// 【修正の核心】：プレイヤーモデルのリアルタイムな（ジャンプ中の）座標ではなく、
+	// プレイヤーが位置するタイルの「基本地面座標」を取得する
+	int pX = m_player->GetUnitGridX();
+	int pZ = m_player->GetUnitGridZ();
+	Vector3 basePos = m_context->GetMapManager()->GetWorldPosition(pX, pZ);
+	basePos.x += 0.8f;
+	basePos.y += 1.1f;
+
+	Matrix4x4 view = m_camera->GetViewMatrix();
+	Matrix4x4 proj = m_camera->GetProjMatrix();
+	Vector2 screenPos = WorldToScreen(basePos, view, proj, Application::GetWidth(), Application::GetHeight());
+
+	// 1. マテリアル設定：テクスチャを有効化
+	MATERIAL mtrl;
+	mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+	mtrl.TextureEnable = TRUE;
+	m_winTextSprite->ModifyMtrl(mtrl);
+
+	// 2. レンダリングステート：深度テストを無効化（「WIN」を最前面に）、アルファブレンドを有効化
+	Renderer::SetUISamplerMode(true);
+	Renderer::SetDepthEnable(false);
+	Renderer::SetBlendState(BS_ALPHABLEND);
+
+	// 3. 描画（「WIN」画像をスクリーンの中心付近にオフセットして表示）
+	m_winTextSprite->Draw(Vector3(1, 1, 1), Vector3(0, 0, 0), Vector3(screenPos.x - 128, screenPos.y - 64, 0));
+
+	// 4. ステートの復元
+	Renderer::SetBlendState(BS_NONE);
+	Renderer::SetDepthEnable(true);
+	Renderer::SetUISamplerMode(false);
+}
+

@@ -93,6 +93,14 @@ void Player::Update(uint64_t dt) {
 
 	// UIアニメーションが終わり、プレイヤーのUpdateが再開された最初のフレームでメニューを開く
 	if (m_isWaitingTurnStart) {
+		Ally* ally = m_context->GetAlly();
+		// もし仲間が存在し、かつ脱出アニメーション（採掘やフェード）の最中であれば
+		if (ally && ally->IsEscaping()) {
+			// ターンする
+			// この間、プレイヤーの状態は WAITING のまま維持され、入力は受け付けず、
+			// カメラも仲間を注視し続ける
+			return;
+		}
 		m_isWaitingTurnStart = false;
 		SwitchToMenuMain();
 	}
@@ -171,6 +179,9 @@ void Player::Update(uint64_t dt) {
 			//攻撃アニメーション終了後、ターン終了
 			EndTurn(); 
 		}
+		break;
+	case PlayerState::ANIM_CELEBRATE:
+		UpdateCelebration(deltaSeconds);
 		break;
 	case PlayerState::WAITING:
 		// プレーヤーターン以外の待機状態
@@ -895,4 +906,41 @@ void Player::ExecuteAttack() {
 	m_state = PlayerState::ANIM_ATTACK;
 }
 
+// 勝利アニメーション開始
+void Player::StartCelebration() {
+	// 勝利アニメーションの初期化
+	m_state = PlayerState::ANIM_CELEBRATE;
+	m_jumpCount = 0;
+	m_jumpTimer = 0.0f;
+	m_isCelebrationDone = false;
+	m_context->GetUIManager()->CloseMenu(); // メニューを閉じる
+	SetFacing(Direction::South); // 勝利ポーズの向きに設定
+}
+// 勝利アニメーションの更新
+void Player::UpdateCelebration(float dt) {
+	// ジャンプの高さをサイン波で変化させるためのパラメータ
+	float jumpSpeed = 15.0f;
+	float jumpHeight = 0.5f;
+	// 前回のサイン値と今回のサイン値を比較して、ジャンプの上下動を実現
+	float previousSin = sinf(m_jumpTimer * jumpSpeed);
+	m_jumpTimer += dt;
+	float currentSin = sinf(m_jumpTimer * jumpSpeed);
 
+	// Y軸のジャンプオフセットを計算 (絶対値によりバウンドを実現)
+	//fabsfを使って、サイン波の上下動を正の値に変換し、ジャンプの高さを調整
+	float yOffset = fabsf(currentSin) * jumpHeight;
+
+	// 地面の基本高度を取得
+	Vector3 basePos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
+	m_srt.pos.y = basePos.y + yOffset;
+
+	// 着地の判定 (sin値が正から負に変わる瞬間を一回のジャンプ完了とみなす)
+	if (previousSin >= 0.0f && currentSin < 0.0f) {
+		m_jumpCount++;
+	}
+
+	if (m_jumpCount >= 6) {
+		m_srt.pos.y = basePos.y; // 確実に接地させる
+		m_isCelebrationDone = true;
+	}
+}
