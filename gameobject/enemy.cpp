@@ -291,6 +291,13 @@ void Enemy::OnDraw(uint64_t dt) {
 void Enemy::OnDrawFloorUI(uint64_t dt) {
 	// 既に死亡している場合、UIを一切描画しない
 	if (m_currentHP <= 0) return;
+
+	// --- 移動中かつ移動範囲データが存在する場合、薄い緑色で描画 ---
+	if (m_state == EnemyState::MOVING && m_context && m_context->GetMapManager() && !m_moveRangeTiles.empty()) {
+		// 0.15fのアルファ値で控えめにガイドを表示
+		m_context->GetMapManager()->DrawColoredTiles(m_moveRangeTiles, Color(0.0f, 1.0f, 0.0f, 0.2f));
+	}
+
 	// 敵がチャージ中の場合、ターゲットとなる床を赤くハイライトする
 	if (m_isCharging && m_context && m_context->GetMapManager()) {
 		Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
@@ -426,6 +433,10 @@ void Enemy::ExecuteAI()
 		{
 			path.resize(m_currentMovePoints);
 		}
+
+		// --- 移動ポイントを消費する前に、現在の移動可能範囲を取得 ---
+		m_moveRangeTiles = map->GetReachableTiles(this->m_gridX, this->m_gridZ, m_currentMovePoints);
+
 		m_currentMovePoints -= (int)path.size();
 		EnemyStartMoveTo(path);
 	}
@@ -577,6 +588,10 @@ void Enemy::onMoveFinished()
 {
 	std::cerr << "enemy move finished " << std::endl;
 	m_state = EnemyState::IDLE;
+
+	// --- 移動完了後などに範囲をクリアし、描画を停止 ---
+	m_moveRangeTiles.clear();
+
 	//移動終了後、最後のタイルに位置を更新
 	if (!m_currentPath.empty()) 
 	{

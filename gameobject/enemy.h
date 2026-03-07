@@ -79,7 +79,7 @@ private:
 
 	std::vector<Tile*> m_currentPath;
 	int m_pathIndex = 0;
-	float m_moveSpeed = 0.2f;
+	float m_moveSpeed = 0.1f;
 	Vector3 m_targetWorldPos;
 
 	float m_attackTimer = 0.0f; 
@@ -100,6 +100,9 @@ private:
 	const float GRAVITY = 50.0f;//重力加速度
 	//ペーパーアニメーション用
 	float lastScaleX = 1.0f;
+
+	// 敵の移動範囲を保持する変数
+	std::vector<Tile*> m_moveRangeTiles;
 
 protected:
 	virtual void OnDrawOverlay(uint64_t delta) override;

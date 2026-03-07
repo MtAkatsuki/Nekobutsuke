@@ -9,10 +9,11 @@ void EnemyActionUI::Init(GameContext* context) {
     m_context = context;
 
     // 数字 1-3 のテクスチャをロード
-    // 画像サイズは 40x40 程度を想定
     m_numSprites.push_back(std::make_unique<CSprite>(48, 48, "assets/texture/ui/ui_num_1.png"));
     m_numSprites.push_back(std::make_unique<CSprite>(48, 48, "assets/texture/ui/ui_num_2.png"));
     m_numSprites.push_back(std::make_unique<CSprite>(48, 48, "assets/texture/ui/ui_num_3.png"));
+    m_numSprites.push_back(std::make_unique<CSprite>(48, 48, "assets/texture/ui/ui_num_4.png"));
+
 
     // 初期状態の設定
     m_state = AnimState::Entrance;
@@ -74,9 +75,9 @@ void EnemyActionUI::Update(float dt) {
 
 void EnemyActionUI::Draw(const Vector3& worldPos, int order) {
     // 安全チェック：行動順が3位以内か、または無効なコンテキストの場合は描画しない
-    if (!m_context || order < 1 || order > 3) return;
+    if (!m_context || order < 1 || order > 4) return;
     if (order > (int)m_numSprites.size()) return;
-
+     
     Camera* camera = m_context->GetCamera();
     if (!camera) return;
 

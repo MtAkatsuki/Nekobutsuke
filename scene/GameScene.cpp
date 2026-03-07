@@ -131,7 +131,14 @@ void GameScene::Init()
 
 	m_context->GetTurnManager()->RegisterObserver([this](TurnState state) {
 		if (state == TurnState::PlayerPhase) {
+			// プレイヤーターンの開始時にUIを非表示にし、後続の中央ポップアップ演出のために画面をクリアにする
+			if (m_turnCounter) m_turnCounter->Hide();
+
 			m_turnCutin->PlayCutinAnimation("Player Phase");
+
+			// --- ターンカウントダウン演出のトリガーをセット ---
+			m_needsTurnCounterAnim = true;
+
 			// 【フェーズ1】プレイヤーのターン開始。UIアニメーション再生中に、カメラをプレイヤーへ向けてスムーズに移動させる
 			if (m_player) {
 				m_camera->SetState(CameraState::Tracking);
@@ -142,7 +149,10 @@ void GameScene::Init()
 					m_camera->SetTargetRadius(17.0f); // 強制注視に合わせてカメラを16.0まで接近させる
 				}
 				else {
-					m_camera->SetTargetLookAt(m_player->getSRT().pos);
+					//最初のターンの始まりは仲間を注視させるので、2ターン目以降はプレイヤーを注視させる
+					if (m_remainingTurns != 5) {
+						m_camera->SetTargetLookAt(m_player->getSRT().pos);
+					}
 				}
 			}
 		}
@@ -264,6 +274,7 @@ void GameScene::debugUICamera() {
 	ImGui::Text("Debug Escape");
 	if (ImGui::Button("Test Escape Model & Text", ImVec2(-1, 30))) {
 		m_debugShowEscape = !m_debugShowEscape;
+		m_turnCounter->SetTurn(0);
 		if (m_debugShowEscape && m_ally) {
 			m_escapeGridX = m_ally->GetUnitGridX();
 			m_escapeGridZ = m_ally->GetUnitGridZ();
@@ -349,6 +360,29 @@ void GameScene::update(uint64_t deltatime)
 		return;
 	}
 
+	// --- カットイン完了直後、TurnCounter のアニメーションを開始 ---
+	if (m_needsTurnCounterAnim) {
+		if (m_turnCounter) m_turnCounter->StartAnimation();
+		m_needsTurnCounterAnim = false; // フラグをリセット
+
+		// === 第1ターン目の場合、開幕のカメラ演出シーケンスを開始し、プレイヤーの入力をロックする ===
+		if (m_remainingTurns == 5 && m_introState == IntroState::Idle) {
+			m_introState = IntroState::TurnCounterFlying;
+
+			// イベントブロック（シナリオ進行用入力ロック）を有効化
+			if (m_gameUIManager) {
+				m_gameUIManager->SetEventBlock(true);
+			}
+		}
+	}
+
+	// --- TurnCounter のアニメーション状態を更新 ---
+	if (m_turnCounter) {
+		m_turnCounter->Update(deltatime);
+	}
+	// --- 開幕のカメラ演出シーケンスの状態を更新 ---
+	UpdateIntroSequence(deltaSeconds);
+
 	// === 4方向カメラ回転入力 (Q / E) ===
 	// ゲームが開始されており、かつリザルト演出中やシーン遷移中でないことを確認
 	if (m_isGameStarted && !m_isGameOverProcessing && !m_isSceneChanging) {
@@ -359,6 +393,13 @@ void GameScene::update(uint64_t deltatime)
 			if (m_camera) m_camera->RotateCameraForward();
 		}
 	}
+
+	// --- 核心的なインターセプト！カウントダウンがアニメーション中（飛行中など）は、
+	// 後のエンティティ更新をすべて阻止して演出に集中させる ---
+	if (m_turnCounter && m_turnCounter->IsAnimating()) {
+		return;
+	}
+
 	// UIの更新
 	if (m_gameUIManager) {
 		m_gameUIManager->Update(deltatime);
@@ -1151,3 +1192,76 @@ void GameScene::DrawWinText() {
 	Renderer::SetUISamplerMode(false);
 }
 
+void GameScene::UpdateIntroSequence(float deltaSeconds) {
+	// ステートが未アクティブまたは完了済みの場合は、ロジックを実行せずにリターン
+	if (m_introState == IntroState::Idle || m_introState == IntroState::Finished) {
+		return;
+	}
+
+	if (m_introState == IntroState::TurnCounterFlying) {
+		// カウントダウン演出が終了して固定されるのを待機
+		if (m_turnCounter && !m_turnCounter->IsAnimating()) {
+			m_introState = IntroState::CameraToAlly;
+			if (m_ally) {
+				m_camera->SetState(CameraState::Tracking);
+				m_camera->SetTargetLookAt(m_ally->getSRT().pos);
+				m_camera->SetTargetRadius(17.0f); // カメラを接近させる
+			}
+		}
+	}
+	else if (m_introState == IntroState::CameraToAlly) {
+		// カメラが味方の位置に概ね到着したかチェック（許容誤差 0.2f）
+		if (m_camera) {
+			Vector3 diff = m_camera->GetLookat() - m_camera->GetTargetLookAt();
+			if (diff.Length() < 0.2f) {
+				m_introState = IntroState::WaitingAllyDialogue;
+			}
+		}
+	}
+	else if (m_introState == IntroState::WaitingAllyDialogue) {
+		// m_isAllyTalked が true であれば、既存の ShowDialogue ロジックがトリガー済み
+		// ダイアログの表示が終了（演出完了）したら、まずはBaseカメラ（全体俯瞰）へ戻す
+		if (m_isAllyTalked && m_dialogueUI && !m_dialogueUI->IsShowing()) {
+			m_introState = IntroState::CameraToBase;
+			m_introTimer = 0.0f; // 【追加】タイマーをリセット
+			if (m_camera) {
+				m_camera->SetState(CameraState::BaseView);
+				m_camera->SetTargetToCenter(); // マップ中心を注視
+				m_camera->SetTargetRadius(Camera::BASE_RADIUS); // 基本の高さ（ズームアウト）に戻る
+			}
+		}
+	}
+
+	// === Baseカメラへの移動と懸停（ホバリング） ===
+	else if (m_introState == IntroState::CameraToBase) {
+		if (m_camera) {
+			Vector3 diff = m_camera->GetLookat() - m_camera->GetTargetLookAt();
+			// カメラがマップ中心（Base）に概ね到着したらカウント開始
+			if (diff.Length() < 0.2f) {
+				m_introTimer += deltaSeconds; // 【時間を加算
+
+				// 0.5秒間懸停（待機）してからプレイヤーへ向かう
+				if (m_introTimer >= 0.5f) {
+					m_introTimer = 0.0f; // タイマーリセット
+					m_introState = IntroState::CameraToPlayer;
+					if (m_player) {
+						m_camera->SetState(CameraState::Tracking);
+						m_camera->SetTargetLookAt(m_player->getSRT().pos);
+						m_camera->SetTargetRadius(Camera::ZOOM_RADIUS); // プレイヤーにズームイン
+					}
+				}
+			}
+		}
+	}
+	else if (m_introState == IntroState::CameraToPlayer) {
+		// カメラがスムーズにプレイヤーの位置へ戻るのを待機
+		if (m_camera) {
+			Vector3 diff = m_camera->GetLookat() - m_camera->GetTargetLookAt();
+			if (diff.Length() < 0.2f) {
+				m_introState = IntroState::Finished;
+				// 運鏡演出が終了。プレイヤーの操作ロックを解除し、操作メニューを表示
+				if (m_gameUIManager) m_gameUIManager->SetEventBlock(false);
+			}
+		}
+	}
+}

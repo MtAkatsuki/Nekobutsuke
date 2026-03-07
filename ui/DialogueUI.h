@@ -21,6 +21,7 @@ public:
 	void ShowDialogue(const Vector3& targetWorldPos, DialogueType type, float duration = 3.0f);
 	//手動で「吹き出し」を消す機能（必要に応じて）
 	void HideDialogue();
+	bool IsShowing() const { return m_isVisible; }
 private:
 	GameContext* m_context = nullptr;
 	std::unique_ptr<CSprite> m_dialogueHelpSprite;// 助けを求める「吹き出し」のスプライト

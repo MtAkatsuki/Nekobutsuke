@@ -89,6 +89,7 @@ public:
 	Vector3 GetPosition() const { return m_position; }
 	Vector3 GetLookat() const { return m_lookat; }
 	Vector3 GetUP() const { return m_up; }
+	Vector3 GetTargetLookAt() const { return m_targetLookAt; }
 	float GetBoundMinX() const { return m_minX; }
 	float GetBoundMaxX() const { return m_maxX; }
 	float GetBoundMinZ() const { return m_minZ; }

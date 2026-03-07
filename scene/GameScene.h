@@ -24,9 +24,20 @@ class GameUIManager;
 class DamageNumberManager;
 class DialogueUI;
 
-enum class CameraDebugMode {
-	Orbit,
-	Free
+//enum class CameraDebugMode {
+//	Orbit,
+//	Free
+//};
+
+// --- ゲーム開始時やターン開始時の導入シネマティック状態 ---
+enum class IntroState {
+	Idle,                // 待機状態
+	TurnCounterFlying,   // ターンカウントUIのポップアップ・移動中
+	CameraToAlly,        // カメラが味方（ネズミ）へスムーズに移動
+	WaitingAllyDialogue, // カメラが到着し、味方のセリフ演出が完了するのを待機
+	CameraToBase,        // 【新規】カメラが一度全体俯瞰（BaseView）へ戻る
+	CameraToPlayer,      // カメラがプレイヤーへ戻る
+	Finished             // すべての導入演出が完了
 };
 
 /**
@@ -159,7 +170,7 @@ private:
 	bool m_enableDebugCamera = true;
 
 
-	CameraDebugMode m_cameraDebugMode = CameraDebugMode::Orbit;
+	//CameraDebugMode m_cameraDebugMode = CameraDebugMode::Orbit;
 	
 	// Scene変更中フラグ
 	bool m_isSceneChanging = false;	
@@ -188,6 +199,11 @@ private:
 
 	// uiアニメーションタイマー
 	float m_uiAnimTimer = 0.0f;
+	// ターンカウンターアニメーションの必要性フラグ
+	bool m_needsTurnCounterAnim = false;
+
+	IntroState m_introState = IntroState::Idle;
+	float m_introTimer = 0.0f; // 演出用の汎用タイマーを追加
 
 	private:
 		void TurnChangeCheck();
@@ -198,6 +214,9 @@ private:
 		void DrawEscapeMarker();
 		// 勝利ジャンプ関連の描画メソッド
 		void DrawWinText();
+
+		// 開幕のカメラ演出（オープニングシーケンス）の更新関数
+		void UpdateIntroSequence(float deltaSeconds);
 
 };
 

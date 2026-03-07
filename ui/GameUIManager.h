@@ -33,7 +33,10 @@ public:
 	void SetMoveOptionEnabled(bool enabled);
 	//メニュー選択確定のアニメーション開始
 	void TriggerSelectAnim(int index);//index小さいのは上から
-	bool IsAnimating()const { return m_animTimer > 0.0f; }
+	bool IsAnimating()const { return m_animTimer > 0.0f || m_isEventBlocked;; }
+
+	// イベントブロック（シナリオ進行用入力ロック）の設定関数
+	void SetEventBlock(bool block) { m_isEventBlocked = block; }
 	//UIリセット
 	void Clear();
 
@@ -99,4 +102,6 @@ private:
 	float m_arrowHoverY = 0.0f;
 
 	bool m_isAttackEnabled = true; // 攻撃メニューの有効状態
+
+	bool m_isEventBlocked = false;
 };
