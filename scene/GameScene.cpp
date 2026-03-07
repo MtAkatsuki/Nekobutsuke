@@ -1141,8 +1141,7 @@ void GameScene::DrawEscapeMarker() {
 	float floatAmplitude = 0.15f;  // 浮遊の振幅（値が大きいほど上下の範囲が広がる）
 	float bobbingOffset = sinf(m_uiAnimTimer * floatSpeed) * floatAmplitude;
 
-	worldPos.x += 0.8f;
-	worldPos.y += (0.7f + bobbingOffset);
+	worldPos.y += (1.5f + bobbingOffset);
 
 	Matrix4x4 view = m_camera->GetViewMatrix();
 	Matrix4x4 proj = m_camera->GetProjMatrix();
@@ -1159,7 +1158,7 @@ void GameScene::DrawEscapeMarker() {
 	Renderer::SetBlendState(BS_ALPHABLEND);
 
 	// 3. 描画
-	m_escapeMarkerSprite->Draw(Vector3(1, 1, 1), Vector3(0, 0, 0), Vector3(screenPos.x - 64, screenPos.y - 64, 0));
+	m_escapeMarkerSprite->Draw(Vector3(1, 1, 1), Vector3(0, 0, 0), Vector3(screenPos.x, screenPos.y, 0));
 
 	// 4. ステートの復元（他の3D描画に影響を与えないようにする）
 	Renderer::SetBlendState(BS_NONE);
@@ -1174,8 +1173,8 @@ void GameScene::DrawWinText() {
 	int pX = m_player->GetUnitGridX();
 	int pZ = m_player->GetUnitGridZ();
 	Vector3 basePos = m_context->GetMapManager()->GetWorldPosition(pX, pZ);
-	basePos.x += 0.8f;
-	basePos.y += 1.1f;
+	basePos.x += 0.0f;
+	basePos.y += 2.0f;
 
 	Matrix4x4 view = m_camera->GetViewMatrix();
 	Matrix4x4 proj = m_camera->GetProjMatrix();
@@ -1193,7 +1192,7 @@ void GameScene::DrawWinText() {
 	Renderer::SetBlendState(BS_ALPHABLEND);
 
 	// 3. 描画（「WIN」画像をスクリーンの中心付近にオフセットして表示）
-	m_winTextSprite->Draw(Vector3(1, 1, 1), Vector3(0, 0, 0), Vector3(screenPos.x - 128, screenPos.y - 64, 0));
+	m_winTextSprite->Draw(Vector3(1, 1, 1), Vector3(0, 0, 0), Vector3(screenPos.x, screenPos.y, 0));
 
 	// 4. ステートの復元
 	Renderer::SetBlendState(BS_NONE);
