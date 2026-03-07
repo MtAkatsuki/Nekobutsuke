@@ -18,7 +18,8 @@ enum class PlayerState {
 	ATTACK_DIR_SELECT,  // 攻撃方向選択中 (WASDで)
 	ANIM_ATTACK,        // 攻撃アニメション中
 	WAITING,
-	ANIM_CELEBRATE// 勝利祝賀アニメーション中
+	ANIM_CELEBRATE,// 勝利祝賀アニメーション中
+	KNOCKBACK	// ノックバック（押し出し）アニメーション中
 };
 
 enum class AttackType {
@@ -59,6 +60,7 @@ public:
 	// 勝利祝賀アニメーション関連
 	void StartCelebration();// 勝利祝賀アニメーション開始
 	bool IsCelebrationDone() const { return m_isCelebrationDone; }// 勝利祝賀アニメーションの完了フラグ
+	virtual void OnPushed(Direction pushDir) override;// プレイヤーのノックバック（押し出し）処理
 
 private:
 	//状態遷移関数

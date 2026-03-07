@@ -348,6 +348,104 @@ void Unit::SetFacing(Direction newDir)
 	m_hasSwappedMesh = false;
 }
 
+void Unit::OnPushed(Direction pushDir)
+{
+	if (m_currentHP <= 0) return;
+	//プッシュ向き入れた後、目標タイルを計算
+	DirOffset offset = DirOffset::From(pushDir);
+	int targetX = m_gridX + offset.x;
+	int targetZ = m_gridZ + offset.z;
+	//障害物の検査
+	MapManager* map = m_context->GetMapManager();
+	bool isBlocked = !(map->IsWalkable(targetX, targetZ));
+	Tile* targetTile = map->GetTile(targetX, targetZ);
+	//Unitの検査
+	Unit* obstacleUnit = nullptr;
+	if (targetTile && targetTile->occupant) {
+		isBlocked = true;
+		obstacleUnit = targetTile->occupant;
+	}
+
+	if (isBlocked) {
+		//ぶつかりの処理
+		Vector3 obstaclePos = map->GetWorldPosition(targetX, targetZ);
+		StartBumpAnimation(obstaclePos);
+
+		//ダメージの処理
+		TakeDamage(1, nullptr); // 押されたユニットもダメージを受ける
+		if (obstacleUnit) {
+			obstacleUnit->TakeDamage(1, this); // ぶつかられたユニットもダメージを受ける 
+		}
+	}
+	else {
+		//障害物はない時の移動処理
+		Tile* currentTile = map->GetTile(m_gridX, m_gridZ);
+		if (currentTile) currentTile->occupant = nullptr;
+
+		m_gridX = targetX;
+		m_gridZ = targetZ;
+		if (targetTile) targetTile->occupant = this;
+
+		Vector3 targetWorldPos = map->GetWorldPosition(targetX, targetZ);
+		StartSlideAnimation(targetWorldPos);
+	}
+}
+
+void Unit::DrawPushPreview(Direction pushDir) {
+	// 動的に矢印レンダラーを取得し、各子クラスでの重複した初期化を回避する
+	auto* pushArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_push_mesh");
+	if (!pushArrowRenderer || !m_context || !m_context->GetMapManager()) return;
+
+	MapManager* map = m_context->GetMapManager();
+	DirOffset offset = DirOffset::From(pushDir);
+
+	// ノックバック先の対象グリッドを計算
+	int targetX = m_gridX + offset.x;
+	int targetZ = m_gridZ + offset.z;
+
+	// 衝突判定（通行不可タイル、または既に占有者がいるか）
+	bool isBlocked = !map->IsWalkable(targetX, targetZ);
+	Tile* targetTile = map->GetTile(targetX, targetZ);
+	if (targetTile && targetTile->occupant) isBlocked = true;
+
+	// 描画位置の計算：現在のグリッドと対象グリッドの境界付近に設定
+	Vector3 myPos = map->GetWorldPosition(m_gridX, m_gridZ);
+	Vector3 targetPos = map->GetWorldPosition(targetX, targetZ);
+	Vector3 arrowPos = myPos + (targetPos - myPos) * 0.2f;
+	arrowPos.y += 0.08f; // 地面とのめり込み（Zファイティング）防止のためのオフセット
+
+	// 回転角の計算
+	float rotY = 0.0f;
+	if (offset.x == 1)       rotY = 0.0f;
+	else if (offset.x == -1) rotY = PI;
+	else if (offset.z == 1)  rotY = -PI / 2.0f;
+	else if (offset.z == -1) rotY = PI / 2.0f;
+
+	Matrix4x4 world = Matrix4x4::CreateScale(Vector3(1.0f, 1.0f, 1.5f))
+		* Matrix4x4::CreateRotationY(rotY)
+		* Matrix4x4::CreateTranslation(arrowPos);
+
+	// 衝突時は黄色（半透明）、非衝突時は灰色（半透明）
+	Color arrowColor = isBlocked ? Color(1.0f, 1.0f, 0.0f, 0.7f) : Color(0.6f, 0.6f, 0.6f, 0.9f);
+
+	Renderer::SetWorldMatrix(&world);
+	if (auto* mat = pushArrowRenderer->GetMaterial(0)) {
+		MATERIAL old = mat->GetData();
+		MATERIAL temp = old;
+		temp.Diffuse = arrowColor;
+		mat->SetMaterial(temp);
+		pushArrowRenderer->Draw();
+		mat->SetMaterial(old); // マテリアルを元の状態に復元
+	}
+
+	// 衝突判定がある場合、矢印の後にヒットエフェクトを重ねて描画
+	if (isBlocked && m_context->GetEffectManager()) {
+		Vector3 effectPos = targetPos;
+		effectPos.y += 0.8f;
+		m_context->GetEffectManager()->DrawStaticHitPreview(effectPos);
+	}
+}
+
 //子クラスでオーバーライドする
 void Unit::StartTurn(){}
 

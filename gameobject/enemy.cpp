@@ -110,7 +110,7 @@ void Enemy::Init(int sequenceNumber)
 	m_maxMovePoints = 4;
 	m_currentMovePoints = m_maxMovePoints;
 
-	m_maxHP = 6;
+	m_maxHP = 5;
 	m_currentHP = m_maxHP;
 
 	m_team = Team::Enemy;
@@ -219,6 +219,8 @@ void Enemy::Update(uint64_t dt) {
 
 				if (targetTile != nullptr && targetTile->occupant != nullptr && targetTile->occupant != this) 
 				{
+					// 敵が突き飛ばし（プッシュ攻撃）を発動。方向は敵の現在の向き（m_facing）とする
+					targetTile->occupant->OnPushed(this->m_facing);
 					std::cout << "[Enemy] SMASH!" << std::endl;
 					targetTile->occupant->TakeDamage(2, this);
 				}
@@ -338,6 +340,14 @@ void Enemy::OnDrawOverlay(uint64_t dt) {
 			mat->SetMaterial(temp);
 			m_attackArrowRenderer->Draw();
 			mat->SetMaterial(old);
+		}
+
+		// ターゲットのタイルに誰かが存在し、かつそれが自分自身でない場合、
+		// そのユニットがどこへ押し出されるかのプレビューを継続的に表示する
+		Tile* lockedTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
+		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
+			// 敵による押し出し方向は、その敵の現在の向き（m_facing）に基づく
+			lockedTile->occupant->DrawPushPreview(m_facing);
 		}
 	}
 }
@@ -700,72 +710,26 @@ void Enemy::ChargeAnimation() {
 	}
 }
 
-void Enemy::OnPushed(Direction pushDir)
-{
-	if (m_currentHP <= 0 || m_state == EnemyState::DEAD_FLYING) {
-		return;
-	}
-
-	//プッシュ向き入れた後、目標タイルを計算
-	DirOffset offset = DirOffset::From(pushDir);
-	int targetX = m_gridX + offset.x;
-	int targetZ = m_gridZ + offset.z;
-
-	//障害物の検査
-	MapManager* map = m_context->GetMapManager();
-	bool isBlocked = !(map->IsWalkable(targetX, targetZ));
-	Tile* targetTile = map->GetTile(targetX, targetZ);
-
-	//Unitの検査
-	Unit* obstacleUnit = nullptr;
-	if (targetTile && targetTile->occupant)
-	{
-		isBlocked = true;
-		obstacleUnit = targetTile->occupant;
-	}
+void Enemy::OnPushed(Direction pushDir) {
+	// すでに死亡している、または吹き飛び中の場合は処理をスキップ
+	if (m_currentHP <= 0 || m_state == EnemyState::DEAD_FLYING) return;
 
 	m_state = EnemyState::KNOCKBACK;
 
+	// 押し出される前のグリッド位置を記録
+	int oldX = m_gridX;
+	int oldZ = m_gridZ;
 
-	if (isBlocked)
-	{	//ぶつかりの処理
-		Vector3 obstaclePos = map->GetWorldPosition(targetX, targetZ);
-		StartBumpAnimation(obstaclePos);
+	// 基底クラスの処理を呼び出し、グリッド移動・衝突判定・アニメーション開始を実行
+	Unit::OnPushed(pushDir);
 
-		//ダメージの処理
-		std::cout << "[Enemy] Hit Wall/Unit! Ouch!" << std::endl;
-		this->TakeDamage(1, nullptr);
 
-		if (obstacleUnit) {
-			std::cout << "[Enemy] Crushed someone else too!" << std::endl;
-			obstacleUnit->TakeDamage(1, this); // ぶつかった向こうもダメージを受ける
-		}
-	}
-	else 
-	{
-		//障害物はない時の移動処理
-		Tile* currentTile = map->GetTile(m_gridX, m_gridZ);
-		if (currentTile)currentTile->occupant = nullptr;
-
-		m_gridX = targetX;
-		m_gridZ = targetZ;
-
-		if(targetTile)targetTile->occupant = this;
-
-		Vector3 targetWorldPos = map->GetWorldPosition(targetX, targetZ);
-		StartSlideAnimation(targetWorldPos);
-		//ロック目標の再計算
-		if (m_isCharging)
-		{
-			// 現在の向きからオフセットを取得
-			DirOffset faceOffset = DirOffset::From(m_facing);
-
-			// 新しい位置に基づいてロック目標を再計算
-			m_lockedGridX = m_gridX + faceOffset.x;
-			m_lockedGridZ = m_gridZ + faceOffset.z;
-
-			std::cout << "[Enemy] Pushed while charging! Relock Target -> "
-				<< m_lockedGridX << "," << m_lockedGridZ << std::endl;
+	// 実際に位置が変化した（壁に衝突しなかった）場合のみ、ロックオン座標をスライドさせる
+	if (m_gridX != oldX || m_gridZ != oldZ) {
+		if (m_isCharging) {
+			// 移動量（新位置 - 旧位置）を現在のロックオン座標に加算
+			m_lockedGridX += (m_gridX - oldX);
+			m_lockedGridZ += (m_gridZ - oldZ);
 		}
 	}
 }
@@ -826,59 +790,5 @@ void Enemy::DrawUI() {
 	if (m_actionUI) {
 		// 現在の座標と表示順（オーダー）を渡して描画
 		m_actionUI->Draw(m_srt.pos, m_displayOrder);
-	}
-}
-
-void Enemy::DrawPushPreview(Direction pushDir) {
-	if (!m_pushArrowRenderer || !m_context || !m_context->GetMapManager()) return;
-
-	MapManager* map = m_context->GetMapManager();
-	DirOffset offset = DirOffset::From(pushDir);
-
-	// ノックバック先の対象グリッドを計算
-	int targetX = m_gridX + offset.x;
-	int targetZ = m_gridZ + offset.z;
-
-	// 衝突判定（通行不可タイル、または既に占有者がいるか）
-	bool isBlocked = !map->IsWalkable(targetX, targetZ);
-	Tile* targetTile = map->GetTile(targetX, targetZ);
-	if (targetTile && targetTile->occupant) isBlocked = true;
-
-	// 描画位置の計算：現在のグリッドと対象グリッドの境界付近に設定
-	Vector3 myPos = map->GetWorldPosition(m_gridX, m_gridZ);
-	Vector3 targetPos = map->GetWorldPosition(targetX, targetZ);
-	Vector3 arrowPos = myPos + (targetPos - myPos) * 0.2f;
-	arrowPos.y += 0.08f; // 地面とのめり込み（Zファイティング）防止のためのオフセット
-
-	// 回転角の計算
-	float rotY = 0.0f;
-	if (offset.x == 1)      rotY = 0.0f;
-	else if (offset.x == -1) rotY = PI;
-	else if (offset.z == 1)  rotY = -PI / 2.0f;
-	else if (offset.z == -1) rotY = PI / 2.0f;
-
-	Matrix4x4 world = Matrix4x4::CreateScale(Vector3(1.0f, 1.0f, 1.5f))
-		* Matrix4x4::CreateRotationY(rotY)
-		* Matrix4x4::CreateTranslation(arrowPos);
-
-	// 衝突時は黄色（半透明）、非衝突時は灰色（半透明）
-	Color arrowColor = isBlocked ? Color(1.0f, 1.0f, 0.0f, 0.7f) : Color(0.6f, 0.6f, 0.6f, 0.9f);
-
-
-	Renderer::SetWorldMatrix(&world);
-	if (auto* mat = m_pushArrowRenderer->GetMaterial(0)) {
-		MATERIAL old = mat->GetData();
-		MATERIAL temp = old;
-		temp.Diffuse = arrowColor;
-		mat->SetMaterial(temp);
-		m_pushArrowRenderer->Draw();
-		mat->SetMaterial(old); // マテリアルを元の状態に復元
-	}
-
-	// 衝突判定がある場合、矢印の後にヒットエフェクトを重ねて描画（より高い描画優先度）
-	if (isBlocked && m_context->GetEffectManager()) {
-		Vector3 effectPos = targetPos;
-		effectPos.y += 0.8f; // ユニットの中心高さに合わせて調整
-		m_context->GetEffectManager()->DrawStaticHitPreview(effectPos);
 	}
 }

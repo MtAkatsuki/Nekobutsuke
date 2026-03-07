@@ -75,8 +75,8 @@ void Player::Init() {
 
 	m_maxMovePoints = 4;
 	m_currentMovePoints = m_maxMovePoints;
-	m_maxHP = 5;
-	m_currentHP = 5;
+	m_maxHP = 4;
+	m_currentHP = m_maxHP;
 
 	m_hasActioned = false;
 	m_isRotating = false;
@@ -178,6 +178,27 @@ void Player::Update(uint64_t dt) {
 		if (UpdateAttackAnimation(dt, nullptr)) {
 			//攻撃アニメーション終了後、ターン終了
 			EndTurn(); 
+		}
+		break;
+	case PlayerState::KNOCKBACK:
+		// スライディング移動（ノックバック）先がある場合
+		if (m_slideEndPos.LengthSquared() > 0.001f) {
+			if (UpdateSlideAnimation(dt)) { // アニメーション更新（ミリ秒dtを渡す）
+				m_slideEndPos = Vector3(0, 0, 0); // 到着したので目標座標をリセット
+
+				// 押し出された先のタイルにギミック（罠など）があるかチェック
+				Tile* t = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+				if (t && t->structure) t->structure->OnEnter(this);
+
+				// 操作可能な状態ならメインメニューへ、そうでなければ待機状態へ
+				if (canControl) SwitchToMenuMain();
+				else m_state = PlayerState::WAITING;
+			}
+		}
+		else {
+			// 壁に衝突して移動が発生しなかった場合
+			if (canControl) SwitchToMenuMain();
+			else m_state = PlayerState::WAITING;
 		}
 		break;
 	case PlayerState::ANIM_CELEBRATE:
@@ -435,12 +456,11 @@ void Player::DrawAttackWarningFloor() {
 void Player::DrawAttackWarningOverlay() {
 	DirOffset offset = DirOffset::From(m_attackDir);
 	Tile* target = m_context->GetMapManager()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
-	// === 敵のノックバックUIプレビューをトリガー ===
-	// 現在の攻撃タイプが Push であり、かつ対象マスに敵が立っている場合
-	if (target && m_selectedAttackType == AttackType::Push && target->occupant && target->occupant->GetTeam() == Team::Enemy) {
-		Enemy* enemy = dynamic_cast<Enemy*>(target->occupant);
-		// プレイヤーの現在の攻撃方向を敵に渡し、ノックバック指示矢印を描画する
-		if (enemy) enemy->DrawPushPreview(m_attackDir);
+	// === ノックバックUIプレビューをトリガー ===
+	// Push（押し出し）を選択中、かつターゲットのマスに自分以外のユニット（敵または味方）がいる場合、押し出しのプレビューを描画する
+	if (target && m_selectedAttackType == AttackType::Push && target->occupant && target->occupant != this) {
+		// ターゲットのユニットが持つプレビュー描画メソッドを直接呼び出す
+		target->occupant->DrawPushPreview(m_attackDir);
 	}
 }
 
@@ -530,16 +550,14 @@ Unit* Player::GetTargetInLine(int range)
 
 			if(targetUnit)
 			{
-				if (targetUnit->GetTeam() == Team::Enemy)
-				{
 					return targetUnit;
-				}
 			}
 
 			return nullptr;
 		}
-		return nullptr;
+
 	}
+	return nullptr;
 }
 
 
@@ -612,12 +630,16 @@ void Player::SwitchToMenuMain() {
 	for (int i = 0; i < 4; ++i) {
 		for (int r = 1; r <= ATTACK_RANGE; ++r) {
 			Tile* t = m_context->GetMapManager()->GetTile(m_gridX + dx[i] * r, m_gridZ + dz[i] * r);
-			if (t && t->occupant && t->occupant->GetTeam() == Team::Enemy) {
-				m_canAttack = true;
-				break; // 敵が1体でも見つかればこの方向のチェックは完了
+			// マスに誰かが存在し、かつそれが自分自身でない場合のみ、押し出し（Push）操作を許可する
+			if (t && t->occupant) {
+				Unit* targetUnit = dynamic_cast<Unit*>(t->occupant);
+				if (targetUnit && targetUnit != this) {
+					m_canAttack = true;
+					break; // 対象が見つかった時点で、この方向のチェックを完了
+				}
 			}
+			if (m_canAttack) break; // 敵が見つかっていれば全チェック終了
 		}
-		if (m_canAttack) break; // 敵が見つかっていれば全チェック終了
 	}
 
 	m_context->GetUIManager()->SetAttackOptionEnabled(m_canAttack);
@@ -898,8 +920,7 @@ void Player::ExecuteAttack() {
 		targetTile->occupant->TakeDamage(1, this);
 		// もし Push 攻撃なら、押す効果を適用
 		if (m_selectedAttackType == AttackType::Push) {
-			Enemy* enemy = dynamic_cast<Enemy*>(targetTile->occupant);
-			if (enemy) enemy->OnPushed(m_attackDir);
+			targetTile->occupant->OnPushed(m_attackDir);
 		}
 	}
 
@@ -943,4 +964,11 @@ void Player::UpdateCelebration(float dt) {
 		m_srt.pos.y = basePos.y; // 確実に接地させる
 		m_isCelebrationDone = true;
 	}
+}
+
+void Player::OnPushed(Direction pushDir) {
+	if (m_currentHP <= 0) return;
+	m_state = PlayerState::KNOCKBACK;
+	if (m_context && m_context->GetUIManager()) m_context->GetUIManager()->CloseMenu();
+	Unit::OnPushed(pushDir);// 基底クラスの処理を呼び出し、グリッド移動・衝突判定・アニメーション開始を実行
 }

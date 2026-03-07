@@ -28,6 +28,7 @@ public:
     bool IsEscaping() const {
         return m_escapeState == EscapeState::Digging || m_escapeState == EscapeState::Fading;
     }
+	virtual void OnPushed(Direction pushDir) override;// 仲間のノックバック（押し出し）処理
 private:
     CShader* m_shader = nullptr;
 
@@ -43,6 +44,7 @@ private:
 	// 脱出関連の変数
     bool m_isEscaping = false;
     float m_escapeAlpha = 1.0f;
+    bool m_isKnockedBack = false;
 	// 脱出の状態管理用の列挙型
     enum class EscapeState {
         None,

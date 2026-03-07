@@ -42,11 +42,10 @@ public:
 		m_isCharging = false; 
 		m_pendingCharge = false;
 	}
-	void OnPushed(Direction pushDir);//プッシュ受け
+	virtual void OnPushed(Direction pushDir) override;//敵のノックバック（押し出し）処理
 	virtual void TakeDamage(int damage, Unit* attacker)override;
 	bool IsDeadFlying() const { return m_state == EnemyState::DEAD_FLYING; }//死亡飛翔中か
-	// ノックバック（押し出し）のプレビューUIを描画
-	void DrawPushPreview(Direction pushDir);
+
 
 private:
 	

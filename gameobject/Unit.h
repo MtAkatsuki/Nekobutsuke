@@ -5,6 +5,7 @@
 #include"../system/Direction.h"
 #include "../enum class/TurnState.h"
 #include "../ui/HPBar.h"
+#include "../system/meshmanager.h"
 
 class MapManager;
 class TurnManager;
@@ -68,10 +69,19 @@ public:
 	// --- 反転（フリップ）アニメーション制御 ---
 	void UpdateFlipAnimation(float dt);
 
+	// 戻り値は押し出し（ノックバック）に成功したかを表す（壁や行き止まりに衝突した場合は false を返す）
+	virtual void OnPushed(Direction pushDir);
+
+	// ノックバック（押し出し）のプレビューUIを描画
+	void DrawPushPreview(Direction pushDir);
 protected:
 	virtual void OnTurnChanged(TurnState state);
 	virtual void StartTurn();
 	virtual void EndTurn();
+
+
+
+
 protected:
 
 	// フリップアニメーションの種類を定義

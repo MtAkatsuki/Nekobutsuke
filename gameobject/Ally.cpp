@@ -58,7 +58,7 @@ void Ally::Update(uint64_t deltatime)
 {
     float dt = static_cast<float>(deltatime) / 1000.0f;
 
-	// 脱出中は徐々に透明になる
+    // 脱出中は徐々に透明になる
     if (m_escapeState == EscapeState::Fading && m_escapeAlpha > 0.0f) {
         m_escapeAlpha -= dt * 1.0f;
         if (m_escapeAlpha <= 0.0f) {
@@ -80,11 +80,25 @@ void Ally::Update(uint64_t deltatime)
     }
 
     UpdateFlipAnimation(dt);
-	// フリップ中は他のアニメーションを更新しない
-    if (m_isFlipping){UpdateWorldMatrix();return;}
+    // フリップ中は他のアニメーションを更新しない
+    if (m_isFlipping) { UpdateWorldMatrix(); return; }
 
-    if (m_isDigging) {UpdateDiggingAnimation(dt);}
-    UpdateWorldMatrix();
+    if (m_isDigging) { UpdateDiggingAnimation(dt); }
+
+    if (m_isKnockedBack) {
+        // スライディング移動（ノックバック）先がある場合
+        if (m_slideEndPos.LengthSquared() > 0.001f) {
+            if (UpdateSlideAnimation(dt)) { // アニメーション更新（ミリ秒dtを渡す）
+                m_slideEndPos = Vector3(0, 0, 0); // 到着したので目標座標をリセット
+
+                // 押し出された先のタイルにギミック（罠など）があるかチェック
+                Tile* t = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+                if (t && t->structure) t->structure->OnEnter(this);
+
+            }
+        }
+        UpdateWorldMatrix();
+    }
 }
 
 void Ally::OnDraw(uint64_t deltatime)
@@ -243,4 +257,13 @@ void Ally::TriggerEscape() {
     if (m_context && m_context->GetDialogueUI()) {
         m_context->GetDialogueUI()->ShowDialogue(m_srt.pos, DialogueType::Escape, -1.0f);
     }
+}
+
+void Ally::OnPushed(Direction pushDir) {
+    // 脱出演出中は無敵（押し出し不可）。押そうとした側が衝突判定を受ける
+    if (IsEscaping()) return;
+
+    m_isKnockedBack = true;
+    // 基底クラスの処理でグリッド移動とアニメーションを実行
+    Unit::OnPushed(pushDir);
 }
