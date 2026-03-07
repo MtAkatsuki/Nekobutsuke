@@ -5,6 +5,7 @@
 #include "../enum class/TurnState.h"
 #include "../ui/DamageNumberManager.h"
 #include "../manager/EffectManager.h"
+#include "../gameobject/Trap.h"
 
 Unit::Unit(GameContext* context) :GameObject(context) {
 	if (m_context && m_context->GetTurnManager()) {
@@ -205,21 +206,18 @@ bool Unit::UpdateSlideAnimation(uint64_t dt)
 	}
 }
 
-void Unit::DrawUI()
-{	//描画前の検査
+void Unit::DrawUI() {   // 描画前のチェック
 	if (!m_hpBar) return;
 	if (m_currentHP <= 0) return;
 
-	// ブロックタイプ選択
-	HPBar::BarType type = HPBar::BarType::Green;
-	if (m_team == Team::Enemy) {
-		type = HPBar::BarType::Red;
-	}
+	// 統一された描画処理の呼び出し。色の区別はせず、m_previewDamage を渡す
+	m_hpBar->Draw(m_srt.pos, m_currentHP, m_maxHP, m_previewDamage);
 
-	m_hpBar->Draw(m_srt.pos, m_currentHP, m_maxHP, type);
+	// 【重要】UI描画後にプレビューダメージを即座にリセット。
+	// これにより、継続的に照準（エイム）されているフレーム間のみ点滅が表示される。
+	m_previewDamage = 0;
 }
 
-// gameobject/Unit.cpp
 
 void Unit::UpdateFlipAnimation(float dt) {
 	// アニメーション中でない場合は Y軸回転をリセット
@@ -372,9 +370,9 @@ void Unit::OnPushed(Direction pushDir)
 		StartBumpAnimation(obstaclePos);
 
 		//ダメージの処理
-		TakeDamage(1, nullptr); // 押されたユニットもダメージを受ける
+		TakeDamage(m_onPushDamage, nullptr); // 押されたユニットもダメージを受ける
 		if (obstacleUnit) {
-			obstacleUnit->TakeDamage(1, this); // ぶつかられたユニットもダメージを受ける 
+			obstacleUnit->TakeDamage(m_onPushDamage, this); // ぶつかられたユニットもダメージを受ける 
 		}
 	}
 	else {
@@ -446,6 +444,44 @@ void Unit::DrawPushPreview(Direction pushDir) {
 	}
 }
 
+int Unit::CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir) {
+	int expectedDamage = baseDamage;
+
+	if (isPush && m_context && m_context->GetMapManager()) {
+		DirOffset offset = DirOffset::From(pushDir);
+		int pushX = m_gridX + offset.x;
+		int pushZ = m_gridZ + offset.z;
+
+		bool isBlocked = !m_context->GetMapManager()->IsWalkable(pushX, pushZ);
+		Tile* nextTile = m_context->GetMapManager()->GetTile(pushX, pushZ);
+		if (nextTile && nextTile->occupant) isBlocked = true;
+
+		if (isBlocked) {
+			expectedDamage += m_onPushDamage; 
+		}
+
+		else if (nextTile && nextTile->structure) {
+			// 衝突せず、次のマスへスムーズに押し出された場合。足元のギミック（罠）を確認
+			if (nextTile->structure->GetType() == MapModelType::TRAP) {
+				Trap* trap = dynamic_cast<Trap*>(nextTile->structure);
+				// 未発動の罠である場合、確実にトラップダメージを受けると予測
+				if (trap && !trap->IsActivated()) {
+					// トラップの固定ダメージ
+					expectedDamage += trap->GetTrapDamage();
+				}
+			}
+		}
+	}
+	return expectedDamage;
+}
+void Unit::Update(uint64_t delta)
+{
+	float dt = static_cast<float>(delta) / 1000.0f;
+	//HPバーの更新
+	if (m_hpBar) {
+		m_hpBar->Update(dt);
+	}
+}
 //子クラスでオーバーライドする
 void Unit::StartTurn(){}
 

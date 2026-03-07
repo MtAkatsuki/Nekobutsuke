@@ -47,8 +47,6 @@ public:
 
 	int GetCurrentMovePoints() const { return m_currentMovePoints; }
 
-	void HandleInput();
-	void AttackInput();
 
 	PlayerState GetState() const { return m_state; }
 
@@ -61,6 +59,9 @@ public:
 	void StartCelebration();// 勝利祝賀アニメーション開始
 	bool IsCelebrationDone() const { return m_isCelebrationDone; }// 勝利祝賀アニメーションの完了フラグ
 	virtual void OnPushed(Direction pushDir) override;// プレイヤーのノックバック（押し出し）処理
+
+	//プレビューヒントのダメージ値を設定、必要に応じてオーバーライドして、予測ダメージの表示を制御
+	virtual void SetPreviewDamage(int dmg) override;
 
 private:
 	//状態遷移関数
@@ -76,23 +77,18 @@ private:
 	//描画補助関数
 	void DrawGhost();       // スタートポイントのプレーヤーのゴーストを描画
 	void DrawPathLine();    // 移動予想ルートを描画
-	//void DrawAttackWarning();// 攻撃予想範囲を描画
 
-	void PlayerStartMoveTo(int targetX, int targetZ);
 	virtual void StartTurn()override;
 	virtual void EndTurn()override;
-	void PullAttack(GameContext* context);
-	void PushAttack();
 	virtual void TakeDamage(int damage, Unit* attacker)override;
 
 	virtual void OnTurnChanged(TurnState state) override;
 	Unit* GetTargetInLine(int range);
 
-	void HandleMoveSelectionInput(float dt);//移動入力
-	void UpdatePathToPrivew();//スタート点からゴールまでのルート
-
 	bool UpdatePathMovement(float dt);
 
+	//専用の移動予測計算関数を追加、現在の入力に基づいて移動予想位置を更新し、予想ダメージを計算する
+	void CalculateMovePreviewDamage();
 
 
 private:
@@ -123,6 +119,7 @@ private:
 	//攻撃データ
 	AttackType m_selectedAttackType = AttackType::Normal;
 	Direction m_attackDir = Direction::North; // 攻撃方向
+	int m_playerDamage = 1; // プレイヤーの攻撃力
 
 	bool m_hasActioned = false;
 	bool m_isRotating = false;

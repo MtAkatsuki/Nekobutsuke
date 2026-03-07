@@ -35,6 +35,7 @@ public:
 	void SetGridPosition(int x, int z) { m_gridX = x; m_gridZ = z; }
 
 	virtual void TakeDamage(int damage, Unit* attacker);
+	virtual void Update(uint64_t delta) override;
 
 	bool IsValidMoveTarget(int targetX, int targetZ);
 
@@ -74,6 +75,13 @@ public:
 
 	// ノックバック（押し出し）のプレビューUIを描画
 	void DrawPushPreview(Direction pushDir);
+	// 攻撃プレビューヒントのダメージ値を設定
+	virtual void SetPreviewDamage(int dmg) { m_previewDamage = dmg; }
+	// 現在の向きを取得
+	Direction GetFacing() const { return m_facing; }
+
+	// 押し出し（ノックバック）を伴う攻撃を受けた際、最終的な被ダメージ量を計算する（壁衝突による追加ダメージを含む）
+	int CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir);
 protected:
 	virtual void OnTurnChanged(TurnState state);
 	virtual void StartTurn();
@@ -99,9 +107,10 @@ protected:
 
 	int m_maxHP = 5;
 	int m_currentHP = 5;
-
+	int m_previewDamage = 0;// 攻撃プレビューのダメージ値
 	int m_gridX;
 	int m_gridZ;
+	int m_onPushDamage = 2; // ノックバック（押し出し）によるダメージ量
 
 	// 目標回転角度
 	Vector3	m_targetRot = { 0.0f,0.0f,0.0f };

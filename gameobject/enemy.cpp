@@ -170,7 +170,7 @@ void Enemy::Init(int sequenceNumber)
 }
 
 void Enemy::Update(uint64_t dt) {
-
+	Unit::Update(dt);
 	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 
 	// 基底クラスの反転（フリップ）アニメーション処理を実行
@@ -202,6 +202,17 @@ void Enemy::Update(uint64_t dt) {
 		m_actionUI->Update(deltaSeconds);
 	}
 
+	// 敵のダメージ予測を計算し、ターゲットのユニットへ設定
+	if (m_isCharging && !m_isDead && m_state != EnemyState::DEAD_FLYING) {
+		Tile* lockedTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
+
+		// ロックオン（溜め攻撃）対象のマスにユニットが存在する場合
+		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
+			int finalDmg = lockedTile->occupant->CalculateExpectedDamage(m_enemyDamage, true, m_facing);
+			lockedTile->occupant->SetPreviewDamage(finalDmg);
+		}
+	}
+
 	switch (m_state)
 	{
 	case EnemyState::MOVING:
@@ -220,9 +231,14 @@ void Enemy::Update(uint64_t dt) {
 				if (targetTile != nullptr && targetTile->occupant != nullptr && targetTile->occupant != this) 
 				{
 					// 敵が突き飛ばし（プッシュ攻撃）を発動。方向は敵の現在の向き（m_facing）とする
-					targetTile->occupant->OnPushed(this->m_facing);
-					std::cout << "[Enemy] SMASH!" << std::endl;
-					targetTile->occupant->TakeDamage(2, this);
+					// 移動後に参照が失われないよう、事前に対象オブジェクトのポインターを保存
+					Unit* victim = targetTile->occupant;
+
+					// 1. 先にダメージ処理を実行（m_enemyDamage を実際のダメージ変数や数値に置き換え）
+					victim->TakeDamage(m_enemyDamage, this);
+
+					// 2. その後、押し出し（ノックバック）の物理効果を発生させる
+					victim->OnPushed(this->m_facing);
 				}
 				else {//miss
 
@@ -651,6 +667,9 @@ void Enemy::StartCharge(Unit* target) {
 		m_lockedGridZ = target->GetUnitGridZ();
 
 		std::cerr << "[Enemy] Locked Target Grid: " << m_lockedGridX << "," << m_lockedGridZ << std::endl;
+
+		// 前の段階で残っていた反転（フリップ）状態を強制的に中断し、SetFacing が確実に適用されるようにする
+		m_isFlipping = false;
 		//向きの再設定
 		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);

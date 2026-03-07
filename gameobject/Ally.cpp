@@ -56,6 +56,7 @@ void Ally::TakeDamage(int damage, Unit* attacker) {
 
 void Ally::Update(uint64_t deltatime)
 {
+    Unit::Update(deltatime);
     float dt = static_cast<float>(deltatime) / 1000.0f;
 
     // 脱出中は徐々に透明になる
@@ -83,22 +84,36 @@ void Ally::Update(uint64_t deltatime)
     // フリップ中は他のアニメーションを更新しない
     if (m_isFlipping) { UpdateWorldMatrix(); return; }
 
-    if (m_isDigging) { UpdateDiggingAnimation(dt); }
 
+    // 押し出された際のスライディングアニメーション更新を追加
     if (m_isKnockedBack) {
-        // スライディング移動（ノックバック）先がある場合
         if (m_slideEndPos.LengthSquared() > 0.001f) {
-            if (UpdateSlideAnimation(dt)) { // アニメーション更新（ミリ秒dtを渡す）
-                m_slideEndPos = Vector3(0, 0, 0); // 到着したので目標座標をリセット
+            // 注意：UpdateSlideAnimation は uint64_t 型の deltatime を受け取る
+            if (UpdateSlideAnimation(deltatime)) {
+                // スライディングアニメーション再生終了
+                m_isKnockedBack = false;
+                m_slideEndPos = Vector3(0, 0, 0);
 
                 // 押し出された先のタイルにギミック（罠など）があるかチェック
-                Tile* t = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
-                if (t && t->structure) t->structure->OnEnter(this);
-
+                Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+                if (currentTile && currentTile->structure) {
+                    std::cout << "[Ally] Knocked into an event/trap!" << std::endl;
+                    currentTile->structure->OnEnter(this);
+                }
             }
         }
+        else {
+            // 実際の移動が発生しなかった場合（例：即座に壁に衝突したなど）
+            m_isKnockedBack = false;
+        }
+
         UpdateWorldMatrix();
+        return; // 押し出し中は以降の処理をスキップし、穴掘りなどの通常アニメーションを一時停止
     }
+
+    if (m_isDigging) { UpdateDiggingAnimation(dt); }
+    UpdateWorldMatrix();
+  
 }
 
 void Ally::OnDraw(uint64_t deltatime)

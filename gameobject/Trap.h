@@ -19,9 +19,12 @@ public:
     //トラップが既に発動しているかどうかの状態を取得
     bool IsActivated() const { return m_isActivated; }
 
+	int GetTrapDamage() const { return m_trapDamage; }
+
 private:
 	bool m_isActivated = false; // 罠が発動したかどうかのフラグ
 
+	int m_trapDamage = 5; // トラップのダメージ量
     /*std::unique_ptr<CTexture> m_texture;*/
     int m_sizeX = 1;
     int m_sizeZ = 1;

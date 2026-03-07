@@ -46,6 +46,12 @@ public:
 	virtual void TakeDamage(int damage, Unit* attacker)override;
 	bool IsDeadFlying() const { return m_state == EnemyState::DEAD_FLYING; }//€–S”òãÄ’†‚©
 
+	// ƒvƒŒƒCƒ„[‚ÌˆÚ“®—\‘ª‚É“G‚ÌUŒ‚”ÍˆÍ‚ğ’ñ‹Ÿ‚·‚é‚½‚ß‚ÌŠÖ”
+	bool IsCharging() const { return m_isCharging; }
+	int GetLockedGridX() const { return m_lockedGridX; }
+	int GetLockedGridZ() const { return m_lockedGridZ; }
+
+	int GetEnemyDamage() const { return m_enemyDamage; }
 
 private:
 	
@@ -74,7 +80,7 @@ private:
 	EnemyState m_state = EnemyState::IDLE;
 
 	int m_MovePoints = 3;				// ˆÚ“®‰Â”\ƒ|ƒCƒ“ƒg
-
+	int m_enemyDamage = 2;				// “G‚ÌUŒ‚—Í
 
 	std::vector<Tile*> m_currentPath;
 	int m_pathIndex = 0;

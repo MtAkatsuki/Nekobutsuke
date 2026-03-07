@@ -5,8 +5,11 @@
 #include	"../manager/GameContext.h"
 #include	"../manager/MapManager.h"
 #include	"../ui/GameUIManager.h"
-#include	 "../system//IScene.h"
+#include	"../system//IScene.h"
 #include    "../system/CSprite.h"
+#include	"../manager/EnemyManager.h"
+#include	"../gameobject/enemy.h"
+#include	"../gameobject/Trap.h"
 #include	<cmath>
 #include	<iostream>
 
@@ -87,6 +90,7 @@ void Player::Init() {
 }
 
 void Player::Update(uint64_t dt) {
+	Unit::Update(dt);
 	//ミリ秒を秒に
 	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 	if (m_context->GetUIManager()->IsAnimating()) {return;}
@@ -143,6 +147,8 @@ void Player::Update(uint64_t dt) {
 		// プレビュー位置の更新
 		m_srt.pos = m_context->GetMapManager()->GetWorldPosition(m_previewGridX, m_previewGridZ);
 		UpdateWorldMatrix();
+		// 移動予想位置に基づいて、プレイヤーの受けダメージ予測を計算
+		CalculateMovePreviewDamage();
 		break;
 	case PlayerState::ANIM_MOVE:
 
@@ -173,6 +179,18 @@ void Player::Update(uint64_t dt) {
 	case PlayerState::ATTACK_DIR_SELECT:
 		HandleAttackDirInput(deltaSeconds);
 		m_srt.pos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
+		// プレイヤーのダメージ予測を計算し、ターゲットのユニットへ設定
+		{
+			DirOffset offset = DirOffset::From(m_attackDir);
+			Tile* targetTile = m_context->GetMapManager()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
+
+			// ターゲットのマスにユニットが存在する場合
+			if (targetTile && targetTile->occupant && targetTile->occupant != this) {
+				bool isPush = (m_selectedAttackType == AttackType::Push);
+				int finalDmg = targetTile->occupant->CalculateExpectedDamage(m_playerDamage, isPush, m_attackDir);
+				targetTile->occupant->SetPreviewDamage(finalDmg);
+			}
+		}
 		break;
 	case PlayerState::ANIM_ATTACK:
 		if (UpdateAttackAnimation(dt, nullptr)) {
@@ -917,7 +935,7 @@ void Player::ExecuteAttack() {
 	// ダメージ処理
 	if (targetTile && targetTile->occupant && targetTile->occupant != this) {
 		// 敵にダメージを与える
-		targetTile->occupant->TakeDamage(1, this);
+		targetTile->occupant->TakeDamage(m_playerDamage, this);
 		// もし Push 攻撃なら、押す効果を適用
 		if (m_selectedAttackType == AttackType::Push) {
 			targetTile->occupant->OnPushed(m_attackDir);
@@ -971,4 +989,66 @@ void Player::OnPushed(Direction pushDir) {
 	m_state = PlayerState::KNOCKBACK;
 	if (m_context && m_context->GetUIManager()) m_context->GetUIManager()->CloseMenu();
 	Unit::OnPushed(pushDir);// 基底クラスの処理を呼び出し、グリッド移動・衝突判定・アニメーション開始を実行
+}
+
+void Player::SetPreviewDamage(int dmg) {
+	// 【核心的な遮蔽】：移動先を選択中のステータスであれば、外部（敵）からの元の座標に対するダメージ注入を無視する。
+	// ダメージ予測は、移動プレビュー座標（Preview座標）に対してプレイヤー自身が直接計算を行うため。
+	if (m_state == PlayerState::MOVE_SELECT) return;
+
+	Unit::SetPreviewDamage(dmg);
+}
+
+void Player::CalculateMovePreviewDamage() {
+	int expectedDamage = 0;
+	MapManager* map = m_context->GetMapManager();
+
+	// 1. 予測：未発動の罠を踏んでしまうか？
+	Tile* previewTile = map->GetTile(m_previewGridX, m_previewGridZ);
+	if (previewTile && previewTile->structure && previewTile->structure->GetType() == MapModelType::TRAP) {
+		Trap* trap = dynamic_cast<Trap*>(previewTile->structure);
+		if (trap && !trap->IsActivated()) {
+			expectedDamage += trap->GetTrapDamage(); // トラップの固定ダメージ
+		}
+	}
+
+	// 2. 予測：敵の攻撃ロックオン範囲に侵入してしまうか？
+	if (m_context->GetEnemyManager()) {
+		const auto& enemies = m_context->GetEnemyManager()->GetAllEnemies();
+		for (auto* enemy : enemies) {
+			// 敵が溜め攻撃中で、かつプレイヤーの移動予測先をロックオンしている場合
+			if (enemy->IsCharging() &&
+				enemy->GetLockedGridX() == m_previewGridX &&
+				enemy->GetLockedGridZ() == m_previewGridZ)
+			{
+				int enemyDmg = enemy->GetEnemyDamage(); // 敵の基本ダメージ
+
+				// 敵に押し出された後の連鎖衝突ダメージをシミュレート
+				DirOffset offset = DirOffset::From(enemy->GetFacing());
+				int pushX = m_previewGridX + offset.x;
+				int pushZ = m_previewGridZ + offset.z;
+
+				bool isBlocked = !map->IsWalkable(pushX, pushZ);
+				Tile* nextTile = map->GetTile(pushX, pushZ);
+
+				// 押し出される先に誰か（自分以外）がいる場合は衝突とみなす
+				if (nextTile && nextTile->occupant && nextTile->occupant != this) isBlocked = true;
+
+				if (isBlocked) {
+					enemyDmg += m_onPushDamage; // 壁衝突による追加ダメージ
+				}
+				else if (nextTile && nextTile->structure && nextTile->structure->GetType() == MapModelType::TRAP) {
+					Trap* pushTrap = dynamic_cast<Trap*>(nextTile->structure);
+					if (pushTrap && !pushTrap->IsActivated()) {
+						enemyDmg += pushTrap->GetTrapDamage(); // 敵に押し出されて罠にハマる連帯ダメージ！
+					}
+				}
+				// 直面する可能性のあるすべての敵のダメージを累積
+				expectedDamage += enemyDmg;
+			}
+		}
+	}
+
+	// インターセプトを回避し、基底クラスのメンバに直接代入
+	m_previewDamage = expectedDamage;
 }

@@ -15,6 +15,7 @@
 #include "../system//FadeTransition.h"
 #include "../manager/AudioManager.h"
 #include "../manager/EffectManager.h"
+#include "../ui/HPBar.h"
 #include <stdio.h> // for sprintf_s
 #include <iostream>
 
@@ -281,6 +282,14 @@ void GameScene::debugUICamera() {
 		}
 	}
 
+	ImGui::Spacing();
+	ImGui::Text("HP Bar Tuning (Real-Time)");
+	ImGui::Separator();
+
+
+	ImGui::SliderFloat("HP Y Offset", &HPBar::s_hpBarOffsetY, 0.0f, 4.0f, "%.2f");
+	ImGui::SliderFloat("HP Heart Size", &HPBar::s_hpBarTexSize, 10.0f, 60.0f, "%.1f");
+	ImGui::SliderFloat("HP Heart Gap", &HPBar::s_hpBarGap, 0.0f, 15.0f, "%.1f");
 
 	ImGui::Spacing();
 	// 4. 設定をローカルの INI ファイルに一括保存

@@ -17,30 +17,27 @@ public:
     ~HPBar() {};
 
     void Init(GameContext* context);
-
+    void Update(float dt);
     // 描画
-	// worldPos: ユニット足元のワールド座標
-    void Draw(const Vector3& worldPos, int currentHP, int maxHP, BarType type);
-
+    // previewDamage: ダメージのプレビュー量（右から左へ点滅させるダメージ予定分）
+    void Draw(const Vector3& worldPos, int currentHP, int maxHP, int previewDamage = 0);
+public:
+    // HPバーの位置調整用オフセット（imgui）
+    static float s_hpBarOffsetY;
+    static float s_hpBarTexSize;
+    static float s_hpBarGap;
 private:
     GameContext* m_context = nullptr;
 
-    // アセット
-	std::unique_ptr<CSprite> m_bgSprite;    // ベース板
-	std::unique_ptr<CSprite> m_greenSprite; // 緑ブロック
-	std::unique_ptr<CSprite> m_redSprite;   // 赤ブロック
+    // アセット (色は区別せず、ハート型の枠と塗りつぶしの組み合わせに変更)
+    std::unique_ptr<CSprite> m_frameSprite; // 底枠（空のハート）
+    std::unique_ptr<CSprite> m_fullSprite;  // 赤いハート（中身）
 
- // ベース板表示サイズ
-    const float DISPLAY_BG_WIDTH = 102.0f;
-    const float DISPLAY_BG_HEIGHT = 15.0f;
+    const float GAP = 2.0f;     // ハート同士の間隔
+    float m_texWidth = 24.0f;   // ハートのテクスチャサイズ（幅）
+    float m_texHeight = 24.0f;  // ハートのテクスチャサイズ（高さ）
 
-    // パディング（余白）：HPバーがベース板の枠線を隠さないようにするため
-    const float PADDING_X = 4.0f;
-    const float PADDING_Y = 4.0f;
-    const float GAP = 1.0f; // ブロック間の隙間
-
-	// ブロック元のサイズ、スケール計算用
-	//maxHpに応じてスケール調整するため
-    float m_texBlockWidth = 0.0f;
-    float m_texBlockHeight = 0.0f;
+	// 点滅制御用タイマー
+    float m_blinkTimer = 0.0f;
+    bool m_blinkState = true;
 };

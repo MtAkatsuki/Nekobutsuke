@@ -36,8 +36,8 @@ void Trap::OnEnter(Unit* unit)
         // デバッグ出力：トラップ発動
         std::cout << "TRAP ACTIVATED! Unit took damage." << std::endl;
 
-        // ユニットに2ポイントのダメージを与える（攻撃者は無し）
-        unit->TakeDamage(6, nullptr);
+        // ユニットにダメージを与える（攻撃者は無し）
+        unit->TakeDamage(m_trapDamage, nullptr);
 
         // 発動済みフラグを立てる
         m_isActivated = true;
