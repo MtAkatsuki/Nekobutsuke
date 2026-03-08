@@ -58,6 +58,14 @@ void GameUIManager::Init(GameContext* context) {
     m_isGuideActive = false;
 
     m_pActiveArrow = std::make_unique<CSprite>(53, 66, "assets/texture/ui/ui_arrow_down.png");
+
+    // カメラ回転UIをロードし、初期位置（左下）を設定
+    m_cameraRotateScale = 0.5f;
+    m_cameraRotateSprite = std::make_unique<CSprite>(306, 270, "assets/texture/ui/ui_text_camera_rotate.png");
+
+    // 左下の座標を計算：画面の高さ - スケーリング後のUIの高さ - マージン
+    m_cameraRotatePos.x = 87.0f;
+    m_cameraRotatePos.y = (float)Application::GetHeight() - (270.0f * m_cameraRotateScale)+ 50.0f;
 }
 
 void GameUIManager::LoadSprite(std::vector<MenuOption>& list, const std::string& path, float w, float h) {
@@ -119,6 +127,15 @@ void GameUIManager::Draw() {
     if (m_isGuideActive) {
         DrawGuideUI();
     }
+	// カメラ回転UIの描画
+    if (m_canRotateCamera && m_cameraRotateSprite) {
+        m_cameraRotateSprite->Draw(
+            Vector3(m_cameraRotateScale, m_cameraRotateScale, 1.0f),
+            Vector3(0, 0, 0),
+            Vector3(m_cameraRotatePos.x, m_cameraRotatePos.y, 0.0f)
+        );
+    }
+
     if (m_currentType == MenuType::None) return;
     // プレイヤーとカメラを取得
     Player* player = m_context->GetPlayer();

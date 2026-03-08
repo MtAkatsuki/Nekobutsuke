@@ -49,8 +49,13 @@ public:
 
 	// ガイドUIの非表示
 	void HideGuideUI();
+	// カメラ回転UIの表示・非表示を制御するメソッド
+	void SetCameraRotateVisible(bool visible) { m_canRotateCamera = visible; }
 
-public:
+	// ImGuiデバッグパネル用の参照取得インターフェース
+	Vector2& GetCameraRotatePos() { return m_cameraRotatePos; }
+	float& GetCameraRotateScale() { return m_cameraRotateScale; }
+
 	void SetAttackOptionEnabled(bool enabled); // AttackMenuセッター
 
 private:
@@ -104,4 +109,10 @@ private:
 	bool m_isAttackEnabled = true; // 攻撃メニューの有効状態
 
 	bool m_isEventBlocked = false;
+
+	// === カメラ回転UI関連メンバ ===
+	std::unique_ptr<CSprite> m_cameraRotateSprite;
+	Vector2 m_cameraRotatePos{ 0.0f, 0.0f };
+	float m_cameraRotateScale = 0.5f;
+	bool m_canRotateCamera = false;
 };

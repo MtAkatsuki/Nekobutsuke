@@ -290,6 +290,15 @@ void GameScene::debugUICamera() {
 	ImGui::SliderFloat("HP Y Offset", &HPBar::s_hpBarOffsetY, 0.0f, 4.0f, "%.2f");
 	ImGui::SliderFloat("HP Heart Size", &HPBar::s_hpBarTexSize, 10.0f, 60.0f, "%.1f");
 	ImGui::SliderFloat("HP Heart Gap", &HPBar::s_hpBarGap, 0.0f, 15.0f, "%.1f");
+	// カメラ回転UIの位置とスケールの調整
+	if (m_gameUIManager) {
+		ImGui::Spacing();
+		ImGui::Text("Camera Rotate UI Tuning");
+		ImGui::Separator();
+		ImGui::SliderFloat("Rotate UI X", &m_gameUIManager->GetCameraRotatePos().x, 0.0f, 1920.0f, "%.1f");
+		ImGui::SliderFloat("Rotate UI Y", &m_gameUIManager->GetCameraRotatePos().y, 0.0f, 1080.0f, "%.1f");
+		ImGui::SliderFloat("Rotate UI Scale", &m_gameUIManager->GetCameraRotateScale(), 0.1f, 3.0f, "%.2f");
+	}
 
 	ImGui::Spacing();
 	// 4. 設定をローカルの INI ファイルに一括保存
@@ -394,7 +403,14 @@ void GameScene::update(uint64_t deltatime)
 
 	// === 4方向カメラ回転入力 (Q / E) ===
 	// ゲームが開始されており、かつリザルト演出中やシーン遷移中でないことを確認
-	if (m_isGameStarted && !m_isGameOverProcessing && !m_isSceneChanging) {
+	bool canRotate = (m_isGameStarted && !m_isGameOverProcessing && !m_isSceneChanging);
+
+	// UI側にも回転可能かどうかを通知して、回転UIの表示/非表示を切り替える
+	if (m_gameUIManager) {
+		m_gameUIManager->SetCameraRotateVisible(canRotate);
+	}
+
+	if (canRotate) {
 		if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_Q)) {
 			if (m_camera) m_camera->RotateCameraReverse();
 		}

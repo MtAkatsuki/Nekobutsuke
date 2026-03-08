@@ -18,7 +18,7 @@ void DialogueUI::Init(GameContext* context)
 void DialogueUI::ShowDialogue(const Vector3& targetWorldPos, DialogueType type, float duration)
 {
     m_targetPos = targetWorldPos;//外部のUnitの位置
-    m_targetPos.y += 1.7f; // 頭の上に表示
+    m_targetPos.y += 1.5f; // 頭の上に表示
 
     // タイプに応じて対応する画像を選択
     if (type == DialogueType::Escape) {
