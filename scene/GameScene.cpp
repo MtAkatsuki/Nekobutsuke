@@ -53,6 +53,15 @@ void GameScene::Init()
 		if (m_context->GetUIManager()) {
 			m_context->GetUIManager()->Clear();
 		}
+
+		// エフェクトとダメージ数字の強制クリア。前回のプレイ内容による視覚的な残存（残留物）を防止する
+		if (m_context->GetEffectManager()) {
+			m_context->GetEffectManager()->Clear();
+		}
+		if (m_context->GetDamageManager()) {
+			m_context->GetDamageManager()->ClearAll();
+		}
+
 		// 前ゲームの参照を遮断（野ポインタ/ダングリングポインタ防止）
 		m_context->SetPlayer(nullptr);
 		m_context->SetAlly(nullptr);
@@ -1190,7 +1199,7 @@ void GameScene::DrawWinText() {
 	int pZ = m_player->GetUnitGridZ();
 	Vector3 basePos = m_context->GetMapManager()->GetWorldPosition(pX, pZ);
 	basePos.x += 0.0f;
-	basePos.y += 2.0f;
+	basePos.y += 1.7f;
 
 	Matrix4x4 view = m_camera->GetViewMatrix();
 	Matrix4x4 proj = m_camera->GetProjMatrix();

@@ -205,17 +205,19 @@ void Player::Update(uint64_t dt) {
 				m_slideEndPos = Vector3(0, 0, 0); // 到着したので目標座標をリセット
 
 				// 押し出された先のタイルにギミック（罠など）があるかチェック
-				Tile* t = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
-				if (t && t->structure) t->structure->OnEnter(this);
+				if (m_currentHP > 0) {
+					Tile* t = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+					if (t && t->structure) t->structure->OnEnter(this);
+				}
 
 				// 操作可能な状態ならメインメニューへ、そうでなければ待機状態へ
-				if (canControl) SwitchToMenuMain();
+				if (canControl && m_currentHP > 0) SwitchToMenuMain();
 				else m_state = PlayerState::WAITING;
 			}
 		}
 		else {
 			// 壁に衝突して移動が発生しなかった場合
-			if (canControl) SwitchToMenuMain();
+			if (canControl && m_currentHP > 0) SwitchToMenuMain();
 			else m_state = PlayerState::WAITING;
 		}
 		break;
@@ -934,12 +936,15 @@ void Player::ExecuteAttack() {
 
 	// ダメージ処理
 	if (targetTile && targetTile->occupant && targetTile->occupant != this) {
-		// 敵にダメージを与える
-		targetTile->occupant->TakeDamage(m_playerDamage, this);
-		// もし Push 攻撃なら、押す効果を適用
+
+		Unit* victim = targetTile->occupant;
+		// 1. 先に移動および衝突判定を実行（この時点ではHPは減少せず、正常に KNOCKBACK 状態へ遷移）
 		if (m_selectedAttackType == AttackType::Push) {
-			targetTile->occupant->OnPushed(m_attackDir);
+			victim->OnPushed(m_attackDir);
 		}
+
+		// 2. 今回の攻撃による基本ダメージをリザルトとして適用
+		victim->TakeDamage(m_playerDamage, this);
 	}
 
 	m_state = PlayerState::ANIM_ATTACK;

@@ -234,11 +234,11 @@ void Enemy::Update(uint64_t dt) {
 					// 移動後に参照が失われないよう、事前に対象オブジェクトのポインターを保存
 					Unit* victim = targetTile->occupant;
 
-					// 1. 先にダメージ処理を実行（m_enemyDamage を実際のダメージ変数や数値に置き換え）
-					victim->TakeDamage(m_enemyDamage, this);
-
-					// 2. その後、押し出し（ノックバック）の物理効果を発生させる
+					// 1. 先に押し出し（ノックバック）の物理効果を発生させる
 					victim->OnPushed(this->m_facing);
+
+					// 2. その後、ダメージ処理を実行（m_enemyDamage を実際のダメージ変数や数値に置き換え）
+					victim->TakeDamage(m_enemyDamage, this);
 				}
 				else {//miss
 
@@ -267,17 +267,26 @@ void Enemy::Update(uint64_t dt) {
 			{
 				m_state = EnemyState::IDLE;
 				m_slideEndPos = Vector3(0, 0, 0);
-				//ノックバック終了後、タイルイベントの検査
-				Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
-				if (currentTile && currentTile->structure) {
-					std::cout << "[Enemy] Knockback finished. Checking tile event..." << std::endl;
-					currentTile->structure->OnEnter(this);
+
+				if (m_currentHP <= 0) {
+					// 死亡して吹き飛ぶ演出へ移行。罠のトリガーロジックは完全にスキップ！
+					Die();
+				}
+				else {
+					m_state = EnemyState::IDLE;
+					// 生存している場合のみ、タイルのイベント（罠など）を発生させる
+					Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+					if (currentTile && currentTile->structure) {
+						currentTile->structure->OnEnter(this);
+					}
 				}
 			}
 		}
 		else 
 		{
 			if (UpdateAttackAnimation(dt, nullptr)) {
+				// 壁に激突した後も生死判定を行い、HPが0なら死亡処理を実行する
+				if (m_currentHP <= 0) Die();
 				m_state = EnemyState::IDLE;
 			}
 		}
@@ -485,8 +494,24 @@ void Enemy::TakeDamage(int damage, Unit* attacker)
 	std::cout << "[Debug] Enemy::TakeDamage Called! Damage: " << damage
 		<< " CurrentHP: " << m_currentHP << std::endl;
 	Unit::TakeDamage(damage, attacker);
-	std::cout << "[Debug] HP After: " << m_currentHP << std::endl;
-	if(m_currentHP<=0&&m_state != EnemyState::DEAD_FLYING)
+	// 攻撃者の位置を記録し、死亡演出が遅延した場合でも正しい吹き飛び方向を計算可能にする
+	if (attacker) {
+		m_hitSourcePos = attacker->getSRT().pos;
+	}
+
+	if (m_currentHP <= 0 && m_state != EnemyState::DEAD_FLYING)
+	{
+		// 【核心】現在ノックバック中（KNOCKBACK）であれば、死亡演出を遅延させる
+		if (m_state == EnemyState::KNOCKBACK) {
+			return;
+		}
+		// それ以外の場合は、即座に死亡処理を実行
+		Die();
+	}
+
+}
+
+	void Enemy::Die() 
 	{
 		std::cout << "[Debug] Enemy died! Switching to DEAD_FLYING." << std::endl;
 		m_state = EnemyState::DEAD_FLYING;
@@ -505,34 +530,19 @@ void Enemy::TakeDamage(int damage, Unit* attacker)
 
 		Vector3 flyDir(0, 1, 0);
 		//死亡時の飛翔方向を計算(攻撃者の位置に基づく、反方向へ)
-		if (attacker) 
-		{	//位置を取得
-			Vector3 attackerPos = attacker->getSRT().pos;
-			Vector3 myPos = m_srt.pos;
-			//水平方向の差分ベクトル
-			Vector3 diff = myPos - attackerPos;
-			diff.y = 0.0f;
+		//位置を取得
+		Vector3 diff = m_srt.pos - m_hitSourcePos;
+		diff.y = 0.0f;
 
-			if (diff.LengthSquared() > 0.001f) {
-				diff.Normalize();
-			}
-			else {
-				diff = Vector3(0, 0, 1);
-			}
+		if (diff.LengthSquared() > 0.001f) diff.Normalize();
+		else diff = Vector3(0, 0, 1);
 
-			//x,zは水平方向の成分、yは上方向の成分
-			flyDir = Vector3(diff.x * 1.8f, 0.6f, diff.z * 1.8f);
-		}
-		//初速度設定
+		flyDir = Vector3(diff.x * 1.8f, 0.6f, diff.z * 1.8f);
+
 		float force = 20.0f;
 		m_deathVelocity = flyDir * force;
-
-		//回転軸設定(ランダム)
 		m_deathSpin = Vector3(death_spin_dist(gen), death_spin_dist(gen), death_spin_dist(gen));
 	}
-
-}
-
 
 
 void Enemy::EnemyStartMoveTo(std::vector<Tile*> path)

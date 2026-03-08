@@ -108,6 +108,8 @@ private:
 
 	// 敵の移動範囲を保持する変数
 	std::vector<Tile*> m_moveRangeTiles;
+	Vector3 m_hitSourcePos = Vector3(0, 0, 0); //攻撃の発生源座標、ノックバックの方向を計算するために使用
+	void Die();
 
 protected:
 	virtual void OnDrawOverlay(uint64_t delta) override;
