@@ -190,7 +190,11 @@ bool Unit::UpdateSlideAnimation(uint64_t dt)
 	if(m_slideTimer<TIME_SLIDE)
 	{
 		float t = m_slideTimer / TIME_SLIDE;
+		// イージング関数(EaseOutQuad)の適用
+		// t(0.0~1.0)を加工し、「最初は速く、停止直前はゆっくり」という減速の動きを作る
 		t = 1.0f - std::pow(1.0f - t, 2.0f);
+		// 線形補間(Lerp)による座標更新
+		// 計算した比率 t に基づいて、開始地点から終了地点までの現在座標を算出する
 		m_srt.pos = Vector3::Lerp(m_slideStartPos, m_slideEndPos, t);
 
 		UpdateWorldMatrix();
@@ -370,9 +374,11 @@ void Unit::OnPushed(Direction pushDir)
 		StartBumpAnimation(obstaclePos);
 
 		//ダメージの処理
-		TakeDamage(m_onPushDamage, nullptr); // 押されたユニットもダメージを受ける
+		// 押されたユニットもダメージを受ける
+		TakeDamage(m_onPushDamage, nullptr); 
 		if (obstacleUnit) {
-			obstacleUnit->TakeDamage(m_onPushDamage, this); // ぶつかられたユニットもダメージを受ける 
+			// ぶつかられたユニットもダメージを受ける 
+			obstacleUnit->TakeDamage(m_onPushDamage, this); 
 		}
 	}
 	else {

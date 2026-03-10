@@ -1024,7 +1024,8 @@ void GameScene::CheckGameStatus(float deltaSeconds)
 		//敵全滅そして全アニメション完了
 		if (isEnemyIsAllDead)
 		{
-			if (!m_context->GetEnemyManager()->EnemyIsEmpty())
+			if (m_context->GetEnemyManager()->IsAnyEnemyDying() ||
+				m_context->GetEnemyManager()->IsAnyEnemyAnimating())
 			{
 				return;
 			}

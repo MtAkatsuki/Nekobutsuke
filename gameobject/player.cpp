@@ -993,7 +993,8 @@ void Player::OnPushed(Direction pushDir) {
 	if (m_currentHP <= 0) return;
 	m_state = PlayerState::KNOCKBACK;
 	if (m_context && m_context->GetUIManager()) m_context->GetUIManager()->CloseMenu();
-	Unit::OnPushed(pushDir);// 基底クラスの処理を呼び出し、グリッド移動・衝突判定・アニメーション開始を実行
+	// 基底クラスの処理を呼び出し、グリッド移動・衝突判定・アニメーション開始を実行
+	Unit::OnPushed(pushDir);
 }
 
 void Player::SetPreviewDamage(int dmg) {

@@ -60,6 +60,10 @@ public:
 	//攻撃受けたあとの位置変化アニメーション
 	void StartSlideAnimation(const Vector3& targetPos);
 	bool UpdateSlideAnimation(uint64_t dt);
+	// 戻り値は押し出し（ノックバック）に成功したかを表す
+	// （壁や行き止まりに衝突した場合は false を返す）
+	virtual void OnPushed(Direction pushDir);
+
 	//HP Barの描画
 	virtual void DrawUI();
 
@@ -70,8 +74,7 @@ public:
 	// --- 反転（フリップ）アニメーション制御 ---
 	void UpdateFlipAnimation(float dt);
 
-	// 戻り値は押し出し（ノックバック）に成功したかを表す（壁や行き止まりに衝突した場合は false を返す）
-	virtual void OnPushed(Direction pushDir);
+
 
 	// ノックバック（押し出し）のプレビューUIを描画
 	void DrawPushPreview(Direction pushDir);

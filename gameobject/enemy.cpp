@@ -286,9 +286,14 @@ void Enemy::Update(uint64_t dt) {
 		{
 			if (UpdateAttackAnimation(dt, nullptr)) {
 				// 壁に激突した後も生死判定を行い、HPが0なら死亡処理を実行する
-				if (m_currentHP <= 0) Die();
-				m_state = EnemyState::IDLE;
+				if (m_currentHP <= 0) { 
+					Die(); 
+				}
+				else {
+					m_state = EnemyState::IDLE; // 生き残っている場合のみIDLEへ！
+				}
 			}
+			
 		}
 		break;
 	default:
