@@ -3,7 +3,6 @@
 #include <array>
 #include <memory>
 
-
 #include "../system/IScene.h"
 #include "../system/SceneClassFactory.h"
 #include "../system/DirectWrite.h"
@@ -24,200 +23,197 @@ class GameUIManager;
 class DamageNumberManager;
 class DialogueUI;
 
-//enum class CameraDebugMode {
-//	Orbit,
-//	Free
-//};
-
-// --- ゲーム開始時やターン開始時の導入シネマティック状態 ---
+// =========================================================
+// ゲーム開始時やターン開始時の導入シネマティック状態
+// =========================================================
 enum class IntroState {
 	Idle,                // 待機状態
 	TurnCounterFlying,   // ターンカウントUIのポップアップ・移動中
 	CameraToAlly,        // カメラが味方（ネズミ）へスムーズに移動
 	WaitingAllyDialogue, // カメラが到着し、味方のセリフ演出が完了するのを待機
-	CameraToBase,        // 【新規】カメラが一度全体俯瞰（BaseView）へ戻る
+	CameraToBase,        // カメラが一度全体俯瞰（BaseView）へ戻る
 	CameraToPlayer,      // カメラがプレイヤーへ戻る
 	Finished             // すべての導入演出が完了
 };
 
-/**
- * @brief カメラ
- */
+// =========================================================
+// GameScene クラス
+// 戦術シミュレーションのメインループと状態管理を担うシーン
+// =========================================================
 class GameScene : public IScene {
 public:
-	virtual ~GameScene() {}
 	static constexpr uint32_t ENEMYMAX = 3;
 
-	/// @brief コピーコンストラクタは使用不可
-	GameScene(const GameScene&) = delete;
+	virtual ~GameScene() {}
 
-	/// @brief 代入演算子も使用不可
+	// コピーコンストラクタ・代入演算子の無効化（安全設計）
+	GameScene(const GameScene&) = delete;
 	GameScene& operator=(const GameScene&) = delete;
 
-	/**
-	 * @brief コンストラクタ
-	 */
 	explicit GameScene();
 
-	/**
-	 * @brief 毎フレームの更新処理
-	 * @param deltatime 前フレームからの経過時間（マイクロ秒）
-	 */
-	void update(uint64_t deltatime) override;
-
-	/**
-	 * @brief 毎フレームの描画処理
-	 * @param deltatime 前フレームからの経過時間（マイクロ秒）
-	 *
-	 */
-	void draw(uint64_t deltatime) override;
-
-	/**
-	 * @brief シーンの初期化処理
-	 *
-	 */
+	// ---------------------------------------------------------
+	// IScene 継承ライフサイクル (Lifecycle Overrides)
+	// ---------------------------------------------------------
 	void Init() override;
-
-	/**
-	 * @brief シーンの終了処理
-	 *
-	 */
+	void update(uint64_t deltatime) override;
+	void draw(uint64_t deltatime) override;
 	void dispose() override;
 
-	/**
-	 * @brief カメラの設定
-	 *
-	 */
-	void debugUICamera();
-
-	void drawGridDebugText();
-
-
-
-	// リソースを読み込む
-	void resourceLoader();
+	// ---------------------------------------------------------
+	// 外部インターフェース・初期設定 (Public Interfaces)
+	// ---------------------------------------------------------
+	void SetGameContext(GameContext* context) override;
 
 	void AddObject(std::unique_ptr<GameObject> obj) {
 		m_GameObjectList.push_back(std::move(obj));
 	}
 
-	void SetGameContext(GameContext* context) override;
-
-	void CheckGameStatus(float deltaSeconds);
-
+	// ---------------------------------------------------------
+	// デバッグ及びツール用関数 (Debug & Tools)
+	// ---------------------------------------------------------
+	void debugUICamera();
+	void drawGridDebugText();
 
 private:
+	// =========================================================
+	// 内部ロジック分割サブ関数群 (Cataloging)
+	// 読み手が更新順序と意図を俯瞰できるように役割ごとに分割
+	// =========================================================
+
+	// ---------------------------------------------------------
+	// 初期化サブルーチン (Init Sub-routines)
+	// ---------------------------------------------------------
+	void ResetManagers();
+	void InitializeCamera();
+	void LoadGameResources();
+	void resourceLoader();
+	void InitializeMap();
+	void SetupGameEntities();
+	void SetupUserInterface();
+	void InitializeDebugFeatures();
+
+	// ---------------------------------------------------------
+	// 更新サブルーチン：システム・表現 (System & Presentation)
+	// ---------------------------------------------------------
+	void UpdateCoreTimers(float deltaSeconds);
+	void UpdateCameraFocus(float deltaSeconds);
+	void UpdateTurnIntroSequence(uint64_t deltatime, float deltaSeconds);
+	void UpdateIntroSequence(float deltaSeconds);
+
+	// ---------------------------------------------------------
+	// 更新サブルーチン：フロー制御インターセプト (Flow Control Interceptors)
+	// ---------------------------------------------------------
+	bool HandlePreGameBlocking(uint64_t deltatime, float deltaSeconds);
+	bool HandleTurnCutinBlocking(uint64_t deltatime);
+	bool IsTurnCounterAnimating() const;
+
+	// ---------------------------------------------------------
+	// 更新サブルーチン：メインロジック (Main Logic & Entities)
+	// ---------------------------------------------------------
+	void UpdateEnvironmentAndDamageUI(uint64_t deltatime);
+	void HandleCameraRotationInput();
+	void ProcessEscapeEvent();
+	void UpdateGameObjects(uint64_t deltatime);
+	void ProcessAllyTacticalDialogue();
+	void UpdatePostEffectsAndAudio(uint64_t deltatime, float deltaSeconds);
+
+	// ---------------------------------------------------------
+	// 勝敗判定とシーン遷移 (Game Status & Transitions)
+	// ---------------------------------------------------------
+	void CheckGameStatus(float deltaSeconds);
+	bool CheckGameOverCondition() const;
+	bool ProcessGameOverFlow(float deltaSeconds);
+	bool CheckGameClearCondition() const;
+	bool IsFieldBusyForClear() const;
+	void ProcessGameClearFlow(float deltaSeconds);
+
+	// ---------------------------------------------------------
+	// ターン進行とイベント制御 (Turn Flow & Events)
+	// ---------------------------------------------------------
+	void TurnChangeCheck();
+	void ProcessEndOfEnemyPhase();
+	void CheckAndTriggerEscapeEvent();
+
+	// ---------------------------------------------------------
+	// レンダリングパイプライン (Rendering Sub-routines)
+	// ---------------------------------------------------------
+	void DrawBackgroundLayer();
+	void DrawFloorLayer(uint64_t deltatime);
+	void DrawFloorUIHints(uint64_t deltatime);
+	void DrawEnvironmentAndEntities(uint64_t deltatime);
+	void DrawTransparentWorld(uint64_t deltatime);
+	void DrawTacticalOverlays(uint64_t deltatime);
+	void DrawDamageAndHitEffects();
+	void DrawScreenSpaceUI();
+
+	void RecalculateCameraBounds();
+	void DrawEscapeCube();
+	void DrawEscapeMarker();
+	void DrawWinText();
+
+	// =========================================================
+	// メンバー変数 (Member Variables)
+	// =========================================================
+
+	// --- コアシステムとマネージャー ---
 	GameContext* m_context = nullptr;
-	 /**
-	 * @brief このシーンで使用するカメラ
-	 */
 	Camera* m_camera = nullptr;
-
-	/**
-	* @brief フィールド
-	*/
 	MapManager* m_MapManager = nullptr;
-	//ターン管理
 	TurnManager* m_turnManager = nullptr;
-	//contextから「吹き出し」を取得
-	DialogueUI* m_dialogueUI = nullptr;
-	//UI管理
 	GameUIManager* m_gameUIManager = nullptr;
-	//ダメージ数字管理
 	DamageNumberManager* m_damageNumberManager = nullptr;
-
-	// ゲームオブジェクトリスト
-	std::vector<std::unique_ptr<GameObject>> m_GameObjectList;
-
-	// 敵
-	std::array<Enemy*, ENEMYMAX> m_enemies;
-	// プレイヤー
-	Player* m_player = nullptr;
-	//仲間
-	Ally* m_ally = nullptr;
-
-	// DirectWrite
+	CShader* m_tileShader = nullptr;
 	std::unique_ptr<DirectWrite> m_directwrite;
 
-	// フォントデータ
-	FontData	m_fontdata;
+	// --- ゲームエンティティ ---
+	std::vector<std::unique_ptr<GameObject>> m_GameObjectList;
+	std::array<Enemy*, ENEMYMAX> m_enemies;
+	Player* m_player = nullptr;
+	Ally* m_ally = nullptr;
+	std::unique_ptr<Background> m_background;
 
+	// --- UIコンポーネント ---
+	DialogueUI* m_dialogueUI = nullptr;
+	std::unique_ptr<TurnCutin> m_turnCutin;
+	std::unique_ptr<TurnCounter> m_turnCounter;
+	std::unique_ptr<TutorialUI> m_tutorialUI;
+	std::unique_ptr<CSprite> m_escapeMarkerSprite;
+	std::unique_ptr<CSprite> m_winTextSprite;
 
-	// 脱出に関連する変数を追加：
+	// --- ゲーム進行状態フラグ ---
+	bool m_isGameStarted = false;
+	bool m_isSceneChanging = false;
+	bool m_isGameOverProcessing = false;
 	bool m_isEscapeActive = false;
+	bool m_isAllyTalked = false;
+
+	// --- パラメータ・タイマー ---
+	int m_remainingTurns = 5;
 	int m_escapeGridX = -1;
 	int m_escapeGridZ = -1;
-	std::unique_ptr<CSprite> m_escapeMarkerSprite; // 脱出地点の浮遊UI
-	std::unique_ptr<CSprite> m_winTextSprite;      // 頭上の「WIN」UI
 
-	CShader* m_tileShader = nullptr;
+	float m_uiAnimTimer = 0.0f;
+	float m_startDelayTimer = 0.0f;
+	float m_gameOverTimer = 0.0f;
+	float m_gameClearTimer = 0.0f;
+	float m_introTimer = 0.0f;
 
-	//マウスでピックアップした位置
-	//debugUICameraで使用
+	// --- 演出・デバッグ制御 ---
+	IntroState m_introState = IntroState::Idle;
+	bool m_needsTurnCounterAnim = false;
+	bool m_shouldShowDebugEscape = false;
+	bool m_isDebugCameraEnabled = true;
+
+	// --- 定数パラメータ ---
+	const float START_WAIT_TIME = 1.0f;
+	const float GAMEOVER_WAIT_DURATION = 1.0f;
+	const float GAMECLEAR_WAIT_DURATION = 1.0f;
+
+	// デバッグ用マウスピッキング座標
 	Vector3 m_pickuppos{ 0,0,0 };
 	Vector3 m_farpoint{};
 	Vector3 m_nearpoint{};
-
-
-	// ターンカットイン表示
-	std::unique_ptr<TurnCutin> m_turnCutin;
-	// ターンカウンター
-	std::unique_ptr<TurnCounter> m_turnCounter;
-	// チュートリアルUI
-	std::unique_ptr<TutorialUI> m_tutorialUI;
-
-
-	bool m_enableDebugCamera = true;
-
-
-	//CameraDebugMode m_cameraDebugMode = CameraDebugMode::Orbit;
-	
-	// Scene変更中フラグ
-	bool m_isSceneChanging = false;	
-
-	float m_gameClearTimer = 0.0f;
-	const float GAMECLEAR_WAIT_DURATION = 1.0f; // クリア後の待機時間
-	//背景
-	std::unique_ptr<Background> m_background;
-
-	int m_remainingTurns = 5; // 残りターン数（勝利まで）
-	bool m_isAllyTalked = false; //今の回のターンで仲間が話したかどうか
-	//ゲームシーン遷移するとき、黒色のフラッシュしないためのメンバー
-	bool m_isGameStarted = false; // ゲーム始めているか
-	float m_startDelayTimer = 0.0f; 
-	const float START_WAIT_TIME = 1.0f; // 待ち時間
-
-	// ===敗北ロジック制御変数===
-	// フラグ：敗北処理が開始されているか（リザルトへの遷移待ち状態）
-	bool m_isGameOverProcessing = false;
-	// 敗北後のウェイト用タイマー
-	float m_gameOverTimer = 0.0f;
-	// 敗北待ち時間（秒）：ダメージ表示やHPゲージの減少、プレイヤーの反応時間を考慮
-	const float GAMEOVER_WAIT_DURATION = 1.0f;
-	// デバッグ用：脱出ガイドの表示切替フラグ
-	bool m_debugShowEscape = false;
-
-	// uiアニメーションタイマー
-	float m_uiAnimTimer = 0.0f;
-	// ターンカウンターアニメーションの必要性フラグ
-	bool m_needsTurnCounterAnim = false;
-
-	IntroState m_introState = IntroState::Idle;
-	float m_introTimer = 0.0f; // 演出用の汎用タイマーを追加
-
-	private:
-		void TurnChangeCheck();
-		// ====== カメラ境界の再計算メソッド ======
-		void RecalculateCameraBounds();
-		// 脱出ガイド関連の描画メソッド
-		void DrawEscapeCube();
-		void DrawEscapeMarker();
-		// 勝利ジャンプ関連の描画メソッド
-		void DrawWinText();
-
-		// 開幕のカメラ演出（オープニングシーケンス）の更新関数
-		void UpdateIntroSequence(float deltaSeconds);
-
 };
 
 REGISTER_CLASS(GameScene)
