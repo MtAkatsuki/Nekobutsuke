@@ -1,37 +1,46 @@
 #pragma once
+
 #include "MapObject.h"
 
-class Trap : public MapObject
-{
+// =========================================================
+// Trap クラス
+// マップ上の罠ギミック。ユニットが進入(OnEnter)した際にダメージを与え、
+// 発動後はアニメーションを伴って消滅する。
+// =========================================================
+class Trap : public MapObject {
 public:
-    using MapObject::MapObject;
+	using MapObject::MapObject;
 
-	// Trap（罠）は通行可能
-    bool IsWalkable() const override { return true; }
+	// ---------------------------------------------------------
+	// ライフサイクル (Lifecycle)
+	// ---------------------------------------------------------
+	void Init(MapModelType type, Vector3 position) override;
+	void Update(uint64_t delta) override;
 
-    void Init(MapModelType type, Vector3 position) override;
-    void Update(uint64_t delta) override;
-	// ユニットが罠に入ったときの処理
-    void OnEnter(Unit* unit) override;
-    void OnDraw(uint64_t delta) override;
-	// 罠の占有サイズを取得（MapManagerでのタイル埋め立て用）
-    static void GetDimensions(MapModelType type, int& outW, int& outD);
-    //トラップが既に発動しているかどうかの状態を取得
-    bool IsActivated() const { return m_isActivated; }
+	// ---------------------------------------------------------
+	// レンダリング (Rendering)
+	// ---------------------------------------------------------
+	void OnDraw(uint64_t delta) override;
 
+	// ---------------------------------------------------------
+	// イベント・状態 (Events & Status)
+	// ---------------------------------------------------------
+	void OnEnter(Unit* unit) override;
+
+	static void GetDimensions(MapModelType type, int& outW, int& outD);
+
+	bool IsActivated() const { return m_hasActivated; }
 	int GetTrapDamage() const { return m_trapDamage; }
 
 private:
-	bool m_isActivated = false; // 罠が発動したかどうかのフラグ
+	bool m_hasActivated = false;   // 罠が発動済みかどうかのフラグ
+	int m_trapDamage = 5;          // トラップの基本ダメージ量
 
-	int m_trapDamage = 5; // トラップのダメージ量
-    /*std::unique_ptr<CTexture> m_texture;*/
-    int m_sizeX = 1;
-    int m_sizeZ = 1;
+	int m_sizeX = 1;
+	int m_sizeZ = 1;
 
-    // アニメーション関連の変数
-    bool m_isAnimating = false;    // 消失アニメーションが再生中かどうか
-    float m_animTimer = 0.0f;      // アニメーション経過時間のタイマー
-    float m_animDuration = 0.5f;   // アニメーションの総再生時間（秒）
-    Vector3 m_initialScale;        // アニメーション開始時の初期スケールを保持
+	// --- アニメーション制御 ---
+	bool m_isDisappearing = false; // 消失アニメーション再生中フラグ
+	float m_animTimer = 0.0f;      // アニメーション進行タイマー
+	Vector3 m_initialScale;        // 開始時の基準スケール
 };

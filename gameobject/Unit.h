@@ -1,8 +1,11 @@
 #pragma once
-#include <array>
 
-#include"GameObject.h"
-#include"../system/Direction.h"
+#include <array>
+#include <functional>
+#include <memory>
+
+#include "GameObject.h"
+#include "../system/Direction.h"
 #include "../enum class/TurnState.h"
 #include "../ui/HPBar.h"
 #include "../system/meshmanager.h"
@@ -12,148 +15,141 @@ class TurnManager;
 class Tile;
 class CStaticMeshRenderer;
 
-class Unit:public GameObject
-{
+// =========================================================
+// Unit クラス
+// プレイヤー、敵、味方など、盤面上を移動し戦闘を行うエンティティの共通基底クラス
+// HP管理、グリッド座標、ダメージ計算、共有アニメーション（ノックバック等）を担う
+// =========================================================
+class Unit : public GameObject {
 public:
-
-	enum class Team
-	{
+	enum class Team {
 		Player,
 		Enemy,
 		Ally
 	};
-	//抽象的なBaseClassとして、引数がないコンストラクタは禁止、実例化も禁止
+
 	explicit Unit(GameContext* context);
 	Unit(const Unit&) = delete;
 	Unit& operator=(const Unit&) = delete;
 	virtual ~Unit() = default;
 
+	// ---------------------------------------------------------
+	// ライフサイクル (Lifecycle)
+	// ---------------------------------------------------------
+	virtual void Update(uint64_t delta) override;
+
+	// ---------------------------------------------------------
+	// コアステータス・ゲッター (Core Status)
+	// ---------------------------------------------------------
 	int GetHP() const { return m_currentHP; }
 	int GetMaxHP() const { return m_maxHP; }
-	int GetUnitGridX()const { return  m_gridX; };
-	int GetUnitGridZ()const { return  m_gridZ; };
-	void SetGridPosition(int x, int z) { m_gridX = x; m_gridZ = z; }
+	int GetUnitGridX() const { return m_gridX; }
+	int GetUnitGridZ() const { return m_gridZ; }
+	Direction GetFacing() const { return m_facing; }
+	virtual Team GetTeam() const { return m_team; }
 
+	void SetGridPosition(int x, int z) { m_gridX = x; m_gridZ = z; }
+	virtual void ResetMovePoints() { m_currentMovePoints = m_maxMovePoints; }
+
+	// ---------------------------------------------------------
+	// 戦闘と物理干渉 (Combat & Physics)
+	// ---------------------------------------------------------
 	virtual void TakeDamage(int damage, Unit* attacker);
-	virtual void Update(uint64_t delta) override;
+
+	// 押し出し（ノックバック）を受けた際の処理。壁衝突時は false を返す想定など、派生クラスで拡張可能
+	virtual void OnPushed(Direction pushDir);
+
+	// 押し出しを伴う攻撃を受けた際、壁や罠による二次ダメージを含めた最終被ダメージを算出
+	int CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir);
+
+	// 攻撃プレビューヒントのダメージ値を設定（UI描画用）
+	virtual void SetPreviewDamage(int dmg) { m_previewDamage = dmg; }
 
 	bool IsValidMoveTarget(int targetX, int targetZ);
 
-	virtual void OnHpChanged() {};//UI更新用フック,UpdateHpBar
-	virtual void ResetMovePoints() { m_currentMovePoints = m_maxMovePoints; };
-	virtual Team GetTeam()const { return m_team; };
-
-	// モデル設定インターフェース ---
-	// 子クラスの Init 内で呼び出し、前後両面のレンダラーを登録する
-	void SetModelRenderers(CStaticMeshRenderer* front, CStaticMeshRenderer* back);
-
-	void SetFacingFromVector(const Vector3& dir);// ベクトルから向きを計算
-	void SetFacing(Direction newDir);             // 向きを手動で直接設定
-
+	// ---------------------------------------------------------
+	// アニメーション制御 (Animation System)
+	// ---------------------------------------------------------
+	void SetFacingFromVector(const Vector3& dir);
+	void SetFacing(Direction newDir);
 
 	void StartAttackAnimation(const Vector3& targetPos);
-	//コールバック関数でダメージ数字を表示する
 	bool UpdateAttackAnimation(float dt, std::function<void()> onImpact);
 
-	//攻撃受けたあとのぶつかりアニメーション
 	void StartBumpAnimation(const Vector3& targetPos);
-	//攻撃受けたあとの位置変化アニメーション
 	void StartSlideAnimation(const Vector3& targetPos);
 	bool UpdateSlideAnimation(uint64_t dt);
-	// 戻り値は押し出し（ノックバック）に成功したかを表す
-	// （壁や行き止まりに衝突した場合は false を返す）
-	virtual void OnPushed(Direction pushDir);
 
-	//HP Barの描画
-	virtual void DrawUI();
-
-	// --- 共通モデル描画メソッド ---
-	// 子クラスの OnDraw 内で呼び出し、キャラ本体の描画を実行する
-	void DrawModel();
-
-	// --- 反転（フリップ）アニメーション制御 ---
 	void UpdateFlipAnimation(float dt);
 
-
-
-	// ノックバック（押し出し）のプレビューUIを描画
+	// ---------------------------------------------------------
+	// レンダリングとUI (Rendering & UI)
+	// ---------------------------------------------------------
+	void SetModelRenderers(CStaticMeshRenderer* front, CStaticMeshRenderer* back);
+	void DrawModel();
+	virtual void DrawUI();
 	void DrawPushPreview(Direction pushDir);
-	// 攻撃プレビューヒントのダメージ値を設定
-	virtual void SetPreviewDamage(int dmg) { m_previewDamage = dmg; }
-	// 現在の向きを取得
-	Direction GetFacing() const { return m_facing; }
 
-	// 押し出し（ノックバック）を伴う攻撃を受けた際、最終的な被ダメージ量を計算する（壁衝突による追加ダメージを含む）
-	int CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir);
+	virtual void OnHpChanged() {};
+
 protected:
 	virtual void OnTurnChanged(TurnState state);
 	virtual void StartTurn();
 	virtual void EndTurn();
 
-
-
-
 protected:
+	// =========================================================
+	// メンバー変数 (Member Variables)
+	// =========================================================
 
-	// フリップアニメーションの種類を定義
+	// フリップアニメーションの挙動スタイル
 	enum class FlipStyle {
-		None,   // アニメーションなし
-		Simple, // 単純な反転 (0 -> 90 -> 0) : 主に北向き（背面）用
-		Swing   // スイング反転 (0 -> 90 -> -90 -> 0) : 左右の鏡像反転用
+		None,
+		Simple, // 0 -> 90 -> 0 (北向き背面用)
+		Swing   // 0 -> 90 -> -90 -> 0 (左右鏡像反転用)
 	};
 	FlipStyle m_currentFlipStyle = FlipStyle::Swing;
 
 	// --- レンダリング関連 ---
-	CStaticMeshRenderer* m_frontRenderer = nullptr; // 正面用モデル
-	CStaticMeshRenderer* m_backRenderer = nullptr;  // 背面用モデル
-	CStaticMeshRenderer* m_currRenderer = nullptr;  // 現在描画中のモデル
-
-	int m_maxHP = 5;
-	int m_currentHP = 5;
-	int m_previewDamage = 0;// 攻撃プレビューのダメージ値
-	int m_gridX;
-	int m_gridZ;
-	int m_onPushDamage = 2; // ノックバック（押し出し）によるダメージ量
-
-	// 目標回転角度
-	Vector3	m_targetRot = { 0.0f,0.0f,0.0f };
-
-	//移動力
-	int m_maxMovePoints;
-	int m_currentMovePoints;
-	//移動アニメション　データ
-	Vector3 m_targetWorldPos;
-	float m_moveSpeed;
-	//0: +Z, 1: +X, 2: -Z, 3: -X
-	Direction m_facing;
-	Team m_team;
-
-	//アニメの変数
-	Vector3 m_animStartPos;
-	Vector3 m_animLungePos;
-	float m_animTimer = 0.0f;
-	bool m_animHasHit = false;//ダメージを一回だけの検査
-	const float TIME_LUNGE = 0.1f;
-	const float TIME_IMPACT = 0.15f;
-	const float TIME_RETURN = 0.20f;
-	const float TIME_END = 0.3f;
-	//変数：攻撃受けたあとの位置変化アニメーション
-	Vector3 m_slideStartPos;
-	Vector3 m_slideEndPos;
-	float m_slideTimer = 0.0f;
-	
-	// --- 左右の向きの記憶用フラグ ---
-	// true = 右向き（東/南）、false = 左向き（西）
-	// 背面（北）を向いた際にも、直前の左右の視覚的な傾向を維持するために使用する
-	bool m_isFacingRight = true;
+	CStaticMeshRenderer* m_frontRenderer = nullptr;
+	CStaticMeshRenderer* m_backRenderer = nullptr;
+	CStaticMeshRenderer* m_currRenderer = nullptr;
 
 	std::unique_ptr<HPBar> m_hpBar;
 
+	// --- コアステータス ---
+	Team m_team;
+	int m_maxHP = 5;
+	int m_currentHP = 5;
+	int m_gridX = 0;
+	int m_gridZ = 0;
+	int m_maxMovePoints = 0;
+	int m_currentMovePoints = 0;
+	float m_moveSpeed = 0.0f;
+	Direction m_facing;
 
-	// --- 反転アニメーションの状態管理 ---
-	bool m_isFlipping = false;          // 反転動作中フラグ
-	float m_flipTimer = 0.0f;           // 反転用タイマー
-	const float FLIP_DURATION = 0.4f;   // 反転にかかる合計時間 (0.2秒)
-	Direction m_nextFacing = Direction::South; // 遷移先の目標方向
-	bool m_hasSwappedMesh = false;      // メッシュの切り替えが完了したかどうかの判定フラグ
+	int m_previewDamage = 0;
+	int m_onPushDamage = 2;  // ノックバック壁衝突時の基本ダメージ量
+
+	Vector3 m_targetRot = { 0.0f, 0.0f, 0.0f };
+	Vector3 m_targetWorldPos;
+
+	// --- アニメーション制御データ ---
+	Vector3 m_animStartPos;
+	Vector3 m_animLungePos;
+	float m_animTimer = 0.0f;
+	bool m_hasAnimHit = false; // 攻撃の多段ヒット防止フラグ
+
+	Vector3 m_slideStartPos;
+	Vector3 m_slideEndPos;
+	float m_slideTimer = 0.0f;
+
+	bool m_isFlipping = false;
+	float m_flipTimer = 0.0f;
+	Direction m_nextFacing = Direction::South;
+	bool m_hasSwappedMesh = false;
+
+	// 左右の向きの記憶（true = 東/南の右向き、false = 西の左向き）
+	// 北(背面)を向いた際も、直前の左右の視覚的傾向を維持するために使用する
+	bool m_isFacingRight = true;
 };

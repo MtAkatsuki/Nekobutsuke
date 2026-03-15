@@ -1,13 +1,34 @@
-#include "Unit.h"
+ï»¿#include "Unit.h"
 #include "../manager/GameContext.h"
 #include "../manager/MapManager.h"
 #include "../manager/TurnManager.h"
-#include "../enum class/TurnState.h"
 #include "../ui/DamageNumberManager.h"
 #include "../manager/EffectManager.h"
 #include "../gameobject/Trap.h"
+#include <cmath>
 
-Unit::Unit(GameContext* context) :GameObject(context) {
+namespace {
+	// ---------------------------------------------------------
+	// æ¼”å‡ºãƒ»ãƒãƒ©ãƒ³ã‚¹ç”¨å®šæ•°ï¼ˆãƒã‚¸ãƒƒã‚¯ãƒŠãƒ³ãƒãƒ¼ã®æ’é™¤ï¼‰
+	// ---------------------------------------------------------
+	const float HIT_EFFECT_Y_OFFSET = 0.8f;      // ãƒ’ãƒƒãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®ç™ºç”Ÿé«˜ã•ï¼ˆèƒ¸ã€œé ­ä»˜è¿‘ï¼‰
+	const float DAMAGE_NUM_Y_OFFSET = 1.0f;      // ãƒ€ãƒ¡ãƒ¼ã‚¸æ•°å­—ã®ç™ºç”Ÿé«˜ã•
+	const float HIT_POS_RANDOM_SPREAD = 0.3f;    // ãƒ’ãƒƒãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®æ•£ã‚‰ã°ã‚Šå¹…
+	const float DAMAGE_NUM_RANDOM_SPREAD = 0.5f; // ãƒ€ãƒ¡ãƒ¼ã‚¸æ•°å­—ã®æ•£ã‚‰ã°ã‚Šå¹…
+
+	const float LUNGE_DISTANCE = 0.7f;           // æ”»æ’ƒæ™‚ã®è¸ã¿è¾¼ã¿è·é›¢
+	const float TIME_LUNGE = 0.1f;               // æ”»æ’ƒï¼šè¸ã¿è¾¼ã¿ã«ã‹ã‹ã‚‹æ™‚é–“
+	const float TIME_IMPACT = 0.15f;             // æ”»æ’ƒï¼šãƒ€ãƒ¡ãƒ¼ã‚¸åˆ¤å®šãŒç™ºç”Ÿã™ã‚‹ç¬é–“
+	const float TIME_RETURN = 0.20f;             // æ”»æ’ƒï¼šæˆ»ã‚Šå§‹ã‚ã‚‹æ™‚é–“
+	const float TIME_END = 0.3f;                 // æ”»æ’ƒï¼šå…ƒã®ä½ç½®ã«æˆ»ã‚‹ï¼ˆå®Œäº†ï¼‰æ™‚é–“
+
+	const float TIME_SLIDE = 0.2f;               // ãƒãƒƒã‚¯ãƒãƒƒã‚¯ï¼ˆã‚¹ãƒ©ã‚¤ãƒ‡ã‚£ãƒ³ã‚°ï¼‰ã®æ‰€è¦æ™‚é–“
+	const float FLIP_DURATION = 0.4f;            // æŒ¯ã‚Šå‘ãï¼ˆåè»¢ï¼‰ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®æ‰€è¦æ™‚é–“
+
+	const float ARROW_Y_OFFSET = 0.08f;          // ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼çŸ¢å°ã®Zãƒ•ã‚¡ã‚¤ãƒ†ã‚£ãƒ³ã‚°é˜²æ­¢ç”¨æµ®ã‹ã—å¹…
+}
+
+Unit::Unit(GameContext* context) : GameObject(context) {
 	if (m_context && m_context->GetTurnManager()) {
 		m_context->GetTurnManager()->RegisterObserver(
 			[this](TurnState state) { this->OnTurnChanged(state); }
@@ -16,352 +37,108 @@ Unit::Unit(GameContext* context) :GameObject(context) {
 	else {
 		std::cerr << "[Error] Unit created but TurnManager is NULL! Observer failed." << std::endl;
 	}
+
 	m_hpBar = std::make_unique<HPBar>();
 	m_hpBar->Init(context);
 }
 
-bool Unit::IsValidMoveTarget(int targetX, int targetZ) {
-	if (m_context->GetMapManager() == nullptr) return false;
+// ---------------------------------------------------------
 
-	bool isMapWalkable = m_context->GetMapManager()->IsWalkable(targetX, targetZ);
+// ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
 
-	return isMapWalkable;
+// ---------------------------------------------------------
+
+void Unit::Update(uint64_t delta) {
+	float dt = static_cast<float>(delta) / 1000.0f;
+	if (m_hpBar) {
+		m_hpBar->Update(dt);
+	}
 }
 
-void Unit::TakeDamage(int damage, Unit* attacker)
-{
+void Unit::StartTurn() {}
+void Unit::EndTurn() {}
+void Unit::OnTurnChanged(TurnState state) {}
+
+// ---------------------------------------------------------
+
+// æˆ¦é—˜ã¨ç‰©ç†å¹²æ¸‰ (Combat & Physics)
+
+// ---------------------------------------------------------
+
+void Unit::TakeDamage(int damage, Unit* attacker) {
 	if (damage < 0) return;
 	m_currentHP = std::max(0, m_currentHP - damage);
 
-	// [V‹K’Ç‰Á] ƒqƒbƒgƒGƒtƒFƒNƒg‚ÌÄ¶
+	// è¦–è¦šçš„é‡è¤‡ã®å›é¿ï¼šè¤‡æ•°å›ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’å—ã‘ãŸéš›ã€ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã‚„æ•°å­—ãŒ
+	
+	// å®Œå…¨ã«é‡ãªã£ã¦è¦‹ãˆãªããªã‚‹ã®ã‚’é˜²ããŸã‚ã€ãƒ©ãƒ³ãƒ€ãƒ ãªã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’åŠ ãˆã‚‹
 	if (m_context && m_context->GetEffectManager()) {
 		Vector3 hitPos = m_srt.pos;
-		hitPos.y += 0.8f; // ‹¹‚â“ª‚ÌˆÊ’u‚É•\¦‚³‚ê‚é‚æ‚¤A­‚µˆÊ’u‚ğã‚°‚é
-
-		// Š®‘S‚Éd‚È‚é‚Ì‚ğ”ğ‚¯‚é‚½‚ßA‚í‚¸‚©‚Éƒ‰ƒ“ƒ_ƒ€‚ÈƒIƒtƒZƒbƒg‚ğ‰Á‚¦‚é
-		hitPos.x += ((rand() % 10) / 10.0f - 0.5f) * 0.3f;
-		hitPos.z += ((rand() % 10) / 10.0f - 0.5f) * 0.3f;
+		hitPos.y += HIT_EFFECT_Y_OFFSET;
+		hitPos.x += ((rand() % 10) / 10.0f - 0.5f) * HIT_POS_RANDOM_SPREAD;
+		hitPos.z += ((rand() % 10) / 10.0f - 0.5f) * HIT_POS_RANDOM_SPREAD;
 
 		m_context->GetEffectManager()->SpawnHitEffect(hitPos);
 	}
 
-	if (m_context->GetDamageManager()) {
+	if (m_context && m_context->GetDamageManager()) {
 		Vector3 headPos = m_srt.pos;
-		headPos.y += 1.0f;
-
-		headPos.x += ((rand() % 10) / 10.0f - 0.5f) * 0.5f;
+		headPos.y += DAMAGE_NUM_Y_OFFSET;
+		headPos.x += ((rand() % 10) / 10.0f - 0.5f) * DAMAGE_NUM_RANDOM_SPREAD;
 
 		m_context->GetDamageManager()->SpawnDamage(headPos, damage);
 	}
+
 	OnHpChanged();
 }
 
-void Unit::SetFacingFromVector(const Vector3& dir) {
-	//ƒxƒNƒgƒ‹‚Ì’·‚³‚ª¬‚³‚¢‰ß‚¬‚é‚ÆAŒü‚«‚Í•ÏX‚µ‚È‚¢‚É‚È‚éAƒtƒŒƒbƒVƒ…‚ğ–h‚®
-	if (dir.LengthSquared() < 0.0001f)return;
+int Unit::CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir) {
+	int expectedDamage = baseDamage;
 
-	Direction newDir = DirOffset::FromVector(dir.x, dir.z);
+	// æŠ¼ã—å‡ºã—æ”»æ’ƒã®å ´åˆã€ç§»å‹•å…ˆã®çŠ¶æ³ã«ã‚ˆã£ã¦è¿½åŠ ã®é€£é–ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’äºˆæ¸¬ã™ã‚‹
+	if (isPush && m_context && m_context->GetMapManager()) {
+		DirOffset offset = DirOffset::From(pushDir);
+		int pushX = m_gridX + offset.x;
+		int pushZ = m_gridZ + offset.z;
 
-	SetFacing(newDir);
-}
+		bool isBlocked = !m_context->GetMapManager()->IsWalkable(pushX, pushZ);
+		Tile* nextTile = m_context->GetMapManager()->GetTile(pushX, pushZ);
+		if (nextTile && nextTile->occupant) isBlocked = true;
 
-
-void Unit::SetModelRenderers(CStaticMeshRenderer* front, CStaticMeshRenderer* back)
-{
-	m_frontRenderer = front;
-	m_backRenderer = back;
-	// --- ƒ}ƒeƒŠƒAƒ‹ƒJƒ‰[‚ğ‹­§“I‚É”’i–¾‚é‚­j‚Éİ’è ---
-	auto ForceWhiteMaterial = [](CStaticMeshRenderer* renderer) {
-		if (!renderer) return;
-
-		// ƒ‚ƒfƒ‹‚Ìƒ}ƒeƒŠƒAƒ‹İ’è‚ğæ“¾i’Êí‚ÍƒCƒ“ƒfƒbƒNƒX0‚Ì‚İ‚ğ‘z’èj
-		// ¦•¡”‚Ìƒ}ƒeƒŠƒAƒ‹‚ª‚ ‚éê‡‚Íƒ‹[ƒvˆ—‚ª•K—v‚¾‚ªA¡‰ñ‚Í0”Ô–Ú‚Ì‚İ‘ÎÛ‚Æ‚·‚é
-		if (auto* mat = renderer->GetMaterial(0)) {
-			MATERIAL m = mat->GetData();
-
-			// yd—vzŒõ‚ÌŒvZ‚É‚æ‚é•‚¸‚İ‚ğ–h‚®‚½‚ßAŠî–{F‚ğu”’v‚É‚·‚é
-			m.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);  // ƒfƒBƒtƒ…[ƒYiŠgU”½ËŒõj‚ğ^‚Á”’‚É
-			m.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);  // ƒAƒ“ƒrƒGƒ“ƒgiŠÂ‹«Œõj‚à^‚Á”’‚É
-			m.Emission = Color(0.1f, 0.1f, 0.1f, 1.0f); // ƒGƒ~ƒbƒVƒui©ŒÈ”­Œõj‚ÍƒIƒt
-			m.TextureEnable = TRUE;                     // ƒeƒNƒXƒ`ƒƒ•\¦‚ğŠmÀ‚É—LŒø‰»
-
-			mat->SetMaterial(m);
+		if (isBlocked) {
+			// å£ã‚„ä»–ã®ãƒ¦ãƒ‹ãƒƒãƒˆã«æ¿€çªã™ã‚‹å ´åˆ
+			expectedDamage += m_onPushDamage;
 		}
-		};
-
-	// ‘O–ÊE”w–Ê‚Ì—¼•û‚ÌƒŒƒ“ƒ_ƒ‰[‚É“K—p
-	ForceWhiteMaterial(m_frontRenderer);
-	ForceWhiteMaterial(m_backRenderer);
-	// -------------------------
-	// ƒfƒtƒHƒ‹ƒg‚Å³–Êƒ‚ƒfƒ‹‚ğg—p
-	m_currRenderer = m_frontRenderer;
-	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
-	m_srt.rot = Vector3(0.0f, 0.0f, 0.0f);
+		else if (nextTile && nextTile->structure) {
+			// è¡çªã›ãšã‚¹ãƒ ãƒ¼ã‚ºã«æŠ¼ã—å‡ºã•ã‚Œã‚‹å ´åˆã€è¶³å…ƒã®ã‚®ãƒŸãƒƒã‚¯ï¼ˆç½ ï¼‰ã‚’ç¢ºèª
+			if (nextTile->structure->GetType() == MapModelType::TRAP) {
+				Trap* trap = dynamic_cast<Trap*>(nextTile->structure);
+				// æœªç™ºå‹•ã®ç½ ã§ã‚ã‚Œã°ã€ãƒˆãƒ©ãƒƒãƒ—ãƒ€ãƒ¡ãƒ¼ã‚¸ãŒåŠ ç®—ã•ã‚Œã‚‹ã¨äºˆæ¸¬
+				if (trap && !trap->IsActivated()) {
+					expectedDamage += trap->GetTrapDamage();
+				}
+			}
+		}
+	}
+	return expectedDamage;
 }
 
-void Unit::StartAttackAnimation(const Vector3& targetPos) {
-	m_animStartPos = m_srt.pos;
-	m_animTimer = 0.0f;
-	m_animHasHit = false;
-
-	//UŒ‚—p‚ÉA–Ú•W•ûŒü‚Ô‚Â‚©‚é
-	Vector3 dir = targetPos - m_animStartPos;
-	//³‹K‰»‚Ì‘O‚ÉA0‚¶‚á‚È‚¢‚ğŒŸ¸‚·‚é
-	if (dir.Length() > 0.001f)dir.Normalize();
-
-	m_animLungePos = m_animStartPos + dir * 0.7f;
-
-	SetFacingFromVector(dir);
-}
-//
-bool Unit::UpdateAttackAnimation(float dt, std::function<void()> onImpact) 
-{
-	
-	float deltaSeconds = dt / 1000.0f;//•b‚Ì•ÏŠ·
-	m_animTimer += deltaSeconds;
-	//ƒ_ƒ[ƒW‚ÌƒR[ƒ‹ƒoƒbƒNAÕ“ËuŠÔ‚ğ‡‚í‚¹‚é
-	//UŒ‚ó‚¯‘¤‚©‚çƒR[ƒ‹ƒoƒbƒNCallBack
-	if (!m_animHasHit && m_animTimer >= TIME_IMPACT) 
-	{
-		m_animHasHit = true;
-		if (onImpact)onImpact();
-	}
-
-	bool isFinished = false;
-	//rush@ƒtƒFƒCƒX‚PAüŒ`•âŠÔLerp‚ÅƒXƒ€[ƒY‚ÉÕ“Ë“_im_animLungePosj‚ÉŒü‚©‚¤
-	if (m_animTimer < TIME_LUNGE)
-	{
-		float t = m_animTimer / TIME_LUNGE;
-		m_srt.pos = Vector3::Lerp(m_animStartPos, m_animLungePos, t);
-	}
-	//stop ƒtƒFƒCƒX‚QAÕ“Ë‚·‚é‚Æ‚«‚Ì~‚Ü‚èŠ´‚ğo‚·
-	else if (m_animTimer < TIME_RETURN) 
-	{
-		m_srt.pos = m_animLungePos;//‚Ô‚Â‚©‚Á‚Ä‚é‚æ‚¤‚É’â~‚·‚é
-	}
-	//return ƒtƒFƒCƒX‚RAŒ³‚ÌˆÊ’u‚É–ß‚é
-	else if (m_animTimer < TIME_END) 
-	{
-		float t = (m_animTimer - TIME_RETURN) / (TIME_END - TIME_RETURN);
-		m_srt.pos = Vector3::Lerp(m_animLungePos, m_animStartPos, t);
-	}
-	else 
-	{
-		m_srt.pos = m_animStartPos;
-		isFinished = true;
-	}
-
-	UpdateWorldMatrix();
-	Renderer::SetWorldMatrix(&m_WorldMatrix);
-
-	return isFinished;
+bool Unit::IsValidMoveTarget(int targetX, int targetZ) {
+	if (m_context->GetMapManager() == nullptr) return false;
+	return m_context->GetMapManager()->IsWalkable(targetX, targetZ);
 }
 
-void Unit::StartBumpAnimation(const Vector3& targetPos)
-{
-	//ƒAƒ^ƒbƒN ƒAƒjƒƒVƒ‡ƒ“‚Æ“¯‚¶A‚½‚¾Œü‚«‚ÍƒŒƒZƒbƒg‚µ‚È‚¢
-	m_animStartPos = m_srt.pos;
-	m_animTimer = 0.0f;
-	m_slideTimer = 0.0f;
-	m_animHasHit = false;
-
-	Vector3 dir = targetPos - m_animStartPos;
-	if (dir.Length() > 0.001f) dir.Normalize();
-
-	m_animLungePos = m_animStartPos + dir * 0.7f;
-
-}
-
-void Unit::StartSlideAnimation(const Vector3& targetPos)
-{	//UŒ‚ó‚¯ˆÊ’u•Ï‰»ƒAƒjƒƒVƒ‡ƒ“‚Ì‰Šú‰»
-	m_slideStartPos = m_srt.pos;
-	m_slideEndPos = targetPos;
-	m_animTimer = 0.0f;
-	m_slideTimer = 0.0f;
-}
-
-bool Unit::UpdateSlideAnimation(uint64_t dt) 
-{
-	float deltaSeconds = dt / 1000.0f;
-	m_slideTimer += deltaSeconds;
-
-	const float TIME_SLIDE = 0.2f;
-	//ƒAƒjƒƒVƒ‡ƒ“Às’†
-	if(m_slideTimer<TIME_SLIDE)
-	{
-		float t = m_slideTimer / TIME_SLIDE;
-		// ƒC[ƒWƒ“ƒOŠÖ”(EaseOutQuad)‚Ì“K—p
-		// t(0.0~1.0)‚ğ‰ÁH‚µAuÅ‰‚Í‘¬‚­A’â~’¼‘O‚Í‚ä‚Á‚­‚èv‚Æ‚¢‚¤Œ¸‘¬‚Ì“®‚«‚ğì‚é
-		t = 1.0f - std::pow(1.0f - t, 2.0f);
-		// üŒ`•âŠÔ(Lerp)‚É‚æ‚éÀ•WXV
-		// ŒvZ‚µ‚½”ä—¦ t ‚ÉŠî‚Ã‚¢‚ÄAŠJn’n“_‚©‚çI—¹’n“_‚Ü‚Å‚ÌŒ»İÀ•W‚ğZo‚·‚é
-		m_srt.pos = Vector3::Lerp(m_slideStartPos, m_slideEndPos, t);
-
-		UpdateWorldMatrix();
-		Renderer::SetWorldMatrix(&m_WorldMatrix);
-		return false;
-	}
-	else //ƒAƒjƒƒVƒ‡ƒ“Š®—¹
-	{
-		m_srt.pos = m_slideEndPos;
-		UpdateWorldMatrix();
-		Renderer::SetWorldMatrix(&m_WorldMatrix);
-		return true;
-	}
-}
-
-void Unit::DrawUI() {   // •`‰æ‘O‚Ìƒ`ƒFƒbƒN
-	if (!m_hpBar) return;
+void Unit::OnPushed(Direction pushDir) {
 	if (m_currentHP <= 0) return;
 
-	// “ˆê‚³‚ê‚½•`‰æˆ—‚ÌŒÄ‚Ño‚µBF‚Ì‹æ•Ê‚Í‚¹‚¸Am_previewDamage ‚ğ“n‚·
-	m_hpBar->Draw(m_srt.pos, m_currentHP, m_maxHP, m_previewDamage);
-
-	// yd—vzUI•`‰æŒã‚ÉƒvƒŒƒrƒ…[ƒ_ƒ[ƒW‚ğ‘¦À‚ÉƒŠƒZƒbƒgB
-	// ‚±‚ê‚É‚æ‚èAŒp‘±“I‚ÉÆ€iƒGƒCƒ€j‚³‚ê‚Ä‚¢‚éƒtƒŒ[ƒ€ŠÔ‚Ì‚İ“_–Å‚ª•\¦‚³‚ê‚éB
-	m_previewDamage = 0;
-}
-
-
-void Unit::UpdateFlipAnimation(float dt) {
-	// ƒAƒjƒ[ƒVƒ‡ƒ“’†‚Å‚È‚¢ê‡‚Í Y²‰ñ“]‚ğƒŠƒZƒbƒg
-	if (!m_isFlipping) {
-		m_srt.rot.y = 0.0f;
-		return;
-	}
-
-	m_flipTimer += dt;
-	float t = m_flipTimer / FLIP_DURATION; // ³‹K‰»‚³‚ê‚½ŠÔ (0.0 -> 1.0)
-	float visualRotY = 0.0f;
-
-	// --- ƒtƒF[ƒY 1: 0“x -> 90“x (”–‚­‚È‚é) ---
-	if (t < 0.5f) {
-		float phaseT = t / 0.5f;
-		visualRotY = std::lerp(0.0f, PI / 2.0f, phaseT);
-	}
-	// --- ƒtƒF[ƒY 2: 90“x -> 0“x (Œú‚İ‚ª–ß‚éAƒƒbƒVƒ…Ø‚è‘Ö‚¦) ---
-	else {
-		// --- —ÕŠE“_FƒƒbƒVƒ…‚ÌØ‚è‘Ö‚¦‚ÆƒXƒP[ƒ‹‚ÌŒvZ ---
-		if (!m_hasSwappedMesh) {
-			m_facing = m_nextFacing;
-			m_hasSwappedMesh = true;
-
-			// u¶‰E‚ÌŒü‚«‚Ì‹L‰¯v‚ğXV (–kŒü‚«ˆÈŠO‚Ìê‡‚Ì‚İ)
-			if (m_facing == Direction::East || m_facing == Direction::South) {
-				m_isFacingRight = true;  // ‰EŒü‚«‚Æ‚µ‚Ä‹L˜^
-			}
-			else if (m_facing == Direction::West) {
-				m_isFacingRight = false; // ¶Œü‚«‚Æ‚µ‚Ä‹L˜^
-			}
-			// ¦ Northi–kj‚Ìê‡‚ÍA’¼‘O‚Ì m_isFacingRight ‚ğ•Û‚·‚é
-
-			//  Œü‚«iFacingj‚É‰‚¶‚ÄƒŒƒ“ƒ_ƒ‰[‚ğ‘I‘ğ
-			//  ‹L‰¯‚³‚ê‚½Œü‚«im_isFacingRightj‚ÉŠî‚Ã‚¢‚Ä ScaleX ‚ğŒˆ’è
-
-			float targetScaleX = 1.0f;
-
-			if (m_facing == Direction::North) {
-				// --- ”w–Êƒ‚[ƒh ---
-				m_currRenderer = m_backRenderer;
-
-				// ”w–Êƒ‚ƒfƒ‹‚Ì•W€‚ªu¶Œü‚«v‚Å‚ ‚é‚Æ‰¼’è‚µ‚½ƒ‹[ƒ‹
-				if (m_isFacingRight) {
-					// u‰EŒü‚«‚Ì”w–Êv‚ğ•\¦‚µ‚½‚¢ê‡ -> ”½“]iƒ~ƒ‰[ƒŠƒ“ƒOj
-					targetScaleX = -1.0f;
-				}
-				else {
-					// u¶Œü‚«‚Ì”w–Êv‚ğ•\¦‚µ‚½‚¢ê‡ -> •W€
-					targetScaleX = 1.0f;
-				}
-			}
-			else {
-				// --- ³–Êƒ‚[ƒh ---
-				m_currRenderer = m_frontRenderer;
-
-				// ³–Êƒ‚ƒfƒ‹‚Ì•W€‚ªu‰EŒü‚«i“ì/“Œjv‚Å‚ ‚é‚Æ‰¼’è
-				if (m_isFacingRight) {
-					targetScaleX = 1.0f;  // •W€
-				}
-				else {
-					targetScaleX = -1.0f; // ”½“]iƒ~ƒ‰[ƒŠƒ“ƒOj
-				}
-			}
-
-			// ƒXƒP[ƒ‹‚ğ“K—p
-			m_srt.scale.x = targetScaleX;
-		}
-
-		// Œã”¼‚Ì‰ñ“]ŒvZ
-		float phaseT = (t - 0.5f) / 0.5f;
-		visualRotY = std::lerp(PI / 2.0f, 0.0f, phaseT);
-	}
-
-	// ƒAƒjƒ[ƒVƒ‡ƒ“I—¹ˆ—
-	if (t >= 1.0f) {
-		m_isFlipping = false;
-		visualRotY = 0.0f;
-	}
-
-	// ÅI“I‚ÈY²‰ñ“]‚ğ“K—p
-	m_srt.rot.y = visualRotY;
-}
-
-void Unit::DrawModel() {
-	// ƒŒƒ“ƒ_ƒ‰[‚ª‰Šú‰»‚³‚ê‚Ä‚¢‚È‚¢ê‡‚Í•`‰æ‚ğƒXƒLƒbƒv
-	if (!m_currRenderer) return;
-
-	// ƒ[ƒ‹ƒhs—ñ‚ğİ’èiÀ•WA‰ñ“]AƒXƒP[ƒŠƒ“ƒO‚ğ”½‰fj
-	Renderer::SetWorldMatrix(&m_WorldMatrix);
-
-	// Œ»İƒAƒNƒeƒBƒu‚ÈƒŒƒ“ƒ_ƒ‰[‚ğg—p‚µ‚Ä•`‰æ‚ğÀs
-	m_currRenderer->Draw();
-}
-
-void Unit::SetFacing(Direction newDir)
-{
-	// Œü‚«‚ª•Ï‚í‚ç‚È‚¢A‚Ü‚½‚ÍŠù‚ÉƒAƒjƒ[ƒVƒ‡ƒ“’†‚È‚ç‰½‚à‚µ‚È‚¢
-	if (m_facing == newDir || m_isFlipping) return;
-
-	// --- ƒAƒjƒ[ƒVƒ‡ƒ“È—ª”»’è (“ì <-> “Œ) ---
-	// “ì(³–Ê) ‚Æ “Œ(³–Ê) ‚ÍŒ©‚½–Ú‚ª“¯‚¶(ScaleX=1)‚È‚Ì‚ÅƒAƒjƒ[ƒVƒ‡ƒ“•s—v
-	bool isCurrentNormal = (m_facing == Direction::South || m_facing == Direction::East);
-	bool isNextNormal = (newDir == Direction::South || newDir == Direction::East);
-
-	if (isCurrentNormal && isNextNormal) {
-		m_facing = newDir;
-		// ‘¦À‚ÉŒü‚«‚ğXV‚µ‚ÄI—¹
-		return;
-	}
-
-	// --- ƒAƒjƒ[ƒVƒ‡ƒ“ƒ^ƒCƒv‚ÌŒˆ’è ---
-	// –ki”w–Êj‚ª—‚Şê‡‚Íu’Pƒ‚È”½“] (Simple)v
-	if (m_facing == Direction::North || newDir == Direction::North) {
-		m_currentFlipStyle = FlipStyle::Simple;
-	}
-	// ¼i”½“]j‚ª—‚Şê‡iå‚É¼<->“ŒA¼<->“ìj‚ÍuƒXƒCƒ“ƒO”½“] (Swing)v
-	else {
-		m_currentFlipStyle = FlipStyle::Swing;
-	}
-
-	// ƒAƒjƒ[ƒVƒ‡ƒ“ŠJn
-	m_nextFacing = newDir;
-	m_isFlipping = true;
-	m_flipTimer = 0.0f;
-	m_hasSwappedMesh = false;
-}
-
-void Unit::OnPushed(Direction pushDir)
-{
-	if (m_currentHP <= 0) return;
-	//ƒvƒbƒVƒ…Œü‚«“ü‚ê‚½ŒãA–Ú•Wƒ^ƒCƒ‹‚ğŒvZ
 	DirOffset offset = DirOffset::From(pushDir);
 	int targetX = m_gridX + offset.x;
 	int targetZ = m_gridZ + offset.z;
-	//áŠQ•¨‚ÌŒŸ¸
+
 	MapManager* map = m_context->GetMapManager();
 	bool isBlocked = !(map->IsWalkable(targetX, targetZ));
 	Tile* targetTile = map->GetTile(targetX, targetZ);
-	//Unit‚ÌŒŸ¸
+
 	Unit* obstacleUnit = nullptr;
 	if (targetTile && targetTile->occupant) {
 		isBlocked = true;
@@ -369,20 +146,18 @@ void Unit::OnPushed(Direction pushDir)
 	}
 
 	if (isBlocked) {
-		//‚Ô‚Â‚©‚è‚Ìˆ—
+		// éšœå®³ç‰©ã«è¡çªã—ãŸå ´åˆã®å‡¦ç†
 		Vector3 obstaclePos = map->GetWorldPosition(targetX, targetZ);
 		StartBumpAnimation(obstaclePos);
 
-		//ƒ_ƒ[ƒW‚Ìˆ—
-		// ‰Ÿ‚³‚ê‚½ƒ†ƒjƒbƒg‚àƒ_ƒ[ƒW‚ğó‚¯‚é
-		TakeDamage(m_onPushDamage, nullptr); 
+		TakeDamage(m_onPushDamage, nullptr);
 		if (obstacleUnit) {
-			// ‚Ô‚Â‚©‚ç‚ê‚½ƒ†ƒjƒbƒg‚àƒ_ƒ[ƒW‚ğó‚¯‚é 
-			obstacleUnit->TakeDamage(m_onPushDamage, this); 
+			// é€£é–è¡çªï¼šã¶ã¤ã‹ã‚‰ã‚ŒãŸãƒ¦ãƒ‹ãƒƒãƒˆã‚‚ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’å—ã‘ã‚‹
+			obstacleUnit->TakeDamage(m_onPushDamage, this);
 		}
 	}
 	else {
-		//áŠQ•¨‚Í‚È‚¢‚ÌˆÚ“®ˆ—
+		// éšœå®³ç‰©ãŒãªã„å ´åˆã®ç§»å‹•å‡¦ç†
 		Tile* currentTile = map->GetTile(m_gridX, m_gridZ);
 		if (currentTile) currentTile->occupant = nullptr;
 
@@ -395,30 +170,261 @@ void Unit::OnPushed(Direction pushDir)
 	}
 }
 
+// ---------------------------------------------------------
+
+// ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³åˆ¶å¾¡ (Animation System)
+
+// ---------------------------------------------------------
+
+void Unit::SetFacingFromVector(const Vector3& dir) {
+	// å¾®å°ãªãƒ™ã‚¯ãƒˆãƒ«ã«ã‚ˆã‚‹ä¸è¦ãªæŒ¯ã‚Šå‘ãï¼ˆãƒ•ãƒªãƒƒã‚«ãƒ¼ï¼‰ã‚’é˜²æ­¢
+	if (dir.LengthSquared() < 0.0001f) return;
+	Direction newDir = DirOffset::FromVector(dir.x, dir.z);
+	SetFacing(newDir);
+}
+
+void Unit::SetFacing(Direction newDir) {
+	if (m_facing == newDir || m_isFlipping) return;
+
+	// å—(æ­£é¢) ã¨ æ±(æ­£é¢) ã¯åŒã˜ãƒ¡ãƒƒã‚·ãƒ¥ãƒ»ã‚¹ã‚±ãƒ¼ãƒ«ã‚’ä½¿ç”¨ã™ã‚‹ãŸã‚ã€ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã‚’çœç•¥ã—ã¦å³æ™‚åæ˜ 
+	bool isCurrentNormal = (m_facing == Direction::South || m_facing == Direction::East);
+	bool isNextNormal = (newDir == Direction::South || newDir == Direction::East);
+
+	if (isCurrentNormal && isNextNormal) {
+		m_facing = newDir;
+		return;
+	}
+
+	if (m_facing == Direction::North || newDir == Direction::North) {
+		m_currentFlipStyle = FlipStyle::Simple;
+	}
+	else {
+		m_currentFlipStyle = FlipStyle::Swing;
+	}
+
+	m_nextFacing = newDir;
+	m_isFlipping = true;
+	m_flipTimer = 0.0f;
+	m_hasSwappedMesh = false;
+}
+
+void Unit::StartAttackAnimation(const Vector3& targetPos) {
+	m_animStartPos = m_srt.pos;
+	m_animTimer = 0.0f;
+	m_hasAnimHit = false;
+
+	Vector3 dir = targetPos - m_animStartPos;
+	if (dir.LengthSquared() > 0.001f) dir.Normalize();
+
+	m_animLungePos = m_animStartPos + dir * LUNGE_DISTANCE;
+	SetFacingFromVector(dir);
+}
+
+bool Unit::UpdateAttackAnimation(float dt, std::function<void()> onImpact) {
+	float deltaSeconds = dt / 1000.0f;
+	m_animTimer += deltaSeconds;
+
+	// è¨­å®šã—ãŸã‚¤ãƒ³ãƒ‘ã‚¯ãƒˆæ™‚é–“ã«é”ã—ãŸå ´åˆã€ãƒ€ãƒ¡ãƒ¼ã‚¸åˆ¤å®šã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ã‚’ç™ºç«ã•ã›ã‚‹
+	if (!m_hasAnimHit && m_animTimer >= TIME_IMPACT) {
+		m_hasAnimHit = true;
+		if (onImpact) onImpact();
+	}
+
+	bool isFinished = false;
+
+	// ãƒ•ã‚§ãƒ¼ã‚º1ï¼šå¯¾è±¡ã«å‘ã‹ã£ã¦ç´ æ—©ãè¸ã¿è¾¼ã‚€ï¼ˆLungeï¼‰
+	if (m_animTimer < TIME_LUNGE) {
+		float t = m_animTimer / TIME_LUNGE;
+		m_srt.pos = Vector3::Lerp(m_animStartPos, m_animLungePos, t);
+	}
+	// ãƒ•ã‚§ãƒ¼ã‚º2ï¼šè¡çªã—ãŸç¬é–“ã®åœæ­¢æ„Ÿï¼ˆãƒ’ãƒƒãƒˆã‚¹ãƒˆãƒƒãƒ—ï¼‰ã‚’æ¼”å‡º
+	else if (m_animTimer < TIME_RETURN) {
+		m_srt.pos = m_animLungePos;
+	}
+	// ãƒ•ã‚§ãƒ¼ã‚º3ï¼šå…ƒã®ä½ç½®ã«ã‚¹ãƒ ãƒ¼ã‚ºã«æˆ»ã‚‹ï¼ˆReturnï¼‰
+	else if (m_animTimer < TIME_END) {
+		float t = (m_animTimer - TIME_RETURN) / (TIME_END - TIME_RETURN);
+		m_srt.pos = Vector3::Lerp(m_animLungePos, m_animStartPos, t);
+	}
+	else {
+		m_srt.pos = m_animStartPos;
+		isFinished = true;
+	}
+
+	UpdateWorldMatrix();
+	Renderer::SetWorldMatrix(&m_WorldMatrix);
+
+	return isFinished;
+}
+
+void Unit::StartBumpAnimation(const Vector3& targetPos) {
+	m_animStartPos = m_srt.pos;
+	m_animTimer = 0.0f;
+	m_slideTimer = 0.0f;
+	m_hasAnimHit = false;
+
+	Vector3 dir = targetPos - m_animStartPos;
+	if (dir.LengthSquared() > 0.001f) dir.Normalize();
+	m_animLungePos = m_animStartPos + dir * LUNGE_DISTANCE;
+}
+
+void Unit::StartSlideAnimation(const Vector3& targetPos) {
+	m_slideStartPos = m_srt.pos;
+	m_slideEndPos = targetPos;
+	m_animTimer = 0.0f;
+	m_slideTimer = 0.0f;
+}
+
+bool Unit::UpdateSlideAnimation(uint64_t dt) {
+	float deltaSeconds = dt / 1000.0f;
+	m_slideTimer += deltaSeconds;
+
+	if (m_slideTimer < TIME_SLIDE) {
+		float t = m_slideTimer / TIME_SLIDE;
+		// EaseOutQuadã®é©ç”¨:ã€Œæœ€åˆã¯é€Ÿãã€åœæ­¢ç›´å‰ã¯ã‚†ã£ãã‚Šã€ã¨ã„ã†è‡ªç„¶ãªæ¸›é€Ÿæ„Ÿã‚’ä½œã‚‹
+		t = 1.0f - std::pow(1.0f - t, 2.0f);
+
+		m_srt.pos = Vector3::Lerp(m_slideStartPos, m_slideEndPos, t);
+
+		UpdateWorldMatrix();
+		Renderer::SetWorldMatrix(&m_WorldMatrix);
+		return false;
+	}
+	else {
+		m_srt.pos = m_slideEndPos;
+		UpdateWorldMatrix();
+		Renderer::SetWorldMatrix(&m_WorldMatrix);
+		return true;
+	}
+}
+
+void Unit::UpdateFlipAnimation(float dt) {
+	if (!m_isFlipping) {
+		m_srt.rot.y = 0.0f;
+		return;
+	}
+
+	m_flipTimer += dt;
+	float t = m_flipTimer / FLIP_DURATION;
+	float visualRotY = 0.0f;
+
+	// ãƒ•ã‚§ãƒ¼ã‚º1: 0åº¦ -> 90åº¦ (ç´™ãŒè£è¿”ã‚‹ã‚ˆã†ã«ç´°ããªã‚‹)
+	if (t < 0.5f) {
+		float phaseT = t / 0.5f;
+		visualRotY = std::lerp(0.0f, PI / 2.0f, phaseT);
+	}
+	// ãƒ•ã‚§ãƒ¼ã‚º2: 90åº¦ -> 0åº¦ (ãƒ¡ãƒƒã‚·ãƒ¥ã‚’åˆ‡ã‚Šæ›¿ãˆã¦åšã¿ãŒæˆ»ã‚‹)
+	else {
+		if (!m_hasSwappedMesh) {
+			m_facing = m_nextFacing;
+			m_hasSwappedMesh = true;
+
+			// å·¦å³ã®è¦–è¦šçš„ãªå‘ãã‚’è¨˜éŒ²
+			if (m_facing == Direction::East || m_facing == Direction::South) {
+				m_isFacingRight = true;
+			}
+			else if (m_facing == Direction::West) {
+				m_isFacingRight = false;
+			}
+
+			float targetScaleX = 1.0f;
+
+			if (m_facing == Direction::North) {
+				m_currRenderer = m_backRenderer;
+				// èƒŒé¢ãƒ¢ãƒ‡ãƒ«ã®æ¨™æº–ãŒã€Œå·¦å‘ãã€ã§ã‚ã‚‹ã¨ä»®å®šã€å³å‘ãã‚’ç¶­æŒã™ã‚‹å ´åˆã¯åè»¢ã•ã›ã‚‹
+				targetScaleX = m_isFacingRight ? -1.0f : 1.0f;
+			}
+			else {
+				m_currRenderer = m_frontRenderer;
+				// æ­£é¢ãƒ¢ãƒ‡ãƒ«ã®æ¨™æº–ãŒã€Œå³å‘ãã€ã§ã‚ã‚‹ã¨ä»®å®šã€å·¦å‘ãã«ã™ã‚‹å ´åˆã¯åè»¢ã•ã›ã‚‹
+				targetScaleX = m_isFacingRight ? 1.0f : -1.0f;
+			}
+
+			m_srt.scale.x = targetScaleX;
+		}
+
+		float phaseT = (t - 0.5f) / 0.5f;
+		visualRotY = std::lerp(PI / 2.0f, 0.0f, phaseT);
+	}
+
+	if (t >= 1.0f) {
+		m_isFlipping = false;
+		visualRotY = 0.0f;
+	}
+
+	m_srt.rot.y = visualRotY;
+}
+
+// ---------------------------------------------------------
+
+// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã¨UI (Rendering & UI)
+
+// ---------------------------------------------------------
+
+void Unit::SetModelRenderers(CStaticMeshRenderer* front, CStaticMeshRenderer* back) {
+	m_frontRenderer = front;
+	m_backRenderer = back;
+
+	// Unlitã‚·ã‚§ãƒ¼ãƒ€ãƒ¼é©ç”¨æ™‚ã€ãƒ¢ãƒ‡ãƒ«ã®ãƒ™ãƒ¼ã‚¹ã‚«ãƒ©ãƒ¼ãŒæš—ããªã‚‰ãªã„ã‚ˆã†ãƒãƒ†ãƒªã‚¢ãƒ«ã‚’ç´”ç™½ã«å¼·åˆ¶ã™ã‚‹
+	auto ForceWhiteMaterial = [](CStaticMeshRenderer* renderer) {
+		if (!renderer) return;
+
+		if (auto* mat = renderer->GetMaterial(0)) {
+			MATERIAL m = mat->GetData();
+			m.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+			m.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
+			m.Emission = Color(0.1f, 0.1f, 0.1f, 1.0f);
+			m.TextureEnable = TRUE;
+			mat->SetMaterial(m);
+		}
+		};
+
+	ForceWhiteMaterial(m_frontRenderer);
+	ForceWhiteMaterial(m_backRenderer);
+
+	m_currRenderer = m_frontRenderer;
+	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
+	m_srt.rot = Vector3(0.0f, 0.0f, 0.0f);
+}
+
+void Unit::DrawModel() {
+	if (!m_currRenderer) return;
+	Renderer::SetWorldMatrix(&m_WorldMatrix);
+	m_currRenderer->Draw();
+}
+
+void Unit::DrawUI() {
+	if (!m_hpBar || m_currentHP <= 0) return;
+
+	m_hpBar->Draw(m_srt.pos, m_currentHP, m_maxHP, m_previewDamage);
+
+	// æç”»å¾Œã«ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’å³åº§ã«ãƒªã‚»ãƒƒãƒˆã™ã‚‹ã“ã¨ã§ã€
+	
+	// ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã•ã‚Œã¦ã„ã‚‹ï¼ˆã‚¨ã‚¤ãƒ ã•ã‚Œã¦ã„ã‚‹ï¼‰ãƒ•ãƒ¬ãƒ¼ãƒ ã®ã¿UIãŒç‚¹æ»…ã™ã‚‹ã‚ˆã†ã«åˆ¶å¾¡ã™ã‚‹
+	m_previewDamage = 0;
+}
+
 void Unit::DrawPushPreview(Direction pushDir) {
-	// “®“I‚É–îˆóƒŒƒ“ƒ_ƒ‰[‚ğæ“¾‚µAŠeqƒNƒ‰ƒX‚Å‚Ìd•¡‚µ‚½‰Šú‰»‚ğ‰ñ”ğ‚·‚é
 	auto* pushArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_push_mesh");
 	if (!pushArrowRenderer || !m_context || !m_context->GetMapManager()) return;
 
 	MapManager* map = m_context->GetMapManager();
 	DirOffset offset = DirOffset::From(pushDir);
 
-	// ƒmƒbƒNƒoƒbƒNæ‚Ì‘ÎÛƒOƒŠƒbƒh‚ğŒvZ
 	int targetX = m_gridX + offset.x;
 	int targetZ = m_gridZ + offset.z;
 
-	// Õ“Ë”»’èi’Ês•s‰Âƒ^ƒCƒ‹A‚Ü‚½‚ÍŠù‚Éè—LÒ‚ª‚¢‚é‚©j
 	bool isBlocked = !map->IsWalkable(targetX, targetZ);
 	Tile* targetTile = map->GetTile(targetX, targetZ);
 	if (targetTile && targetTile->occupant) isBlocked = true;
 
-	// •`‰æˆÊ’u‚ÌŒvZFŒ»İ‚ÌƒOƒŠƒbƒh‚Æ‘ÎÛƒOƒŠƒbƒh‚Ì‹«ŠE•t‹ß‚Éİ’è
 	Vector3 myPos = map->GetWorldPosition(m_gridX, m_gridZ);
 	Vector3 targetPos = map->GetWorldPosition(targetX, targetZ);
-	Vector3 arrowPos = myPos + (targetPos - myPos) * 0.2f;
-	arrowPos.y += 0.08f; // ’n–Ê‚Æ‚Ì‚ß‚è‚İiZƒtƒ@ƒCƒeƒBƒ“ƒOj–h~‚Ì‚½‚ß‚ÌƒIƒtƒZƒbƒg
 
-	// ‰ñ“]Šp‚ÌŒvZ
+	// æç”»ä½ç½®ã‚’ç¾åœ¨åœ°ã¨å¯¾è±¡åœ°ã®é–“ã«è¨­å®š
+	Vector3 arrowPos = myPos + (targetPos - myPos) * 0.2f;
+	arrowPos.y += ARROW_Y_OFFSET;
+
 	float rotY = 0.0f;
 	if (offset.x == 1)       rotY = 0.0f;
 	else if (offset.x == -1) rotY = PI;
@@ -429,7 +435,7 @@ void Unit::DrawPushPreview(Direction pushDir) {
 		* Matrix4x4::CreateRotationY(rotY)
 		* Matrix4x4::CreateTranslation(arrowPos);
 
-	// Õ“Ë‚Í‰©Fi”¼“§–¾jA”ñÕ“Ë‚ÍŠDFi”¼“§–¾j
+	// è¡çªãŒäºˆæ¸¬ã•ã‚Œã‚‹å ´åˆã¯é»„è‰²ã€å®‰å…¨ã«ç§»å‹•ã§ãã‚‹å ´åˆã¯ç°è‰²ã§è¦–è¦šçš„ãƒ•ã‚£ãƒ¼ãƒ‰ãƒãƒƒã‚¯ã‚’æä¾›ã™ã‚‹
 	Color arrowColor = isBlocked ? Color(1.0f, 1.0f, 0.0f, 0.7f) : Color(0.6f, 0.6f, 0.6f, 0.9f);
 
 	Renderer::SetWorldMatrix(&world);
@@ -439,58 +445,12 @@ void Unit::DrawPushPreview(Direction pushDir) {
 		temp.Diffuse = arrowColor;
 		mat->SetMaterial(temp);
 		pushArrowRenderer->Draw();
-		mat->SetMaterial(old); // ƒ}ƒeƒŠƒAƒ‹‚ğŒ³‚Ìó‘Ô‚É•œŒ³
+		mat->SetMaterial(old);
 	}
 
-	// Õ“Ë”»’è‚ª‚ ‚éê‡A–îˆó‚ÌŒã‚ÉƒqƒbƒgƒGƒtƒFƒNƒg‚ğd‚Ë‚Ä•`‰æ
 	if (isBlocked && m_context->GetEffectManager()) {
 		Vector3 effectPos = targetPos;
-		effectPos.y += 0.8f;
+		effectPos.y += HIT_EFFECT_Y_OFFSET;
 		m_context->GetEffectManager()->DrawStaticHitPreview(effectPos);
 	}
 }
-
-int Unit::CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir) {
-	int expectedDamage = baseDamage;
-
-	if (isPush && m_context && m_context->GetMapManager()) {
-		DirOffset offset = DirOffset::From(pushDir);
-		int pushX = m_gridX + offset.x;
-		int pushZ = m_gridZ + offset.z;
-
-		bool isBlocked = !m_context->GetMapManager()->IsWalkable(pushX, pushZ);
-		Tile* nextTile = m_context->GetMapManager()->GetTile(pushX, pushZ);
-		if (nextTile && nextTile->occupant) isBlocked = true;
-
-		if (isBlocked) {
-			expectedDamage += m_onPushDamage; 
-		}
-
-		else if (nextTile && nextTile->structure) {
-			// Õ“Ë‚¹‚¸AŸ‚Ìƒ}ƒX‚ÖƒXƒ€[ƒY‚É‰Ÿ‚µo‚³‚ê‚½ê‡B‘«Œ³‚ÌƒMƒ~ƒbƒNiã©j‚ğŠm”F
-			if (nextTile->structure->GetType() == MapModelType::TRAP) {
-				Trap* trap = dynamic_cast<Trap*>(nextTile->structure);
-				// –¢”­“®‚Ìã©‚Å‚ ‚éê‡AŠmÀ‚Éƒgƒ‰ƒbƒvƒ_ƒ[ƒW‚ğó‚¯‚é‚Æ—\‘ª
-				if (trap && !trap->IsActivated()) {
-					// ƒgƒ‰ƒbƒv‚ÌŒÅ’èƒ_ƒ[ƒW
-					expectedDamage += trap->GetTrapDamage();
-				}
-			}
-		}
-	}
-	return expectedDamage;
-}
-void Unit::Update(uint64_t delta)
-{
-	float dt = static_cast<float>(delta) / 1000.0f;
-	//HPƒo[‚ÌXV
-	if (m_hpBar) {
-		m_hpBar->Update(dt);
-	}
-}
-//qƒNƒ‰ƒX‚ÅƒI[ƒo[ƒ‰ƒCƒh‚·‚é
-void Unit::StartTurn(){}
-
-void Unit::EndTurn(){}
-
-void Unit::OnTurnChanged(TurnState state){}

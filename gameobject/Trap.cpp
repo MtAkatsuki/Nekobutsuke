@@ -3,54 +3,68 @@
 #include "../gameobject/Unit.h"
 #include <iostream>
 
-void Trap::Init(MapModelType type, Vector3 position)
-{
-    // 基底クラスの初期化と、トラップの占有サイズ（通常は1x1）を取得
+namespace {
+    // 演出・バランス用定数
+    const float TRAP_Y_OFFSET = 0.4f;       // 地面に埋まらないための初期Yオフセット
+    const float TRAP_INITIAL_SCALE = 0.5f;  // トラップの基準スケール
+    const float ANIM_DURATION = 0.5f;       // 消失アニメーションの再生時間（秒）
+}
+
+void Trap::Init(MapModelType type, Vector3 position) {
     MapObject::Init(type, position);
     GetDimensions(type, m_sizeX, m_sizeZ);
 
     m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("trap_mesh");
-
     if (!m_renderer) {
         OutputDebugStringA("[Trap] Warning: trap_mesh not found.\n");
     }
 
-    m_srt.scale = Vector3(0.5f, 0.5f, 0.5f);
+    m_srt.scale = Vector3(TRAP_INITIAL_SCALE, TRAP_INITIAL_SCALE, TRAP_INITIAL_SCALE);
     m_srt.rot = Vector3(0.0f, 0.0f, 0.0f);
     m_srt.pos = position;
+    m_srt.pos.y += TRAP_Y_OFFSET;
 
-    m_srt.pos.y += 0.4f;
-
-    // [アニメーション用] 初期スケールを保存
+    // アニメーション計算用の基準スケールと透明度を保存
     m_initialScale = m_srt.scale;
+    m_currentAlpha = 1.0f;
 
     UpdateWorldMatrix();
 }
 
-void Trap::OnEnter(Unit* unit)
-{
-    // 既に発動済みの場合は処理をスキップ
-    if (m_isActivated) return;
+void Trap::Update(uint64_t dt) {
+    // 消失アニメーション中でなければ計算をスキップ
+    if (!m_isDisappearing) return;
 
-    if (unit) {
-        // デバッグ出力：トラップ発動
-        std::cout << "TRAP ACTIVATED! Unit took damage." << std::endl;
+    float deltaSeconds = static_cast<float>(dt) / 1000.0f;
+    m_animTimer += deltaSeconds;
 
-        // ユニットにダメージを与える（攻撃者は無し）
-        unit->TakeDamage(m_trapDamage, nullptr);
+    // 進行度の正規化 (0.0 ～ 1.0)
+    float t = m_animTimer / ANIM_DURATION;
 
-        // 発動済みフラグを立てる
-        m_isActivated = true;
-        m_isAnimating = true;   // 【新規】消失アニメーションの再生を開始
-        m_animTimer = 0.0f;     // タイマーをリセットして最初から再生
+    if (t >= 1.0f) {
+        t = 1.0f;
+        m_isDisappearing = false;
+
+        // 完全に消失させる
+        m_srt.scale = Vector3(0, 0, 0);
+        m_currentAlpha = 0.0f;
     }
+    else {
+        // 【ロジック責務】：Update内では「数学的な計算」のみを行う
+        // スケールを徐々に小さくする (1.0 -> 0.0)
+        m_srt.scale = m_initialScale * (1.0f - t);
+
+        // 透明度（Alpha）をフェードアウトさせる (1.0 -> 0.0)
+        m_currentAlpha = 1.0f - t;
+    }
+
+    UpdateWorldMatrix();
 }
 
 void Trap::OnDraw(uint64_t delta) {
-    if (m_srt.scale.x <= 0.001f) return;
-    if (!m_renderer) return;
+    // 完全に縮小されている（消失済み）場合は描画をスキップし、GPU負荷を軽減する
+    if (m_srt.scale.x <= 0.001f || !m_renderer) return;
 
-    // === unlightshader をセット ===
     auto shader = MeshManager::getShader<CShader>("unlightshader");
     if (shader) {
         shader->SetGPU();
@@ -60,22 +74,12 @@ void Trap::OnDraw(uint64_t delta) {
     Renderer::SetDepthEnable(true);
     Renderer::SetWorldMatrix(&m_WorldMatrix);
 
-
-	// マテリアルの透明度をアニメーションに応じて調整
+    // 【描画責務】：Updateで計算された m_currentAlpha をマテリアルに適用するだけ
     if (auto* mat = m_renderer->GetMaterial(0)) {
         MATERIAL m = mat->GetData();
         m.TextureEnable = TRUE;
         m.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
-        m.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
-		// アニメーション中は透明度を調整
-        if (m_isAnimating) {
-            float t = m_animTimer / m_animDuration;
-            if (t > 1.0f) t = 1.0f;
-            m.Diffuse.w = 1.0f - t;
-        }
-        else {
-            m.Diffuse.w = 1.0f;
-        }
+        m.Diffuse = Color(1.0f, 1.0f, 1.0f, m_currentAlpha);
         mat->SetMaterial(m);
     }
 
@@ -84,48 +88,27 @@ void Trap::OnDraw(uint64_t delta) {
     Renderer::SetBlendState(BS_NONE);
 }
 
+void Trap::OnEnter(Unit* unit) {
+    // 重複発動の防止
+    if (m_hasActivated) return;
+
+    if (unit) {
+        std::cout << "[Trap] TRAP ACTIVATED! Unit took damage." << std::endl;
+
+        // ユニットにトラップダメージを適用（攻撃者=nullptr）
+        unit->TakeDamage(m_trapDamage, nullptr);
+
+        // 発動状態を確定し、消失演出へ移行
+        m_hasActivated = true;
+        m_isDisappearing = true;
+        m_animTimer = 0.0f;
+    }
+}
+
+
 void Trap::GetDimensions(MapModelType type, int& outW, int& outD)
 {
     switch (type) {
     case MapModelType::TRAP: default: outW = 1; outD = 1; break;
     }
-}
-
-void Trap::Update(uint64_t dt) {
-    // アニメーション再生中でない場合は何もしない
-    if (!m_isAnimating) return;
-
-    // ミリ秒を秒単位に変換
-    float deltaSeconds = (float)dt / 1000.0f;
-    m_animTimer += deltaSeconds;
-
-    // アニメーションの進捗率を計算 (0.0 ～ 1.0)
-    float t = m_animTimer / m_animDuration;
-
-    if (t >= 1.0f) {
-        t = 1.0f;
-        m_isAnimating = false;
-        // アニメーション終了：完全に非表示にする
-        m_srt.scale = Vector3(0, 0, 0);
-        // 必要に応じてここで m_isDead = true; を設定し、シーンから削除する
-    }
-    else {
-        // 【演出1】スケール：初期サイズから 0 へと徐々に小さくする
-        // 線形補間（Lerp）に近い計算：Current = Start * (1 - t)
-        m_srt.scale = m_initialScale * (1.0f - t);
-
-        // 【演出2】透明度（フェードアウト）：1.0 から 0.0 へ
-        // マテリアルの Diffuse アルファ値（w成分）を書き換える
-        if (m_renderer) {
-            CMaterial* mat = m_renderer->GetMaterial(0);
-            if (mat) {
-                MATERIAL m = mat->GetData();
-                m.Diffuse.w = 1.0f - t; // w は Alpha チャンネル
-                mat->SetMaterial(m);    // 変更を GPU 定数バッファへ反映
-            }
-        }
-    }
-
-    // 行列を再計算して描画に反映
-    UpdateWorldMatrix();
 }

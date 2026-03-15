@@ -3,48 +3,42 @@
 
 MapObject::MapObject(GameContext* context):GameObject(context){}
 
-void MapObject::Init(MapModelType type, Vector3 position)
-{
+void MapObject::Init(MapModelType type, Vector3 position) {
 	m_srt.pos = position;
-    // オブジェクトタイプを保存（AIの識別やロジック判定に使用）
-    m_type = type;
+	m_type = type;
 
-    // 通行可能属性（m_isWalkable）の設定
-    // デフォルトは通行可能だが、障害物（壁や家具）については false に設定する。
-    // ※基底クラスで一括設定しているが、特殊な Prop の場合は各 Init でのオーバーライドも可能。
-    switch (type) {
-    case MapModelType::WALL:
-    case MapModelType::PROP_SOFA_TATE:
-    case MapModelType::PROP_SOFA_YOKO:
-    case MapModelType::PROP_CATTOWER:
-    case MapModelType::PROP_TABLE:
-    case MapModelType::PROP_BOOKSHELF:
-        // 障害物：通行不可能に設定
-        m_isWalkable = false;
-        break;
+	// オブジェクトタイプに基づく通行可能属性（Walkable）の初期設定
+	switch (type) {
+	case MapModelType::WALL:
+	case MapModelType::PROP_SOFA_TATE:
+	case MapModelType::PROP_SOFA_YOKO:
+	case MapModelType::PROP_CATTOWER:
+	case MapModelType::PROP_TABLE:
+	case MapModelType::PROP_BOOKSHELF:
+		m_isWalkable = false; // 障害物は通行不可
+		break;
 
-    case MapModelType::TRAP:
-        // トラップ：通行は可能（ただしダメージ判定あり）なため true に設定
-        m_isWalkable = true;
-        break;
+	case MapModelType::TRAP:
+		m_isWalkable = true;  // トラップは進入可能なため true に設定（ダメージはOnEnterで処理）
+		break;
 
-    default:
-        // 床などはデフォルトで通行可能
-        m_isWalkable = true;
-        break;
-    }
-	if (type == MapModelType::FLOOR) 
-	{
-		//grassのrenderer作成
+	default:
+		m_isWalkable = true;  // 床などはデフォルトで通行可能
+		break;
+	}
+
+	if (type == MapModelType::FLOOR) {
 		m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("floor_mesh");
 	}
 
 	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
 	UpdateWorldMatrix();
 }
-void MapObject::Update(uint64_t delta) 
-{
+
+void MapObject::Update(uint64_t delta) {
+    // ベースクラスのUpdateは空実装（派生クラスで必要に応じて拡張）
 }
+
 void MapObject::OnDraw(uint64_t delta)
 {
 	if (m_renderer != nullptr) {
