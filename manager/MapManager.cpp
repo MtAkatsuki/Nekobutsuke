@@ -16,6 +16,7 @@
 #include "../gameobject/player.h"
 #include "../gameobject/enemy.h"
 #include "../gameobject/Ally.h"
+#include "EnemyManager.h"
 #include "GameContext.h"
 
 namespace {

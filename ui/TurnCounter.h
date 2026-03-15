@@ -1,153 +1,122 @@
-#pragma once
+ï»¿#pragma once
 #include <vector>
 #include <memory>
 #include <string>
 #include "../system/CSprite.h"
 #include "../Application.h"
 
+// =========================================================
+// TurnCounter ã‚¯ãƒ©ã‚¹
+// æ®‹ã‚Šã‚¿ãƒ¼ãƒ³æ•°ã®UIè¡¨ç¤ºã¨ã€ã‚¿ãƒ¼ãƒ³æ›´æ–°æ™‚ã®ãƒãƒƒãƒ—ã‚¢ãƒƒãƒ—æ¼”å‡ºã‚’ç®¡ç†ã™ã‚‹
+// =========================================================
 class TurnCounter {
 public:
+    enum class AnimState {
+        Hidden,       // éè¡¨ç¤ºçŠ¶æ…‹ï¼ˆæ•µã‚¿ãƒ¼ãƒ³ä¸­ãªã©ï¼‰
+        CenterPopUp,  // ç”»é¢ä¸­å¤®ã§æ‹¡å¤§ã—ãªãŒã‚‰ãƒãƒƒãƒ—ã‚¢ãƒƒãƒ—
+        CenterWait,   // ä¸­å¤®ã§ä¸€æ™‚åœæ­¢ã—ã¦ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã«æ³¨è¦–ã•ã›ã‚‹
+        MoveToCorner, // ç¸®å°ã—ãªãŒã‚‰å·¦ä¸Šï¼ˆæŒ‡å®šåº§æ¨™ï¼‰ã¸ç§»å‹•
+        Fixed         // å·¦ä¸Šã®ç›®æ¨™åœ°ç‚¹ã«å›ºå®šè¡¨ç¤º
+    };
 
-	// --- ƒ_ƒCƒAƒƒO‚âUI‰‰o‚Ìó‘Ô‚ğŠÇ—‚·‚é—ñ‹“Œ^ ---
-	enum class AnimState {
-		Hidden,       // ”ñ•\¦ó‘Ôi“Gƒ^[ƒ“’†‚È‚Çj
-		CenterPopUp,  // ‰æ–Ê’†‰›‚ÅŠg‘å‚µ‚È‚ª‚çƒ|ƒbƒvƒAƒbƒv
-		CenterWait,   // ’†‰›‚Åˆê’â~‚µ‚ÄƒvƒŒƒCƒ„[‚É’‹‚³‚¹‚é
-		MoveToCorner, // k¬‚µ‚È‚ª‚ç¶ãiw’èÀ•Wj‚ÖˆÚ“®
-		Fixed         // ¶ã‚Ì–Ú•W’n“_‚ÉŒÅ’è•\¦
-	};
-
-    TurnCounter() {};
-    ~TurnCounter() {};
+    TurnCounter() = default;
 
     void Init() {
-		// ƒ^[ƒ“ƒJƒEƒ“ƒ^[—p‚ÌƒXƒvƒ‰ƒCƒg‚ğ‚P`‚T‚Ü‚Å“Ç‚İ‚Ş
         for (int i = 1; i <= 5; ++i) {
             std::string path = "assets/texture/ui/turn_" + std::to_string(i) + ".png";
-            auto sprite = std::make_unique<CSprite>(462, 100, path.c_str());
+            auto sprite = std::make_unique<CSprite>(NUM_TEX_W, NUM_TEX_H, path.c_str());
             m_numberSprites.push_back(std::move(sprite));
         }
         m_currentTurn = 5;
 
-        m_escapePromptSprite = std::make_unique<CSprite>(502, 215, "assets/texture/ui/escape_prompt.png");
-		//Å‰‚Í•s•\¦
-		m_state = AnimState::Hidden;
+        m_escapePromptSprite = std::make_unique<CSprite>(PROMPT_TEX_W, PROMPT_TEX_H, "assets/texture/ui/escape_prompt.png");
+        m_state = AnimState::Hidden;
     }
 
     void SetTurn(int turn) {
-		// ”ÍˆÍ‚Í‚P`‚T‚É§ŒÀ
-        if (turn < 0) turn = 0;
-        if (turn > 5) turn = 5;
         m_currentTurn = turn;
     }
 
-	// ”òsƒAƒjƒ[ƒVƒ‡ƒ“‚ÌŠJni’†‰›‚©‚ç‹÷‚Ö‚ÌˆÚ“®ƒV[ƒPƒ“ƒXj
-	void StartAnimation() {
-		m_state = AnimState::CenterPopUp;
-		m_timer = 0.0f;
-		m_currentScale = Vector3(0.0f, 0.0f, 1.0f);
+    void StartAnimation() {
+        m_animTimer = 0.0f;
+        m_state = AnimState::CenterPopUp;
 
-		float screenW = (float)Application::GetWidth();
-		float screenH = (float)Application::GetHeight();
-		m_currentPos = Vector3(screenW / 2.0f, screenH / 2.0f, 0.0f);
-	}
+        // ç”»é¢ä¸­å¤®ã‚’ã‚¹ã‚¿ãƒ¼ãƒˆä½ç½®ã«è¨­å®š
+        m_currentPos.x = Application::GetWidth() / 2.0f;
+        m_currentPos.y = Application::GetHeight() / 2.0f;
+        m_currentScale = Vector3(0.0f, 0.0f, 1.0f);
+    }
 
-	// ‰B‚·AŸ‚Ìƒ^[ƒ“n‚Ü‚é‘O‚É
-	void Hide() {
-		m_state = AnimState::Hidden;
-	}
+    void Hide() {
+        m_state = AnimState::Hidden;
+    }
 
-	// “üê‚à‚µ‚­‚Í”òsƒAƒjƒƒVƒ‡ƒ“‚µ‚Ä‚¢‚é‚©
-	bool IsAnimating() const {
-		return m_state == AnimState::CenterPopUp ||
-			m_state == AnimState::CenterWait ||
-			m_state == AnimState::MoveToCorner;
-	}
-
+    // ... å‰é¢éƒ¨åˆ†ä¿æŒä¸å˜ ...
     void Update(uint64_t dt) {
-        //‚à‚µ•s•\¦AŒÅ’è’†‚È‚çARETURN
         if (m_state == AnimState::Hidden || m_state == AnimState::Fixed) return;
 
         float deltaSeconds = static_cast<float>(dt) / 1000.0f;
+        m_animTimer += deltaSeconds;
 
-        if (deltaSeconds > 0.1f) deltaSeconds = 0.016f;
-
-        m_timer += deltaSeconds;
-
-        float screenW = (float)Application::GetWidth();
-        float screenH = (float)Application::GetHeight();
-        Vector3 centerPos(screenW / 2.0f, screenH / 2.0f, 0.0f);
-
-        // ‰æ‘œ‚Ìí—Şiƒ^[ƒ“”‚©’Eow¦‚©j‚É‰‚¶‚Ä–Ú•WÀ•W‚ğØ‚è‘Ö‚¦
+        // ç›®æ¨™ã®å›ºå®šåº§æ¨™
         Vector3 targetPos = (m_currentTurn <= 0) ? Vector3(210.0f, 100.0f, 0.0f) : Vector3(200.0f, 50.0f, 0.0f);
 
-        // ƒAƒjƒ[ƒVƒ‡ƒ“ƒ^ƒCƒ€ƒ‰ƒCƒ“İ’è
-        const float TIME_POPUP = 0.3f; // ƒ|ƒbƒvƒAƒbƒvŠÔ
-        const float TIME_WAIT = 1.5f;  // ’†‰›‘Ò‹@I—¹ŠÔ(0.3 ~ 1.5)
-        const float TIME_MOVE = 2.0f;  // ˆÚ“®Š®—¹ŠÔ(1.5 ~ 2.0)
-
-        if (m_timer <= TIME_POPUP) {
-            m_state = AnimState::CenterPopUp;
-            float t = m_timer / TIME_POPUP;
-            // Ease-Out Cubic: oŒ»‚Í¨‚¢‚æ‚­A~‚Ü‚é’¼‘O‚ÍŠŠ‚ç‚©‚É
+        if (m_state == AnimState::CenterPopUp) {
+            float t = m_animTimer / TIME_POPUP;
+            if (t >= 1.0f) {
+                t = 1.0f;
+                m_state = AnimState::CenterWait;
+                m_animTimer = 0.0f;
+            }
+            // åŸç‰ˆã® Ease-Out Cubic ç·©å‹•
             t = 1.0f - std::pow(1.0f - t, 3.0f);
-            m_currentScale = Vector3(t, t, 1.0f);
-            m_currentPos = centerPos;
+            float scale = t * 1.0f;
+            m_currentScale = Vector3(scale, scale, 1.0f);
         }
-        else if (m_timer <= TIME_WAIT) {
-            m_state = AnimState::CenterWait;
-            m_currentScale = Vector3(1.0f, 1.0f, 1.0f);
-            m_currentPos = centerPos;
+        else if (m_state == AnimState::CenterWait) {
+            if (m_animTimer >= TIME_WAIT) {
+                m_state = AnimState::MoveToCorner;
+                m_animTimer = 0.0f;
+            }
         }
-        else if (m_timer <= TIME_MOVE) {
-            m_state = AnimState::MoveToCorner;
-            float t = (m_timer - TIME_WAIT) / (TIME_MOVE - TIME_WAIT);
-            // Smoothstep: “®‚«o‚µ‚Æ’â~‚Ì—¼•û‚ğŠŠ‚ç‚©‚É‚·‚é
-            t = t * t * (3.0f - 2.0f * t);
+        else if (m_state == AnimState::MoveToCorner) {
+            float t = m_animTimer / TIME_MOVE;
+            float easeT = t * t * (3.0f - 2.0f * t);
 
-            // ƒXƒP[ƒ‹‚ğ 1.0 ‚©‚ç 0.8 ‚Ök¬
-            float s = 1.0f + (0.8f - 1.0f) * t;
-            m_currentScale = Vector3(s, s, 1.0f);
+            if (t >= 1.0f) {
+                easeT = 1.0f;
+                m_state = AnimState::Fixed;
+            }
 
-            // À•W‚Ì•âŠÔiƒAƒ“ƒ`ƒGƒCƒŠƒAƒX‚âT“®–h~‚Ì‚½‚ßlÌŒÜ“üj
-            float px = centerPos.x + (targetPos.x - centerPos.x) * t;
-            float py = centerPos.y + (targetPos.y - centerPos.y) * t;
-            m_currentPos.x = std::round(px);
-            m_currentPos.y = std::round(py);
-            m_currentPos.z = 0.0f;
-        }
-        else {
-            m_state = AnimState::Fixed;
-            m_currentScale = Vector3(0.8f, 0.8f, 1.0f);
-            m_currentPos = targetPos;
+            Vector3 centerPos(Application::GetWidth() / 2.0f, Application::GetHeight() / 2.0f, 0.0f);
+            m_currentPos = Vector3::Lerp(centerPos, targetPos, easeT);
+
+            // 1.0f ã‹ã‚‰ 0.8f ã¸ç¸®å°
+            float scale = std::lerp(1.0f, FINAL_SCALE, easeT);
+            m_currentScale = Vector3(scale, scale, 1.0f);
         }
     }
 
     void Draw() {
-		// ”ñ•\¦ó‘Ô‚È‚ç•`‰æ‚µ‚È‚¢
         if (m_state == AnimState::Hidden) return;
-		// ƒCƒ“ƒfƒbƒNƒX‚O‚ªƒ^[ƒ“‚PAƒCƒ“ƒfƒbƒNƒX‚S‚ªƒ^[ƒ“‚T‚É‘Î‰
-		// ƒ^[ƒ“”‚ª‚O‚Ìê‡‚Í’Eo’ñ¦‰æ‘œ‚ğ•\¦‚·‚é
-        // ƒjƒAƒŒƒXƒgƒlƒCƒo[i“_ƒTƒ“ƒvƒŠƒ“ƒOj‚ğ‹­§F®””{‚Å‚È‚¢ƒXƒP[ƒŠƒ“ƒO‚ÌƒsƒNƒZƒ‹‚Ú‚¯‚ğ–h~
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ï¼ãŒã‚¿ãƒ¼ãƒ³ï¼‘ã€ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ï¼”ãŒã‚¿ãƒ¼ãƒ³ï¼•ã«å¯¾å¿œ
+		
+		// ã‚¿ãƒ¼ãƒ³æ•°ãŒï¼ã®å ´åˆã¯è„±å‡ºæç¤ºç”»åƒã‚’è¡¨ç¤ºã™ã‚‹
         Renderer::SetUISamplerMode(true);
 
-		if (m_currentTurn <= 0) {
-			// ƒ^[ƒ“”‚ª0‚Ìê‡A’Eo’ñ¦‰æ‘œ‚ğ•\¦‚·‚é
+		MATERIAL mtrl;
+		mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+		mtrl.TextureEnable = TRUE;
+
+		if (m_currentTurn <= 0) {// ã‚¿ãƒ¼ãƒ³æ•°ãŒ0ã®å ´åˆã€è„±å‡ºæç¤ºç”»åƒã‚’è¡¨ç¤ºã™ã‚‹
 			if (m_escapePromptSprite) {
-				MATERIAL mtrl;
-				mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
-				mtrl.TextureEnable = TRUE;
 				m_escapePromptSprite->ModifyMtrl(mtrl);
 				m_escapePromptSprite->Draw(m_currentScale, Vector3(0, 0, 0), m_currentPos);
 			}
 		}
-		else {
-			// ’Êí‚Ì”š•\¦
+		else {// é€šå¸¸ã®æ•°å­—è¡¨ç¤º
 			int index = m_currentTurn - 1;
 			if (index >= 0 && index < m_numberSprites.size()) {
-				MATERIAL mtrl;
-				mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
-				mtrl.TextureEnable = TRUE;
 				m_numberSprites[index]->ModifyMtrl(mtrl);
 				m_numberSprites[index]->Draw(m_currentScale, Vector3(0, 0, 0), m_currentPos);
 			}
@@ -156,16 +125,31 @@ public:
         Renderer::SetUISamplerMode(false);
     }
 
+    bool IsAnimating() const {
+        return m_state == AnimState::CenterPopUp ||
+            m_state == AnimState::CenterWait ||
+            m_state == AnimState::MoveToCorner;
+    }
+
 private:
-	// ƒ^[ƒ“ƒJƒEƒ“ƒ^[—p‚ÌƒXƒvƒ‰ƒCƒg”z—ñ
+    // --- å®šæ•° ---
+    static constexpr float NUM_TEX_W = 462.0f;
+    static constexpr float NUM_TEX_H = 100.0f;
+    static constexpr float PROMPT_TEX_W = 502.0f;
+    static constexpr float PROMPT_TEX_H = 215.0f;
+
+    static constexpr float TIME_POPUP = 0.3f;
+    static constexpr float TIME_WAIT = 1.2f;
+    static constexpr float TIME_MOVE = 0.5f;
+    static constexpr float FINAL_SCALE = 0.8f;
+
     std::vector<std::unique_ptr<CSprite>> m_numberSprites;
-	//’Eo’ñ¦—p‚ÌƒXƒvƒ‰ƒCƒg
     std::unique_ptr<CSprite> m_escapePromptSprite;
-	// Œ»İ‚Ìƒ^[ƒ“”
-    int m_currentTurn = 5;
-	// ƒAƒjƒ[ƒVƒ‡ƒ“‚Ìó‘ÔŠÇ—
+
     AnimState m_state = AnimState::Hidden;
-    float m_timer = 0.0f;
-    Vector3 m_currentPos{ 0, 0, 0 };
-    Vector3 m_currentScale{ 1, 1, 1 };
+    int m_currentTurn = 5;
+    float m_animTimer = 0.0f;
+
+    Vector3 m_currentPos;
+    Vector3 m_currentScale;
 };

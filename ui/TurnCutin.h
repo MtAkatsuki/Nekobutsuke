@@ -1,13 +1,16 @@
-#pragma once
+ï»¿#pragma once
 #include <string>
 #include <memory>
+#include <cmath>
 #include "../system/CSprite.h"
 #include "../Application.h"
 #include "../system/Transform.h"
-#include <iostream>
 
-class TurnCutin
-{
+// =========================================================
+// TurnCutin ã‚¯ãƒ©ã‚¹
+// ã‚¿ãƒ¼ãƒ³é–‹å§‹æ™‚ï¼ˆPlayer Phase / Enemy Phaseï¼‰ã®ç”»é¢ã‚«ãƒƒãƒˆã‚¤ãƒ³æ¼”å‡ºã‚’åˆ¶å¾¡ã™ã‚‹
+// =========================================================
+class TurnCutin {
 public:
 	enum class AnimState {
 		Idle,
@@ -16,133 +19,111 @@ public:
 		FadeOut
 	};
 
-	TurnCutin() {};
+	TurnCutin() = default;
 
+	// ---------------------------------------------------------
+	// ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
+	// ---------------------------------------------------------
 	void Init() {
-		m_playerSprite = std::make_unique<CSprite>(684, 364, "assets/texture/ui_cutin_PlayerPhase.png");
-		m_enemySprite = std::make_unique<CSprite>(684, 364, "assets/texture/ui_cutin_EnemyPhase.png");
+		m_playerSprite = std::make_unique<CSprite>(TEX_WIDTH, TEX_HEIGHT, "assets/texture/ui_cutin_PlayerPhase.png");
+		m_enemySprite = std::make_unique<CSprite>(TEX_WIDTH, TEX_HEIGHT, "assets/texture/ui_cutin_EnemyPhase.png");
 
 		m_srt.scale = Vector3(0.0f, 0.0f, 1.0f);
 		m_srt.rot = Vector3(0.0f, 0.0f, 0.0f);
-		m_state = AnimState::Idle;
+		m_state = AnimState::Idle; 
 		m_timer = 0.0f;
 	}
 
-	void PlayCutinAnimation(std::string type)
-	{
+	void PlayCutinAnimation(const std::string& type) {
 		m_timer = 0.0f;
 		m_srt.scale = Vector3(0.0f, 0.0f, 1.0f);
 		m_srt.pos = Vector3(0.0f, 0.0f, 0.0f);
-		
+
+		if (type == "Player Phase") m_activeSprite = m_playerSprite.get();
+		else if (type == "Enemy Phase") m_activeSprite = m_enemySprite.get();
+
 		m_state = AnimState::FadeIn;
-		
-		if(type =="Player Phase")
-		{
-			m_currentSprite = m_playerSprite.get();
-		}
-		else if(type=="Enemy Phase")
-		{
-			m_currentSprite = m_enemySprite.get();
-		}
-		else
-		{
-			m_currentSprite = nullptr;
-		}
-		m_srt.scale = Vector3(0.0f, 0.0f, 1.0f);
 	}
 
-	void Update(uint64_t dt)
-	{
-		if (m_state == AnimState::Idle || m_currentSprite == nullptr) return;
+	void Update(uint64_t dt) {
+		if (m_state == AnimState::Idle) return;
 
 		float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 		m_timer += deltaSeconds;
 
-		float screenW = (float)Application::GetWidth();
-		float screenH = (float)Application::GetHeight();
+		// çŠ¶æ€ã«å¿œã˜ãŸã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³è¨ˆç®—
+		if (m_timer < TIME_FADE_IN) {
+			// ãƒ•ã‚§ãƒ¼ã‚º1ï¼šç´ æ—©ãæ‹¡å¤§ã—ãªãŒã‚‰å‡ºç¾
+			float t = m_timer / TIME_FADE_IN;
+			t = 1.0f - std::pow(1.0f - t, 2.0f);
 
-		float centerX = screenW / 2.0f;
-		float centerY = screenH / 2.0f;
-
-		m_srt.pos = Vector3(centerX, centerY, 0.0f);
-
-		float currentScale = 1.0f;
-		float currentAlpha = 1.0f;
-
-
-		// 0s(ŠJn) -> 0.5s(“üêŠ®—¹)
-		if (m_timer < m_timerPhase1) {
-			float t = m_timer / m_timerPhase1;
-			//easeOutg‚¤Aæ‚¸‚Í‘‚¢“®‚«AŒã‚Å‚ä‚Á‚­‚è
-			t = 1.0f - pow(1.0f - t, 2.0f);//pow‚Í™pæ,(1.0f-t)‚Ì3æ
-
-			currentScale = std::lerp(0.0f, 1.0f, t); // 0 -> 1
-			currentAlpha = std::lerp(0.0f, 1.0f, t); // “§–¾ -> •s“§–¾
+			m_currentScale = std::lerp(0.0f, 1.0f, t);
+			m_currentAlpha = std::lerp(0.0f, 1.0f, t);
 			m_state = AnimState::FadeIn;
 		}
-		//  0.5s(“üêŠ®—¹) -> 2.5s(‘ŞêŠJn)
-		else if (m_timer < m_timerPhase2)
-		{
-			currentScale = 1.0f;
-			currentAlpha = 1.0f;
+		else if (m_timer < TIME_WAIT_END) {
+			// ãƒ•ã‚§ãƒ¼ã‚º2ï¼šç”»é¢ä¸­å¤®ã§åœæ­¢ã—ã€ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã«ãƒ•ã‚§ãƒ¼ã‚ºã‚’èªè­˜ã•ã›ã‚‹
+			m_currentScale = 1.0f;
+			m_currentAlpha = 1.0f;
 			m_state = AnimState::Wait;
 		}
-		//2.5s(‘ŞêŠJn) -> 3.0s(I‚í‚è)
-		else if (m_timer < m_timerPhase3)
-		{
-			float fadeOutDuration = m_timerPhase3 - m_timerPhase2;
+		else if (m_timer < TIME_FADE_OUT_END) {
+			// ãƒ•ã‚§ãƒ¼ã‚º3ï¼šå¾ã€…ã«æ¶ˆæ»… (Ease-Inï¼šæœ€åˆã¯ã‚†ã£ãã‚Šã€å¾ŒåŠã§ä¸€æ°—ã«æ¶ˆãˆã‚‹)
+			float fadeOutDuration = TIME_FADE_OUT_END - TIME_WAIT_END;
+			float t = (m_timer - TIME_WAIT_END) / fadeOutDuration;
+			t = std::pow(t, 2.0f);
 
-			float t = (m_timer - m_timerPhase2) / fadeOutDuration;
-
-			//easeIng‚¤Aæ‚¸‚Í‚ä‚Á‚­‚èAŒã‚Å‘‚¢“®‚«
-			t = pow(t, 2.0f);
-		
-			currentScale = std::lerp(1.0f, 0.0f, t); // 1 -> 0
-			currentAlpha = std::lerp(1.0f, 0.0f, t); // •s“§–¾ -> “§–¾
+			m_currentScale = std::lerp(1.0f, 0.0f, t);
+			m_currentAlpha = std::lerp(1.0f, 0.0f, t);
 			m_state = AnimState::FadeOut;
 		}
-		else
-		{
-			//ƒAƒjƒI—¹
+		else {
 			m_state = AnimState::Idle;
 			return;
 		}
 
-		m_srt.scale = Vector3(currentScale, currentScale, 1.0f);
-
-		MATERIAL mtrl;
-		mtrl.Ambient = Color(0, 0, 0, 0);
-		mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, currentAlpha);
-		mtrl.Specular = Color(0, 0, 0, 0);
-		mtrl.Emission = Color(0, 0, 0, 0);
-		mtrl.Shiness = 0;
-		mtrl.TextureEnable = TRUE;
-
-		m_currentSprite->ModifyMtrl(mtrl);
-
-
+		m_srt.scale = Vector3(m_currentScale, m_currentScale, 1.0f);
 	}
 
-	void Draw()
-	{
-		if (m_state != AnimState::Idle && m_currentSprite != nullptr)
-		{
-			m_currentSprite->Draw(this->m_srt.scale, this->m_srt.rot, this->m_srt.pos);
-		}
+	void Draw() {
+		if (m_state == AnimState::Idle || !m_activeSprite) return;
+
+		Renderer::SetUISamplerMode(true);
+
+		// è¨ˆç®—æ¸ˆã¿ã®ã‚¢ãƒ«ãƒ•ã‚¡å€¤ã‚’ãƒãƒ†ãƒªã‚¢ãƒ«ã«é©ç”¨
+		MATERIAL mtrl;
+		mtrl.Ambient = Color(0, 0, 0, 0);
+		mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, m_currentAlpha);
+		mtrl.Specular = Color(0, 0, 0, 0);
+		mtrl.Emission = Color(0, 0, 0, 0);
+		mtrl.TextureEnable = TRUE;
+		m_activeSprite->ModifyMtrl(mtrl);
+
+		// ç”»é¢ä¸­å¤®ã¸æç”»
+		Vector3 centerPos(Application::GetWidth() / 2.0f, Application::GetHeight() / 2.0f, 0.0f);
+		m_activeSprite->Draw(m_srt.scale, m_srt.rot, centerPos);
+
+		Renderer::SetUISamplerMode(false);
 	}
 
 	bool IsAnimating() const { return m_state != AnimState::Idle; }
+
 private:
+	// --- ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ç”¨å®šæ•° ---
+	static constexpr float TEX_WIDTH = 684.0f;
+	static constexpr float TEX_HEIGHT = 364.0f;
+	static constexpr float TIME_FADE_IN = 0.2f;
+	static constexpr float TIME_WAIT_END = 0.6f;
+	static constexpr float TIME_FADE_OUT_END = 0.8f;
+
 	std::unique_ptr<CSprite> m_playerSprite;
 	std::unique_ptr<CSprite> m_enemySprite;
+	CSprite* m_activeSprite = nullptr;
 
-	CSprite* m_currentSprite = nullptr;
 	AnimState m_state = AnimState::Idle;
 	SRT m_srt;
-	float m_targetX = 0.0;
-	float m_timer = 0.0f;
 
-	const float m_timerPhase1 = 0.2f; // “üêŠ®—¹
-	const float m_timerPhase2 = 0.6f; // ‘ŞêŠJn
-	const float m_timerPhase3 = 0.8f; // I‚í‚è
+	float m_timer = 0.0f;
+	float m_currentScale = 0.0f;
+	float m_currentAlpha = 0.0f;
 };

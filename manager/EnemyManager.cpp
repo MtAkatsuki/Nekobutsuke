@@ -1,5 +1,6 @@
 #include "EnemyManager.h"
 #include "GameContext.h"
+#include "../manager/TurnManager.h"
 #include <iostream>
 
 namespace {

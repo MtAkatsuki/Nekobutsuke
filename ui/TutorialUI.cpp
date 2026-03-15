@@ -1,17 +1,15 @@
 #include "TutorialUI.h"
 #include "../system/CDirectInput.h"
 #include "../Application.h"
+#include <iostream>
 
-TutorialUI::TutorialUI() {
-}
-
-TutorialUI::~TutorialUI() {
-    m_images.clear();
+namespace {
+    const float ANIM_SPEED = 5.0f;  // フェードイン・アウトの速度
+    const float TEX_WIDTH = 1009.0f;
+    const float TEX_HEIGHT = 573.0f;
 }
 
 void TutorialUI::Init() {
-    // 3枚のチュートリアル画像を読み込み
-    // 各パスに対応する png ファイルが存在することを確認してください
     m_images.push_back(std::make_unique<CSprite>(1009, 573, "assets/texture/ui/tutorial_01.png"));
     m_images.push_back(std::make_unique<CSprite>(1009, 573, "assets/texture/ui/tutorial_02.png"));
     m_images.push_back(std::make_unique<CSprite>(1009, 573, "assets/texture/ui/tutorial_03.png"));
@@ -26,18 +24,12 @@ void TutorialUI::Init() {
 }
 
 void TutorialUI::Update(float deltaSeconds) {
-    if (m_isAllFinished) return;
-
-    // 安全チェック：インデックスの範囲外参照を防止
-    if (m_currentIndex >= m_images.size()) {
-        m_isAllFinished = true;
-        return;
-    }
+    if (m_isAllFinished || m_currentIndex >= m_images.size()) return;
 
     switch (m_state) {
     case State::APPEARING:
         // 拡大アニメーション
-        m_scale += m_animSpeed * deltaSeconds;
+        m_scale += ANIM_SPEED * deltaSeconds;
         if (m_scale >= 1.0f) {
             m_scale = 1.0f;
             m_state = State::WAITING; // アニメーション終了、待機状態へ
@@ -53,7 +45,7 @@ void TutorialUI::Update(float deltaSeconds) {
 
     case State::DISAPPEARING:
         // 縮小アニメーション
-        m_scale -= m_animSpeed * deltaSeconds;
+        m_scale -= ANIM_SPEED * deltaSeconds;
         if (m_scale <= 0.0f) {
             m_scale = 0.0f;
             m_state = State::FINISHED; // 現在の画像の表示が終了
@@ -76,26 +68,21 @@ void TutorialUI::Update(float deltaSeconds) {
 }
 
 void TutorialUI::Draw() {
-    if (m_isAllFinished) return;
-    if (m_currentIndex >= m_images.size()) return;
+    if (m_isAllFinished || m_currentIndex >= m_images.size()) return;
 
-    // 必要に応じて、背景を暗くするための半透明の黒いマスクをここで描画
-    // ...
-
-    // 現在の画像を描画
-    // CSprite::Draw が (スケール, 回転, 位置) を受け取る引数構成であると仮定
     if (m_images[m_currentIndex]) {
-        // アルファブレンドを有効にして透明度付き画像をサポート
+        Renderer::SetUISamplerMode(true);
         Renderer::SetBlendState(BS_ALPHABLEND);
-        Renderer::SetDepthEnable(false); // UIは通常デプステスト（深度テスト）を不要とする
+        Renderer::SetDepthEnable(false);
 
         m_images[m_currentIndex]->Draw(
-            Vector3(m_scale, m_scale, 1.0f),     // スケール
-            Vector3(0.0f, 0.0f, 0.0f),           // 回転
-            Vector3(m_centerX, m_centerY, 0.0f)  // 位置 (画面中心)
+            Vector3(m_scale, m_scale, 1.0f),
+            Vector3(0.0f, 0.0f, 0.0f),
+            Vector3(m_centerX, m_centerY, 0.0f) 
         );
 
         Renderer::SetDepthEnable(true);
         Renderer::SetBlendState(BS_NONE);
+        Renderer::SetUISamplerMode(false);
     }
 }

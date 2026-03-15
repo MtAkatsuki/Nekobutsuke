@@ -5,6 +5,7 @@
 #include "../manager/MapManager.h"
 #include "../ui/DamageNumberManager.h"
 #include "../manager/EffectManager.h"
+#include "../manager/EnemyManager.h"
 #include <iostream>
 #include <random>
 

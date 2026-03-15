@@ -1,21 +1,22 @@
 #include "../scene/GameScene.h"
-#include "../system/CDirectInput.h"
 #include "../utility/ScreenToWorld.h"
-#include"../utility/WorldToScreen.h"
+#include "../utility/WorldToScreen.h"
+#include "../system/CDirectInput.h"
 #include "../system/SphereDrawer.h"
 #include "../system/DebugUI.h"
 #include "../system/CPolar3D.h"
 #include "../system/meshmanager.h"
-#include "../manager/MapManager.h"
-#include "../manager/GameContext.h"
-#include	"../ui/GameUIManager.h"
-#include "../ui/DamageNumberManager.h"
-#include "../ui/DialogueUI.h"
 #include "../system/scenemanager.h"
 #include "../system//FadeTransition.h"
+#include "../manager/MapManager.h"
+#include "../manager/GameContext.h"
 #include "../manager/AudioManager.h"
 #include "../manager/EffectManager.h"
+#include "../manager/EnemyManager.h"
 #include "../ui/HPBar.h"
+#include "../ui/GameUIManager.h"
+#include "../ui/DamageNumberManager.h"
+#include "../ui/DialogueUI.h"
 #include <stdio.h> // for sprintf_s
 #include <iostream>
 
@@ -752,7 +753,7 @@ bool GameScene::CheckGameClearCondition() const
 {
 	// 勝利ルートA：盤面の敵をすべて排除した
 	bool isEnemyAnnihilated = (m_context && m_context->GetEnemyManager() &&
-		m_context->GetEnemyManager()->EnemyIsAllDead());
+		m_context->GetEnemyManager()->AreAllEnemiesDead());
 
 	// 勝利ルートB：指定ターンを耐え抜き、プレイヤーが脱出地点に到達（お祝いアニメ完了）した
 	bool isSurvivalEscaped = (m_player && m_player->IsCelebrationDone());
@@ -818,7 +819,7 @@ void GameScene::TurnChangeCheck()
 	EnemyManager* em = m_context->GetEnemyManager();
 
 	// 1. ターン交代の必要がない、または敵が全滅している場合は処理しない
-	if (!tm->IsTurnChangeRequested() || em->EnemyIsAllDead()) {
+	if (!tm->IsTurnChangeRequested() || em->AreAllEnemiesDead()) {
 		return;
 	}
 
