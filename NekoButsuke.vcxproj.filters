@@ -545,9 +545,6 @@
     <ClInclude Include="gameobject\Trap.h">
       <Filter>ソース ファイル\gameobject</Filter>
     </ClInclude>
-    <ClInclude Include="ui\EnemyActionUI.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="manager\AudioManager.h">
       <Filter>ソース ファイル\manager</Filter>
     </ClInclude>
@@ -555,6 +552,9 @@
       <Filter>ソース ファイル\manager</Filter>
     </ClInclude>
     <ClInclude Include="ui\TutorialUI.h">
+      <Filter>ソース ファイル\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\EnemyActionUI.h">
       <Filter>ソース ファイル\ui</Filter>
     </ClInclude>
   </ItemGroup>

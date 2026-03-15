@@ -5,32 +5,36 @@
 #include "../Application.h"
 #include <algorithm> // for max
 
+namespace {
+    // --- 定数定義 (Magic Numbers) ---
+    constexpr float BLINK_INTERVAL_SEC = 0.4f; // 点滅周期（秒）
+    constexpr float BASE_TEX_WIDTH = 100.0f;
+    constexpr float BASE_TEX_HEIGHT = 84.0f;
+    constexpr float CULLING_MARGIN = 100.0f; // 画面外カリングの余裕マージン
+    constexpr float WORLD_OFFSET_Y = 1.1f;   // ユニットの足元から頭上へのオフセット
+}
+
 float HPBar::s_hpBarOffsetY = 1.0f;
 float HPBar::s_hpBarTexSize = 22.0f;
 float HPBar::s_hpBarGap = 1.0f;
 
-void HPBar::Init(GameContext* context)
-{
+void HPBar::Init(GameContext* context) {
     m_context = context;
 
-    // 元のブロックサイズ
     m_frameSprite = std::make_unique<CSprite>(100, 84, "assets/texture/UI/ui_heart_frame.png");
     m_fullSprite = std::make_unique<CSprite>(78, 56, "assets/texture/UI/ui_heart_full.png");
-
-    m_texWidth = 100.0f;
-    m_texHeight = 84.0f;
 }
 
 void HPBar::Update(float dt) {
     m_blinkTimer += dt;
-    if (m_blinkTimer >= 0.4f) { //0.2秒ごとに状態を切り替える
-        m_blinkState = !m_blinkState;
+    // ダメージプレビュー用の点滅状態を一定周期でトグル
+    if (m_blinkTimer >= BLINK_INTERVAL_SEC) {
+        m_isBlinkOn = !m_isBlinkOn;
         m_blinkTimer = 0.0f;
     }
 }
 
-void HPBar::Draw(const Vector3& worldPos, int currentHP, int maxHP, int previewDamage)
-{
+void HPBar::Draw(const Vector3& worldPos, int currentHP, int maxHP, int previewDamage){
     if (!m_context || maxHP <= 0 || currentHP <= 0) return;
 
     Camera* camera = m_context->GetCamera();
@@ -38,46 +42,43 @@ void HPBar::Draw(const Vector3& worldPos, int currentHP, int maxHP, int previewD
 
     // 座標変換(3D -> 2D)
     Vector3 drawPos = worldPos;
-	drawPos.y += 1.1f; // 高さ調整、ユニットの足元から少し上にオフセット
+    drawPos.y += WORLD_OFFSET_Y;
 
     float screenW = (float)Application::GetWidth();
     float screenH = (float)Application::GetHeight();
     Vector2 screenPos = WorldToScreen(drawPos, camera->GetViewMatrix(), camera->GetProjMatrix(), screenW, screenH);
 
-    // 画面外カリング
-    if (screenPos.x < -100 || screenPos.x > screenW + 100 || screenPos.y < -100 || screenPos.y > screenH + 100) return;
+    // 画面外カリング (パフォーマンス最適化)
+    if (screenPos.x < -CULLING_MARGIN || screenPos.x > screenW + CULLING_MARGIN ||
+        screenPos.y < -CULLING_MARGIN || screenPos.y > screenH + CULLING_MARGIN) {
+        return;
+    }
 
-
-    // ==========================================
-    //  等比スケーリングの計算
-    //  ImGuiで設定された s_hpBarTexSize を目標の幅とする
-    //  アスペクト比を維持するため、算出されたスケール値をXとYの両方に適用する
-     // ==========================================
-    float scaleRate = s_hpBarTexSize / m_texWidth;
+    // 動的スケーリング計算
+    
+    // ImGuiの設定値(s_hpBarTexSize)を基準にアスペクト比を維持
+    float scaleRate = s_hpBarTexSize / BASE_TEX_WIDTH;
     Vector3 scaleVec(scaleRate, scaleRate, 1.0f);
+    float actualFrameWidth = BASE_TEX_WIDTH * scaleRate;
 
-    // 実際に画面へ描画される枠の幅（間隔計算に使用）
-    float actualFrameWidth = m_texWidth * scaleRate;
-
-    // UI全体の幅を算出し、中央揃えにするための開始座標を決定
-    float totalWidth = maxHP * actualFrameWidth + (maxHP - 1) * s_hpBarGap;
-    float startX = screenPos.x - totalWidth / 2.0f + actualFrameWidth / 2.0f;
+    // UI全体を中央揃えにするための開始X座標を算出
+    float totalWidth = (maxHP * actualFrameWidth) + ((maxHP - 1) * s_hpBarGap);
+    float startX = screenPos.x - (totalWidth / 2.0f) + (actualFrameWidth / 2.0f);
     float drawY = screenPos.y;
 
-    // 【HPゼロ時は表示しない】という仕様に基づき、currentHP分だけループして描画
-    for (int i = 0; i < currentHP; i++)
-    {
-        float x = startX + i * (actualFrameWidth + s_hpBarGap);
-        Vector3 pos(x, drawY, 0);
+    // HPゼロ時は非表示とするため、currentHPの数だけ描画ループ
+    for (int i = 0; i < currentHP; i++) {
+        float x = startX + (i * (actualFrameWidth + s_hpBarGap));
+        Vector3 pos(x, drawY, 0.0f);
 
-        // 1. 常に底枠（空のハート）を描画
+        // 1. 常に底枠を描画
         m_frameSprite->Draw(scaleVec, Vector3(0, 0, 0), pos);
 
-        // 2. そのハートがダメージプレビュー範囲内（右側優先）にあるか判定
-        bool isPreviewing = (i >= currentHP - previewDamage);
+        // 2. ダメージプレビュー範囲内か判定（右側から減る想定）
+        bool isPreviewingTarget = (i >= currentHP - previewDamage);
 
-        // プレビュー対象外、または点滅の「点灯」周期であれば赤心を描画
-        if (!isPreviewing || m_blinkState) {
+        // プレビュー対象外、または点滅の「点灯」タイミングであれば中身を描画
+        if (!isPreviewingTarget || m_isBlinkOn) {
             m_fullSprite->Draw(scaleVec, Vector3(0, 0, 0), pos);
         }
     }

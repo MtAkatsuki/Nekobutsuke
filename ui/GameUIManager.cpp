@@ -169,9 +169,14 @@ void GameUIManager::Clear() {
 void GameUIManager::OpenMainMenu() {
     if (m_currentMenu == MenuType::Main) return;
     m_currentMenu = MenuType::Main;
-    for (auto& opt : m_mainMenuOptions) {
-        opt.currentScale = Vector3(1.0f, 1.0f, 1.0f);
-        opt.targetScale = Vector3(1.0f, 1.0f, 1.0f);
+
+    for (int i = 0; i < m_mainMenuOptions.size(); ++i) {
+        m_mainMenuOptions[i].currentScale = Vector3(1.0f, 1.0f, 1.0f);
+        m_mainMenuOptions[i].targetScale = Vector3(1.0f, 1.0f, 1.0f);
+		// デフォルトでは「移動」と「攻撃」を有効、「終了」は非表示
+        if (i == 2) {
+            m_mainMenuOptions[i].isVisible = true;
+        }
     }
 }
 

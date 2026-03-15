@@ -12,7 +12,7 @@
 namespace {
 	// 演出・バランス用定数
 	const int INITIAL_HP = 5;
-	const int INITIAL_MOVE_POINTS = 3;
+	const int INITIAL_MOVE_POINTS = 4;
 	const float MOVE_SPEED = 5.0f;
 	const float DEATH_GRAVITY = 50.0f;         // 死亡時の重力加速度
 	const float DEATH_FLY_FORCE = 20.0f;       // 吹き飛び時の初速
