@@ -7,40 +7,63 @@
 class GameContext;
 
 enum class EnemyPhaseState {
-    IDLE,          
-    READY_TO_START, 
-    ACTING,        
-    INTERVAL,       
-    ALL_FINISHED    
+	IDLE,
+	READY_TO_START,
+	ACTING,
+	INTERVAL,
+	ALL_FINISHED
 };
 
+// =========================================================
+// EnemyManager クラス
+// 敵フェーズにおけるAIの行動順序と状態遷移を管理する
+// =========================================================
 class EnemyManager {
 public:
-    EnemyManager() = default;
-    ~EnemyManager() = default;
+	EnemyManager() = default;
+	~EnemyManager() = default;
 
-    void Init(GameContext* context) { m_context = context; }
-    void RegisterEnemy(Enemy* enemy);
-    void RemoveEnemy(Enemy* enemy);
-    void StartEnemyPhase();
+	// ---------------------------------------------------------
+	// ライフサイクルと初期化 (Lifecycle & Initialization)
+	// ---------------------------------------------------------
+	void Init(GameContext* context) { m_context = context; }
+	void Update(uint64_t dt);
+	void ClearAll();
 
-    void Update(uint64_t dt);
-    bool IsFinished() const { return m_state == EnemyPhaseState::ALL_FINISHED; }
-    bool EnemyIsAllDead() const;
-	bool EnemyIsEmpty() const { return m_enemies.empty(); }
-    bool IsAnyEnemyDying() const;
-    bool IsAnyEnemyAnimating() const;
-    void ClearAll();
+	// ---------------------------------------------------------
+	// エンティティ管理 (Entity Management)
+	// ---------------------------------------------------------
+	void RegisterEnemy(Enemy* enemy);
+	void RemoveEnemy(Enemy* enemy);
+	const std::vector<Enemy*>& GetAllEnemies() const { return m_enemies; }
 
-    const std::vector<Enemy*>& GetAllEnemies() const { return m_enemies; }
+	// ---------------------------------------------------------
+	// フェーズ制御 (Phase Control)
+	// ---------------------------------------------------------
+	void StartEnemyPhase();
+
+	// ---------------------------------------------------------
+	// 状態クエリ (State Queries)
+	// ---------------------------------------------------------
+	bool IsFinished() const { return m_state == EnemyPhaseState::ALL_FINISHED; }
+	bool AreAllEnemiesDead() const;                             
+	bool IsEnemyListEmpty() const { return m_enemies.empty(); } 
+	bool IsAnyEnemyDying() const;
+	bool IsAnyEnemyAnimating() const;
+
 private:
-    void ResortAndRenumber();
+	// ---------------------------------------------------------
+	// 内部サブルーチン (Internal Sub-routines)
+	// ---------------------------------------------------------
+	void ResortAndRenumber();
 
-    GameContext* m_context = nullptr;
-    std::vector<Enemy*> m_enemies;
+	// =========================================================
+	// メンバー変数 (Member Variables)
+	// =========================================================
+	GameContext* m_context = nullptr;
+	std::vector<Enemy*> m_enemies;
 
-    EnemyPhaseState m_state = EnemyPhaseState::IDLE;
-    int m_currentActorIndex = 0;
-    float m_timer = 0.0f;
-    const float ACT_INTERVAL = 0.5f;
+	EnemyPhaseState m_state = EnemyPhaseState::IDLE;
+	int m_currentActorIndex = 0;
+	float m_phaseTimer = 0.0f;
 };

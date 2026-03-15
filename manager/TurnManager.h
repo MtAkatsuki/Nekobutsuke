@@ -3,49 +3,62 @@
 #include <functional>
 #include "../enum class/TurnState.h"
 
+// =========================================================
+// TurnManager クラス
+// ターン制の進行状態（フェーズ）を管理し、オブザーバーパターンを用いて
+// 各エンティティ（Player, Enemy 等）へフェーズ遷移を疎結合に通知する
+// =========================================================
 class TurnManager {
 public:
-	//TurnCallBackという名前を<void(TurnPhase)>につける
+	// ターン状態の変更通知を受け取るためのコールバック型
 	using TurnCallBack = std::function<void(TurnState)>;
 
-	//ターンの変更知りたいときに呼び出される関数を登録する
+	// ---------------------------------------------------------
+	// オブザーバー管理 (Observer Management)
+	// ---------------------------------------------------------
 	void RegisterObserver(TurnCallBack callback) {
-		callbacksList.push_back(callback);
+		m_callbacksList.push_back(callback);
 	}
 
-	//敵とプレーヤー行動終わるならSetState
+	void ClearObservers() {
+		m_callbacksList.clear();
+	}
+
+	// ---------------------------------------------------------
+	// ステート制御 (State Control)
+	// ---------------------------------------------------------
 	void SetState(TurnState newState) {
-		currentState = newState;
-		m_isTurnChangeRequest = false;//SetState実行したら、要求フラグをリセット
-		NotifyObservers();//状況変化をしたUnitが状況応じて行動する
+		m_currentState = newState;
+		m_isTurnChangeRequested = false; // 状態移行が完了したため、要求フラグをリセット
+		NotifyObservers();               // 登録された全オブジェクトへ状態変化を一斉通知
 	}
-	//ターン変更を要求する
+
 	void RequestEndTurn() {
-		m_isTurnChangeRequest = true;
+		m_isTurnChangeRequested = true;
 	}
-	//ターン変更が要求されているか
+
+	// ---------------------------------------------------------
+	// 状態クエリ (State Queries)
+	// ---------------------------------------------------------
 	bool IsTurnChangeRequested() const {
-		return m_isTurnChangeRequest;
+		return m_isTurnChangeRequested;
 	}
 
 	TurnState GetTurnState() const {
-		return currentState;
+		return m_currentState;
 	}
 
-	//二度目プレーヤーするための処理
-	void ClearObservers() {
-		callbacksList.clear();
-	}
 private:
-	TurnState currentState = TurnState::PlayerPhase;
-
-	std::vector<TurnCallBack> callbacksList;
-
-	bool m_isTurnChangeRequest = false;//ターン変更要求フラグ
-	
 	void NotifyObservers() {
-		for (const auto& func : callbacksList) {
-			func(currentState);
+		for (const auto& func : m_callbacksList) {
+			func(m_currentState);
 		}
 	}
+
+	// =========================================================
+	// メンバー変数 (Member Variables)
+	// =========================================================
+	TurnState m_currentState = TurnState::PlayerPhase;
+	std::vector<TurnCallBack> m_callbacksList;
+	bool m_isTurnChangeRequested = false;
 };

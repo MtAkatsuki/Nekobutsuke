@@ -1,131 +1,222 @@
-#include	"enemy.h"	
-#include    "../system/CDirectInput.h"
-#include	"../system/meshmanager.h"
-#include	"../system/motiondatamanager.h"
-#include	"../manager/GameContext.h"
-#include	"../scene/GameScene.h"
-#include	"../manager/MapManager.h"
+#include "enemy.h"    
+#include "../system/meshmanager.h"
+#include "../manager/GameContext.h"
+#include "../scene/GameScene.h"
+#include "../manager/MapManager.h"
 #include "../ui/DamageNumberManager.h"
-#include    <iostream>
-#include	<random>
 #include "../manager/EffectManager.h"
+#include <iostream>
+#include <random>
 
-std::random_device rd;
-std::mt19937 gen(rd());
-std::uniform_real_distribution<float> shake_dist(-0.01f, 0.01f);
-std::uniform_real_distribution<float> death_spin_dist(0, 10.0f);//均等の分布（０～１０）
+namespace {
+	// 演出・バランス用定数
+	const int INITIAL_HP = 5;
+	const int INITIAL_MOVE_POINTS = 3;
+	const float MOVE_SPEED = 5.0f;
+	const float DEATH_GRAVITY = 50.0f;         // 死亡時の重力加速度
+	const float DEATH_FLY_FORCE = 20.0f;       // 吹き飛び時の初速
+	const float CHARGE_SHAKE_AMP = 0.01f;      // 蓄力時の震え幅
+	const float ATTACK_DELAY = 0.1f;           // 攻撃開始前のディレイ
+	const int ATTACK_RANGE = 1;				   // 攻撃範囲（グリッド単位）
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<float> shake_dist(-CHARGE_SHAKE_AMP, CHARGE_SHAKE_AMP);
+	std::uniform_real_distribution<float> death_spin_dist(0.0f, 10.0f);
+}
 
 
 void Enemy::init(){}
 
-void Enemy::Init(int sequenceNumber)
-{
+void Enemy::Init(int sequenceNumber) {
 	std::string numStr = std::to_string(sequenceNumber);
 	std::string frontName = "enemy_front_" + numStr;
 	std::string backName = "enemy_back_" + numStr;
-
-	// ディレクトリパス
 	std::string dirPath = "assets/model/character/";
 
-	// 正面（Front）モデルのロード ---
-	{
-		// 完全なファイルパスを構築
-		std::string fullPath = dirPath + frontName + ".obj";
-
-		// ファイルが本当に存在するかチェックする
-		if (!std::filesystem::exists(fullPath)) {
-			// コンソールが無い場合でもVSの出力ウィンドウに出るようにする
-			std::string err = "[Error] File NOT Found: " + fullPath + "\n";
-			OutputDebugStringA(err.c_str());
-			MessageBoxA(NULL, err.c_str(), "File Load Error", MB_OK | MB_ICONERROR);
-			// ここで return しないとクラッシュします
-			return;
-		}
-
-		// デバッグ用：ロードしようとしているパスを出力
-		std::string msg = "[Log] Loading: " + fullPath + "\n";
-		OutputDebugStringA(msg.c_str());
-
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-
-		// 構築済みの fullPath を渡す
+	// モデル読み込みのサブルーチン
+	auto LoadModel = [&](const std::string& name) {
+		std::string fullPath = dirPath + name + ".obj";
+		if (!std::filesystem::exists(fullPath)) return;
+		auto mesh = std::make_unique<CStaticMesh>();
 		mesh->Load(fullPath.c_str(), dirPath.c_str());
-
-		// --- ここから下は変更なし ---
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
+		auto renderer = std::make_unique<CStaticMeshRenderer>();
 		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>(frontName, std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(frontName, std::move(renderer));
-	}
+		MeshManager::RegisterMesh<CStaticMesh>(name, std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(name, std::move(renderer));
+		};
 
-	// 背面（Back）モデルのロード
-	{
-		// 完全なファイルパスを構築
-		std::string fullPath = dirPath + backName + ".obj";
+	LoadModel(frontName);
+	LoadModel(backName);
 
-		// ファイルが本当に存在するかチェックする
-		if (!std::filesystem::exists(fullPath)) {
-			// コンソールが無い場合でもVSの出力ウィンドウに出るようにする
-			std::string err = "[Error] File NOT Found: " + fullPath + "\n";
-			OutputDebugStringA(err.c_str());
-			MessageBoxA(NULL, err.c_str(), "File Load Error", MB_OK | MB_ICONERROR);
-			// ここで return しないとクラッシュします
-			return;
-		}
-
-		// デバッグ用：ロードしようとしているパスを出力
-		std::string msg = "[Log] Loading: " + fullPath + "\n";
-		OutputDebugStringA(msg.c_str());
-
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-
-		// 構築済みの fullPath を渡す
-		mesh->Load(fullPath.c_str(), dirPath.c_str());
-
-		// --- ここから下は変更なし ---
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>(backName, std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(backName, std::move(renderer));
-	}
-
-	// シェーダーの取得（ライティング無効の Unlit シェーダーを使用）
 	m_EnemyShader = MeshManager::getShader<CShader>("unlightshader");
-
-	//  Unit クラス（基底クラス）への登録
 	auto* frontR = MeshManager::getRenderer<CStaticMeshRenderer>(frontName);
 	auto* backR = MeshManager::getRenderer<CStaticMeshRenderer>(backName);
 	SetModelRenderers(frontR, backR);
 
-	//行動順番UIの初期化
 	m_actionUI = std::make_unique<EnemyActionUI>();
 	m_actionUI->Init(m_context);
-	
+
 	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_srt.rot = Vector3(0, 0, 0);
-
 	m_targetWorldPos = m_srt.pos;
-	m_moveSpeed = 5.0f;
+	m_moveSpeed = MOVE_SPEED;
 
-	m_maxMovePoints = 4;
+	m_maxMovePoints = INITIAL_MOVE_POINTS;
 	m_currentMovePoints = m_maxMovePoints;
-
-	m_maxHP = 5;
+	m_maxHP = INITIAL_HP;
 	m_currentHP = m_maxHP;
-
 	m_team = Team::Enemy;
-
-
-
 	m_state = EnemyState::IDLE;
 	m_isDead = false;
 	//初期向き：プレイヤーの方を向く
-	// デフォルトの初期状態として【南】を向かせる
-	// これにより、目標が「西」になった場合に「南 -> 西」の回転アニメーションが再生される
+	SetInitialFacingToPlayer();
 
-	
+	m_pushArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_push_mesh");
+	m_attackArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_attack_mesh");
+	if (!m_attackArrowRenderer) m_attackArrowRenderer = m_pushArrowRenderer;
 
-	//  目標方向の計算（水平方向優先の重み付けロジック）
+	UpdateWorldMatrix();
+}
+
+void Enemy::dispose() {
+
+}
+
+void Enemy::Update(uint64_t dt) {
+	Unit::Update(dt);
+	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
+
+	UpdateFlipAnimation(deltaSeconds);
+
+	if (m_pendingCharge && !m_isFlipping) {
+		// 蓄力（突進準備）が保留されており、かつ反転アニメーションが完了（false）した場合
+		m_pendingCharge = false;
+		m_isCharging = true;
+	}
+
+	// 蓄力（チャージ）中の震えオフセットを計算
+	if (m_isCharging) {
+		m_shakeOffset = Vector3(shake_dist(gen), 0.0f, shake_dist(gen));
+	}
+	else {
+		m_shakeOffset = Vector3(0, 0, 0);
+	}
+
+	//死亡飛翔中の更新処理
+	if (m_state == EnemyState::DEAD_FLYING)
+	{
+		DeathFlyingUpdate(deltaSeconds);
+		return; // これ以降のAIや移動処理はさせない
+	}
+
+	if (m_isMyTurn && m_state == EnemyState::IDLE) {
+		ExecuteAI();
+		m_isMyTurn = false;
+	}
+
+	if (m_actionUI) m_actionUI->Update(deltaSeconds);
+
+	// 敵のダメージ予測を計算し、ターゲットのユニットへ設定
+	if (m_isCharging && !m_isDead && m_state != EnemyState::DEAD_FLYING) {
+		Tile* lockedTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
+		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
+			int finalDmg = lockedTile->occupant->CalculateExpectedDamage(m_enemyDamage, true, m_facing);
+			lockedTile->occupant->SetPreviewDamage(finalDmg);
+		}
+	}
+
+	switch (m_state) {
+	case EnemyState::MOVING:
+		updateMove(dt);
+		break;
+
+	case EnemyState::ATTACKING:
+
+		m_attackTimer += deltaSeconds;
+		if (m_attackTimer > 0.1f) {
+			auto impactCallback = [this]() {
+				Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
+				if (targetTile != nullptr && targetTile->occupant != nullptr && targetTile->occupant != this) {
+					// 移動後に参照が失われないよう、事前に対象オブジェクトのポインターを保存
+					Unit* victim = targetTile->occupant;
+
+					// 1. 先に押し出し（ノックバック）の物理効果を発生させる
+					victim->OnPushed(this->m_facing);
+
+					// 2. その後、ダメージ処理を実行（m_enemyDamage を実際のダメージ変数や数値に置き換え）
+					victim->TakeDamage(m_enemyDamage, this);
+				}
+				else {//miss
+					if (m_context->GetDamageManager()) {
+						Vector3 missPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+						missPos.y += 1.0f;
+						m_context->GetDamageManager()->SpawnDamage(missPos, 0);
+					}
+				}
+				};
+			if (UpdateAttackAnimation(dt, impactCallback)) {
+				//アタックアニメ実行、完了の検査
+				m_state = EnemyState::IDLE;
+				m_isCharging = false;
+				EnemyEndAction();
+			}
+		}
+		break;
+
+	case EnemyState::KNOCKBACK:
+		if (m_slideEndPos.LengthSquared() > 0.001f) {
+			if (UpdateSlideAnimation(dt)) {
+				m_state = EnemyState::IDLE;
+				m_slideEndPos = Vector3(0, 0, 0);
+				if (m_currentHP <= 0) {
+					// 死亡して吹き飛ぶ演出へ移行。罠のトリガーロジックは完全にスキップ！
+					Die();
+				}
+				else {
+					m_state = EnemyState::IDLE;
+					// 生存している場合のみ、タイルのイベント（罠など）を発生させる
+					Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+					if (currentTile && currentTile->structure) {
+						currentTile->structure->OnEnter(this);
+					}
+				}
+			}
+		}
+		else {
+			if (UpdateAttackAnimation(dt, nullptr)) {
+				// 壁に激突した後も生死判定を行い、HPが0なら死亡処理を実行する
+				if (m_currentHP <= 0) Die();
+				else m_state = EnemyState::IDLE;// 生き残っている場合のみIDLEへ
+			}
+		}
+		break;
+	default:break;
+	}
+
+	UpdateWorldMatrix();
+}
+
+void Enemy::OnDraw(uint64_t dt) {
+	Renderer::SetPixelArtMode(true);
+	if (m_EnemyShader != nullptr) m_EnemyShader->SetGPU();
+
+	// 蓄力中の震えは `m_srt.pos` を直接汚染せず、描画用の一時的な Matrix で処理する
+	if (m_isCharging) {
+		Matrix4x4 shakeWorld = Matrix4x4::CreateScale(m_srt.scale)
+			* Matrix4x4::CreateRotationY(m_srt.rot.y)
+			* Matrix4x4::CreateTranslation(m_srt.pos + m_shakeOffset); // オフセットを加算
+		Renderer::SetWorldMatrix(&shakeWorld);
+		if (m_currRenderer) m_currRenderer->Draw();
+	}
+	else {
+		DrawModel();
+	}
+
+	Renderer::SetPixelArtMode(false);
+}
+
+void Enemy::SetInitialFacingToPlayer() {
 	Player* target = m_context->GetPlayer();
 	if (target)
 	{
@@ -156,177 +247,274 @@ void Enemy::Init(int sequenceNumber)
 		// finalDir が South の場合は静止を維持する（仕様通り）
 		SetFacing(finalDir);
 	}
-
-	// プッシュ方向の矢印メッシュのレンダラーを取得
-	m_pushArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_push_mesh");
-
-	// 攻撃方向の矢印メッシュのレンダラーを取得
-	m_attackArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_attack_mesh");
-	if (!m_attackArrowRenderer) {
-		m_attackArrowRenderer = m_pushArrowRenderer;
-	}
-
-	UpdateWorldMatrix(); // 初期行列を確定させる
 }
 
-void Enemy::Update(uint64_t dt) {
-	Unit::Update(dt);
-	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
+void Enemy::EnemyStartAction() {
+	if (m_currentHP <= 0 || m_state == EnemyState::DEAD_FLYING) return;
 
-	// 基底クラスの反転（フリップ）アニメーション処理を実行
-	UpdateFlipAnimation(deltaSeconds);
-
-	if (m_pendingCharge) {
-		// 蓄力（突進準備）が保留されており、かつ反転アニメーションが完了（false）した場合
-		if (!m_isFlipping) {
-			m_pendingCharge = false; // 待機フラグを解除
-			m_isCharging = true;     // 蓄力（震え演出）を正式に開始
-			std::cout << "[Enemy] Turn complete. Now Charging!" << std::endl;
-		}
+	if (m_isCharging) {
+		ReleaseChargeAttack();
 	}
-
-	//死亡飛翔中の更新処理
-	if (m_state == EnemyState::DEAD_FLYING)
-	{
-		DeathFlyingUpdate(deltaSeconds);
-		return; // これ以降のAIや移動処理はさせない
-	}
-
-	if (m_isMyTurn && m_state == EnemyState::IDLE)
-	{
+	else {
+		m_pendingCharge = false;
+		ResetMovePoints();
 		ExecuteAI();
-		m_isMyTurn = false;
 	}
-	//行動順番UIの更新
-	if (m_actionUI) {
-		m_actionUI->Update(deltaSeconds);
-	}
+}
 
-	// 敵のダメージ予測を計算し、ターゲットのユニットへ設定
-	if (m_isCharging && !m_isDead && m_state != EnemyState::DEAD_FLYING) {
-		Tile* lockedTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
+void Enemy::OnTurnChanged(TurnState state) {
+	if (state == TurnState::EnemyPhase) StartTurn();
+}
 
-		// ロックオン（溜め攻撃）対象のマスにユニットが存在する場合
-		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
-			int finalDmg = lockedTile->occupant->CalculateExpectedDamage(m_enemyDamage, true, m_facing);
-			lockedTile->occupant->SetPreviewDamage(finalDmg);
+void Enemy::OnPushed(Direction pushDir) {
+	if (m_currentHP <= 0 || m_state == EnemyState::DEAD_FLYING) return;
+
+	m_state = EnemyState::KNOCKBACK;
+	int oldX = m_gridX;
+	int oldZ = m_gridZ;
+
+	Unit::OnPushed(pushDir);
+
+	// 実際に位置が変化した（壁に衝突しなかった）場合のみ、ロックオン座標をスライドさせる
+	if (m_gridX != oldX || m_gridZ != oldZ) {
+		if (m_isCharging) {
+			// 移動量（新位置 - 旧位置）を現在のロックオン座標に加算
+			m_lockedGridX += (m_gridX - oldX);
+			m_lockedGridZ += (m_gridZ - oldZ);
 		}
 	}
+}
 
-	switch (m_state)
+void Enemy::TakeDamage(int damage, Unit* attacker) {
+	Unit::TakeDamage(damage, attacker);
+	if (attacker) m_hitSourcePos = attacker->getSRT().pos;
+
+	if (m_currentHP <= 0 && m_state != EnemyState::DEAD_FLYING)
 	{
-	case EnemyState::MOVING:
-		updateMove(dt);
-		break;
-	case EnemyState::ATTACKING:
-
-		m_attackTimer += deltaSeconds;
-
-		if (m_attackTimer > 0.1f)
-		{
-			auto impactCallback = [this]() {//this->ここのクラス
-				//ロックしたタイルを取得
-				Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
-
-				if (targetTile != nullptr && targetTile->occupant != nullptr && targetTile->occupant != this) 
-				{
-					// 敵が突き飛ばし（プッシュ攻撃）を発動。方向は敵の現在の向き（m_facing）とする
-					// 移動後に参照が失われないよう、事前に対象オブジェクトのポインターを保存
-					Unit* victim = targetTile->occupant;
-
-					// 1. 先に押し出し（ノックバック）の物理効果を発生させる
-					victim->OnPushed(this->m_facing);
-
-					// 2. その後、ダメージ処理を実行（m_enemyDamage を実際のダメージ変数や数値に置き換え）
-					victim->TakeDamage(m_enemyDamage, this);
-				}
-				else {//miss
-
-					std::cout << "[Enemy] MISSED! No one at " << m_lockedGridX << "," << m_lockedGridZ << std::endl;
-
-					if (m_context->GetDamageManager()) 
-					{
-						Vector3 missPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-						missPos.y += 1.0f;
-						m_context->GetDamageManager()->SpawnDamage(missPos, 0);
-					}
-					}
-				};
-			if(UpdateAttackAnimation(dt,impactCallback)){
-				//アタックアニメ実行、完了の検査
-			m_state = EnemyState::IDLE;
-			m_isCharging = false;
-			EnemyEndAction();
-			}
+		// 現在ノックバック中（KNOCKBACK）であれば、死亡演出を遅延させる
+		if (m_state == EnemyState::KNOCKBACK) {
+			return;
 		}
-			break;
-	case EnemyState::KNOCKBACK:
-		if (m_slideEndPos.LengthSquared() > 0.001f) 
-		{
-			if(UpdateSlideAnimation(dt))
-			{
-				m_state = EnemyState::IDLE;
-				m_slideEndPos = Vector3(0, 0, 0);
+		// それ以外の場合は、即座に死亡処理を実行
+		Die();
+	}
+}
 
-				if (m_currentHP <= 0) {
-					// 死亡して吹き飛ぶ演出へ移行。罠のトリガーロジックは完全にスキップ！
-					Die();
-				}
-				else {
-					m_state = EnemyState::IDLE;
-					// 生存している場合のみ、タイルのイベント（罠など）を発生させる
-					Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
-					if (currentTile && currentTile->structure) {
-						currentTile->structure->OnEnter(this);
-					}
-				}
-			}
-		}
-		else 
-		{
-			if (UpdateAttackAnimation(dt, nullptr)) {
-				// 壁に激突した後も生死判定を行い、HPが0なら死亡処理を実行する
-				if (m_currentHP <= 0) { 
-					Die(); 
-				}
-				else {
-					m_state = EnemyState::IDLE; // 生き残っている場合のみIDLEへ！
-				}
-			}
-			
-		}
-		break;
-	default:
-		break;
+void Enemy::ExecuteAI() {
+	Player* player = m_context->GetPlayer();
+	Ally* ally = m_context->GetAlly();
+
+	//ターゲット決定(一番近いユニット)
+	Unit* target = nullptr;
+	int distToPlayer = 999;
+	int distToAlly = 999;
+
+	//プレイヤーの距離計算
+	if (player && player->GetHP() > 0) {
+		distToPlayer = m_context->GetMapManager()->CalculateDistance(
+			this->m_gridX, this->m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
 	}
 
+	//味方の距離計算
+	if (ally && ally->GetHP() > 0) {
+		distToAlly = m_context->GetMapManager()->CalculateDistance(
+			this->m_gridX, this->m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
+	}
+
+	if (distToAlly < distToPlayer) target = ally;
+	else target = player;
+
+	if (!target) {
+		EndTurn();//ターゲットがいない場合、ターン終了
+		return;
+	}
+
+	int dist = m_context->GetMapManager()->CalculateDistance(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ());
+	//攻撃範囲の設定
 
 
+	if (dist <= ATTACK_RANGE) {
+		StartCharge(target);
+	}
+	else {
+		MapManager* map = m_context->GetMapManager();
+		auto path = map->FindPaths(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ(), false);
+
+		//見つかった道の長さと移動力を比較する、そして移動力と同じ長さになる
+		if (path.size() > m_currentMovePoints) { path.resize(m_currentMovePoints); }
+
+		// --- 移動ポイントを消費する前に、現在の移動可能範囲を取得 ---
+		m_moveRangeTiles = map->GetReachableTiles(this->m_gridX, this->m_gridZ, m_currentMovePoints);
+		m_currentMovePoints -= (int)path.size();
+		EnemyStartMoveTo(path);
+	}
+}
+
+void Enemy::EnemyEndAction() {
+	m_state = EnemyState::IDLE;
+}
+
+void Enemy::EnemyStartMoveTo(std::vector<Tile*> path) {
+	if (path.empty()) {
+		onMoveFinished();
+		return;
+	}
+	Tile* oldTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+	if (oldTile && oldTile->occupant == this) oldTile->occupant = nullptr;
+
+	m_currentPath = path;
+	m_pathIndex = 0;
+	m_state = EnemyState::MOVING;
+	m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
+}
+
+void Enemy::updateMove(uint64_t delta) {
+	Vector3 currentPos = this->getSRT().pos;
+	Vector3 direction = m_targetWorldPos - currentPos;
+	SetFacingFromVector(direction);
+
+	float distanceSq = direction.LengthSquared();
+	if (distanceSq < 0.01f) {
+		this->setPosition(m_targetWorldPos);
+		m_pathIndex++;
+		if (m_pathIndex >= m_currentPath.size()) onMoveFinished();
+		else m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
+	}
+	else {
+		float dt = static_cast<float>(delta) / 1000.0f;
+		float moveStep = m_moveSpeed * dt;
+		float dist = std::sqrt(distanceSq);
+		if (dist > 0.0001f) {
+			direction = direction * (1.0f / dist);
+			if (moveStep >= dist) this->setPosition(m_targetWorldPos);
+			else this->setPosition(currentPos + direction * moveStep);
+		}
+		UpdateWorldMatrix();
+	}
+}
+
+void Enemy::onMoveFinished() {
+	m_state = EnemyState::IDLE;
+	m_moveRangeTiles.clear();
+
+	if (!m_currentPath.empty()) {
+		Tile* endTile = m_currentPath.back();
+		this->m_gridX = endTile->gridX;
+		this->m_gridZ = endTile->gridZ;
+		if (endTile) {
+			endTile->occupant = this;
+			//罠のチェック
+			if (endTile->structure) endTile->structure->OnEnter(this);
+		}
+	}
+	//プレーヤーと味方の距離を再計算、攻撃範囲内かどうか
+	Player* player = m_context->GetPlayer();
+	Ally* ally = m_context->GetAlly();
+	Unit* targetInRange = nullptr;
+
+	// チェック Playerは範囲内か
+	if (player && player->GetHP() > 0) {
+		int d = m_context->GetMapManager()->CalculateDistance(m_gridX, m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
+		if (d <= 1) targetInRange = player;
+	}
+	// チェック Ally は範囲内か(優先でAllyロック)
+	if (ally && ally->GetHP() > 0) {
+		int d = m_context->GetMapManager()->CalculateDistance(m_gridX, m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
+		if (d <= 1) targetInRange = ally;
+	}
+
+	if (targetInRange) {
+		StartCharge(targetInRange);
+		return;
+	}
+	EnemyEndAction();
+}
+
+void Enemy::StartCharge(Unit* target) {
+	if (target) {
+		m_lockedGridX = target->GetUnitGridX();
+		m_lockedGridZ = target->GetUnitGridZ();
+		// 前の段階で残っていた反転（フリップ）状態を強制的に中断し、SetFacing が確実に適用されるようにする
+		m_isFlipping = false;
+		//向きの再設定
+		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
+		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+		SetFacingFromVector(targetPos - myPos);
+	}
+
+	if (m_isFlipping) {
+		// 反転アニメーション中の場合は、突進前の「震え演出」を保留にする
+		m_pendingCharge = true;
+		m_isCharging = false;
+	}
+	else {
+		// 既に対象の方向を向いている（反転不要な）場合は、即座に震え演出を開始
+		m_pendingCharge = false;
+		m_isCharging = true;
+	}
+	EnemyEndAction();
+}
+
+void Enemy::ReleaseChargeAttack() {
+	m_state = EnemyState::ATTACKING;
+	Vector3 targetGridPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+	StartAttackAnimation(targetGridPos);
+	m_attackTimer = 0.0f;
+	m_isCharging = false;
+}
+
+void Enemy::Die() {
+	m_state = EnemyState::DEAD_FLYING;
+	// 死亡時に蓄力（チャージ）状態を強制クリアし、警告UIの残存を防止する
+	m_isCharging = false;
+	m_pendingCharge = false;
+
+	if (m_context && m_context->GetMapManager()) {
+		Tile* myTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+		if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
+	}
+
+	Vector3 diff = m_srt.pos - m_hitSourcePos;
+	diff.y = 0.0f;
+	if (diff.LengthSquared() > 0.001f) diff.Normalize();
+	else diff = Vector3(0, 0, 1);
+
+	Vector3 flyDir = Vector3(diff.x * 1.8f, 0.6f, diff.z * 1.8f);
+	m_deathVelocity = flyDir * DEATH_FLY_FORCE;
+	m_deathSpin = Vector3(death_spin_dist(gen), death_spin_dist(gen), death_spin_dist(gen));
+}
+
+void Enemy::DeathFlyingUpdate(float deltaSeconds) {
+	if (m_isDead) return;
+	//重力の影響(v = v0 + at)
+	m_deathVelocity.y -= (DEATH_GRAVITY * deltaSeconds);
+
+	//位置の更新(p = p0 + vt)
+	m_srt.pos += m_deathVelocity * deltaSeconds;
+	m_srt.rot += m_deathSpin * deltaSeconds;
+
+	if (m_srt.pos.y < -20.0f) {
+		if (m_context && m_context->GetEnemyManager()) {
+			m_context->GetEnemyManager()->RemoveEnemy(this);
+		}
+		Destroy();
+	}
 	UpdateWorldMatrix();
 }
 
-// 1. エンティティレイヤー (5.1)
-void Enemy::OnDraw(uint64_t dt) {
-	if (m_isCharging) {
-		// チャージ中のアニメーション描画
-		ChargeAnimation();
-	}
-	else {
-		Renderer::SetPixelArtMode(true);
-		if (m_EnemyShader != nullptr) m_EnemyShader->SetGPU();
-		DrawModel();
-		Renderer::SetPixelArtMode(false);
+void Enemy::DrawUI() {
+	Unit::DrawUI();
+	if (m_currentHP <= 0) return;
+	if (m_actionUI) {
+		m_actionUI->Draw(m_srt.pos, m_displayOrder);
 	}
 }
 
-// 2. 床面 UI レイヤー (3)
 void Enemy::OnDrawFloorUI(uint64_t dt) {
-	// 既に死亡している場合、UIを一切描画しない
 	if (m_currentHP <= 0) return;
 
 	// --- 移動中かつ移動範囲データが存在する場合、薄い緑色で描画 ---
 	if (m_state == EnemyState::MOVING && m_context && m_context->GetMapManager() && !m_moveRangeTiles.empty()) {
-		// 0.15fのアルファ値で控えめにガイドを表示
 		m_context->GetMapManager()->DrawColoredTiles(m_moveRangeTiles, Color(0.0f, 1.0f, 0.0f, 0.2f));
 	}
 
@@ -340,13 +528,12 @@ void Enemy::OnDrawFloorUI(uint64_t dt) {
 	}
 }
 
-// 3. 浮遊 Overlay レイヤー (6)
 void Enemy::OnDrawOverlay(uint64_t dt) {
-	// 既に死亡している場合、UIを一切描画しない
 	if (m_currentHP <= 0) return;
+
 	// 敵の攻撃意図（赤い矢印）を最前面に描画
 	if (m_isCharging && m_attackArrowRenderer && m_context && m_context->GetMapManager()) {
-		if (m_EnemyShader != nullptr) m_EnemyShader->SetGPU(); // シェーダーの有効化を確認
+		if (m_EnemyShader) m_EnemyShader->SetGPU();
 
 		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
@@ -360,7 +547,9 @@ void Enemy::OnDrawOverlay(uint64_t dt) {
 		else if (diff.z > 0.1f)  rotY = -PI / 2.0f;
 		else if (diff.z < -0.1f) rotY = PI / 2.0f;
 
-		Matrix4x4 world = Matrix4x4::CreateScale(Vector3(0.6f, 0.6f, 0.6f)) * Matrix4x4::CreateRotationY(rotY) * Matrix4x4::CreateTranslation(arrowPos);
+		Matrix4x4 world = Matrix4x4::CreateScale(Vector3(0.6f, 0.6f, 0.6f))
+			* Matrix4x4::CreateRotationY(rotY)
+			* Matrix4x4::CreateTranslation(arrowPos);
 
 		Renderer::SetWorldMatrix(&world);
 		if (auto* mat = m_attackArrowRenderer->GetMaterial(0)) {
@@ -373,456 +562,11 @@ void Enemy::OnDrawOverlay(uint64_t dt) {
 		}
 
 		// ターゲットのタイルに誰かが存在し、かつそれが自分自身でない場合、
+		
 		// そのユニットがどこへ押し出されるかのプレビューを継続的に表示する
 		Tile* lockedTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
 		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
-			// 敵による押し出し方向は、その敵の現在の向き（m_facing）に基づく
 			lockedTile->occupant->DrawPushPreview(m_facing);
 		}
-	}
-}
-
-void Enemy::dispose() {
-
-}
-
-
-
-void Enemy::EnemyStartAction()
-{
-	if (m_currentHP <= 0 || m_state == EnemyState::DEAD_FLYING) {
-		return;
-	}
-	std::cerr << "[Enemy] ID: " << m_displayOrder << " Start Action!" << std::endl;
-
-	if (m_isCharging)
-	{
-		ReleaseChargeAttack();
-	}
-	else
-	{
-		m_pendingCharge = false;
-		ResetMovePoints();
-		ExecuteAI();
-	}
-
-}
-
-void Enemy::EnemyEndAction()
-{
-	std::cerr << "enemy turn end " << std::endl;
-	m_state = EnemyState::IDLE;
-
-}
-void Enemy::ExecuteAI()
-{
-	std::cerr << "enemy ExecuteAI" << std::endl;
-	//ターゲットのプレイヤーを取得
-	Player* player = m_context->GetPlayer();
-	//ターゲットの味方を取得
-	Ally* ally = m_context->GetAlly();
-
-	//ターゲット決定(一番近いユニット)
-	Unit* target = nullptr;
-	int distToPlayer = 999;
-	int distToAlly = 999;
-	//プレイヤーの距離計算
-	if (player && player->GetHP() > 0) {
-		distToPlayer = m_context->GetMapManager()->CalculateDistance(
-			this->m_gridX, this->m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
-	}
-	//味方の距離計算
-	if (ally && ally->GetHP() > 0) {
-		distToAlly = m_context->GetMapManager()->CalculateDistance(
-			this->m_gridX, this->m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
-	}
-
-	// 一番近いユニットをターゲットに設定
-	if (distToAlly < distToPlayer) {
-		target = ally;
-		std::cout << "[AI] Target locked: ALLY (Dist: " << distToAlly << ")" << std::endl;
-	}
-	else {
-		target = player;
-		std::cout << "[AI] Target locked: PLAYER (Dist: " << distToPlayer << ")" << std::endl;
-	}
-
-	if(!target)
-	{
-		EndTurn();//ターゲットがいない場合、ターン終了
-		return;
-	}
-
-	int dist = m_context->GetMapManager()->CalculateDistance
-	(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ());
-	//攻撃範囲の設定
-	int attackRange = 1;
-
-	if (dist <= attackRange) 
-	{
-		std::cout << "[AI] Attacking!" << std::endl;
-		StartCharge(target);
-	}
-	else
-	{
-		std::cout << "[AI] Pathfinding..." << std::endl;
-		MapManager* map = m_context->GetMapManager();
-		auto path = map->FindPaths(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ(),false);
-		//見つかった道の長さと移動力を比較する、そして移動力と同じ長さになる
-		if (path.size() > m_currentMovePoints) 
-		{
-			path.resize(m_currentMovePoints);
-		}
-
-		// --- 移動ポイントを消費する前に、現在の移動可能範囲を取得 ---
-		m_moveRangeTiles = map->GetReachableTiles(this->m_gridX, this->m_gridZ, m_currentMovePoints);
-
-		m_currentMovePoints -= (int)path.size();
-		EnemyStartMoveTo(path);
-	}
-}
-
-
-void Enemy::OnTurnChanged(TurnState state)
-{
-	std::cerr << "enemy turn OnTurnChanged " << std::endl;
-	if (state == TurnState::EnemyPhase)
-	{
-		//プレイヤーのターン開始
-		StartTurn();
-	}
-
-}
-
-void Enemy::TakeDamage(int damage, Unit* attacker) 
-{
-	std::cout << "[Debug] Enemy::TakeDamage Called! Damage: " << damage
-		<< " CurrentHP: " << m_currentHP << std::endl;
-	Unit::TakeDamage(damage, attacker);
-	// 攻撃者の位置を記録し、死亡演出が遅延した場合でも正しい吹き飛び方向を計算可能にする
-	if (attacker) {
-		m_hitSourcePos = attacker->getSRT().pos;
-	}
-
-	if (m_currentHP <= 0 && m_state != EnemyState::DEAD_FLYING)
-	{
-		// 【核心】現在ノックバック中（KNOCKBACK）であれば、死亡演出を遅延させる
-		if (m_state == EnemyState::KNOCKBACK) {
-			return;
-		}
-		// それ以外の場合は、即座に死亡処理を実行
-		Die();
-	}
-
-}
-
-	void Enemy::Die() 
-	{
-		std::cout << "[Debug] Enemy died! Switching to DEAD_FLYING." << std::endl;
-		m_state = EnemyState::DEAD_FLYING;
-
-		// 【新規追加】死亡時に蓄力（チャージ）状態を強制クリアし、警告UIの残存を防止する
-		m_isCharging = false;
-		m_pendingCharge = false;
-
-		//元にいる、すでに死んだ敵のタイルの占有を解除
-		if (m_context && m_context->GetMapManager()) {
-			Tile* myTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
-			if (myTile && myTile->occupant == this) {
-				myTile->occupant = nullptr;
-			}
-		}
-
-		Vector3 flyDir(0, 1, 0);
-		//死亡時の飛翔方向を計算(攻撃者の位置に基づく、反方向へ)
-		//位置を取得
-		Vector3 diff = m_srt.pos - m_hitSourcePos;
-		diff.y = 0.0f;
-
-		if (diff.LengthSquared() > 0.001f) diff.Normalize();
-		else diff = Vector3(0, 0, 1);
-
-		flyDir = Vector3(diff.x * 1.8f, 0.6f, diff.z * 1.8f);
-
-		float force = 20.0f;
-		m_deathVelocity = flyDir * force;
-		m_deathSpin = Vector3(death_spin_dist(gen), death_spin_dist(gen), death_spin_dist(gen));
-	}
-
-
-void Enemy::EnemyStartMoveTo(std::vector<Tile*> path)
-{
-	std::cerr << "enemy start to move " << std::endl;
-	if (path.empty()) 
-	{
-		onMoveFinished();
-		return;
-	}
-	//start点のタイル占有取り消せ
-	Tile* oldTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
-	if (oldTile && oldTile->occupant == this) {
-		oldTile->occupant = nullptr;
-	}
-
-	m_currentPath = path;
-	m_pathIndex = 0;
-
-	m_state = EnemyState::MOVING;
-
-	m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
-
-}
-
-void Enemy::updateMove(uint64_t delta)
-{
-	Vector3 currentPos = this->getSRT().pos;
-	Vector3 direction = m_targetWorldPos - currentPos;
-
-	SetFacingFromVector(direction);
-
-	float distanceSq = direction.LengthSquared();
-
-	if (distanceSq < 0.01f) 
-	{
-		this->setPosition(m_targetWorldPos);
-		m_pathIndex++;
-
-		if (m_pathIndex >= m_currentPath.size()) 
-		{
-			onMoveFinished();
-		}
-		else 
-		{
-			m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
-			//LookAt向き調整待ち
-		}
-	}
-	else 
-	{
-	
-		float dt = static_cast<float>(delta) / 1000.0f;
-		float moveStep = m_moveSpeed * dt;
-
-		float dist = std::sqrt(distanceSq);
-		if (dist > 0.0001f) 
-		{
-			direction = direction * (1.0f / dist);
-
-			if (moveStep >= dist) 
-			{
-				this->setPosition(m_targetWorldPos);
-			}
-			else
-			{
-				Vector3 newPos = currentPos + direction * moveStep;
-				this->setPosition(newPos);
-			}
-
-		}
-
-		//向き調整待ち
-		UpdateWorldMatrix();
-	}
-}
-
-void Enemy::onMoveFinished()
-{
-	std::cerr << "enemy move finished " << std::endl;
-	m_state = EnemyState::IDLE;
-
-	// --- 移動完了後などに範囲をクリアし、描画を停止 ---
-	m_moveRangeTiles.clear();
-
-	//移動終了後、最後のタイルに位置を更新
-	if (!m_currentPath.empty()) 
-	{
-		Tile* endTile = m_currentPath.back();
-		this->m_gridX = endTile->gridX;
-		this->m_gridZ = endTile->gridZ;
-		//ゴールのタイルを占有
-		if (endTile) {
-			endTile->occupant = this;
-			//罠のチェック
-			if (endTile->structure) {
-				std::cout << "[Enemy] Movement finished. Checking tile event..." << std::endl;
-				endTile->structure->OnEnter(this);
-			}
-		}
-
-	}
-	//プレーヤーと味方の距離を再計算、攻撃範囲内かどうか
-	Player* player = m_context->GetPlayer();
-	Ally* ally = m_context->GetAlly();
-	//ターゲット決定(一番近いユニット)
-	Unit* targetInRange = nullptr;
-
-	// チェック Playerは範囲内か
-	if (player && player->GetHP() > 0) {
-		int d = m_context->GetMapManager()->CalculateDistance(m_gridX, m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
-		if (d <= 1) targetInRange = player;
-	}
-	// チェック Ally は範囲内か(優先でAllyロック)
-	if (ally && ally->GetHP() > 0) {
-		int d = m_context->GetMapManager()->CalculateDistance(m_gridX, m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
-		if (d <= 1) targetInRange = ally;
-	}
-	//攻撃範囲内のターゲットがいる場合、チャージ攻撃開始
-	if (targetInRange) {
-		StartCharge(targetInRange);
-		return;
-	}
-	EnemyEndAction();
-}
-
-void Enemy::StartCharge(Unit* target) {
-
-	
-	if (target) {
-		m_lockedGridX = target->GetUnitGridX();
-		m_lockedGridZ = target->GetUnitGridZ();
-
-		std::cerr << "[Enemy] Locked Target Grid: " << m_lockedGridX << "," << m_lockedGridZ << std::endl;
-
-		// 前の段階で残っていた反転（フリップ）状態を強制的に中断し、SetFacing が確実に適用されるようにする
-		m_isFlipping = false;
-		//向きの再設定
-		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
-		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-		SetFacingFromVector(targetPos - myPos);
-	}
-	// 基底クラスの m_isFlipping フラグを確認（Unit.h で定義、Enemy からアクセス可能）
-	if (m_isFlipping) {
-		// 反転アニメーション中の場合は、突進前の「震え演出」を保留にする
-		m_pendingCharge = true;
-		m_isCharging = false;
-		std::cout << "[Enemy] Turning... Waiting to charge." << std::endl;
-	}
-	else {
-		// 既に対象の方向を向いている（反転不要な）場合は、即座に震え演出を開始
-		m_pendingCharge = false;
-		m_isCharging = true;
-		std::cout << "[Enemy] Facing correct. Start charging immediately." << std::endl;
-	}
-
-	EnemyEndAction();
-}
-
-void Enemy::ReleaseChargeAttack() {
-	std::cerr << "[Enemy] Releasing Charged Attack!" << std::endl;
-
-	m_state = EnemyState::ATTACKING;
-
-	Vector3 targetGridPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-	StartAttackAnimation(targetGridPos);
-	m_attackTimer = 0.0f;
-
-	m_isCharging = false;
-
-}
-
-void Enemy::ChargeAnimation() {
-	Vector3 originalPos = m_srt.pos;
-
-	if (m_isCharging) {
-		float shakeX = shake_dist(gen);
-		float shakeZ = shake_dist(gen);
-
-		m_srt.pos.x += shakeX;
-		m_srt.pos.z += shakeZ;
-
-		UpdateWorldMatrix();
-		Renderer::SetWorldMatrix(&m_WorldMatrix);
-	}
-
-	if (m_EnemyShader)m_EnemyShader->SetGPU();
-	DrawModel();
-
-	if (m_isCharging) {
-		m_srt.pos = originalPos;
-		UpdateWorldMatrix();
-		Renderer::SetWorldMatrix(&m_WorldMatrix);
-	}
-}
-
-void Enemy::OnPushed(Direction pushDir) {
-	// すでに死亡している、または吹き飛び中の場合は処理をスキップ
-	if (m_currentHP <= 0 || m_state == EnemyState::DEAD_FLYING) return;
-
-	m_state = EnemyState::KNOCKBACK;
-
-	// 押し出される前のグリッド位置を記録
-	int oldX = m_gridX;
-	int oldZ = m_gridZ;
-
-	// 基底クラスの処理を呼び出し、グリッド移動・衝突判定・アニメーション開始を実行
-	Unit::OnPushed(pushDir);
-
-
-	// 実際に位置が変化した（壁に衝突しなかった）場合のみ、ロックオン座標をスライドさせる
-	if (m_gridX != oldX || m_gridZ != oldZ) {
-		if (m_isCharging) {
-			// 移動量（新位置 - 旧位置）を現在のロックオン座標に加算
-			m_lockedGridX += (m_gridX - oldX);
-			m_lockedGridZ += (m_gridZ - oldZ);
-		}
-	}
-}
-
-void Enemy::DeathFlyingUpdate(float deltaSeconds)
-{	//ログずっと出るの防止
-	if (m_isDead) return;
-	//重力の影響(v = v0 + at)
-		m_deathVelocity.y -= (GRAVITY * deltaSeconds);
-
-		//位置の更新(p = p0 + vt)
-		m_srt.pos += m_deathVelocity * deltaSeconds;
-
-		//回転の更新
-		m_srt.rot += m_deathSpin * deltaSeconds;
-
-		//LOG
-		static float lastPrintY = 0.0f;
-		if (std::abs(m_srt.pos.y - lastPrintY) > 5.0f) {
-			std::cerr << "[Enemy Debug] Flying... Y=" << m_srt.pos.y << std::endl;
-			lastPrintY = m_srt.pos.y;
-		}
-
-		//境界チェック
-		if (m_srt.pos.y < -20.0f) 
-		{
-			std::cerr << "[Enemy Debug] Y < -30! Calling Deactivate & RemoveEnemy." << std::endl; //
-			
-			if (m_context && m_context->GetEnemyManager()) {
-				std::cerr << "[Enemy Debug] Pointer to Manager is valid. Removing..." << std::endl; 
-				m_context->GetEnemyManager()->RemoveEnemy(this);
-			}
-			else {
-				std::cerr << "[Enemy Debug] FATAL: EnemyManager is NULL!" << std::endl;
-			}
-
-			Destroy();
-		}
-
-		UpdateWorldMatrix();
-		return;
-}
-
-void Enemy::SetDisplayOrder(int order)
-{
-	m_displayOrder = order;
-}
-
-void Enemy::DrawUI() {
-	// 1. まず基底クラスのメソッドを呼び出し、HPバーを描画する
-	Unit::DrawUI();
-
-	// 2. 既に死亡している（画面外への吹き飛び中など）場合は、
-	//    基本的にUIを表示しない（仕様に応じて変更可能）
-	if (m_currentHP <= 0) return;
-
-	// 3. 行動順を示す数字を描画
-	if (m_actionUI) {
-		// 現在の座標と表示順（オーダー）を渡して描画
-		m_actionUI->Draw(m_srt.pos, m_displayOrder);
 	}
 }

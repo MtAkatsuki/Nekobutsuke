@@ -1,39 +1,44 @@
 #pragma once
-#include <Audio.h> // DirectXTK Audio
+#include <Audio.h> 
 #include <map>
 #include <string>
 #include <memory>
 #include <iostream>
 
+// =========================================================
+// AudioManager クラス (Singleton)
+// DirectX AudioEngine をラップし、BGMのクロスフェードや
+// SE（効果音）の再生状態を一括管理するサウンドシステム
+// =========================================================
 class AudioManager
 {
 public:
-	static AudioManager& GetInstance()
-	{
+	static AudioManager& GetInstance() {
 		static AudioManager instance;
 		return instance;
 	}
-	//AudioManagerの初期化とアセット読み込み
+
+	// ---------------------------------------------------------
+	// ライフサイクル (Lifecycle)
+	// ---------------------------------------------------------
 	void Init();
-
 	void Update(float dt);
+	void Suspend(); // バックグラウンド移行時の一時停止
+	void Resume();  // フォアグラウンド復帰時の再開
 
-	// BGM（背景音楽）の再生
-	// name: リソース名
-	// loop: ループ再生するかどうか
-	// fadeTime: クロスフェード/フェードインの時間（秒）
+	// ---------------------------------------------------------
+	// BGM 制御 (Background Music Control)
+	// ---------------------------------------------------------
+	// BGMの再生（既存曲がある場合は自動的にクロスフェードを行う）
 	void PlayBGM(const std::string& name, bool loop = true, float fadeTime = 1.0f);
-
-	// 現在のBGMを停止（フェードアウト付き）
 	void StopBGM(float fadeTime = 1.0f);
 
-	// 一時停止・再開（アプリのバックグラウンド移行時などに使用）
-	void Suspend();
-	void Resume();
-
-	// SEリソースの読み込み
+	// ---------------------------------------------------------
+	// SE 制御 (Sound Effects Control)
+	// ---------------------------------------------------------
 	void LoadSE(const std::string& name, const std::wstring& path);
-	// SEの再生 (Fire-and-forget 方式)
+
+	// SEの再生 (Fire-and-forget 方式：単発の音の再生に特化)
 	void PlaySE(const std::string& name, float volume = 1.0f, float pitch = 0.0f, float pan = 0.0f);
 
 private:
@@ -42,23 +47,19 @@ private:
 	AudioManager(const AudioManager&) = delete;
 	AudioManager& operator=(const AudioManager&) = delete;
 
-	//アセット保存用
+	// =========================================================
+	// メンバー変数
+	// =========================================================
 	std::unique_ptr<DirectX::AudioEngine> m_audEngine;
 	std::map<std::string, std::unique_ptr<DirectX::SoundEffect>> m_soundEffects;
 
-	// 再生インスタンス
-	std::unique_ptr<DirectX::SoundEffectInstance> m_currentBGM; // 現在再生中（またはフェードアウト中）
-	std::unique_ptr<DirectX::SoundEffectInstance> m_nextBGM;    // 再生準備中（フェードイン中）
+	// --- BGM 再生インスタンス ---
+	std::unique_ptr<DirectX::SoundEffectInstance> m_currentBGM; // 再生中・フェードアウト中
+	std::unique_ptr<DirectX::SoundEffectInstance> m_nextBGM;    // 準備中・フェードイン中
 
-private:
-	// フェード制御用変数
-	bool m_isCrossFading = false;   // クロスフェード実行中フラグ
-	float m_fadeTimer = 0.0f;       // フェード用タイマー
-	float m_fadeDuration = 1.0f;    // フェードの総時間（継続時間）
-
-	// 現在のBGMが「フェードアウトのみ」の状態かどうか（StopBGMに対応）
+	// --- フェード制御ステート ---
+	bool m_isCrossFading = false;
 	bool m_isStopping = false;
-
-	// 音量設定
-	const float MAX_VOLUME = 0.5f; // 最大音量（音割れや騒音防止のため）
+	float m_fadeTimer = 0.0f;
+	float m_fadeDuration = 1.0f;
 };

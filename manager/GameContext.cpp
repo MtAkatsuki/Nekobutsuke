@@ -1,6 +1,7 @@
 #include "../manager/GameContext.h"
 #include "../manager/MapManager.h"  
 #include "../manager/TurnManager.h"
+#include "../manager/EnemyManager.h"
 #include "../ui/DamageNumberManager.h"
 #include "../ui/GameUIManager.h"
 #include "../ui/DialogueUI.h"
@@ -9,7 +10,6 @@
 
 GameContext::GameContext() = default;
 GameContext::~GameContext() = default;
-
 
 void GameContext::Init() {
     m_mapManager = std::make_unique<MapManager>();
@@ -33,38 +33,23 @@ void GameContext::Init() {
     m_camera = std::make_unique<Camera>();
 }
 
-MapManager* GameContext::GetMapManager() {
-    return m_mapManager.get();
-}
+MapManager* GameContext::GetMapManager() { return m_mapManager.get(); }
+TurnManager* GameContext::GetTurnManager() { return m_turnManager.get(); }
+EnemyManager* GameContext::GetEnemyManager() { return m_enemyManager.get(); }
+Camera* GameContext::GetCamera() { return m_camera.get(); }
 
-TurnManager* GameContext::GetTurnManager() {
-    return m_turnManager.get();
-}
+EffectManager* GameContext::GetEffectManager() { return m_effectManager.get(); }
+DamageNumberManager* GameContext::GetDamageManager() { return m_damageNumberManager.get(); }
+GameUIManager* GameContext::GetUIManager() { return m_gameUIManager.get(); }
+DialogueUI* GameContext::GetDialogueUI() { return m_dialogueUI.get(); }
 
-Player* GameContext::GetPlayer() {
-    return m_player;
-}
+Player* GameContext::GetPlayer() { return m_player; }
+void GameContext::SetPlayer(Player* player) { m_player = player; }
+
+Ally* GameContext::GetAlly() { return m_ally; }
+void GameContext::SetAlly(Ally* ally) { m_ally = ally; }
 
 TurnState GameContext::GetCurrentTurnState() const {
     return m_turnManager->GetTurnState();
 }
-
-Camera* GameContext::GetCamera() {
-    return m_camera.get();
-}
-
-EffectManager* GameContext::GetEffectManager() {
-    return m_effectManager.get(); }
-
-Ally* GameContext::GetAlly() {
-    return m_ally;
-}
-void GameContext::SetAlly(Ally* ally) { m_ally = ally; }
-
-void GameContext::SetPlayer(Player* player) { m_player = player; }
-
-EnemyManager* GameContext::GetEnemyManager() { return m_enemyManager.get(); }
-DamageNumberManager* GameContext::GetDamageManager() { return m_damageNumberManager.get(); }
-GameUIManager* GameContext::GetUIManager() { return m_gameUIManager.get(); }
-DialogueUI* GameContext::GetDialogueUI() { return m_dialogueUI.get(); }
 

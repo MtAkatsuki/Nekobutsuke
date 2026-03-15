@@ -1,23 +1,28 @@
 #include <memory>
 #include <queue>
-#include <algorithm> // for reverse
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include	"../gameobject/GameObject.h"
-#include	"../scene/GameScene.h"
-#include	"MapManager.h"
-#include	"../gameobject/MapObject.h"
-#include	"../system/stb_perlin.h"
-#include	"../system/RandomEngine.h"
-#include	"../system/collision.h"
-#include	"../utility/WorldToScreen.h"
-#include    "../system/meshmanager.h"
+#include "../gameobject/GameObject.h"
+#include "../scene/GameScene.h"
+#include "MapManager.h"
+#include "../gameobject/MapObject.h"
+#include "../system/stb_perlin.h"
+#include "../system/RandomEngine.h"
+#include "../system/collision.h"
+#include "../utility/WorldToScreen.h"
+#include "../system/meshmanager.h"
 #include "../gameobject/player.h"
 #include "../gameobject/enemy.h"
 #include "../gameobject/Ally.h"
-#include	"GameContext.h"
+#include "GameContext.h"
 
+namespace {
+	// 視覚的オフセット（Zファイティング防止・パースペクティブ調整用）
+	const float VISUAL_Z_OFFSET = -0.3f;
+	const float HEIGHT_OFFSET_RANGE_PANEL = 0.05f;
+}
 
 void MapManager::Init(GameContext* context) {
 	m_mapWidth = 9;
@@ -36,7 +41,6 @@ void MapManager::Init(GameContext* context) {
 	m_rangeRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("range_panel_mesh");
 }
 
-// グリッド座標からワールド座標を取得
 //Tile対象作らない、メモリーに効率がいい
 Vector3 MapManager::GetWorldPosition(int gridX, int gridZ) const
 {
@@ -49,11 +53,8 @@ Vector3 MapManager::GetWorldPosition(int gridX, int gridZ) const
 	worldX = m_tileOffsets.x + worldX + (m_tileSize / 2.0f);
 	worldZ = m_tileOffsets.z + worldZ + (m_tileSize / 2.0f);
 
-	// グローバルな視覚的オフセット (Visual Offset) の追加
 	// Z軸の負の方向（カメラ方向）へオフセットさせ、物体をマスの手前側に寄せる
-
-	float visualZOffset = -0.3f;
-	worldZ += visualZOffset;
+	worldZ += VISUAL_Z_OFFSET;
 
 	return Vector3(worldX, worldY, worldZ);
 }
@@ -92,6 +93,7 @@ const std::vector<Tile>& MapManager::GetAllTiles()const
 {
 	return m_grid;
 }
+
 //通過できるかの検査
 bool MapManager::IsWalkable(int gridX, int gridZ) const
 {
@@ -310,7 +312,7 @@ void MapManager::DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX
 	for (Tile* t : tiles)
 	{
 		Vector3 pos = GetWorldPosition(t->gridX, t->gridZ);
-		pos.y += 0.05f;//少し浮かせて描画
+		pos.y += HEIGHT_OFFSET_RANGE_PANEL;//少し浮かせて描画
 
 		//見やすいために少し小さくする
 		Matrix4x4 world = Matrix4x4::CreateScale(0.9f) * Matrix4x4::CreateTranslation(pos);
@@ -380,178 +382,142 @@ std::vector<std::vector<std::string>> MapManager::ParseCSV(const std::string& fi
 	return grid;
 }
 
+// ---------------------------------------------------------
+
+// レベルロード・パイプライン (Level Loading Pipeline)
+
+// ---------------------------------------------------------
+
 void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
-	// 1. 既存データのクリーンアップ
-	// メモリリークを防ぐため、新しいレベルを読み込む前に以前のオブジェクトとグリッドを破棄する
+	std::cout << "[MapManager] Loading Level: " << csvPath << std::endl;
+
+	// 1. 古いデータの破棄
+	ClearCurrentLevel();
+
+	// 2. CSVデータの解析
+	auto csvData = ParseCSV(csvPath);
+	if (csvData.empty()) return;
+
+	// 3. グリッド寸法の確立と初期化
+	SetupGridDimensions(csvData);
+
+	// 4. マップレイヤーの生成（Zオーダーの奥から手前へ）
+	SpawnFloorLayer(context);
+	SpawnStaticStructures(csvData, context);
+	SpawnDynamicEntities(csvData, context);
+
+	std::cout << "[MapManager] Level Loaded Successfully." << std::endl;
+}
+
+void MapManager::ClearCurrentLevel() {
 	m_mapObjects.clear();
 	m_grid.clear();
+}
 
-	// 2. CSVファイルの解析（パース）
-	auto csvData = ParseCSV(csvPath);
-	if (csvData.empty()) return; // データが空、または読み込み失敗時は中断
-
+void MapManager::SetupGridDimensions(const std::vector<std::vector<std::string>>& csvData) {
 	// csvData の要素数（外側の vector）は「行数」であり、マップの「奥行き（Z軸）」に対応する
-	m_mapDepth = (int)csvData.size();
-
+	m_mapDepth = static_cast<int>(csvData.size());
 	// csvData[0]（最初の行）の要素数は「列数」であり、マップの「幅（X軸）」に対応する
-	// ※全ての行が同じ列数であることを前提としている
-	m_mapWidth = (int)csvData[0].size();
+	m_mapWidth = static_cast<int>(csvData[0].size());
 
-
-	// タイル座標をワールド座標に変換するためのオフセット計算
-	// マップの中心が (0, 0, 0) に来るように調整
 	m_tileSize = 1.0f;
-	m_tileOffsets.x = 0.5f * -(float(GetMapWidth()) * m_tileSize);
+	m_tileOffsets.x = 0.5f * -(static_cast<float>(m_mapWidth) * m_tileSize);
 	m_tileOffsets.y = 0.0f;
-	m_tileOffsets.z = 0.5f * -(float(GetMapDepth()) * m_tileSize);
+	m_tileOffsets.z = 0.5f * -(static_cast<float>(m_mapDepth) * m_tileSize);
 
-	// 一次元配列としてグリッドデータをリサイズ
 	m_grid.resize(m_mapWidth * m_mapDepth);
 
-	// CSV解析ループに入る前に、全グリッドを確実に初期化する。
-	// CSVの行が短い場合などに発生する「未初期化タイル」を防ぐため。
-	for (int i = 0; i < m_grid.size(); ++i) {
+	for (int i = 0; i < static_cast<int>(m_grid.size()); ++i) {
 		m_grid[i].gridX = i % m_mapWidth;
 		m_grid[i].gridZ = i / m_mapWidth;
 		m_grid[i].type = TileType::FLOOR;
 		m_grid[i].isWalkable = true;
-		m_grid[i].occupant = nullptr;   // 安全化
-		m_grid[i].structure = nullptr;  // 安全化
+		m_grid[i].occupant = nullptr;
+		m_grid[i].structure = nullptr;
 	}
+}
 
-	// ユニット（Player, Enemy, Ally）は、床（MapObject）が全て追加された「後」にSceneに追加する。
-	// これにより、GameSceneの描画ループで「床 -> ユニット」の順になり、
-	// 残像（Ghost）やUIが床に隠れる問題（Z-Fighting/Occlusion）が解決する。
-	std::vector<std::unique_ptr<GameObject>> unitsToSpawn;
-
-	// 3. マップオブジェクトの生成
-	// 外側のループが Z軸（行）、内側のループが X軸（列）に対応
-
-	//フェイス１：まずは全部のフロアーを生成、描画リストの再前端にある
+void MapManager::SpawnFloorLayer(GameContext* context) {
 	for (int z = 0; z < m_mapDepth; z++) {
-
-		// --- CSVの行とゲーム内Z座標の反転処理 ---
-		// z=0 (マップの下端) の時、CSVの最終行を読み込む
-		// z=max (マップの上端) の時、CSVの第0行を読み込む
-
 		for (int x = 0; x < m_mapWidth; x++) {
 			auto floorObj = std::make_unique<MapObject>(context);
 			floorObj->Init(MapModelType::FLOOR, GetWorldPosition(x, z));
 			if (m_Scene) m_Scene->AddObject(std::move(floorObj));
 		}
 	}
+}
 
-	// フェイス２：家具と障害物を生成
+void MapManager::SpawnStaticStructures(const std::vector<std::vector<std::string>>& csvData, GameContext* context) {
 	for (int z = 0; z < m_mapDepth; z++) {
-		int csvRowIndex = (m_mapDepth - 1) - z;
+		int csvRowIndex = (m_mapDepth - 1) - z; // CSVのZ軸反転
 		for (int x = 0; x < m_mapWidth; x++) {
-
-			// 行の長さが足りない場合の安全策
 			if (x >= csvData[csvRowIndex].size()) continue;
 
-			// 現在のセル（タイル）を取得
 			Tile* currentTile = GetTile(x, z);
 			Vector3 worldPos = GetWorldPosition(x, z);
 
+			// 重複生成の防止（大型オブジェクトの一部として既に処理されている場合）
+			if (currentTile->structure != nullptr) continue;
 
-			// === [重要ロジック 1]：先着優先（オーバーラップ防止） ===
-			// このマスに既に構造物（structure）が設定されている場合、
-			// それは大型オブジェクトの一部（例：3x1マスのソファの端など）として処理済みであることを意味する。
-			// 重複してインスタンスを生成しないよう、このマスの処理をスキップする。
-			if (currentTile->structure != nullptr) {
-				continue;
-			}
-
-			// CSVデータから現在のマスのトークンを取得し、配置の基準となるワールド座標を計算
 			std::string token = csvData[csvRowIndex][x];
-
-
-			// トークンに基づいたオブジェクトタイプとトラップ判定の初期化
 			MapModelType propType = MapModelType::FLOOR;
 			bool isTrap = false;
 
-			// トークンに基づき、生成するオブジェクトの種類を判別
-			if (token == "W")                propType = MapModelType::WALL;        // テスト用の壁
-			else if (token == "W_T_SOFA")    propType = MapModelType::PROP_SOFA_TATE; // 黄色のソファ
-			else if (token == "W_Y_SOFA")    propType = MapModelType::PROP_SOFA_YOKO;  // 白のソファ
-			else if (token == "W_CATTOWER")  propType = MapModelType::PROP_CATTOWER;    // キャットタワー
-			else if (token == "W_TABLE")     propType = MapModelType::PROP_TABLE;       // テーブル
-			else if (token == "W_BOOKSHELF") propType = MapModelType::PROP_BOOKSHELF;   // 本棚
-			else if (token == "T") { propType = MapModelType::TRAP; isTrap = true; } // トラップ（地刺）
+			if (token == "W")                propType = MapModelType::WALL;
+			else if (token == "W_T_SOFA")    propType = MapModelType::PROP_SOFA_TATE;
+			else if (token == "W_Y_SOFA")    propType = MapModelType::PROP_SOFA_YOKO;
+			else if (token == "W_CATTOWER")  propType = MapModelType::PROP_CATTOWER;
+			else if (token == "W_TABLE")     propType = MapModelType::PROP_TABLE;
+			else if (token == "W_BOOKSHELF") propType = MapModelType::PROP_BOOKSHELF;
+			else if (token == "T") { propType = MapModelType::TRAP; isTrap = true; }
 
-			// オブジェクトが設定された場合（床以外）の生成処理
 			if (propType != MapModelType::FLOOR) {
-
-				// 生成するオブジェクトと占有サイズを格納する変数を定義
 				std::unique_ptr<MapObject> newObj = nullptr;
 				int sizeX = 1, sizeZ = 1;
 
 				if (isTrap) {
-					// --- トラップ（Trap）の生成 ---
 					auto trap = std::make_unique<Trap>(context);
-					Trap::GetDimensions(propType, sizeX, sizeZ); // トラップの占有サイズを取得
+					Trap::GetDimensions(propType, sizeX, sizeZ);
 					newObj = std::move(trap);
 				}
 				else {
-					// --- 家具・障害物（Prop）の生成 ---
 					auto prop = std::make_unique<Prop>(context);
-					Prop::GetDimensions(propType, sizeX, sizeZ); // 家具の占有サイズを取得
+					Prop::GetDimensions(propType, sizeX, sizeZ);
 					newObj = std::move(prop);
 				}
 
-				// === 座標計算およびタイル埋め立て（共通ロジック） ===
-
-				// オブジェクトのサイズに基づき、中心点へのオフセットを計算
-				// ※複数マス占有の場合、中心がタイル間にくるため 0.5f の調整が必要
 				float offsetX = (sizeX - 1) * m_tileSize * 0.5f;
 				float offsetZ = (sizeZ - 1) * m_tileSize * 0.5f;
 				Vector3 centerPos = worldPos;
 				centerPos.x += offsetX;
 				centerPos.z += offsetZ;
 
-				// --- DEBUG LOG FOR PROP ---
-				// 家具生成時の座標を確認
-				if (isTrap || propType == MapModelType::PROP_TABLE) {
-					std::cout << "[PROP/TRAP] Created at " << x << "," << z
-						<< " CenterZ: " << centerPos.z << std::endl;
-				}
-				// -------------------------
-				// 
-				// オブジェクトの初期化（計算した中心座標を適用）
 				newObj->Init(propType, centerPos);
-
-				// 家具の基準グリッド座標を設定
-				// これにより、Prop::Update 内でグリッドベースの遮蔽計算が可能になります
 				newObj->SetGridPosition(x, z);
 
-				// 占有するすべてのタイルに対して構造物（structure）情報を登録
-				// ※所有権移譲前に生ポインタを取得しておく
 				MapObject* rawPtr = newObj.get();
-
+				// 占有タイルの登録
 				for (int i = 0; i < sizeX; ++i) {
 					for (int j = 0; j < sizeZ; ++j) {
-						int targetX = x + i;
-						int targetZ = z + j;
-
-						Tile* t = GetTile(targetX, targetZ);
-						if (t) {
-							// Trap/Prop を問わず、タイルの構造物スロットに登録
-							// これにより、AIの回避や進入イベント判定が可能になる
-							t->structure = rawPtr;
-						}
+						Tile* t = GetTile(x + i, z + j);
+						if (t) t->structure = rawPtr;
 					}
 				}
 
-				// シーンマネージャーへ登録（所有権の移動）
 				if (m_Scene) m_Scene->AddObject(std::move(newObj));
 			}
 		}
 	}
+}
 
+void MapManager::SpawnDynamicEntities(const std::vector<std::vector<std::string>>& csvData, GameContext* context) {
+	// ユニット（Player, Enemy, Ally）は、床（MapObject）が全て追加された「後」にSceneに追加する。
+	 
+	// これにより、GameSceneの描画ループで「床 -> ユニット」の順になり、
+	
+	// 残像（Ghost）やUIが床に隠れる問題（Z-Fighting/Occlusion）が解決する。
+	std::vector<std::unique_ptr<GameObject>> unitsToSpawn;
 
-
-
-	// 2. 動的ユニット（Player/Enemy/Ally）の生成および配置
 	for (int z = 0; z < m_mapDepth; z++) {
 		int csvRowIndex = (m_mapDepth - 1) - z;
 		for (int x = 0; x < m_mapWidth; x++) {
@@ -559,62 +525,46 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 			Vector3 worldPos = GetWorldPosition(x, z);
 
 			if (token == "P") {
-				// もしプレイヤーが未生成なら、新規に生成
 				Player* pPlayer = context->GetPlayer();
 				if (!pPlayer) {
 					auto newPlayer = std::make_unique<Player>(context);
 					newPlayer->Init();
 					pPlayer = newPlayer.get();
 					context->SetPlayer(pPlayer);
-					// 後で追加するためにリストへ
 					unitsToSpawn.push_back(std::move(newPlayer));
 				}
-
-				// 位置を設定
 				pPlayer->SetGridPosition(x, z);
 				pPlayer->setPosition(worldPos);
-
-				// 初期化後のワールド行列更新
 				pPlayer->UpdateWorldMatrix();
-
 				GetTile(x, z)->occupant = pPlayer;
-
-				// Playerの位置ログ
-				std::cout << "[PLAYER] Spawn Z: " << worldPos.z << std::endl;
 			}
 			else if (token == "A") {
-				// 味方キャラクター（Ally）の生成
 				auto ally = std::make_unique<Ally>(context);
 				ally->Init();
 				ally->SetGridPosition(x, z);
 				ally->setPosition(worldPos);
 				ally->UpdateWorldMatrix();
 				GetTile(x, z)->occupant = ally.get();
-				context->SetAlly(ally.get()); // グローバルな味方情報として登録
-				// 後で追加するためにリストへ
+				context->SetAlly(ally.get());
 				unitsToSpawn.push_back(std::move(ally));
 			}
-			else if (token[0] == 'E') { // トークンの先頭が 'E' の場合は敵とみなす (E1, E2, E3...)
+			else if (token[0] == 'E') {
 				int typeID = 0;
-				// 2文字目以降をIDとして取得
 				if (token.length() > 1) typeID = std::stoi(token.substr(1));
 
-				// 敵キャラクター（Enemy）の生成
 				auto enemy = std::make_unique<Enemy>(context);
-				enemy->Init(typeID); // IDに基づいたリソース読み込み
+				enemy->Init(typeID);
 				enemy->SetGridPosition(x, z);
 				enemy->setPosition(worldPos);
 				enemy->UpdateWorldMatrix();
 				GetTile(x, z)->occupant = enemy.get();
 
-				// EnemyManagerに登録して管理下に置く
 				if (context->GetEnemyManager()) context->GetEnemyManager()->RegisterEnemy(enemy.get());
-				// 後で追加するためにリストへ
 				unitsToSpawn.push_back(std::move(enemy));
 			}
 		}
-
 	}
+
 	if (m_Scene) {
 		for (auto& unitObj : unitsToSpawn) {
 			m_Scene->AddObject(std::move(unitObj));

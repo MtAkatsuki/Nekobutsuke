@@ -1,160 +1,146 @@
 #pragma once
 
-#include	<memory>
-#include	"../gameobject/Unit.h"
-#include	"../system/CStaticMesh.h"
-#include	"../system/CStaticMeshRenderer.h"
-#include	"../system/CShader.h"
-#include	"../system/Direction.h"
-#include	"../manager/TurnManager.h"
+#include <memory>
+#include "../gameobject/Unit.h"
+#include "../system/CStaticMesh.h"
+#include "../system/CStaticMeshRenderer.h"
+#include "../system/CShader.h"
+#include "../system/Direction.h"
+#include "../manager/TurnManager.h"
 
 class MapManager;
 class Enemy;
 
+// =========================================================
+// PlayerState
+// プレイヤーのステートマシン定義
+// =========================================================
 enum class PlayerState {
-	MENU_MAIN,          // メインメニュー (J/K/Space)
-	MOVE_SELECT,        // 移動操作中 (WASDで)
-	ANIM_MOVE,          // 移動アニメション中
-	ATTACK_DIR_SELECT,  // 攻撃方向選択中 (WASDで)
-	ANIM_ATTACK,        // 攻撃アニメション中
-	WAITING,
-	ANIM_CELEBRATE,// 勝利祝賀アニメーション中
-	KNOCKBACK	// ノックバック（押し出し）アニメーション中
+    MENU_MAIN,          // メインメニュー表示中 (入力待ち)
+    MOVE_SELECT,        // 移動モード (WASDでカーソル移動)
+    ANIM_MOVE,          // 移動アニメーション進行中
+    ATTACK_DIR_SELECT,  // 攻撃方向選択中 (WASDで方向切り替え)
+    ANIM_ATTACK,        // 攻撃アニメーション進行中
+    WAITING,            // 敵/味方ターン中の待機状態
+    ANIM_CELEBRATE,     // クリア時の勝利アニメーション
+    KNOCKBACK           // 敵からのノックバック被弾中
 };
 
 enum class AttackType {
-	Normal,
-	Push
+    Normal,
+    Push
 };
 
+// =========================================================
+// Player クラス
+// プレイヤー操作のインターフェースと、状態遷移（ステートマシン）を担う
+// =========================================================
 class Player : public Unit {
-
 public:
-	//Unit(GameContext*)継承する
-	using Unit::Unit;
+    using Unit::Unit;
 
-	void init() override {}
-	void dispose() override {}
+    // ---------------------------------------------------------
+    // ライフサイクル (Lifecycle)
+    // ---------------------------------------------------------
+    void init() override {}
+    void Init();
+    void dispose() override {}
+    virtual void Update(uint64_t delta) override;
+    void OnDraw(uint64_t delta) override;
 
-	virtual void Update(uint64_t delta) override;
-	void OnDraw(uint64_t delta) override;
-	void Init();
+    // ---------------------------------------------------------
+    // 状態とクエリ (Status & Queries)
+    // ---------------------------------------------------------
+    PlayerState GetState() const { return m_state; }
+    int GetCurrentMovePoints() const { return m_currentMovePoints; }
+    int GetPreviewGridX() const { return m_previewGridX; }
+    int GetPreviewGridZ() const { return m_previewGridZ; }
+    bool IsCelebrationDone() const { return m_isCelebrationDone; }
 
+    // ---------------------------------------------------------
+    // フローとイベント (Flow & Events)
+    // ---------------------------------------------------------
+    void StartCelebration();
+    virtual void OnPushed(Direction pushDir) override;
+    virtual void SetPreviewDamage(int dmg) override;
 
+protected:
+    virtual void StartTurn() override;
+    virtual void EndTurn() override;
+    virtual void TakeDamage(int damage, Unit* attacker) override;
+    virtual void OnTurnChanged(TurnState state) override;
 
-
-	void playerResourceLoader();
-
-	int GetCurrentMovePoints() const { return m_currentMovePoints; }
-
-
-	PlayerState GetState() const { return m_state; }
-
-	int GetPreviewGridX() const { return m_previewGridX; }
-	int GetPreviewGridZ() const { return m_previewGridZ; }
-
-	// 攻撃距離を定数パラメータ化 (例: 1マス)
-	const int ATTACK_RANGE = 1;
-	// 勝利祝賀アニメーション関連
-	void StartCelebration();// 勝利祝賀アニメーション開始
-	bool IsCelebrationDone() const { return m_isCelebrationDone; }// 勝利祝賀アニメーションの完了フラグ
-	virtual void OnPushed(Direction pushDir) override;// プレイヤーのノックバック（押し出し）処理
-
-	//プレビューヒントのダメージ値を設定、必要に応じてオーバーライドして、予測ダメージの表示を制御
-	virtual void SetPreviewDamage(int dmg) override;
-
-private:
-	//状態遷移関数
-	void SwitchToMenuMain();
-	void SwitchToMoveSelect();
-	void SwitchToAttackDirSelect(AttackType type);
-	void ExecuteMove();
-	void ExecuteAttack();
-	//入力処理関数
-	void HandleMenuInput();
-	void HandleMoveInput(float dt);
-	void HandleAttackDirInput(float dt);
-	//描画補助関数
-	void DrawGhost();       // スタートポイントのプレーヤーのゴーストを描画
-	void DrawPathLine();    // 移動予想ルートを描画
-
-	virtual void StartTurn()override;
-	virtual void EndTurn()override;
-	virtual void TakeDamage(int damage, Unit* attacker)override;
-
-	virtual void OnTurnChanged(TurnState state) override;
-	Unit* GetTargetInLine(int range);
-
-	bool UpdatePathMovement(float dt);
-
-	//専用の移動予測計算関数を追加、現在の入力に基づいて移動予想位置を更新し、予想ダメージを計算する
-	void CalculateMovePreviewDamage();
-
+    virtual void OnDrawFloorUI(uint64_t delta) override;
+    virtual void OnDrawTransparent(uint64_t delta) override;
+    virtual void OnDrawOverlay(uint64_t delta) override;
 
 private:
-	enum class ControlState 
-	{
-		SELECT_MOVE,//移動操作中、移動範囲と移動予想位置を表示する
-		ANIMATING,//移動アニメーション中
-		WAITING//プレーヤー以外のターン
-	};
-	ControlState m_controlState = ControlState::WAITING;
+    void playerResourceLoader();
 
-	//CStaticMesh*			m_PlayerMesh;
-	//CStaticMeshRenderer*	m_PlayerMeshrenderer;
-	CShader*	m_PlayerShader;
-	//状態
-	PlayerState m_state = PlayerState::WAITING;
-	bool canControl = false;
+    // --- 状態遷移 (State Transitions) ---
+    void SwitchToMenuMain();
+    void SwitchToMoveSelect();
+    void SwitchToAttackDirSelect(AttackType type);
+    void ExecuteMove();
+    void ExecuteAttack();
 
-	//移動データ
-	int m_startGridX = 0;   // スタートポイントのX
-	int m_startGridZ = 0;   // スタートポイントのZ
-	int m_previewGridX = 0; // 操作中の予想移動先のX
-	int m_previewGridZ = 0; // 操作中の予想移動先のZ
-	float m_inputCooldown = 0.0f;
-	std::vector<Tile*> m_moveRangeTiles; // 緑の移動範囲タイル
-	std::vector<Tile*> m_currentPath;
+    // --- 入力ハンドラ (Input Handlers) ---
+    void HandleMenuInput();
+    void HandleMoveInput(float dt);
+    void HandleAttackDirInput(float dt);
 
-	//攻撃データ
-	AttackType m_selectedAttackType = AttackType::Normal;
-	Direction m_attackDir = Direction::North; // 攻撃方向
-	int m_playerDamage = 1; // プレイヤーの攻撃力
+    // --- 描画補助 (Rendering Helpers) ---
+    void DrawGhost();
+    void DrawPathLine();
+    void DrawAttackWarningFloor();
+    void DrawAttackWarningOverlay();
 
-	bool m_hasActioned = false;
-	bool m_isRotating = false;
-	bool m_hasMoved = false;
-	
-	// 移動アニメション用データ
-	int m_pathAnimIndex = 0; //現在はどのパスを移動中か
-	const float MOVE_SPEED = 10.0f; // 移動スピード
+    // --- ユーティリティ (Utilities) ---
+    float CalculateLineRotation(int dx, int dz);
+    float CalculateCornerRotation(int dx1, int dz1, int dx2, int dz2);
+    Unit* GetTargetInLine(int range);
+    bool UpdatePathMovement(float dt);
+    void CalculateMovePreviewDamage();
+    void UpdateCelebration(float dt);
 
-	// パス描画用メッシュレンダラー
-	CStaticMeshRenderer* m_PathLineRenderer = nullptr;   // 直線 (Left -> Right)
-	CStaticMeshRenderer* m_PathCornerRenderer = nullptr; // 直角 (Left -> Bottom)
+    // =========================================================
+    // メンバー変数
+    // =========================================================
+    CShader* m_PlayerShader = nullptr;
 
-	// パスの回転計算
-	float CalculateLineRotation(int dx, int dz);
-	float CalculateCornerRotation(int dx1, int dz1, int dx2, int dz2);
-	// 次のメニュー状態(アニメション実行を確保するため)
-	PlayerState m_nextState = PlayerState::WAITING;
+    PlayerState m_state = PlayerState::WAITING;
+    PlayerState m_nextState = PlayerState::WAITING;
+    bool canControl = false;
 
-	//プレーヤーカメラフェイス２用のフラグ
-	bool m_isZoomedIn = false;
+    // --- 移動・パス ---
+    int m_startGridX = 0;
+    int m_startGridZ = 0;
+    int m_previewGridX = 0;
+    int m_previewGridZ = 0;
+    float m_inputCooldown = 0.0f;
+    std::vector<Tile*> m_moveRangeTiles;
+    std::vector<Tile*> m_currentPath;
+    int m_pathAnimIndex = 0;
 
-	bool m_isWaitingTurnStart = false; // ターン開始時のUIカットイン待ちフラグ
-	bool m_canAttack = false;          // 攻撃可能な敵が範囲内にいるか
-	// 勝利祝賀アニメーション用データ
-	int m_jumpCount = 0;// ジャンプの回数
-	float m_jumpTimer = 0.0f;// ジャンプの長さを制御するタイマー
-	bool m_isCelebrationDone = false;// 祝賀アニメーションの完了フラグ
-	void UpdateCelebration(float dt);// 勝利祝賀アニメーションの更新処理
+    // --- 戦闘・攻撃 ---
+    AttackType m_selectedAttackType = AttackType::Normal;
+    Direction m_attackDir = Direction::North;
+    int m_playerDamage = 1;
+    bool m_canAttack = false;
 
-	protected:
-		virtual void OnDrawFloorUI(uint64_t delta) override;
-		virtual void OnDrawTransparent(uint64_t delta) override;
-		virtual void OnDrawOverlay(uint64_t delta) override;
+    // --- フラグ ---
+    bool m_hasActioned = false;
+    bool m_isRotating = false;
+    bool m_hasMoved = false;
+    bool m_isZoomedIn = false;
+    bool m_isWaitingTurnStart = false;
 
-		void DrawAttackWarningFloor();
-		void DrawAttackWarningOverlay();
+    // --- 勝利演出 ---
+    int m_jumpCount = 0;
+    float m_jumpTimer = 0.0f;
+    bool m_isCelebrationDone = false;
+
+    // --- 描画用 ---
+    CStaticMeshRenderer* m_PathLineRenderer = nullptr;
+    CStaticMeshRenderer* m_PathCornerRenderer = nullptr;
 };
