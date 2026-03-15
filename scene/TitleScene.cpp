@@ -4,135 +4,99 @@
 #include "../system/scenemanager.h"
 #include "../system/SceneClassFactory.h"
 #include "../manager/AudioManager.h"
-/**
- * @brief タイトルシーンのコンストラクタ
- *
- * 
- */
-TitleScene::TitleScene()
-{
+#include <cmath>
+
+namespace {
+    // --- 演出・定数定義 (Magic Numbers) ---
+    constexpr float FADE_OUT_DURATION = 1000.0f;
+    constexpr float BLINK_SPEED       = 1.0f;
+    constexpr float BLINK_MIN_ALPHA   = 0.3f; // 完全に消えないための下限値
+    constexpr float BLINK_RANGE       = 0.7f; // 変動幅 (0.3 + 0.7 = 1.0)
+    
+    constexpr float HINT_POS_Y_RATIO  = 0.8f; // 画面下部への配置比率
 }
 
-/**
- * @brief タイトルシーンの更新処理
- *
- * Enterキー（リターンキー）が押されたら、`GameMainScene` へフェードアウト遷移する。
- *
- * @param deltatime 前フレームからの経過時間（マイクロ秒）
- */
-void TitleScene::update(uint64_t deltatime)
-{
+void TitleScene::Init() {
+    // nullptr の場合のみ生成（安全なリソース初期化）
+    if (!m_image) {
+        m_image = std::make_unique<CSprite>(SCREEN_WIDTH, SCREEN_HEIGHT, "assets/texture/title.png");
+    }
+    if (!m_hintSprite) {
+        m_hintSprite = std::make_unique<CSprite>(677.0f, 369.0f, "assets/texture/ui/ui_press_enter.png");
+    }
+
+    m_blinkTimer = 0.0f;
+    m_currentHintAlpha = 1.0f;
+
+    // タイトルBGMの再生 (ループあり、1秒フェードイン)
+    AudioManager::GetInstance().PlayBGM("Title", true, 1.0f);
+}
+
+void TitleScene::update(uint64_t deltatime) {
     float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
 
-    // m_hintSprite透明度変化コントロール用
+    // --- アニメーションの更新 ---
     m_blinkTimer += deltaSeconds;
+    // サイン波による呼吸（明滅）エフェクトの計算
+    float sinValue = std::abs(std::sin(m_blinkTimer * BLINK_SPEED));
+    m_currentHintAlpha = BLINK_MIN_ALPHA + (BLINK_RANGE * sinValue);
 
-    // --- 任意キー入力のチェック ---
-    bool anyKeyPressed = false;
-    // 1から255までの主要なキーコードをすべてチェックする
-    for (int i = 1; i < 256; i++)
-    {
-        if (CDirectInput::GetInstance().CheckKeyBufferTrigger(i))
-        {
-            anyKeyPressed = true;
-            break; // いずれかのキーが見つかったらループを抜ける
+    // --- 入力検知 (Any Key) ---
+    bool hasAnyKeyPressed = false;
+    // 主要なキーコード(1~255)を走査
+    for (int i = 1; i < 256; i++) {
+        if (CDirectInput::GetInstance().CheckKeyBufferTrigger(i)) {
+            hasAnyKeyPressed = true;
+            break;
         }
     }
 
-    // 任意のキーが押されたらシーンを遷移させる
-    if (anyKeyPressed)
-    {
+    if (hasAnyKeyPressed) {
         SceneManager::GetInstance().SetCurrentScene(
             "GameScene",
-            std::make_unique<FadeTransition>(1000.0f, FadeTransition::Mode::FadeInOut)
+            std::make_unique<FadeTransition>(FADE_OUT_DURATION, FadeTransition::Mode::FadeInOut)
         );
     }
 }
 
-/**
- * @brief タイトルシーンの描画処理
- *
- * タイトル画像を画面中央に描画する。
- *
- * @param deltatime 前フレームからの経過時間（マイクロ秒）
- */
-void TitleScene::draw(uint64_t deltatime)
-{
+void TitleScene::dispose() {
+
+}
+
+void TitleScene::draw(uint64_t deltatime) {
+    if (!m_image) return;
+
     Renderer::SetUISamplerMode(true);
+
+    // 背景ロゴ描画
     m_image->Draw(
         Vector3(1.0f, 1.0f, 1.0f),
         Vector3(0.0f, 0.0f, 0.0f),
         Vector3(SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f, 0.0f)
     );
-    //呼吸アニメーション
-    if (m_hintSprite)
-    {
 
-        // --- 透明度の計算 (サイン波による明滅エフェクト) ---
-            // sin関数（-1.0～1.0）をabsで絶対値化（0.0～1.0）し、
-            // 係数3.0fで点滅スピードを調整。
-        float alpha = std::abs(std::sin(m_blinkTimer * 1.0f));
-
-        // 完全に消えないよう、透明度の範囲を 0.3 ～ 1.0 にクランプ
-        alpha = 0.3f + (0.7f * alpha);
-
-        // --- マテリアルの更新 (アルファ値を適用) ---
+    // ヒント(Press Any Key)描画
+    if (m_hintSprite) {
         MATERIAL mtrl;
-        mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, alpha);
+        mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, m_currentHintAlpha); // Updateで計算済みの値を適用
         mtrl.TextureEnable = TRUE;
         m_hintSprite->ModifyMtrl(mtrl);
 
-        // --- 座標計算 (画面下部の中央に配置) ---
         float posX = SCREEN_WIDTH / 2.0f;
-        float posY = SCREEN_HEIGHT * 0.8f;
+        float posY = SCREEN_HEIGHT * HINT_POS_Y_RATIO;
 
-        // --- レンダリング設定 (透過・重なり順の制御) ---
-        // アルファブレンディングを有効にし、深度テストを無効化して最前面に描画
+        // UI用ブレンドステート適用
         Renderer::SetBlendState(BS_ALPHABLEND);
         Renderer::SetDepthEnable(false);
 
-        m_hintSprite->Draw(Vector3(1, 1, 1), Vector3(0, 0, 0), Vector3(posX, posY, 0));
+        m_hintSprite->Draw(Vector3(1.0f, 1.0f, 1.0f), Vector3(0.0f, 0.0f, 0.0f), Vector3(posX, posY, 0.0f));
 
-        // ステートのリセット
         Renderer::SetDepthEnable(true);
         Renderer::SetBlendState(BS_NONE);
     }
+
     Renderer::SetUISamplerMode(false);
 }
 
-/**
- * @brief タイトルシーンの初期化処理
- *
- * シーンがアクティブになる際に一度だけ呼ばれる初期化処理。
- */
-void TitleScene::Init()
-{
-    static bool first = true;
-    if (first) {
-
-        m_image = std::make_unique<CSprite>(
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT,
-            "assets/texture/title.png"
-        );
-        m_hintSprite = std::make_unique<CSprite>(677.0f, 369.0f, "assets/texture/ui/ui_press_enter.png");
-    }
-
-    m_blinkTimer = 0.0f;
-
-    // タイトルBGMの再生
-    // loop = true (通常、タイトル曲はループ再生させる)
-    // fadeTime = 1.0f (1秒かけてフェードイン)
-    AudioManager::GetInstance().PlayBGM("Title", true, 1.0f);
-}
-
-/**
- * @brief タイトルシーンの終了処理
- *
- * シーンが破棄される前に呼ばれるリソース解放処理。
- */
-void TitleScene::dispose()
-{
-}
 
 REGISTER_CLASS(TitleScene);

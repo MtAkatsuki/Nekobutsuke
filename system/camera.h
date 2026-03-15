@@ -1,153 +1,168 @@
 #pragma once
 
-#include	"commontypes.h"
-#include	"renderer.h"
-#include	"CPolar3D.h"
-#include	"../application.h"
+#include "commontypes.h"
+#include "renderer.h"
+#include "CPolar3D.h"
+#include "../application.h"
 
+// --- カメラの追従状態 ---
 enum class CameraState {
-	BaseView,       // 全体俯瞰（特定の対象を追跡しない固定視点）
-	Tracking,       // 追跡（プレイヤーやカーソルをフォロー）
-	ActionFocus     // アクションフォーカス（攻撃方向の演出用：固定オフセット）
+    BaseView,       // 全体俯瞰（特定の対象を追跡しない固定視点）
+    Tracking,       // 追跡（プレイヤーやカーソルをフォロー）
+    ActionFocus     // アクションフォーカス（攻撃方向の演出用など）
 };
 
+// =========================================================
+// Camera クラス
+// 3D空間の視点を管理する。
+// 極座標系（Polar 3D）を用いたスムーズな追従（Lerp補間）と、
+// 4方向のクォータービュー回転制御を提供する。
+// =========================================================
 class Camera {
+public:
+    Camera() = default;
+    virtual ~Camera() = default;
+
+    // ---------------------------------------------------------
+    // ライフサイクル (Lifecycle)
+    // ---------------------------------------------------------
+    void Init();
+    void Dispose();
+    void Update(float dt);
+    void Draw();
+
+    // ---------------------------------------------------------
+    // カメラ制御：直接設定 (Direct Setters)
+    // ---------------------------------------------------------
+    void SetPosition(const Vector3& position) { m_position = position; }
+    void SetUP(const Vector3& up) { m_up = up; }
+
+    // 注視点を即時移動（Lerpを無視して瞬間移動）
+    void SetLookat(const Vector3& position) {
+        m_lookat = position;
+        m_targetLookAt = position;
+    }
+
+    // 極座標（距離・方位角・仰角）を即時適用
+    void ForceSetPolar(float radius, float azimuth, float elevation) {
+        m_radius = radius;    m_targetRadius = radius;
+        m_azimuth = azimuth;   m_targetAzimuth = azimuth;
+        m_elevation = elevation; m_targetElevation = elevation;
+    }
+
+    // ---------------------------------------------------------
+    // カメラ制御：目標駆動 (Target-driven Smooth Controls)
+    // ※ Lerp補間によって滑らかに遷移するためのターゲット設定
+    // ---------------------------------------------------------
+    void SetTargetLookAt(const Vector3& target);
+    void SetTargetRadius(float radius) { m_targetRadius = radius; }
+    void SetTargetAzimuth(float azimuth) { m_targetAzimuth = azimuth; }
+    void SetTargetElevation(float elevation) { m_targetElevation = elevation; }
+
+    // シーン中心へのショートカットコマンド
+    void SetLookAtCenter() { SetLookat(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z)); }
+    void SetTargetToCenter() { SetTargetLookAt(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z)); }
+
+    // ---------------------------------------------------------
+    // カメラ制御：4方向回転 (Quarter-View Rotation)
+    // ---------------------------------------------------------
+    // 順回転 (Eキー相当)：正面左 -> 正面右 -> 背面右 -> 背面左
+    void RotateCameraForward() {
+        m_dirIndexOffset++;
+        UpdateTargetAzimuth();
+    }
+
+    // 逆回転 (Qキー相当)：正面左 -> 背面左 -> 背面右 -> 正面右
+    void RotateCameraReverse() {
+        m_dirIndexOffset--;
+        UpdateTargetAzimuth();
+    }
+
+    // 基本カメラ位置(正面左)にリセット
+    void ResetCameraDirection() {
+        m_dirIndexOffset = 0;
+        UpdateTargetAzimuth();
+    }
+
+    // 基準方位角(BASE_AZIMUTH)と現在のインデックスに基づく目標角の再計算
+    void UpdateTargetAzimuth() {
+        m_targetAzimuth = BASE_AZIMUTH + (m_dirIndexOffset * (3.14159265f / 2.0f));
+    }
+
+    // 負数のオフセットを安全に 0～3 の範囲に正規化（例: -1 -> 3）
+    int GetNormalizedDirIndex() const { return (m_dirIndexOffset % 4 + 4) % 4; }
+
+    // ---------------------------------------------------------
+    // 状態管理・ゲッター (State & Getters)
+    // ---------------------------------------------------------
+    void SetBounds(float minX, float maxX, float minZ, float maxZ);
+    void SetState(CameraState state) { m_state = state; }
+
+    CameraState GetState() const { return m_state; }
+
+    Matrix4x4 GetViewMatrix() const { return m_viewmtx; }
+    Matrix4x4 GetProjMatrix() const { return m_projmtx; }
+
+    Vector3 GetPosition()     const { return m_position; }
+    Vector3 GetLookat()       const { return m_lookat; }
+    Vector3 GetUP()           const { return m_up; }
+    Vector3 GetTargetLookAt() const { return m_targetLookAt; }
+
+    float GetBoundMinX() const { return m_minX; }
+    float GetBoundMaxX() const { return m_maxX; }
+    float GetBoundMinZ() const { return m_minZ; }
+    float GetBoundMaxZ() const { return m_maxZ; }
+
+    // ---------------------------------------------------------
+    // 設定管理 (Config Management)
+    // ---------------------------------------------------------
+    static void SaveConfig();
+    static void LoadConfig();
+
+public:
+    // ==========================================
+    // カメラ制御パラメータ定数群 (Public Parameters)
+    // ==========================================
+    static constexpr float TUTORIAL_RADIUS = 45.0f;
+    static constexpr float BASE_RADIUS = 30.0f;
+    static constexpr float CAMERA_LERP_SPEED = 5.0f;
+
+    static constexpr float SCENE_CENTER_X = 0.0f;
+    static constexpr float SCENE_CENTER_Y = 0.0f;
+    static constexpr float SCENE_CENTER_Z = 0.0f;
+
+    // --- 実行時変更可能なパラメータ (inline 変数) ---
+    // ※ 設定ファイル(.ini)やデバッグUIから動的に上書きされる値
+    static inline float ZOOM_RADIUS = 25.0f;
+    static inline float BASE_AZIMUTH = 1.58f;
+    static inline float BASE_ELEVATION = -1.08f;
+    static inline float BOUND_PADDING = -2.0f;
+
 protected:
-	Vector3	m_position = Vector3(0.0f, 0.0f, 0.0f);	// 実際のカメラ位置 (物理座標)
+    // --- トランスフォーム・行列 ---
+    Vector3   m_position{ 0.0f, 0.0f, 0.0f };
+    Vector3   m_up{ 0.0f, 1.0f, 0.0f };
+    Matrix4x4 m_viewmtx{};
+    Matrix4x4 m_projmtx{};
 
-	// === コーターゲット駆動変数 ===
-	Vector3		m_lookat{};				// 現在の注視点
-	Vector3		m_targetLookAt{};		// 目標の注視点
+    // --- コーターゲット駆動変数 (極座標・注視点) ---
+    Vector3 m_lookat{};
+    Vector3 m_targetLookAt{};
 
-	float		m_radius = 30.0f;		// 現在の極座標距離
-	float		m_targetRadius = 30.0f;	// 目標距離
+    float m_radius = 30.0f;
+    float m_targetRadius = 30.0f;
+    float m_azimuth = 1.58f;
+    float m_targetAzimuth = 1.58f;
+    float m_elevation = -1.08f;
+    float m_targetElevation = -1.08f;
 
-	float		m_azimuth = 1.58f;		// 現在の方位角 (左右回転)
-	float		m_targetAzimuth = 1.58f;// 目標方位角
+    // --- 動作制限・状態 ---
+    float m_minX = -100.0f;
+    float m_maxX = 100.0f;
+    float m_minZ = -100.0f;
+    float m_maxZ = 100.0f;
 
-	float		m_elevation = -1.08f;	// 現在の仰角 (上下俯仰)
-	float		m_targetElevation = -1.08f;
-
-	// 境界制限（バウンディングボックス）
-	float		m_minX = -100.0f;
-	float		m_maxX = 100.0f;
-	float		m_minZ = -100.0f;
-	float		m_maxZ = 100.0f;
-
-	// カメラ状態と補間速度
-	CameraState	m_state = CameraState::BaseView;
-	float		m_lerpSpeed = 5.0f;     // スムーズな移動の速度係数
-
-	Vector3		m_up = { 0,1,0 };
-	Matrix4x4	m_viewmtx{};
-	Matrix4x4   m_projmtx{};
-
-	int m_dirIndexOffset = 0; // 4方向カメラ位置オフセット：0=正面左(基本), 1=正面右, 2=背面右, 3=背面左
-
-public:
-	virtual ~Camera() {}
-	Camera() = default;
-
-	void Init();
-	void Dispose();
-	void Update(float dt); // === dtパラメータを受け取るように変更 ===
-	void Draw();
-
-	// 即時/直接設定 (現在値と目標値を共に上書き)
-	void SetPosition(const Vector3& position) { m_position = position; }
-	void SetLookat(const Vector3& position) { m_lookat = position; m_targetLookAt = position; }
-	void SetUP(const Vector3& up) { m_up = up; }
-	void ForceSetPolar(float radius, float azimuth, float elevation) {
-		m_radius = radius; m_targetRadius = radius;
-		m_azimuth = azimuth; m_targetAzimuth = azimuth;
-		m_elevation = elevation; m_targetElevation = elevation;
-	}
-
-	// 目標駆動設定（スムーズな移動）
-	void SetTargetLookAt(const Vector3& target);
-	void SetTargetRadius(float radius) { m_targetRadius = radius; }
-	void SetTargetAzimuth(float azimuth) { m_targetAzimuth = azimuth; }
-	void SetTargetElevation(float elevation) { m_targetElevation = elevation; }
-
-	// 境界および状態の設定
-	void SetBounds(float minX, float maxX, float minZ, float maxZ);
-	void SetState(CameraState state) { m_state = state; }
-	CameraState GetState() const { return m_state; }
-
-	// ====== 注視点をシーンの中心に即座に合わせる ======
-	void SetLookAtCenter() {
-		SetLookat(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z));
-	}
-	// ====== 目標注視点をシーンの中心へスムーズに移動させる ======
-	void SetTargetToCenter() {
-		SetTargetLookAt(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z));
-	}
-
-	// ゲッター 
-	Matrix4x4 GetViewMatrix() const { return m_viewmtx; }
-	Matrix4x4 GetProjMatrix() const { return m_projmtx; }
-	Vector3 GetPosition() const { return m_position; }
-	Vector3 GetLookat() const { return m_lookat; }
-	Vector3 GetUP() const { return m_up; }
-	Vector3 GetTargetLookAt() const { return m_targetLookAt; }
-	float GetBoundMinX() const { return m_minX; }
-	float GetBoundMaxX() const { return m_maxX; }
-	float GetBoundMinZ() const { return m_minZ; }
-	float GetBoundMaxZ() const { return m_maxZ; }
-
-	// カメラパラメータの保存と読み込み
-	static void SaveConfig();
-	static void LoadConfig();
-
-	// === 4方向カメラ回転制御 ===
-	// 順回転 (Eキー)：正面左 -> 正面右 -> 背面右 -> 背面左
-	void RotateCameraForward() {
-		m_dirIndexOffset++;
-		UpdateTargetAzimuth();
-	}
-
-	// 逆回転 (Qキー)：正面左 -> 背面左 -> 背面右 -> 正面右
-	void RotateCameraReverse() {
-		m_dirIndexOffset--;
-		UpdateTargetAzimuth();
-	}
-
-	// 基本カメラ位置(BASE_AZIMUTH)と現在のオフセット値に基づいて、目標方位角を再計算する
-	void UpdateTargetAzimuth() {
-		// 回転ごとに90度 (PI / 2) 増加する
-		// 基本カメラ位置は BASE_AZIMUTH で個別に定義されており、いつでも調整可能
-		m_targetAzimuth = BASE_AZIMUTH + (m_dirIndexOffset * (3.14159265f / 2.0f));
-	}
-
-	// 正面左側の基本カメラ位置にリセットする
-	void ResetCameraDirection() {
-		m_dirIndexOffset = 0;
-		UpdateTargetAzimuth();
-	}
-
-	// オフセット値が負数であっても、正しく 0～3 の範囲に変換されるようにする
-	// 例えば、-1 は 3 に、-2 は 2 に、-3 は 1 に変換される
-	// 最初の%4は余りを取る演算で、次の+4は負数を正数に変換するための調整、最後の%4は4方向の範囲に戻すためのもの
-	int GetNormalizedDirIndex() const { return (m_dirIndexOffset % 4 + 4) % 4; }
-
-public:
-	// ==========================================
-	// カメラ制御パラメータ定数
-	// ==========================================
-	static constexpr float TUTORIAL_RADIUS = 45.0f;
-	static constexpr float BASE_RADIUS = 30.0f;
-	// 【変更】：constexpr を削除し inline を追加。実行時の変更を可能にする
-	static inline float ZOOM_RADIUS = 25.0f;
-	static inline float BASE_AZIMUTH = 1.58f;
-	static inline float BASE_ELEVATION = -1.08f;
-	static constexpr float CAMERA_LERP_SPEED = 5.0f;
-
-	// ====== シーン中心座標定数 ======
-	static constexpr float SCENE_CENTER_X = 0.0f;
-	static constexpr float SCENE_CENTER_Y = 0.0f;
-	static constexpr float SCENE_CENTER_Z = 0.0f;
-
-	// ====== 動的境界のエッジバッファ（パディング）定数 ======
-	// 【変更】：constexpr を削除し inline を追加。実行時の変更を可能にする
-	static inline float BOUND_PADDING = -2.0f;
+    CameraState m_state = CameraState::BaseView;
+    float       m_lerpSpeed = 5.0f;
+    int         m_dirIndexOffset = 0; // 回転オフセット：0=基本, 1=右, 2=背後右, 3=背後左
 };

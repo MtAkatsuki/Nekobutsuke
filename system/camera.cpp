@@ -5,20 +5,16 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <string>
 
-void Camera::SetTargetLookAt(const Vector3& target) {
-	m_targetLookAt = target;
-	// 注視点をクランプし、カメラが追跡しすぎて画面外の未描画領域（穿面）が見えるのを防ぐ
-	m_targetLookAt.x = std::clamp(m_targetLookAt.x, m_minX, m_maxX);
-	m_targetLookAt.z = std::clamp(m_targetLookAt.z, m_minZ, m_maxZ);
-}
+namespace {
+	// --- レンダリング・投影行列用定数 ---
+	constexpr float FOV_DEG = 15.0f;    // 視野角 (タクティカルRPGに適した狭角設定)
+	constexpr float NEAR_PLANE = 0.1f;     // ニアクリップ面
+	constexpr float FAR_PLANE = 1000.0f;  // ファークリップ面
 
-//視野の境界線設置する
-void Camera::SetBounds(float minX, float maxX, float minZ, float maxZ) {
-	m_minX = minX;
-	m_maxX = maxX;
-	m_minZ = minZ;
-	m_maxZ = maxZ;
+	// --- 設定ファイル名 ---
+	const std::string CONFIG_FILE_NAME = "nekobutsuke_camera.ini";
 }
 
 void Camera::Init()
@@ -30,78 +26,70 @@ void Camera::Dispose()
 
 }
 
-	void Camera::Update(float dt) {
-		// 1. フレームレートに依存しない平滑化係数 t を計算
-		// m_lerpSpeed が大きいほど追従が速くなる（推奨値：5.0f - 20.0f）
-		// t = 1 - f^dt
-		// f = e^ln(f)-> f^dt = e^ln(f)*dt
-		float t = 1.0f - std::expf(-m_lerpSpeed * dt);
+void Camera::Update(float dt) {
+	// 1. フレームレートに依存しない平滑化（Lerp）係数の計算
+	
+	// t = 1 - f^dt
+	
+	// f = e^ln(f)-> f^dt = e^ln(f)*dt
+	float t = 1.0f - std::expf(-m_lerpSpeed * dt);
 
-		// 2. 平滑化係数を使用して注視点を更新
-		// 線形補間（Lerp）：a + (b - a) * t
-		auto LerpFunc = [&](float& current, float target) {
-			current += (target - current) * t;
-			};
+	auto LerpFunc = [&](float& current, float target) {
+		current += (target - current) * t;
+		};
 
-		LerpFunc(m_lookat.x, m_targetLookAt.x);
-		LerpFunc(m_lookat.y, m_targetLookAt.y);
-		LerpFunc(m_lookat.z, m_targetLookAt.z);
+	// 2. 目標パラメータへの追従
 
-		// 3. 極座標パラメータを更新
-		LerpFunc(m_radius, m_targetRadius);
-		LerpFunc(m_azimuth, m_targetAzimuth);
-		LerpFunc(m_elevation, m_targetElevation);
+	// 線形補間（Lerp）：a + (b - a) * t
+	LerpFunc(m_lookat.x, m_targetLookAt.x);
+	LerpFunc(m_lookat.y, m_targetLookAt.y);
+	LerpFunc(m_lookat.z, m_targetLookAt.z);
 
-		// 4. 位置と UP ベクトルを再計算（ロジックは維持）
-		CPolor3D polor(m_radius, m_elevation, m_azimuth);
-		Vector3 offset = polor.ToCartesian();
-		m_position = m_lookat + offset;
+	LerpFunc(m_radius, m_targetRadius);
+	LerpFunc(m_azimuth, m_targetAzimuth);
+	LerpFunc(m_elevation, m_targetElevation);
 
-		CPolor3D polorup(1.0f, m_elevation + PI / 2.0f, m_azimuth);
-		m_up = polorup.ToCartesian();
-	}
+	// 3. 極座標からデカルト座標（ワールド座標）への変換
+	CPolor3D polor(m_radius, m_elevation, m_azimuth);
+	Vector3 offset = polor.ToCartesian();
+	m_position = m_lookat + offset;
 
-void Camera::Draw()
-{
-	// ビュー変換後列作成
-	m_viewmtx = 
-		DirectX::XMMatrixLookAtLH(
-			m_position, 
-			m_lookat, 
-			m_up);				// 左手系にした　20230511 by suzuki.tomoki
+	CPolor3D polorup(1.0f, m_elevation + PI / 2.0f, m_azimuth);
+	m_up = polorup.ToCartesian();
+}
 
-	// DIRECTXTKのメソッドは右手系　20230511 by suzuki.tomoki
-	// 右手系にすると３角形頂点が反時計回りになるので描画されなくなるので注意
-	// このコードは確認テストのために残す
-	//	m_ViewMatrix = m_ViewMatrix.CreateLookAt(m_Position, m_Target, up);					
-
+void Camera::Draw(){
+	// 左手系ビュー行列の生成
+	m_viewmtx = DirectX::XMMatrixLookAtLH(m_position, m_lookat, m_up);
 	Renderer::SetViewMatrix(&m_viewmtx);
 
-	//プロジェクション行列の生成
-	constexpr float fieldOfView = DirectX::XMConvertToRadians(15.0f);    // 視野角
-	
-	float aspectRatio = static_cast<float>(Application::GetWidth()) / static_cast<float>(Application::GetHeight());	// アスペクト比	
-	float nearPlane = 0.1f;       // ニアクリップ
-	float farPlane = 1000.0f;      // ファークリップ
+	// プロジェクション行列の生成
+	float aspectRatio = static_cast<float>(Application::GetWidth()) / static_cast<float>(Application::GetHeight());
+	float fovRad = DirectX::XMConvertToRadians(FOV_DEG);
 
-	//プロジェクション行列の生成
-	m_projmtx =
-		DirectX::XMMatrixPerspectiveFovLH(
-			fieldOfView, 
-			aspectRatio, 
-			nearPlane, 
-			farPlane);	// 左手系にした　20230511 by suzuki.tomoki
-
-	// DIRECTXTKのメソッドは右手系　20230511 by suzuki.tomoki
-	// 右手系にすると３角形頂点が反時計回りになるので描画されなくなるので注意
-	// このコードは確認テストのために残す
-//	projectionMatrix = DirectX::SimpleMath::Matrix::CreatePerspectiveFieldOfView(fieldOfView, aspectRatio, nearPlane, farPlane);
-
+	m_projmtx = DirectX::XMMatrixPerspectiveFovLH(fovRad, aspectRatio, NEAR_PLANE, FAR_PLANE);
 	Renderer::SetProjectionMatrix(&m_projmtx);
 }
 
-// 補助関数：文字列の先頭と末尾から空白、タブ、改行などを取り除く
+
+void Camera::SetTargetLookAt(const Vector3& target) {
+	m_targetLookAt = target;
+	// 注視点をクランプし、カメラが追跡しすぎて画面外の未描画領域（穿面）が見えるのを防ぐ
+	m_targetLookAt.x = std::clamp(m_targetLookAt.x, m_minX, m_maxX);
+	m_targetLookAt.z = std::clamp(m_targetLookAt.z, m_minZ, m_maxZ);
+}
+
+void Camera::SetBounds(float minX, float maxX, float minZ, float maxZ) {
+	m_minX = minX;
+	m_maxX = maxX;
+	m_minZ = minZ;
+	m_maxZ = maxZ;
+}
+
+
 std::string Trim(const std::string& s) {
+	// 補助関数：文字列の先頭と末尾から空白、タブ、改行などを取り除く
+	
 	// 1. 最初に出現する【空白以外】の文字の位置を検索
 	auto start = s.find_first_not_of(" \t\r\n");
 
@@ -113,7 +101,6 @@ std::string Trim(const std::string& s) {
 	return (start == std::string::npos) ? "" : s.substr(start, end - start + 1);
 }
 
-// ====== 設定をローカルに保存 ======
 void Camera::SaveConfig() {
 	// プロジェクトの .exe と同階層に nekobutsuke_camera.ini を生成
 	std::ofstream file("nekobutsuke_camera.ini");
@@ -127,7 +114,6 @@ void Camera::SaveConfig() {
 	}
 }
 
-// ====== ローカルから設定を読み込み ======
 void Camera::LoadConfig() {
 	std::ifstream file("nekobutsuke_camera.ini");
 	if (!file.is_open()) {
