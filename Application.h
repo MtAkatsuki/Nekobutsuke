@@ -6,86 +6,45 @@
 #include <cstdint>
 #include "system/NonCopyable.h"
 
-/**
- * @brief アプリケーションクラスです.
- * @details このクラスはアプリケーションの初期化、終了処理、メインループを担当します。
- * 非コピーアブルなクラスとして設計されており、ウィンドウハンドルやインスタンスハンドルを管理します。
- */
-class Application : NonCopyable
-{
+// =========================================================
+// Application クラス
+// Windows APIをラップし、ウィンドウの生成・破棄・メッセージループを管理する。
+// コピーを禁止（NonCopyable）し、OSリソースの二重解放を防ぐ。
+// =========================================================
+class Application : NonCopyable {
 public:
-    /**
-     * @brief コンストラクタです.
-     * @param width ウィンドウの横幅です.
-     * @param height ウィンドウの縦幅です.
-     * @details ウィンドウのサイズを設定し、アプリケーションを初期化します。
-     */
+    // ---------------------------------------------------------
+    // ライフサイクル (Lifecycle)
+    // ---------------------------------------------------------
     Application(uint32_t width, uint32_t height);
-
-    /**
-     * @brief デストラクタです.
-     * @details アプリケーションの終了処理を行います。
-     */
     ~Application();
 
-    /**
-     * @brief アプリケーションを実行します.
-     * @details メインループを開始し、アプリケーションのメイン処理を実行します。
-     */
+    // ---------------------------------------------------------
+    // フロー制御 (Flow)
+    // ---------------------------------------------------------
     void Run();
 
-    /**
-     * @brief ウィンドウの横幅を取得します.
-     * @return ウィンドウの横幅を返します.
-     */
-    static uint32_t GetWidth() {
-        return m_Width;
-    }
-    
-    /**
-     * @brief ウィンドウの縦幅を取得します.
-     * @return ウィンドウの縦幅を返します.
-     */
-    static uint32_t GetHeight() {
-        return m_Height;
-    }
-
-    /**
-     * @brief ウィンドウハンドルを取得します.
-     * @return ウィンドウハンドルを返します.
-     */
-    static HWND GetWindow() {
-        return m_hWnd;
-    }
-
-    /**
-     * @brief インスタンスハンドルを取得します.
-     * @return インスタンスハンドルを返します.
-     */
-    static HINSTANCE GetHInstance() {
-        return m_hInst;
-    }
+    // ---------------------------------------------------------
+    // ゲッター (Getters)
+    // ---------------------------------------------------------
+    static uint32_t  GetWidth() { return m_Width; }
+    static uint32_t  GetHeight() { return m_Height; }
+    static HWND      GetWindow() { return m_hWnd; }
+    static HINSTANCE GetHInstance() { return m_hInst; }
 
 private:
-    static HINSTANCE   m_hInst;    ///< インスタンスハンドルです.
-    static HWND        m_hWnd;     ///< ウィンドウハンドルです.
-    static uint32_t    m_Width;    ///< ウィンドウの横幅です.
-    static uint32_t    m_Height;   ///< ウィンドウの縦幅です.
-
     static bool InitApp();
     static void TermApp();
     static bool InitWnd();
     static void TermWnd();
     static void MainLoop();
 
-    /**
-     * @brief ウィンドウプロシージャ関数です.
-     * @param hWnd ウィンドウハンドルです.
-     * @param msg メッセージです.
-     * @param wp WPARAM パラメータです.
-     * @param lp LPARAM パラメータです.
-     * @return 処理結果を返します.
-     * @details ウィンドウに送られたメッセージを処理します。
-     */
+    // ウィンドウプロシージャ（OSからのメッセージ処理）
     static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp);
+
+private:
+    static HINSTANCE m_hInst;
+    static HWND      m_hWnd;
+    static uint32_t  m_Width;
+    static uint32_t  m_Height;
 };

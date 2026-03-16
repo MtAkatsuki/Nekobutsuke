@@ -1,112 +1,56 @@
-﻿//-----------------------------------------------------------------------------
-// Includes
-//-----------------------------------------------------------------------------
-#include <chrono>
-#include <thread>
-#include "Application.h"
+﻿#include "Application.h"
 #include "system/imgui/imgui_impl_win32.h"
 #include "game.h"
 #include <stdexcept>
 #include <iostream>
 
-//-----------------------------------------------------------------------------
-// Constant Values.
-//-----------------------------------------------------------------------------
-constexpr auto ClassName = TEXT("NekoButsuke");        //!< ウィンドウクラス名.
-constexpr auto WindowName = TEXT("NekoButsuke");        //!< ウィンドウ名.
+namespace {
+    // --- 設定・定数 (Magic Numbers) ---
+    constexpr auto WINDOW_CLASS_NAME = TEXT("NekoButsuke");
+    constexpr auto WINDOW_TITLE = TEXT("NekoButsuke");
+    constexpr UINT TIMER_RESOLUTION_MS = 1; // Windowsの高精度タイマーの分解能(ms)
+}
 
-//-----------------------------------------------------------------------------
-// Class Static
-//-----------------------------------------------------------------------------
-HINSTANCE  Application::m_hInst;        //!< インスタンスハンドルです.
-HWND       Application::m_hWnd;         //!< ウィンドウハンドルです.
-uint32_t   Application::m_Width;        //!< ウィンドウの横幅です.
-uint32_t   Application::m_Height;       //!< ウィンドウの縦幅です.
+// --- 静的メンバ変数の実体 ---
+HINSTANCE Application::m_hInst = nullptr;
+HWND      Application::m_hWnd = nullptr;
+uint32_t  Application::m_Width = 0;
+uint32_t  Application::m_Height = 0;
 
-// ImGuiのWin32プロシージャハンドラ(マウス対応)
+// ImGuiのWin32プロシージャハンドラ
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-///////////////////////////////////////////////////////////////////////////////
-// Application class
-///////////////////////////////////////////////////////////////////////////////
-
-/**
- * @brief コンストラクタです.
- * @param width ウィンドウの横幅です.
- * @param height ウィンドウの縦幅です.
- * @details ウィンドウのサイズを初期化し、タイマー精度を設定します。
- */
-Application::Application(uint32_t width, uint32_t height)
-{
-    m_Height = height;
+Application::Application(uint32_t width, uint32_t height) {
     m_Width = width;
+    m_Height = height;
 
-    timeBeginPeriod(1);
+    // Sleep等の精度を上げるため、OSのタイマー分解能を最小値(1ms)に設定
+    timeBeginPeriod(TIMER_RESOLUTION_MS);
 }
 
-/**
- * @brief デストラクタです.
- * @details タイマー精度を元に戻します。
- */
-Application::~Application()
-{
-    timeEndPeriod(1);
+Application::~Application() {
+    timeEndPeriod(TIMER_RESOLUTION_MS);
 }
 
-/**
- * @brief アプリケーションを実行します.
- * @details 初期化に成功した場合、メインループを開始します。
- */
-void Application::Run()
-{
-    if (InitApp())
-    {
+void Application::Run() {
+    if (InitApp()) {
         MainLoop();
     }
-
     TermApp();
 }
 
-/**
- * @brief アプリケーションの初期化を行います.
- * @return 初期化が成功した場合にtrueを返します。
- * @details ウィンドウの初期化が含まれます。
- */
-bool Application::InitApp()
-{
-    // ウィンドウの初期化.
-    if (!InitWnd())
-    {
-        return false;
-    }
-
-    // 正常終了.
-    return true;
+bool Application::InitApp() {
+    return InitWnd();
 }
 
-/**
- * @brief アプリケーションの終了処理を行います.
- * @details ウィンドウの終了処理が含まれます。
- */
-void Application::TermApp()
-{
-    // ウィンドウの終了処理.
+void Application::TermApp() {
     TermWnd();
 }
 
-/**
- * @brief ウィンドウを初期化します.
- * @return 初期化に成功した場合にtrueを返します。
- * @details ウィンドウクラスの登録とウィンドウの生成を行います。
- */
-bool Application::InitWnd()
-{
+bool Application::InitWnd(){
     // インスタンスハンドルを取得.
-    auto hInst = GetModuleHandle(nullptr);
-    if (hInst == nullptr)
-    {
-        return false;
-    }
+    HINSTANCE hInst = GetModuleHandle(nullptr);
+    if (!hInst) return false;
 
     // ウィンドウの設定.
     WNDCLASSEX wc = {};
@@ -117,46 +61,29 @@ bool Application::InitWnd()
     wc.hCursor = LoadCursor(hInst, IDC_ARROW);
     wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);
     wc.lpszMenuName = nullptr;
-    wc.lpszClassName = ClassName;
+    wc.lpszClassName = WINDOW_CLASS_NAME;
     wc.hIconSm = LoadIcon(hInst, IDI_APPLICATION);
 
     // ウィンドウの登録.
-    if (!RegisterClassEx(&wc))
-    {
-        return false;
-    }
+    if (!RegisterClassEx(&wc)) return false;
 
     // インスタンスハンドル設定.
     m_hInst = hInst;
 
-    // ウィンドウのサイズを設定.
-    RECT rc = {};
-    rc.right = static_cast<LONG>(m_Width);
-    rc.bottom = static_cast<LONG>(m_Height);
-
-    // ウィンドウサイズを調整.
-    auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
+    // クライアント領域（描画エリア）が指定解像度になるようウィンドウサイズを逆算
+    RECT rc = { 0, 0, static_cast<LONG>(m_Width), static_cast<LONG>(m_Height) };
+    DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
     AdjustWindowRect(&rc, style, FALSE);
 
     // ウィンドウを生成.
     m_hWnd = CreateWindowEx(
-        0,
-        ClassName,
-        WindowName,
-        style,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        rc.right - rc.left,
-        rc.bottom - rc.top,
-        nullptr,
-        nullptr,
-        m_hInst,
-        nullptr);
+        0, WINDOW_CLASS_NAME, WINDOW_TITLE, style,
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        rc.right - rc.left, rc.bottom - rc.top,
+        nullptr, nullptr, m_hInst, nullptr
+    );
 
-    if (m_hWnd == nullptr)
-    {
-        return false;
-    }
+    if (!m_hWnd) return false;
 
     // ウィンドウを表示.
     ShowWindow(m_hWnd, SW_SHOWNORMAL);
@@ -171,26 +98,18 @@ bool Application::InitWnd()
     return true;
 }
 
-/**
- * @brief ウィンドウの終了処理を行います.
- * @details ウィンドウクラスの登録解除を行います。
- */
 void Application::TermWnd()
 {
     // ウィンドウの登録を解除.
-    if (m_hInst != nullptr)
+    if (m_hInst)
     {
-        UnregisterClass(ClassName, m_hInst);
+        UnregisterClass(WINDOW_CLASS_NAME, m_hInst);
     }
 
     m_hInst = nullptr;
     m_hWnd = nullptr;
 }
 
-/**
- * @brief メインループを実行します.
- * @details メッセージを処理します。WM_QUITメッセージを受け取るまで続きます。
- */
 void Application::MainLoop()
 {
     MSG msg = {};
@@ -215,6 +134,8 @@ void Application::MainLoop()
         system("PAUSE");
         return;
     }
+
+    // Windowsメッセージループ
     while (WM_QUIT != msg.message)
     {
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) == TRUE)
@@ -223,7 +144,7 @@ void Application::MainLoop()
             DispatchMessage(&msg);
         }
         else {
-            // ゲームループ
+            // OSからのメッセージ処理がない空き時間にゲームループを回す
             gameloop();
         }
     }
@@ -232,31 +153,18 @@ void Application::MainLoop()
 
 }
 
-/**
- * @brief ウィンドウプロシージャです.
- * @param hWnd ウィンドウハンドルです.
- * @param msg メッセージです.
- * @param wp WPARAM パラメータです.
- * @param lp LPARAM パラメータです.
- * @return 処理結果を返します.
- * @details ウィンドウのメッセージを処理します。
- */
 LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
+    // ImGuiにイベントを渡す
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wp, lp))
         return true;
 
-    switch (msg)
-    {
+    switch (msg) {
     case WM_DESTROY:
-    {
         PostQuitMessage(0);
-    }
-    break;
-
+        break;
     default:
-    { /* DO_NOTHING */ }
-    break;
+        break;
     }
 
     return DefWindowProc(hWnd, msg, wp, lp);

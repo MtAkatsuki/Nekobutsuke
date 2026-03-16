@@ -1,86 +1,95 @@
-#include	"scenemanager.h"
-#include	"SceneClassFactory.h"
-#include	"../manager/GameContext.h"
-#include	"../scene/GameScene.h"
-#include	"../gameobject/player.h"
-#include	"../gameobject/enemy.h"
-#include	"../system/DebugUI.h"
+#include "scenemanager.h"
+#include "SceneClassFactory.h"
+#include "../manager/GameContext.h"
+#include "../system/DebugUI.h"
 #include "../manager/AudioManager.h"
-#include	<iostream>
+#include <iostream>
 
 SceneManager::SceneManager() = default;
 
-void SceneManager::Init()
-{
+SceneManager::~SceneManager() { Dispose(); }
+
+void SceneManager::Init() {
 	m_context = std::make_unique<GameContext>();
 	m_context->Init();
-
 	AudioManager::GetInstance().Init();
 }
 
-SceneManager::~SceneManager() { Dispose(); }
+void SceneManager::Update(uint64_t deltatime) {
+	float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
 
-// 登録されているシーンを全て破棄する
-void SceneManager::Dispose() 
-{
-	// 登録されているすべてシーンの終了処理
-	for (auto& s : m_scenes) 
-	{
-		s.second->dispose();
+	// 常駐システムの更新
+	AudioManager::GetInstance().Update(deltaSeconds);
+
+	// --- トランジション（画面遷移）の進行管理 ---
+	if (m_transition) {
+		m_transition->update(deltatime);
+
+		// 画面が完全に暗転（または覆われた）タイミングで実際のシーンを切り替える
+		if (m_transition->canSwap() && !m_hasSwapped) {
+			InternalChangeScene(m_targetSceneName);
+			m_hasSwapped = true;
+			m_transition->onSceneSwapped(); // 新シーン描画開始（フェードイン等へ移行）
+		}
+
+		// 遷移演出がすべて終了した際のクリーンアップ
+		if (m_transition->isFinished()) {
+			m_isTransitioning = false;
+			m_transition = nullptr;
+		}
 	}
 
-	m_scenes.clear();
-	m_currentSceneName.clear();
-	m_context.reset();
+	// --- 現在のシーンの更新 ---
+	auto it = m_scenes.find(m_currentSceneName);
+	if (it != m_scenes.end() && it->second) {
+		it->second->update(deltatime);
+	}
 }
 
-
-
-
-void SceneManager::Draw(uint64_t deltatime)
-{
-
+void SceneManager::Draw(uint64_t deltatime) {
 	// 現在のシーンを描画
 	auto it = m_scenes.find(m_currentSceneName);
 	if (it != m_scenes.end() && it->second) {
 		it->second->draw(deltatime);
 	}
-
-	if (m_transition) 
+	// シーンの上にトランジション（暗転用ポリゴンなど）を被せて描画
+	if (m_transition)
 	{
 		m_transition->draw();
 	}
 }
 
-void SceneManager::Update(uint64_t deltatime)
-{
-	float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
-
-	// BGM更新
-	AudioManager::GetInstance().Update(deltaSeconds);
-
-	if (m_transition) 
-	{
-		m_transition->update(deltatime);
-		//FadeOut終了とき、シーン遷移できるか検査する
-		if (m_transition->canSwap() && !m_hasSwapped) //遷移状態全部許可得る場合
-		{
-			InternalChangeScene(m_nextSceneName);//実際遷移実行の場所
-			m_hasSwapped = true;
-			m_transition->onSceneSwapped();//FadeInを知らせる
-		}
-
-		//シーン遷移全部終了か検査
-		if (m_transition->isFinished()) 
-		{
-			m_isTransitioning = false;
-			m_transition = nullptr;
+void SceneManager::Dispose() {
+	for (auto& s : m_scenes) {
+		if (s.second) {
+			s.second->dispose();
 		}
 	}
-	auto it = m_scenes.find(m_currentSceneName);
-	// 現在のシーンを更新
-	if (it != m_scenes.end() && it->second) {
-		it->second->update(deltatime);
+	m_scenes.clear();
+	m_currentSceneName.clear();
+	m_context.reset();
+}
+
+void SceneManager::SetCurrentScene(const std::string& sceneName, std::unique_ptr<SceneTransition> transition) {
+	DebugUI::ClearDebugFunction(); // 遷移時に不要なデバッグUIを破棄
+
+	// 二重遷移の防止（防御的プログラミング）
+	if (m_isTransitioning || m_transition != nullptr) {
+		std::cerr << "[SceneManager] Warning: Ignored SetCurrentScene. Transition already active." << std::endl;
+		return;
+	}
+
+	if (transition) {
+		m_transition = std::move(transition);
+		m_targetSceneName = sceneName;
+		m_hasSwapped = false;
+		m_isTransitioning = true;
+
+		m_transition->start();
+	}
+	else {
+		// トランジションなしの場合は即時切り替え
+		InternalChangeScene(sceneName);
 	}
 }
 
@@ -98,26 +107,4 @@ void SceneManager::InternalChangeScene(const std::string& sceneName)
 		m_scenes[m_currentSceneName] = std::move(nowScene);
 	}
 	else { std::cerr << "[Error] Scene Not Found: " << sceneName << std::endl; }
-}
-
-void SceneManager::SetCurrentScene(const std::string& sceneName,std::unique_ptr<SceneTransition> transition)
-{
-	DebugUI::ClearDebugFunction();
-
-	if (m_isTransitioning || m_transition != nullptr)
-	{
-		std::cerr << "[SceneManager] Ignored SetCurrentScene: Transition already active." << std::endl;
-		return;
-	}
-	if (transition)
-	{	//もしシーン遷移アニメションがあれば
-		m_transition = std::move(transition);
-		m_nextSceneName = sceneName;
-		m_hasSwapped = false;
-		m_isTransitioning = true;
-
-		m_transition->start();
-	}
-	//アニメションなし、すぐに遷移
-	else { InternalChangeScene(sceneName);}
 }

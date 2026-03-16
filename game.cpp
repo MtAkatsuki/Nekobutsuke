@@ -1,19 +1,25 @@
-#include	"system/renderer.h"
-#include    "system/DebugUI.h"
-#include    "system/CDirectInput.h"
-#include	"system/scenemanager.h"
-#include	"fpscontrol.h"
-#include    "game.h"
-#include	"manager/GameContext.h"
-#include	"system/FadeTransition.h"
-#include    "system/BoxDrawer.h"
+#include "game.h"
+#include "system/renderer.h"
+#include "system/DebugUI.h"
+#include "system/CDirectInput.h"
+#include "system/scenemanager.h"
+#include "fpscontrol.h"
+#include "manager/GameContext.h"
+#include "system/FadeTransition.h"
+#include "system/BoxDrawer.h"
+#include "Application.h"
 
-#include "system/imgui/imgui.h"
-#include "system/imgui/imgui_impl_dx11.h"
-#include "system/imgui/imgui_impl_win32.h"
+#include <iostream>
 
-const uint64_t FIXED_STEP = 16; // 16ms 約60 FPS
-static uint64_t g_accumulator = 0; // タイムアキュムレータ
+namespace {
+	// --- 設定・定数  ---
+	constexpr uint64_t TARGET_FPS = 60;
+	constexpr uint64_t FIXED_STEP_MS = 16;  // 16ms (約60FPS相当の固定ステップ)
+	constexpr uint64_t DELTA_TIME_MAX_MS = 100; // delta_timeのクランプ上限（スパイク対策）
+	constexpr float    INITIAL_FADE_DURATION = 300.0f;
+}
+
+static uint64_t g_accumulator = 0; // 固定ステップ更新用のタイムアキュムレータ
 
 void gameinit()
 {
@@ -24,7 +30,8 @@ void gameinit()
 	BoxDrawerInit();
 
 	std::cerr << "[Step 2] Initializing DirectInput..." << std::endl;
-	CDirectInput::GetInstance().Init(Application::GetHInstance(),
+	CDirectInput::GetInstance().Init(
+		Application::GetHInstance(),
 		Application::GetWindow(),
 		Application::GetWidth(),
 		Application::GetHeight());
@@ -42,25 +49,23 @@ void gameinit()
 	std::cerr << "[Step 5] Setting Current Scene..." << std::endl;
 	
 	SceneManager::GetInstance().SetCurrentScene("TitleScene",
-		std::make_unique<FadeTransition>(300.0f, FadeTransition::Mode::FadeInOnly));
+		std::make_unique<FadeTransition>(INITIAL_FADE_DURATION, FadeTransition::Mode::FadeInOnly));
 	std::cerr << "[Step 5] OK." << std::endl;
 }
 
-void gameupdate(uint64_t deltatime)
-{
-	CDirectInput::GetInstance().GetKeyBuffer();		// キーボードの状態を取得
-	CDirectInput::GetInstance().GetMouseState();	// マウスの状態を取得
+void gameupdate(uint64_t deltatime){
+	// 入力デバイスの更新
+	CDirectInput::GetInstance().GetKeyBuffer();
+	CDirectInput::GetInstance().GetMouseState();
 
-	// シーンマネージャの更新
-	SceneManager::GetInstance().Update(FIXED_STEP);
+	// シーンマネージャの更新 (現在は固定ステップで回している)
+	SceneManager::GetInstance().Update(FIXED_STEP_MS);
 
-	g_accumulator -= FIXED_STEP;
-
+	g_accumulator -= FIXED_STEP_MS;
 }
 
-void gamedraw(uint64_t deltatime)
-{
-	// F3 キーが押された時、ImGui の表示状態を切り替える
+void gamedraw(uint64_t deltatime){
+	// F4 キーで ImGui の表示状態を切り替え
 	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_F4)) {
 		DebugUI::Toggle();
 	}
@@ -72,54 +77,39 @@ void gamedraw(uint64_t deltatime)
 	// レンダリング前処理
 	Renderer::Begin();
 
-	// シーンマネージャの描画
 	SceneManager::GetInstance().Draw(deltatime);
 
 	if (DebugUI::IsVisible()) {
-		// デバッグUIの描画
-		DebugUI::Draw();   
-		//ImGui の描画データを GPU に送信
-		DebugUI::EndFrame();
+		DebugUI::Draw();
+		DebugUI::EndFrame(); // ImGui の描画データを GPU に送信
 	}
 
-
-	// レンダリング後処理
+	// --- レンダリングパイプライン終了 ---
 	Renderer::End();
 }
 
-void gamedispose()
-{
-	//// デバッグUIの終了処理
+void gamedispose(){
 	DebugUI::DisposeUI();
-
-	// シーンマネージャの終了処理
 	SceneManager::GetInstance().Dispose();
-
-	// レンダラの終了処理
 	Renderer::Uninit();
 
 }
 
-void gameloop()
-{
-	uint64_t delta_time = 0;
+void gameloop(){
+	static FPS fpsrate(TARGET_FPS);
 
-	// フレームの待ち時間を計算する
-	static FPS fpsrate(60);
+	// 前回実行されてからの経過時間を計算
+	uint64_t delta_time = fpsrate.CalcDelta();
 
-	// 前回実行されてからの経過時間を計算する
-	delta_time = fpsrate.CalcDelta();
-
-	if (delta_time > 100) {
-		delta_time = 100;
+	// スパイク対策：ウィンドウ移動などでOS側で処理が停止した場合、
+	// delta_time が異常な値になり物理演算が破綻するのを防ぐ。
+	if (delta_time > DELTA_TIME_MAX_MS) {
+		delta_time = DELTA_TIME_MAX_MS;
 	}
-	//std::cerr << delta_time << std::endl;
 
-	// 更新処理、描画処理を呼び出す
 	gameupdate(delta_time);
 	gamedraw(delta_time);
 
-	// 規定時間までWAIT
+	// 次のフレームまで待機(Wait)し、fpsrate内部の時間を更新する
 	fpsrate.Tick();
-
 }

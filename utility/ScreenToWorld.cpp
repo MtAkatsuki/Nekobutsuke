@@ -1,48 +1,38 @@
 #include "ScreenToWorld.h"
 #include "../application.h"
 
-Vector3 ScreenToWorld::GetNDC() {
+Vector3 ScreenToWorld::GetNDC() const {
+	// 画面サイズに基づきビューポート行列を構築
+	Matrix4x4 mtxViewport = Matrix4x4::Identity;
+	float halfWidth = Application::GetWidth() / 2.0f;
+	float halfHeight = Application::GetHeight() / 2.0f;
 
-	// ビューポート変換行列作成
-	m_mtxviewport = Matrix4x4::Identity;
-	m_mtxviewport._11 =  Application::GetWidth() / 2.0f;
-	m_mtxviewport._22 = -1.0f * (Application::GetHeight() / 2.0f);
-	m_mtxviewport._41 = Application::GetWidth() / 2.0f;
-	m_mtxviewport._42 = Application::GetHeight() / 2.0f;
+	mtxViewport._11 = halfWidth;
+	mtxViewport._22 = -halfHeight; // Y軸反転
+	mtxViewport._41 = halfWidth;
+	mtxViewport._42 = halfHeight;
 
-	// スクリーン座標をVECTOR3に格納
-	Vector3 screenPos(
-		static_cast<float>(m_mouseposx), 
-		static_cast<float>(m_mouseposy), 0.0f);
+	Vector3 screenPos(static_cast<float>(m_mouseX), static_cast<float>(m_mouseY), 0.0f);
 
-	Matrix4x4 invvp = m_mtxviewport.Invert();
-
-	// スクリーン座標をワールド座標に変換
-	Vector3 NDCPos = screenPos.Transform(screenPos, invvp);
-
-	return NDCPos;
+	// ビューポート行列の逆行列を用いて、スクリーン座標からNDC（[-1, 1]空間）へ逆変換
+	Matrix4x4 invViewport = mtxViewport.Invert();
+	return screenPos.Transform(screenPos, invViewport);
 }
 
-// ビュー座標系での座標を取得
-Vector3 ScreenToWorld::GetViewCoordinate(
-	float depth,
-	const Matrix4x4& projmtx) {
+Vector3 ScreenToWorld::GetViewCoordinate(float depth, const Matrix4x4& projmtx) const {
+	Vector3 ndcPos = GetNDC();
+	ndcPos.z = depth;
 
-	// 正規デバイス座標系での座標を取得
-	Vector3 NDCPos = GetNDC();
-	NDCPos.z = depth;
+	// プロジェクション行列の逆行列を求め、NDCからビュー空間へ逆変換
+	Matrix4x4 invProj = projmtx.Invert();
+	Vector3 viewPos = ndcPos.Transform(ndcPos, invProj);
 
-	// クリップ空間座標系での座標を取得
-	Matrix4x4 invproj = projmtx.Invert();		// プロジェクション変換行列の逆行列を求める
-
-	// 正規デバイス座標をクリップ空間座標に変換
-	Vector3 viewPos = NDCPos.Transform(NDCPos, invproj);
-
-	// Wで割り算
-	float w = NDCPos.x * invproj._14 +
-		NDCPos.y * invproj._24 +
-		NDCPos.z * invproj._34 +
-		invproj._44;
+	// 逆透視除算（Inverse Perspective Division）
+	// W成分を計算し、それで割ることで同次座標系からデカルト座標系に戻す
+	float w = (ndcPos.x * invProj._14) +
+		(ndcPos.y * invProj._24) +
+		(ndcPos.z * invProj._34) +
+		invProj._44;
 
 	viewPos.x /= w;
 	viewPos.y /= w;
@@ -51,33 +41,22 @@ Vector3 ScreenToWorld::GetViewCoordinate(
 	return viewPos;
 }
 
-// ワールド座標系での座標を取得
-Vector3 ScreenToWorld::GetWorldCoordinate(
-		float depth,
-		const Matrix4x4& projmtx,
-		const Matrix4x4& viewmtx
-) {
+Vector3 ScreenToWorld::GetWorldCoordinate(float depth, const Matrix4x4& projmtx, const Matrix4x4& viewmtx) const {
+	Vector3 clipPos = GetViewCoordinate(depth, projmtx);
 
-	// ビュー座標系での座標を取得
-	Vector3 clippos = GetViewCoordinate(
-		depth,
-		projmtx);
+	// ビュー行列の逆行列を求め、ビュー空間からワールド空間へ逆変換
+	Matrix4x4 invView = viewmtx.Invert();
+	Vector3 worldPos = clipPos.Transform(clipPos, invView);
 
-	// ビュー空間座標系での座標を取得
-	Matrix4x4 invview = viewmtx.Invert();		// ビュー変換行列の逆行列を求める
+	// 同次除算
+	float w = (worldPos.x * invView._14) +
+		(worldPos.y * invView._24) +
+		(worldPos.z * invView._34) +
+		invView._44;
 
-	// クリップ空間座標をビュー空間座標系に変換
-	Vector3 viewPos = clippos.Transform(clippos, invview);
+	worldPos.x /= w;
+	worldPos.y /= w;
+	worldPos.z /= w;
 
-	// Wで割り算
-	float w = viewPos.x * invview._14 +
-		viewPos.y * invview._24 +
-		viewPos.z * invview._34 +
-		invview._44;
-
-	viewPos.x /= w;
-	viewPos.y /= w;
-	viewPos.z /= w;
-
-	return viewPos;
+	return worldPos;
 }

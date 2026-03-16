@@ -10,8 +10,10 @@
 
 #pragma warning(push)
 #pragma warning(disable:4005)
-
 #pragma warning(pop)
 
+// =========================================================
+// ÉOÉçÅ[ÉoÉãê›íË (Global Configurations)
+// =========================================================
 constexpr uint32_t SCREEN_WIDTH = 1280;
 constexpr uint32_t SCREEN_HEIGHT = 720;
