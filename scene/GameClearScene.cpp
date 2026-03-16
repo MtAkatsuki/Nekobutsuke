@@ -43,8 +43,15 @@ void GameClearScene::update(uint64_t deltatime) {
     if (m_inputDelayTimer < INPUT_LOCK_DURATION) {
         return;
     }
+    bool hasAnyKeyPressed = false;
+    for (int i = 1; i < 256; i++) {
+        if (CDirectInput::GetInstance().CheckKeyBufferTrigger(i)) {
+            hasAnyKeyPressed = true;
+            break;
+        }
+    }
 
-    if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_RETURN)) {
+    if (hasAnyKeyPressed) {
         SceneManager::GetInstance().SetCurrentScene(
             "TitleScene",
             std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BackgroundTransitionTime)
