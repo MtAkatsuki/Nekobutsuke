@@ -15,7 +15,7 @@ public:
     // ---------------------------------------------------------
     // ライフサイクル (Lifecycle)
     // ---------------------------------------------------------
-    void Init();
+    void Init(const std::string& texturePath = "assets/texture/bg_stripe.png");
     void Update(uint64_t dt);
 
     // ---------------------------------------------------------
@@ -23,13 +23,20 @@ public:
     // ---------------------------------------------------------
     void Draw();
 
+    // ---------------------------------------------------------
+    // ゲッター / セッター
+    // ---------------------------------------------------------
+    void SetAlpha(float alpha) { m_alpha = alpha; }
+    void SetScrollSpeed(float speed) { m_scrollSpeed = speed; }
+
 private:
     std::unique_ptr<CSprite> m_sprite;
 
     // --- 状態管理 ---
     float m_scrollOffset = 0.0f;
+    float m_alpha = 1.0f;
 
     // --- アニメーション・描画パラメータ ---
-    static constexpr float SCROLL_SPEED = 0.2f;  // スクロール速度
+    float m_scrollSpeed = 0.3f;  // スクロール速度
     static constexpr float TILE_REPEAT = 10.0f; // テクスチャの繰り返し回数
 };

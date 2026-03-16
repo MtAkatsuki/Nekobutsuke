@@ -13,8 +13,8 @@ namespace {
 	constexpr float ROTATION_RAD = -PI / 4.0f;   // -45度の斜め配置
 }
 
-void Background::Init() {
-	m_sprite = std::make_unique<CSprite>(BG_SIZE, BG_SIZE, "assets/texture/bg_stripe.png");
+void Background::Init(const std::string& texturePath) {
+    m_sprite = std::make_unique<CSprite>(BG_SIZE, BG_SIZE, texturePath.c_str());
 }
 
 void Background::Update(uint64_t dt) {
@@ -23,7 +23,7 @@ void Background::Update(uint64_t dt) {
     float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 
     // スクロールオフセットの加算とオーバーフロー防御
-    m_scrollOffset += SCROLL_SPEED * deltaSeconds;
+    m_scrollOffset += m_scrollSpeed * deltaSeconds;
     if (m_scrollOffset > UV_OVERFLOW_LIMIT) {
         m_scrollOffset -= UV_OVERFLOW_LIMIT;
     }
@@ -54,5 +54,14 @@ void Background::Draw() {
     Vector3 scale(1.0f, 1.0f, 1.0f);
     Vector3 rot(0.0f, 0.0f, ROTATION_RAD);
 
+    MATERIAL mtrl;
+    mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, m_alpha);
+    mtrl.TextureEnable = TRUE;
+    m_sprite->ModifyMtrl(mtrl);
+
+    Renderer::SetBlendState(BS_ALPHABLEND);
+    Renderer::SetDepthEnable(false);
     m_sprite->Draw(scale, rot, centerPos);
+    Renderer::SetDepthEnable(true);
+    Renderer::SetBlendState(BS_NONE);
 }

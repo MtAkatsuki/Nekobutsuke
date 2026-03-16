@@ -8,6 +8,7 @@
 #include "../system/meshmanager.h"
 #include "../system/scenemanager.h"
 #include "../system//FadeTransition.h"
+#include "../system/BackgroundTransition.h"
 #include "../manager/MapManager.h"
 #include "../manager/GameContext.h"
 #include "../manager/AudioManager.h"
@@ -30,6 +31,8 @@ namespace {
 	const float ESCAPE_MARKER_BASE_Y = 1.5f;           // 脱出アイコンのY軸ベース座標
 	const float FADE_TIME_GAMEOVER = 1000.0f;          // 敗北時の暗転時間（ms）
 	const float FADE_TIME_CLEAR = 300.0f;              // 勝利時のホワイトアウト時間（ms）
+	constexpr float FADE_IN_OUT_DURATION = 1000.0f;	   // フェードイン・アウトの合計時間（ms）
+	constexpr float BackgroundTransitionTime = 4000.0f;// 背景遷移のスクロール時間（ms）
 }
 
 GameScene::GameScene()
@@ -743,7 +746,7 @@ bool GameScene::ProcessGameOverFlow(float deltaSeconds)
 
 		SceneManager::GetInstance().SetCurrentScene(
 			"GameOverScene",
-			std::make_unique<FadeTransition>(FADE_TIME_GAMEOVER, FadeTransition::Mode::FadeInOut)
+			std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BackgroundTransitionTime)
 		);
 	}
 	return true;
@@ -803,7 +806,7 @@ void GameScene::ProcessGameClearFlow(float deltaSeconds)
 
 		SceneManager::GetInstance().SetCurrentScene(
 			"GameClearScene",
-			std::make_unique<FadeTransition>(FADE_TIME_CLEAR, FadeTransition::Mode::FadeInOut)
+			std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BackgroundTransitionTime)
 		);
 	}
 }

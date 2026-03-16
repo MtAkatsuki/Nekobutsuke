@@ -4,11 +4,13 @@
 #include "../system/scenemanager.h"
 #include "../system/SceneClassFactory.h"
 #include "../manager/AudioManager.h"
+#include "../system/BackgroundTransition.h"
 #include <cmath>
 
 namespace {
-    // --- 演出・定数定義 (Magic Numbers) ---
-    constexpr float FADE_OUT_DURATION = 1000.0f;
+    // --- 演出・定数定義 ---
+	constexpr float FADE_IN_OUT_DURATION = 1000.0f;// フェードイン・アウトの合計時間（ms）
+	constexpr float BackgroundTransitionTime = 4000.0f;// 背景遷移のスクロール時間（ms）
     constexpr float BLINK_SPEED       = 1.0f;
     constexpr float BLINK_MIN_ALPHA   = 0.3f; // 完全に消えないための下限値
     constexpr float BLINK_RANGE       = 0.7f; // 変動幅 (0.3 + 0.7 = 1.0)
@@ -54,7 +56,7 @@ void TitleScene::update(uint64_t deltatime) {
     if (hasAnyKeyPressed) {
         SceneManager::GetInstance().SetCurrentScene(
             "GameScene",
-            std::make_unique<FadeTransition>(FADE_OUT_DURATION, FadeTransition::Mode::FadeInOut)
+            std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BackgroundTransitionTime)
         );
     }
 }

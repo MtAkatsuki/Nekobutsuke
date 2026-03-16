@@ -195,6 +195,7 @@ DirectXTK.lib
     <ClCompile Include="scene\GameScene.cpp" />
     <ClCompile Include="scene\TitleScene.cpp" />
     <ClCompile Include="system\AssimpPerse.cpp" />
+    <ClCompile Include="system\BackgroundTransition.cpp" />
     <ClCompile Include="system\BoneCombMatrix.cpp" />
     <ClCompile Include="system\BoxDrawer.cpp" />
     <ClCompile Include="system\C3DShape.cpp" />
@@ -274,6 +275,7 @@ DirectXTK.lib
     <ClInclude Include="scene\GameScene.h" />
     <ClInclude Include="scene\TitleScene.h" />
     <ClInclude Include="system\AssimpPerse.h" />
+    <ClInclude Include="system\BackgroundTransition.h" />
     <ClInclude Include="system\BoneCombMatrix.h" />
     <ClInclude Include="system\BoxDrawer.h" />
     <ClInclude Include="system\C3DShape.h" />

@@ -5,11 +5,14 @@
 #include "GameOverScene.h"
 #include "../system/SceneClassFactory.h"
 #include "../manager/AudioManager.h"
+#include "../system/BackgroundTransition.h"
 
 namespace {
     // --- 定数定義 ---
     constexpr float FADE_OUT_DURATION = 1000.0f;
     constexpr float INPUT_LOCK_DURATION = 1.0f; // 遷移直後の誤操作防止(1秒)
+    constexpr float FADE_IN_OUT_DURATION = 1000.0f;// フェードイン・アウトの合計時間（ms）
+    constexpr float BackgroundTransitionTime = 4000.0f;// 背景遷移のスクロール時間（ms）
 }
 
 void GameOverScene::Init() {
@@ -33,7 +36,7 @@ void GameOverScene::update(uint64_t deltatime) {
     if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_RETURN)) {
         SceneManager::GetInstance().SetCurrentScene(
             "TitleScene",
-            std::make_unique<FadeTransition>(FADE_OUT_DURATION, FadeTransition::Mode::FadeInOut)
+            std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BackgroundTransitionTime)
         );
     }
 }

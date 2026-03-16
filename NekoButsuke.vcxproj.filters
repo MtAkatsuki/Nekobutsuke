@@ -261,6 +261,9 @@
     <ClCompile Include="ui\EnemyActionUI.cpp">
       <Filter>ソース ファイル\ui</Filter>
     </ClCompile>
+    <ClCompile Include="system\BackgroundTransition.cpp">
+      <Filter>ソース ファイル\system</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
@@ -556,6 +559,9 @@
     </ClInclude>
     <ClInclude Include="ui\EnemyActionUI.h">
       <Filter>ソース ファイル\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="system\BackgroundTransition.h">
+      <Filter>ソース ファイル\system</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
