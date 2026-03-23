@@ -1,8 +1,8 @@
 #include "scenemanager.h"
 #include "SceneClassFactory.h"
-#include "../manager/GameContext.h"
-#include "../system/DebugUI.h"
-#include "../manager/AudioManager.h"
+#include "../Core/GameContext.h"
+#include "DebugUI.h"
+#include "Audio/AudioManager.h"
 #include <iostream>
 
 SceneManager::SceneManager() = default;

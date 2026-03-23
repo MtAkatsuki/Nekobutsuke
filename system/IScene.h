@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <memory>
-#include "../gameobject/Gameobject.h"
+#include "../Actor/Base/Gameobject.h"
 
 class GameContext;
 // シーンインタフェース

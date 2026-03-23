@@ -4,7 +4,7 @@
 #include <string>
 #include "IScene.h"
 #include "noncopyable.h"
-#include "../system/SceneTransition.h"
+#include "SceneTransition.h"
 
 class GameContext;
 

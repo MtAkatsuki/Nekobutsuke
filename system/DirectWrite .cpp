@@ -1,5 +1,5 @@
 #include "DirectWrite.h"
-#include "../main.h"
+#include "../Core/main.h"
 #include <assert.h>
 
 //

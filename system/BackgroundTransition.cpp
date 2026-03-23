@@ -4,7 +4,7 @@
 namespace {
     // --- 演出用定数定義 ---
     constexpr float MAX_SCROLL_SPEED = 0.2f; // スクロール開始時の初期速度
-    const char* TRANSITION_BG_PATH = "assets/texture/bg_stripe_blue.png";
+    const char* TRANSITION_BG_PATH = "Assets/texture/bg_stripe_blue.png";
 }
 
 BackgroundTransition::BackgroundTransition(float fadeDurationMs, float scrollDurationMs)

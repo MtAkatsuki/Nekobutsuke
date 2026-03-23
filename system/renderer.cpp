@@ -7,8 +7,8 @@
  */
 
 #include <stdexcept>
-#include "renderer.h"
-#include "../Application.h"
+#include "Renderer.h"
+#include "../Core/Application.h"
 
 //------------------------------------------------------------------------------
 // スタティックメンバ変数の初期化

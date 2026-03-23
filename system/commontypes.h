@@ -2,7 +2,7 @@
 #include	<wrl/client.h>
 #include	<cstdint>
 #include	<numbers>
-#include    "../system/Library/DirectXTK/include/SimpleMath.h"
+#include    "Library/DirectXTK/include/SimpleMath.h"
 
 // 基本型のエイリアス
 using Vector4 = DirectX::SimpleMath::Vector4;

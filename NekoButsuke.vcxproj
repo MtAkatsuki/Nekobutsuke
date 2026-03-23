@@ -18,6 +18,191 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <None Include=".gitattributes" />
+    <None Include=".gitignore" />
+    <None Include="DirectXTK.props" />
+    <None Include="imgui.ini" />
+    <None Include="nekobutsuke_camera.ini" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Actor\Base\MapObject.cpp" />
+    <ClCompile Include="Actor\Base\Unit.cpp" />
+    <ClCompile Include="Actor\Character\Ally.cpp" />
+    <ClCompile Include="Actor\Character\Enemy.cpp" />
+    <ClCompile Include="Actor\Character\Player.cpp" />
+    <ClCompile Include="Actor\Gimmick\Prop.cpp" />
+    <ClCompile Include="Actor\Gimmick\Trap.cpp" />
+    <ClCompile Include="Core\Application.cpp" />
+    <ClCompile Include="Core\Game.cpp" />
+    <ClCompile Include="Core\GameContext.cpp" />
+    <ClCompile Include="Core\main.cpp" />
+    <ClCompile Include="GamePlay\Manager\EffectManager.cpp" />
+    <ClCompile Include="GamePlay\Manager\EnemyManager.cpp" />
+    <ClCompile Include="GamePlay\Manager\MapManager.cpp" />
+    <ClCompile Include="GamePlay\Scene\Background.cpp" />
+    <ClCompile Include="GamePlay\Scene\GameClearScene.cpp" />
+    <ClCompile Include="GamePlay\Scene\GameOverScene.cpp" />
+    <ClCompile Include="GamePlay\Scene\GameScene.cpp" />
+    <ClCompile Include="GamePlay\Scene\TitleScene.cpp" />
+    <ClCompile Include="System\AssimpPerse.cpp" />
+    <ClCompile Include="System\Audio\AudioManager.cpp" />
+    <ClCompile Include="System\BackgroundTransition.cpp" />
+    <ClCompile Include="System\BoneCombMatrix.cpp" />
+    <ClCompile Include="System\BoxDrawer.cpp" />
+    <ClCompile Include="System\C3DShape.cpp" />
+    <ClCompile Include="System\Camera.cpp" />
+    <ClCompile Include="System\CapsuleDrawer.cpp" />
+    <ClCompile Include="System\CConeMesh.cpp" />
+    <ClCompile Include="System\CCylinderMesh.cpp" />
+    <ClCompile Include="System\CLineMesh.cpp" />
+    <ClCompile Include="System\Collision.cpp" />
+    <ClCompile Include="System\ConeDrawer.cpp" />
+    <ClCompile Include="System\CPlane.cpp" />
+    <ClCompile Include="System\CPlaneMesh.cpp" />
+    <ClCompile Include="System\CShader.cpp" />
+    <ClCompile Include="System\CSprite.cpp" />
+    <ClCompile Include="System\CStaticMesh.cpp" />
+    <ClCompile Include="System\CStaticMeshRenderer.cpp" />
+    <ClCompile Include="System\CTexture.cpp" />
+    <ClCompile Include="System\CylinderDrawer.cpp" />
+    <ClCompile Include="System\DebugUI.cpp" />
+    <ClCompile Include="System\DirectWrite .cpp" />
+    <ClCompile Include="System\dx11helper.cpp" />
+    <ClCompile Include="System\FadeTransition.cpp" />
+    <ClCompile Include="System\imgui\imgui.cpp" />
+    <ClCompile Include="System\imgui\imgui_demo.cpp" />
+    <ClCompile Include="System\imgui\imgui_draw.cpp" />
+    <ClCompile Include="System\imgui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="System\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="System\imgui\imgui_tables.cpp" />
+    <ClCompile Include="System\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="System\LineDrawer.cpp" />
+    <ClCompile Include="System\Meshmanager.cpp" />
+    <ClCompile Include="System\Renderer.cpp" />
+    <ClCompile Include="System\SceneManager.cpp" />
+    <ClCompile Include="System\SphereDrawer.cpp" />
+    <ClCompile Include="System\stb.cpp" />
+    <ClCompile Include="System\TriangleDrawer.cpp" />
+    <ClCompile Include="System\Utility.cpp" />
+    <ClCompile Include="System\Utility\ScreenToWorld.cpp" />
+    <ClCompile Include="System\Utility\WorldToScreen.cpp" />
+    <ClCompile Include="UI\Component\DialogueUI.cpp" />
+    <ClCompile Include="UI\Component\EnemyActionUI.cpp" />
+    <ClCompile Include="UI\Component\HPBar.cpp" />
+    <ClCompile Include="UI\Component\TutorialUI.cpp" />
+    <ClCompile Include="UI\System\DamageNumberManager.cpp" />
+    <ClCompile Include="UI\System\GameUIManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Actor\Base\Gameobject.h" />
+    <ClInclude Include="Actor\Base\MapObject.h" />
+    <ClInclude Include="Actor\Base\Unit.h" />
+    <ClInclude Include="Actor\Character\Ally.h" />
+    <ClInclude Include="Actor\Character\Enemy.h" />
+    <ClInclude Include="Actor\Character\Player.h" />
+    <ClInclude Include="Actor\Gimmick\Prop.h" />
+    <ClInclude Include="Actor\Gimmick\Trap.h" />
+    <ClInclude Include="Core\Application.h" />
+    <ClInclude Include="Core\Game.h" />
+    <ClInclude Include="Core\GameContext.h" />
+    <ClInclude Include="Core\main.h" />
+    <ClInclude Include="EnumClass\TurnState.h" />
+    <ClInclude Include="GamePlay\Manager\EffectManager.h" />
+    <ClInclude Include="GamePlay\Manager\EnemyManager.h" />
+    <ClInclude Include="GamePlay\Manager\MapManager.h" />
+    <ClInclude Include="GamePlay\Manager\TurnManager.h" />
+    <ClInclude Include="GamePlay\Scene\Background.h" />
+    <ClInclude Include="GamePlay\Scene\GameClearScene.h" />
+    <ClInclude Include="GamePlay\Scene\GameOverScene.h" />
+    <ClInclude Include="GamePlay\Scene\GameScene.h" />
+    <ClInclude Include="GamePlay\Scene\TitleScene.h" />
+    <ClInclude Include="System\AimOrientation.h" />
+    <ClInclude Include="System\AssimpPerse.h" />
+    <ClInclude Include="System\Audio\AudioManager.h" />
+    <ClInclude Include="System\BackgroundTransition.h" />
+    <ClInclude Include="System\BoneCombMatrix.h" />
+    <ClInclude Include="System\BoxDrawer.h" />
+    <ClInclude Include="System\C3DShape.h" />
+    <ClInclude Include="System\Camera.h" />
+    <ClInclude Include="System\CapsuleDrawer.h" />
+    <ClInclude Include="System\CBoxMesh.h" />
+    <ClInclude Include="System\CConeMesh.h" />
+    <ClInclude Include="System\CCylinderMesh.h" />
+    <ClInclude Include="System\CDirectInput.h" />
+    <ClInclude Include="System\CIndexBuffer.h" />
+    <ClInclude Include="System\CLineMesh.h" />
+    <ClInclude Include="System\CMaterial.h" />
+    <ClInclude Include="System\CMesh.h" />
+    <ClInclude Include="System\CMeshRenderer.h" />
+    <ClInclude Include="System\Collision.h" />
+    <ClInclude Include="System\CommonTypes.h" />
+    <ClInclude Include="System\ConeDrawer.h" />
+    <ClInclude Include="System\CPlane.h" />
+    <ClInclude Include="System\CPlaneMesh.h" />
+    <ClInclude Include="System\CPolar3D.h" />
+    <ClInclude Include="System\CShader.h" />
+    <ClInclude Include="System\CSphereMesh.h" />
+    <ClInclude Include="System\CSprite.h" />
+    <ClInclude Include="System\CStaticMesh.h" />
+    <ClInclude Include="System\CStaticMeshRenderer.h" />
+    <ClInclude Include="System\CTexture.h" />
+    <ClInclude Include="System\CTreeNode.h" />
+    <ClInclude Include="System\CVertexBuffer.h" />
+    <ClInclude Include="System\CylinderDrawer.h" />
+    <ClInclude Include="System\DebugUI.h" />
+    <ClInclude Include="System\Direction.h" />
+    <ClInclude Include="System\DirectWrite.h" />
+    <ClInclude Include="System\dx11helper.h" />
+    <ClInclude Include="System\FadeTransition.h" />
+    <ClInclude Include="System\imgui\imconfig.h" />
+    <ClInclude Include="System\imgui\imgui.h" />
+    <ClInclude Include="System\imgui\imgui_impl_dx11.h" />
+    <ClInclude Include="System\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="System\imgui\imgui_internal.h" />
+    <ClInclude Include="System\imgui\imstb_rectpack.h" />
+    <ClInclude Include="System\imgui\imstb_textedit.h" />
+    <ClInclude Include="System\imgui\imstb_truetype.h" />
+    <ClInclude Include="System\IScene.h" />
+    <ClInclude Include="System\LineDrawer.h" />
+    <ClInclude Include="System\Meshmanager.h" />
+    <ClInclude Include="System\noncopyable.h" />
+    <ClInclude Include="System\RandomEngine.h" />
+    <ClInclude Include="System\Renderer.h" />
+    <ClInclude Include="System\SceneClassFactory.h" />
+    <ClInclude Include="System\SceneManager.h" />
+    <ClInclude Include="System\SceneTransition.h" />
+    <ClInclude Include="System\SphereDrawer.h" />
+    <ClInclude Include="System\stb_image.h" />
+    <ClInclude Include="System\Transform.h" />
+    <ClInclude Include="System\TriangleDrawer.h" />
+    <ClInclude Include="System\Utility.h" />
+    <ClInclude Include="System\Utility\FpsControl.h" />
+    <ClInclude Include="System\Utility\ScreenToWorld.h" />
+    <ClInclude Include="System\Utility\WorldToScreen.h" />
+    <ClInclude Include="UI\Component\DialogueUI.h" />
+    <ClInclude Include="UI\Component\EnemyActionUI.h" />
+    <ClInclude Include="UI\Component\HPBar.h" />
+    <ClInclude Include="UI\Component\TurnCounter.h" />
+    <ClInclude Include="UI\Component\TurnCutin.h" />
+    <ClInclude Include="UI\Component\TutorialUI.h" />
+    <ClInclude Include="UI\System\DamageNumberManager.h" />
+    <ClInclude Include="UI\System\GameUIManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shader\common.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Shader\GeometryShader.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Shader\UnlitTexturePS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Shader\UnlitTextureVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -173,210 +358,6 @@ DirectXTK.lib
       <AdditionalLibraryDirectories>$(ProjectDir)system\Library\Assimp\lib;$(ProjectDir)system\Library\DirectXTK\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="Application.cpp" />
-    <ClCompile Include="game.cpp" />
-    <ClCompile Include="gameobject\Ally.cpp" />
-    <ClCompile Include="gameobject\enemy.cpp" />
-    <ClCompile Include="gameobject\MapObject.cpp" />
-    <ClCompile Include="gameobject\player.cpp" />
-    <ClCompile Include="gameobject\Prop.cpp" />
-    <ClCompile Include="gameobject\Trap.cpp" />
-    <ClCompile Include="gameobject\Unit.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="manager\AudioManager.cpp" />
-    <ClCompile Include="manager\EffectManager.cpp" />
-    <ClCompile Include="manager\EnemyManager.cpp" />
-    <ClCompile Include="manager\GameContext.cpp" />
-    <ClCompile Include="manager\MapManager.cpp" />
-    <ClCompile Include="scene\Background.cpp" />
-    <ClCompile Include="scene\GameClearScene.cpp" />
-    <ClCompile Include="scene\GameOverScene.cpp" />
-    <ClCompile Include="scene\GameScene.cpp" />
-    <ClCompile Include="scene\TitleScene.cpp" />
-    <ClCompile Include="system\AssimpPerse.cpp" />
-    <ClCompile Include="system\BackgroundTransition.cpp" />
-    <ClCompile Include="system\BoneCombMatrix.cpp" />
-    <ClCompile Include="system\BoxDrawer.cpp" />
-    <ClCompile Include="system\C3DShape.cpp" />
-    <ClCompile Include="system\camera.cpp" />
-    <ClCompile Include="system\CAnimationData.cpp" />
-    <ClCompile Include="system\CAnimationMesh.cpp" />
-    <ClCompile Include="system\CAnimationMeshBlender.cpp" />
-    <ClCompile Include="system\CAnimationObject.cpp" />
-    <ClCompile Include="system\CapsuleDrawer.cpp" />
-    <ClCompile Include="system\CConeMesh.cpp" />
-    <ClCompile Include="system\CCylinderMesh.cpp" />
-    <ClCompile Include="system\CLineMesh.cpp" />
-    <ClCompile Include="system\collision.cpp" />
-    <ClCompile Include="system\ConeDrawer.cpp" />
-    <ClCompile Include="system\CPlane.cpp" />
-    <ClCompile Include="system\CPlaneMesh.cpp" />
-    <ClCompile Include="system\CShader.cpp" />
-    <ClCompile Include="system\CSprite.cpp" />
-    <ClCompile Include="system\CStaticMesh.cpp" />
-    <ClCompile Include="system\CStaticMeshRenderer.cpp" />
-    <ClCompile Include="system\CTexture.cpp" />
-    <ClCompile Include="system\CylinderDrawer.cpp" />
-    <ClCompile Include="system\DebugUI.cpp" />
-    <ClCompile Include="system\DirectWrite .cpp" />
-    <ClCompile Include="system\dx11helper.cpp" />
-    <ClCompile Include="system\FadeTransition.cpp" />
-    <ClCompile Include="system\imgui\imgui.cpp" />
-    <ClCompile Include="system\imgui\imgui_demo.cpp" />
-    <ClCompile Include="system\imgui\imgui_draw.cpp" />
-    <ClCompile Include="system\imgui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="system\imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="system\imgui\imgui_tables.cpp" />
-    <ClCompile Include="system\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="system\LineDrawer.cpp" />
-    <ClCompile Include="system\meshmanager.cpp" />
-    <ClCompile Include="system\motiondatamanager.cpp" />
-    <ClCompile Include="system\PlaneDrawer.cpp" />
-    <ClCompile Include="system\renderer.cpp" />
-    <ClCompile Include="system\scenemanager.cpp" />
-    <ClCompile Include="system\SphereDrawer.cpp" />
-    <ClCompile Include="system\stb.cpp" />
-    <ClCompile Include="system\stbperlin.cpp" />
-    <ClCompile Include="system\TriangleDrawer.cpp" />
-    <ClCompile Include="system\utility.cpp" />
-    <ClCompile Include="ui\DamageNumberManager.cpp" />
-    <ClCompile Include="ui\DialogueUI.cpp" />
-    <ClCompile Include="ui\EnemyActionUI.cpp" />
-    <ClCompile Include="ui\GameUIManager.cpp" />
-    <ClCompile Include="ui\HPBar.cpp" />
-    <ClCompile Include="ui\TutorialUI.cpp" />
-    <ClCompile Include="utility\ScreenToWorld.cpp" />
-    <ClCompile Include="utility\WorldToScreen.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Application.h" />
-    <ClInclude Include="enum class\TurnState.h" />
-    <ClInclude Include="fpscontrol.h" />
-    <ClInclude Include="game.h" />
-    <ClInclude Include="gameobject\Ally.h" />
-    <ClInclude Include="gameobject\enemy.h" />
-    <ClInclude Include="gameobject\GameObject.h" />
-    <ClInclude Include="gameobject\MapObject.h" />
-    <ClInclude Include="gameobject\player.h" />
-    <ClInclude Include="gameobject\Prop.h" />
-    <ClInclude Include="gameobject\Trap.h" />
-    <ClInclude Include="gameobject\Unit.h" />
-    <ClInclude Include="main.h" />
-    <ClInclude Include="manager\AudioManager.h" />
-    <ClInclude Include="manager\EffectManager.h" />
-    <ClInclude Include="manager\EnemyManager.h" />
-    <ClInclude Include="manager\GameContext.h" />
-    <ClInclude Include="manager\MapManager.h" />
-    <ClInclude Include="manager\TurnManager.h" />
-    <ClInclude Include="scene\Background.h" />
-    <ClInclude Include="scene\GameClearScene.h" />
-    <ClInclude Include="scene\GameOverScene.h" />
-    <ClInclude Include="scene\GameScene.h" />
-    <ClInclude Include="scene\TitleScene.h" />
-    <ClInclude Include="system\AssimpPerse.h" />
-    <ClInclude Include="system\BackgroundTransition.h" />
-    <ClInclude Include="system\BoneCombMatrix.h" />
-    <ClInclude Include="system\BoxDrawer.h" />
-    <ClInclude Include="system\C3DShape.h" />
-    <ClInclude Include="system\camera.h" />
-    <ClInclude Include="system\CAnimationData.h" />
-    <ClInclude Include="system\CAnimationMesh.h" />
-    <ClInclude Include="system\CAnimationMeshBlender.h" />
-    <ClInclude Include="system\CAnimationObject.h" />
-    <ClInclude Include="system\CapsuleDrawer.h" />
-    <ClInclude Include="system\CBoxMesh.h" />
-    <ClInclude Include="system\CConeMesh.h" />
-    <ClInclude Include="system\CCylinderMesh.h" />
-    <ClInclude Include="system\CDirectInput.h" />
-    <ClInclude Include="system\CIndexBuffer.h" />
-    <ClInclude Include="system\CLineMesh.h" />
-    <ClInclude Include="system\CMaterial.h" />
-    <ClInclude Include="system\CMesh.h" />
-    <ClInclude Include="system\CMeshRenderer.h" />
-    <ClInclude Include="system\collision.h" />
-    <ClInclude Include="system\commontypes.h" />
-    <ClInclude Include="system\ConeDrawer.h" />
-    <ClInclude Include="system\CPlane.h" />
-    <ClInclude Include="system\CPlaneMesh.h" />
-    <ClInclude Include="system\CPolar3D.h" />
-    <ClInclude Include="system\CShader.h" />
-    <ClInclude Include="system\CSphereMesh.h" />
-    <ClInclude Include="system\CSprite.h" />
-    <ClInclude Include="system\CStaticMesh.h" />
-    <ClInclude Include="system\CStaticMeshRenderer.h" />
-    <ClInclude Include="system\CTexture.h" />
-    <ClInclude Include="system\CTreeNode.h" />
-    <ClInclude Include="system\CVertexBuffer.h" />
-    <ClInclude Include="system\CylinderDrawer.h" />
-    <ClInclude Include="system\DebugUI.h" />
-    <ClInclude Include="system\Direction.h" />
-    <ClInclude Include="system\DirectWrite.h" />
-    <ClInclude Include="system\dx11helper.h" />
-    <ClInclude Include="system\FadeTransition.h" />
-    <ClInclude Include="system\imgui\imconfig.h" />
-    <ClInclude Include="system\imgui\imgui.h" />
-    <ClInclude Include="system\imgui\imgui_impl_dx11.h" />
-    <ClInclude Include="system\imgui\imgui_impl_win32.h" />
-    <ClInclude Include="system\imgui\imgui_internal.h" />
-    <ClInclude Include="system\imgui\imstb_rectpack.h" />
-    <ClInclude Include="system\imgui\imstb_textedit.h" />
-    <ClInclude Include="system\imgui\imstb_truetype.h" />
-    <ClInclude Include="system\IScene.h" />
-    <ClInclude Include="system\LineDrawer.h" />
-    <ClInclude Include="system\meshmanager.h" />
-    <ClInclude Include="system\motiondatamanager.h" />
-    <ClInclude Include="system\noncopyable.h" />
-    <ClInclude Include="system\PlaneDrawer.h" />
-    <ClInclude Include="system\RandomEngine.h" />
-    <ClInclude Include="system\renderer.h" />
-    <ClInclude Include="system\SceneClassFactory.h" />
-    <ClInclude Include="system\scenemanager.h" />
-    <ClInclude Include="system\SceneTransition.h" />
-    <ClInclude Include="system\SphereDrawer.h" />
-    <ClInclude Include="system\stb_image.h" />
-    <ClInclude Include="system\stb_perlin.h" />
-    <ClInclude Include="system\transform.h" />
-    <ClInclude Include="system\TriangleDrawer.h" />
-    <ClInclude Include="system\utility.h" />
-    <ClInclude Include="ui\DamageNumberManager.h" />
-    <ClInclude Include="ui\DialogueUI.h" />
-    <ClInclude Include="ui\EnemyActionUI.h" />
-    <ClInclude Include="ui\GameUIManager.h" />
-    <ClInclude Include="ui\HPBar.h" />
-    <ClInclude Include="ui\TurnCounter.h" />
-    <ClInclude Include="ui\TurnCutin.h" />
-    <ClInclude Include="ui\TutorialUI.h" />
-    <ClInclude Include="utility\ScreenToWorld.h" />
-    <ClInclude Include="utility\WorldToScreen.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="shader\common.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
-    <FxCompile Include="shader\GeometryShader.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Geometry</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="shader\unlitTexturePS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="shader\unlitTextureVS.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-    </FxCompile>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

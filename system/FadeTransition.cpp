@@ -1,5 +1,5 @@
-#include    "../main.h"
-#include    "../system/scenemanager.h"
+#include    "../Core/main.h"
+#include    "Scenemanager.h"
 #include    "FadeTransition.h"
 #include    "BoxDrawer.h"
 

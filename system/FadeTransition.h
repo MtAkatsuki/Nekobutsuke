@@ -1,5 +1,5 @@
 #pragma once
-#include "scenemanager.h"
+#include "Scenemanager.h"
 #include "SceneTransition.h"
 
 //FdaeTransition‚Í‰æ–Ê‚Ì–¾ˆÃ‚¾‚¯ŠÇ—‚·‚é

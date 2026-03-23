@@ -1,7 +1,7 @@
-#include "commonTypes.h"
-#include "renderer.h"
-#include "camera.h"
-#include "../application.h"
+#include "CommonTypes.h"
+#include "Renderer.h"
+#include "Camera.h"
+#include "../Core/Application.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>

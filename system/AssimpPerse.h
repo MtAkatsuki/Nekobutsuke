@@ -1,10 +1,10 @@
 #pragma once
-#include	"../system/Library/Assimp/include/assimp/Importer.hpp"
-#include	"../system/Library/Assimp/include/assimp/scene.h"
-#include	"../system/Library/Assimp/include/assimp/postprocess.h"
-#include	"../system/Library/Assimp/include/assimp/cimport.h"
-#include	"../system/CTexture.h"
-#include	"../system/CTreeNode.h"
+#include	"Library/Assimp/include/assimp/Importer.hpp"
+#include	"Library/Assimp/include/assimp/scene.h"
+#include	"Library/Assimp/include/assimp/postprocess.h"
+#include	"Library/Assimp/include/assimp/cimport.h"
+#include	"CTexture.h"
+#include	"CTreeNode.h"
 
 namespace GM31 {namespace GE {namespace {}
 namespace myAssimp

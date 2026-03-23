@@ -1,7 +1,7 @@
 #pragma once
-#include "../system/scenemanager.h"
-#include "../system/SceneTransition.h"
-#include "../scene/Background.h"
+#include "../System/scenemanager.h"
+#include "SceneTransition.h"
+#include "../GamePlay/Scene/Background.h"
 #include <memory>
 
 // =========================================================

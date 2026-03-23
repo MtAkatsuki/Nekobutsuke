@@ -1,9 +1,9 @@
 #pragma once
 
-#include "commontypes.h"
-#include "renderer.h"
+#include "CommonTypes.h"
+#include "Renderer.h"
 #include "CPolar3D.h"
-#include "../application.h"
+#include "../Core/Application.h"
 
 // --- ƒJƒƒ‰‚Ì’Ç]ó‘Ô ---
 enum class CameraState {

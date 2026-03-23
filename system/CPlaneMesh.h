@@ -1,5 +1,5 @@
 #pragma once
-#include "../system/Library/DirectXTK/include/SimpleMath.h"
+#include "Library/DirectXTK/include/SimpleMath.h"
 #include	<random>
 #include	"CMesh.h"
 

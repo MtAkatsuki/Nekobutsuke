@@ -2,7 +2,7 @@
 #include	<filesystem>
 #include	<string>
 #include	<Windows.h>
-#include	"../system/Library/Assimp/include/assimp/scene.h"
+#include	"Library/Assimp/include/assimp/scene.h"
 
 namespace utility {
     // std::string 用のディレクトリ取得関数

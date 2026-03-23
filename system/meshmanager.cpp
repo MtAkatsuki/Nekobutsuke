@@ -1,4 +1,4 @@
-#include	"meshmanager.h"
+#include	"Meshmanager.h"
 #include	"SceneClassFactory.h"
 
 
