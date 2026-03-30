@@ -71,6 +71,39 @@ void Camera::Draw(){
 	Renderer::SetProjectionMatrix(&m_projmtx);
 }
 
+void Camera::ChangeState(CameraState state, const Vector3& targetPos) {
+	m_state = state;
+
+	switch (state) {
+	case CameraState::BaseView:
+		SetTargetToCenter();
+		SetTargetRadius(BASE_RADIUS);
+		break;
+
+	case CameraState::Tracking:
+		SetTargetLookAt(targetPos);
+		SetTargetRadius(ZOOM_RADIUS);
+		break;
+
+	case CameraState::TargetFocus:
+		SetTargetLookAt(targetPos);
+		SetTargetRadius(TARGET_FOCUS_RADIUS);
+		break;
+
+	case CameraState::ActionFocus:
+		SetTargetLookAt(targetPos);
+		SetTargetRadius(ZOOM_RADIUS);
+		break;
+	}
+}
+
+void Camera::UpdateTrackingTarget(const Vector3& targetPos) {
+	if (m_state == CameraState::Tracking ||
+		m_state == CameraState::TargetFocus ||
+		m_state == CameraState::ActionFocus) {
+		SetTargetLookAt(targetPos);
+	}
+}
 
 void Camera::SetTargetLookAt(const Vector3& target) {
 	m_targetLookAt = target;
@@ -85,7 +118,6 @@ void Camera::SetBounds(float minX, float maxX, float minZ, float maxZ) {
 	m_minZ = minZ;
 	m_maxZ = maxZ;
 }
-
 
 std::string Trim(const std::string& s) {
 	// 補助関数：文字列の先頭と末尾から空白、タブ、改行などを取り除く

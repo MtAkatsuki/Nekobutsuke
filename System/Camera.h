@@ -9,7 +9,8 @@
 enum class CameraState {
     BaseView,       // 全体俯瞰（特定の対象を追跡しない固定視点）
     Tracking,       // 追跡（プレイヤーやカーソルをフォロー）
-    ActionFocus     // アクションフォーカス（攻撃方向の演出用など）
+    ActionFocus,    // アクションフォーカス（攻撃方向の演出用など）
+    TargetFocus       // 特写ズーム（チュートリアル/脱出演出時の17.0fなど）
 };
 
 // =========================================================
@@ -86,7 +87,7 @@ public:
 
     // 基準方位角(BASE_AZIMUTH)と現在のインデックスに基づく目標角の再計算
     void UpdateTargetAzimuth() {
-        m_targetAzimuth = BASE_AZIMUTH + (m_dirIndexOffset * (3.14159265f / 2.0f));
+        m_targetAzimuth = BASE_AZIMUTH + (m_dirIndexOffset * (PI / 2.0f));
     }
 
     // 負数のオフセットを安全に 0～3 の範囲に正規化（例: -1 -> 3）
@@ -96,7 +97,8 @@ public:
     // 状態管理・ゲッター (State & Getters)
     // ---------------------------------------------------------
     void SetBounds(float minX, float maxX, float minZ, float maxZ);
-    void SetState(CameraState state) { m_state = state; }
+    void ChangeState(CameraState state, const Vector3& targetPos = Vector3(0, 0, 0));
+    void UpdateTrackingTarget(const Vector3& targetPos);
 
     CameraState GetState() const { return m_state; }
 
@@ -125,6 +127,7 @@ public:
     // ==========================================
     static constexpr float TUTORIAL_RADIUS = 45.0f;
     static constexpr float BASE_RADIUS = 30.0f;
+    static constexpr float TARGET_FOCUS_RADIUS = 17.0f;
     static constexpr float CAMERA_LERP_SPEED = 5.0f;
 
     static constexpr float SCENE_CENTER_X = 0.0f;

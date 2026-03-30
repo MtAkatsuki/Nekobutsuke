@@ -110,8 +110,8 @@ void Player::Update(uint64_t dt) {
 
 	case PlayerState::ANIM_MOVE:
 		// 【追跡】：移動アニメーション中、プレイヤーを継続的に追従する
-		if (m_context && m_context->GetCamera()->GetState() == CameraState::Tracking) {
-			m_context->GetCamera()->SetTargetLookAt(m_srt.pos);
+		if (m_context && m_context->GetCamera()) {
+			m_context->GetCamera()->UpdateTrackingTarget(m_srt.pos);
 		}
 		if (UpdatePathMovement(deltaSeconds)) {
 			m_hasMoved = true;
@@ -273,8 +273,7 @@ void Player::SwitchToMenuMain() {
 
 	// カメラ帰還
 	if (m_context && m_context->GetCamera()) {
-		m_context->GetCamera()->SetState(CameraState::Tracking);
-		m_context->GetCamera()->SetTargetLookAt(m_srt.pos);
+		m_context->GetCamera()->ChangeState(CameraState::Tracking, m_srt.pos);
 	}
 
 	if (m_hasMoved) m_context->GetUIManager()->SetMoveOptionEnabled(false);
@@ -342,11 +341,10 @@ void Player::SwitchToAttackDirSelect(AttackType type) {
 	);
 	// 【戦闘カメラ演出】：攻撃方向の選択時、カメラを攻撃方向へ少し前進（オフセット）させる
 	if (m_context && m_context->GetCamera()) {
-		m_context->GetCamera()->SetState(CameraState::ActionFocus);
 		DirOffset offset = DirOffset::From(m_attackDir);
 		// 攻撃方向へ 1.5 マス分オフセットさせた位置をターゲットにする
 		Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 1.5f;
-		m_context->GetCamera()->SetTargetLookAt(targetPos);
+		m_context->GetCamera()->ChangeState(CameraState::ActionFocus, targetPos);
 	}
 }
 
@@ -500,7 +498,7 @@ void Player::HandleMoveInput(float dt) {
 
 				// 【カーソル移動】：カメラの目標注視点をカーソルのプレビュー位置に更新
 				Vector3 previewPos = m_context->GetMapManager()->GetWorldPosition(m_previewGridX, m_previewGridZ);
-				m_context->GetCamera()->SetTargetLookAt(previewPos);
+				m_context->GetCamera()->UpdateTrackingTarget(previewPos);
 			}
 		}
 	}
@@ -572,7 +570,7 @@ void Player::HandleAttackDirInput(float dt) {
 			if (m_context && m_context->GetCamera()) {
 				DirOffset offset = DirOffset::From(m_attackDir);
 				Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 2.5f;
-				m_context->GetCamera()->SetTargetLookAt(targetPos);
+				m_context->GetCamera()->UpdateTrackingTarget(targetPos);
 			}
 		}
 	}

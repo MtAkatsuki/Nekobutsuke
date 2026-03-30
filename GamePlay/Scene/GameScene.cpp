@@ -25,7 +25,6 @@
 namespace {
 	// 演出用定数
 	const int INITIAL_TURN_COUNT = 5;                  // 初期ターン数（脱出イベントまでのカウントダウン開始値）
-	const float TARGET_FOCUS_RADIUS = 17.0f;           // カメラ注目時のズーム半径
 	const float CAMERA_ARRIVAL_TOLERANCE = 0.2f;       // カメラ位置到達判定の許容誤差
 	const float CAMERA_HOVER_DURATION = 0.5f;          // カメラ俯瞰時のホバリング（待機）時間
 	const float ESCAPE_MARKER_BASE_Y = 1.5f;           // 脱出アイコンのY軸ベース座標
@@ -203,8 +202,7 @@ void GameScene::InitializeCamera() {
 	Camera::LoadConfig();
 	m_camera = m_context->GetCamera();
 	m_camera->ForceSetPolar(Camera::TUTORIAL_RADIUS, Camera::BASE_AZIMUTH, Camera::BASE_ELEVATION);
-	m_camera->SetLookAtCenter();
-	m_camera->SetState(CameraState::BaseView);
+	m_camera->ChangeState(CameraState::BaseView);
 	m_camera->ResetCameraDirection();
 	m_camera->Update(1.0f); // 初期View/Proj行列を正確に算出するため一度強制更新
 }
@@ -400,18 +398,15 @@ void GameScene::SetupUserInterface() {
 			m_needsTurnCounterAnim = true;
 
 			if (m_player) {
-				m_camera->SetState(CameraState::Tracking);
-
 				// フェーズに応じたプレイヤー誘導：
 				// ① 脱出フェーズ中は目的地である味方を注視
 				// ② ゲーム開始直後（第1ターン）は守るべき対象（味方）を注視し、プレイヤーに目標を認識させる
 				// ③ それ以外の通常ターンは操作対象であるプレイヤー自身を注視
 				if (m_isEscapeActive && m_ally && !m_ally->IsEscapeDone()) {
-					m_camera->SetTargetLookAt(m_ally->getSRT().pos);
-					m_camera->SetTargetRadius(TARGET_FOCUS_RADIUS);
+					m_camera->ChangeState(CameraState::TargetFocus, m_ally->getSRT().pos);
 				}
 				else if (m_remainingTurns != INITIAL_TURN_COUNT) {
-					m_camera->SetTargetLookAt(m_player->getSRT().pos);
+					m_camera->ChangeState(CameraState::Tracking, m_player->getSRT().pos);
 				}
 			}
 		}
@@ -419,9 +414,7 @@ void GameScene::SetupUserInterface() {
 			m_turnCutin->PlayCutinAnimation("Enemy Phase");
 			m_context->GetEnemyManager()->StartEnemyPhase();
 			// 敵ターン中は全体状況を把握させるため俯瞰視点へ戻す
-			m_camera->SetState(CameraState::BaseView);
-			m_camera->SetTargetToCenter();
-			m_camera->SetTargetRadius(Camera::BASE_RADIUS);
+			m_camera->ChangeState(CameraState::BaseView);
 		}
 		});
 
@@ -494,9 +487,7 @@ void GameScene::UpdateIntroSequence(float deltaSeconds) {
 		if (m_turnCounter && !m_turnCounter->IsAnimating()) {
 			m_introState = IntroState::CameraToAlly;
 			if (m_ally) {
-				m_camera->SetState(CameraState::Tracking);
-				m_camera->SetTargetLookAt(m_ally->getSRT().pos);
-				m_camera->SetTargetRadius(17.0f);
+				m_camera->ChangeState(CameraState::TargetFocus, m_ally->getSRT().pos);
 			}
 		}
 	}
@@ -514,9 +505,7 @@ void GameScene::UpdateIntroSequence(float deltaSeconds) {
 			m_introState = IntroState::CameraToBase;
 			m_introTimer = 0.0f;
 			if (m_camera) {
-				m_camera->SetState(CameraState::BaseView);
-				m_camera->SetTargetToCenter();
-				m_camera->SetTargetRadius(Camera::BASE_RADIUS);
+				m_camera->ChangeState(CameraState::BaseView);
 			}
 		}
 	}
@@ -532,9 +521,7 @@ void GameScene::UpdateIntroSequence(float deltaSeconds) {
 					m_introTimer = 0.0f;
 					m_introState = IntroState::CameraToPlayer;
 					if (m_player) {
-						m_camera->SetState(CameraState::Tracking);
-						m_camera->SetTargetLookAt(m_player->getSRT().pos);
-						m_camera->SetTargetRadius(Camera::ZOOM_RADIUS);
+						m_camera->ChangeState(CameraState::Tracking, m_player->getSRT().pos);
 					}
 				}
 			}
@@ -642,9 +629,7 @@ void GameScene::ProcessEscapeEvent()
 
 		// 脱出成功の強調：カメラを強制的にプレイヤーへズームインさせ達成感を高める
 		if (m_camera) {
-			m_camera->SetTargetRadius(TARGET_FOCUS_RADIUS);
-			m_camera->SetState(CameraState::Tracking);
-			m_camera->SetTargetLookAt(m_player->getSRT().pos);
+			m_camera->ChangeState(CameraState::TargetFocus, m_player->getSRT().pos);
 		}
 
 		m_player->StartCelebration();
@@ -1183,9 +1168,7 @@ void GameScene::debugUICamera() {
 			// 演出のテスト用にカメラのズームインも合わせて確認
 
 			if (m_camera) {
-				m_camera->SetTargetRadius(17.0f);
-				m_camera->SetState(CameraState::Tracking);
-				m_camera->SetTargetLookAt(m_player->getSRT().pos);
+				m_camera->ChangeState(CameraState::TargetFocus, m_player->getSRT().pos);
 			}
 
 		}
