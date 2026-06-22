@@ -23,26 +23,17 @@ void Ally::Init()
     // ---  Model Front ---
     {
         std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-        mesh->Load("Assets/model/character/ally_front.obj", "Assets/model/character/");
+        mesh->Load("Assets/model/character/Mouse/Mouse_01.obj", "Assets/model/character/Mouse");
         std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
         renderer->Init(*mesh);
-        MeshManager::RegisterMesh<CStaticMesh>("ally_front_mesh", std::move(mesh));
-        MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("ally_front_mesh", std::move(renderer));
-    }
-    // ---  Model Back ---
-    {
-        std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-        mesh->Load("Assets/model/character/ally_back.obj", "Assets/model/character/");
-        std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-        renderer->Init(*mesh);
-        MeshManager::RegisterMesh<CStaticMesh>("ally_back_mesh", std::move(mesh));
-        MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("ally_back_mesh", std::move(renderer));
+        MeshManager::RegisterMesh<CStaticMesh>("ally_mesh", std::move(mesh));
+        MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("ally_mesh", std::move(renderer));
     }
 
+
     m_shader = MeshManager::getShader<CShader>("unlightshader");
-    auto* frontR = MeshManager::getRenderer<CStaticMeshRenderer>("ally_front_mesh");
-    auto* backR = MeshManager::getRenderer<CStaticMeshRenderer>("ally_back_mesh");
-    SetModelRenderers(frontR, backR);
+    auto* renderer = MeshManager::getRenderer<CStaticMeshRenderer>("ally_mesh");
+    SetModelRenderer(renderer);
 
 
     //初期ステータスを設置
@@ -51,8 +42,7 @@ void Ally::Init()
     m_team = Team::Ally;
     m_maxMovePoints = 0;// 味方は自立移動しない
     m_currentMovePoints = m_maxMovePoints;
-
-    m_srt.scale = Vector3(-1.0f, 1.0f, 1.0f);
+    m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
     SetFacing(Direction::South);
     UpdateWorldMatrix();
 
@@ -81,8 +71,8 @@ void Ally::Update(uint64_t deltatime) {
         }
     }
 
-    UpdateFlipAnimation(dt);
-    if (m_isFlipping) { UpdateWorldMatrix(); return; }
+    UpdateFacingRotation(dt);
+    if (m_isTurning) { UpdateWorldMatrix(); return; }
 
 
     // ノックバック中のスライディング更新（優先）
@@ -118,7 +108,6 @@ void Ally::OnDraw(uint64_t deltatime) {
     if (m_escapeAlpha <= 0.0f) return;
 
     if (m_shader) m_shader->SetGPU();
-    Renderer::SetPixelArtMode(true);
     Renderer::SetBlendState(BS_ALPHABLEND);
     Renderer::SetDepthEnable(true);
     Renderer::SetWorldMatrix(&m_WorldMatrix);
@@ -138,11 +127,9 @@ void Ally::OnDraw(uint64_t deltatime) {
             renderer->GetMaterial(0)->SetMaterial(m);
             };
 
-        OverrideAlpha(m_frontRenderer);
-        OverrideAlpha(m_backRenderer);
+        OverrideAlpha(m_Renderer);
         DrawModel();
-        RestoreAlpha(m_frontRenderer);
-        RestoreAlpha(m_backRenderer);
+        RestoreAlpha(m_Renderer);
     }
     else {
         // 通常状態はそのまま描画
@@ -150,7 +137,6 @@ void Ally::OnDraw(uint64_t deltatime) {
     }
 
     Renderer::SetBlendState(BS_NONE);
-    Renderer::SetPixelArtMode(false);
 }
 
 void Ally::TakeDamage(int damage, Unit* attacker) {

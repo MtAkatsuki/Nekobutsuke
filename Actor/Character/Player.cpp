@@ -81,7 +81,7 @@ void Player::Update(uint64_t dt) {
 		}
 	}
 
-	UpdateFlipAnimation(deltaSeconds);
+	UpdateFacingRotation(deltaSeconds);
 
 	//アニメション終わった後、またメニュー遷移実際に実行する
 	
@@ -178,10 +178,8 @@ void Player::Update(uint64_t dt) {
 }
 
 void Player::OnDraw(uint64_t dt) {
-	Renderer::SetPixelArtMode(true);
 	if (m_PlayerShader != nullptr) m_PlayerShader->SetGPU();
 	DrawModel();
-	Renderer::SetPixelArtMode(false);
 }
 
 void Player::StartCelebration() {
@@ -590,13 +588,13 @@ void Player::DrawGhost() {
 
 	Renderer::SetWorldMatrix(&ghostWorld);
 
-	CMaterial* mtrl = m_frontRenderer->GetMaterial(0);
+	CMaterial* mtrl = m_Renderer->GetMaterial(0);
 	MATERIAL old = mtrl->GetData();
 	MATERIAL gray = old;
 	gray.Diffuse = Color(1.0f, 1.0f, 1.0f, GHOST_ALPHA); //半透明
 	mtrl->SetMaterial(gray);
 
-	m_frontRenderer->Draw();
+	m_Renderer->Draw();
 
 	MATERIAL restore = old;
 	restore.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -892,32 +890,22 @@ void Player::UpdateCelebration(float dt) {
 }
 
 void Player::playerResourceLoader() {
-	// ---  Model Front ---
+	// ---  Model  ---
 	{
 		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load("Assets/model/character/player_front.obj", "Assets/model/character/");
+		mesh->Load("Assets/model/character/Mouse/Mouse_01.obj", "Assets/model/character/Mouse");
 		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
 		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>("player_front_mesh", std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("player_front_mesh", std::move(renderer));
-	}
-	// ---  Model Back ---
-	{
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load("Assets/model/character/player_back.obj", "Assets/model/character/");
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>("player_back_mesh", std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("player_back_mesh", std::move(renderer));
+		MeshManager::RegisterMesh<CStaticMesh>("player_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("player_mesh", std::move(renderer));
 	}
 
 	m_PlayerShader = MeshManager::getShader<CShader>("unlightshader");
 	m_PathLineRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
 	m_PathCornerRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_corner_mesh");
 
-	auto* frontR = MeshManager::getRenderer<CStaticMeshRenderer>("player_front_mesh");
-	auto* backR = MeshManager::getRenderer<CStaticMeshRenderer>("player_back_mesh");
-	SetModelRenderers(frontR, backR);
+	auto* renderer = MeshManager::getRenderer<CStaticMeshRenderer>("player_mesh");
+	SetModelRenderer(renderer);
 
 
 	if (m_PlayerShader) {

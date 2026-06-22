@@ -29,7 +29,7 @@ public:
     // ライフサイクル (Lifecycle)
     // ---------------------------------------------------------
     void init() override;
-    void Init(int sequenceNumber);
+    void Init();
     void dispose() override;
     virtual void Update(uint64_t delta) override;
     void OnDraw(uint64_t delta) override;

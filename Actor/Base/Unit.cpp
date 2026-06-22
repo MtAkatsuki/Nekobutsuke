@@ -23,7 +23,8 @@ namespace {
 	const float TIME_END = 0.3f;                 // 攻撃：元の位置に戻る（完了）時間
 
 	const float TIME_SLIDE = 0.2f;               // ノックバック（スライディング）の所要時間
-	const float FLIP_DURATION = 0.4f;            // 振り向き（反転）アニメーションの所要時間
+	const float FACING_LERP_SPEED = 14.0f;		// 12〜18 で手触り調整
+	const float MODEL_FORWARD_OFFSET = 0.0f;	// ← モデル導入後の一回限り標定
 
 	const float ARROW_Y_OFFSET = 0.08f;          // プレビュー矢印のZファイティング防止用浮かし幅
 }
@@ -184,28 +185,12 @@ void Unit::SetFacingFromVector(const Vector3& dir) {
 }
 
 void Unit::SetFacing(Direction newDir) {
-	if (m_facing == newDir || m_isFlipping) return;
+	if (m_facing == newDir) return;
 
-	// 南(正面) と 東(正面) は同じメッシュ・スケールを使用するため、アニメーションを省略して即時反映
-	bool isCurrentNormal = (m_facing == Direction::South || m_facing == Direction::East);
-	bool isNextNormal = (newDir == Direction::South || newDir == Direction::East);
-
-	if (isCurrentNormal && isNextNormal) {
-		m_facing = newDir;
-		return;
-	}
-
-	if (m_facing == Direction::North || newDir == Direction::North) {
-		m_currentFlipStyle = FlipStyle::Simple;
-	}
-	else {
-		m_currentFlipStyle = FlipStyle::Swing;
-	}
-
-	m_nextFacing = newDir;
-	m_isFlipping = true;
-	m_flipTimer = 0.0f;
-	m_hasSwappedMesh = false;
+	m_facing = newDir;
+	DirOffset o = DirOffset::From(newDir);
+	m_targetRot.y = atan2f((float)o.x, (float)o.z) + MODEL_FORWARD_OFFSET;
+	m_isTurning = true;
 }
 
 void Unit::StartAttackAnimation(const Vector3& targetPos) {
@@ -298,61 +283,13 @@ bool Unit::UpdateSlideAnimation(uint64_t dt) {
 	}
 }
 
-void Unit::UpdateFlipAnimation(float dt) {
-	if (!m_isFlipping) {
-		m_srt.rot.y = 0.0f;
-		return;
-	}
-
-	m_flipTimer += dt;
-	float t = m_flipTimer / FLIP_DURATION;
-	float visualRotY = 0.0f;
-
-	// フェーズ1: 0度 -> 90度 (紙が裏返るように細くなる)
-	if (t < 0.5f) {
-		float phaseT = t / 0.5f;
-		visualRotY = std::lerp(0.0f, PI / 2.0f, phaseT);
-	}
-	// フェーズ2: 90度 -> 0度 (メッシュを切り替えて厚みが戻る)
-	else {
-		if (!m_hasSwappedMesh) {
-			m_facing = m_nextFacing;
-			m_hasSwappedMesh = true;
-
-			// 左右の視覚的な向きを記録
-			if (m_facing == Direction::East || m_facing == Direction::South) {
-				m_isFacingRight = true;
-			}
-			else if (m_facing == Direction::West) {
-				m_isFacingRight = false;
-			}
-
-			float targetScaleX = 1.0f;
-
-			if (m_facing == Direction::North) {
-				m_currRenderer = m_backRenderer;
-				// 背面モデルの標準が「左向き」であると仮定、右向きを維持する場合は反転させる
-				targetScaleX = m_isFacingRight ? -1.0f : 1.0f;
-			}
-			else {
-				m_currRenderer = m_frontRenderer;
-				// 正面モデルの標準が「右向き」であると仮定、左向きにする場合は反転させる
-				targetScaleX = m_isFacingRight ? 1.0f : -1.0f;
-			}
-
-			m_srt.scale.x = targetScaleX;
-		}
-
-		float phaseT = (t - 0.5f) / 0.5f;
-		visualRotY = std::lerp(PI / 2.0f, 0.0f, phaseT);
-	}
-
-	if (t >= 1.0f) {
-		m_isFlipping = false;
-		visualRotY = 0.0f;
-	}
-
-	m_srt.rot.y = visualRotY;
+void Unit::UpdateFacingRotation(float dt) {   
+	if (!m_isTurning) return;
+	float diff = m_targetRot.y - m_srt.rot.y;
+	while (diff > PI) diff -= 2.0f * PI;     
+	while (diff < -PI) diff += 2.0f * PI;
+	if (fabsf(diff) < 0.001f) { m_srt.rot.y = m_targetRot.y; m_isTurning = false; return; }
+	m_srt.rot.y += diff * (1.0f - expf(-FACING_LERP_SPEED * dt));
 }
 
 // ---------------------------------------------------------
@@ -361,15 +298,11 @@ void Unit::UpdateFlipAnimation(float dt) {
 
 // ---------------------------------------------------------
 
-void Unit::SetModelRenderers(CStaticMeshRenderer* front, CStaticMeshRenderer* back) {
-	m_frontRenderer = front;
-	m_backRenderer = back;
+void Unit::SetModelRenderer(CStaticMeshRenderer* r) {
+	m_Renderer = r;
 
-	// Unlitシェーダー適用時、モデルのベースカラーが暗くならないようマテリアルを純白に強制する
-	auto ForceWhiteMaterial = [](CStaticMeshRenderer* renderer) {
-		if (!renderer) return;
 
-		if (auto* mat = renderer->GetMaterial(0)) {
+		if (auto* mat = m_Renderer->GetMaterial(0)) {
 			MATERIAL m = mat->GetData();
 			m.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
 			m.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -377,20 +310,16 @@ void Unit::SetModelRenderers(CStaticMeshRenderer* front, CStaticMeshRenderer* ba
 			m.TextureEnable = TRUE;
 			mat->SetMaterial(m);
 		}
-		};
 
-	ForceWhiteMaterial(m_frontRenderer);
-	ForceWhiteMaterial(m_backRenderer);
 
-	m_currRenderer = m_frontRenderer;
 	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_srt.rot = Vector3(0.0f, 0.0f, 0.0f);
 }
 
 void Unit::DrawModel() {
-	if (!m_currRenderer) return;
+	if (!m_Renderer) return;
 	Renderer::SetWorldMatrix(&m_WorldMatrix);
-	m_currRenderer->Draw();
+	m_Renderer->Draw();
 }
 
 void Unit::DrawUI() {

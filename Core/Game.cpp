@@ -16,7 +16,7 @@ namespace {
 	constexpr uint64_t TARGET_FPS = 60;
 	constexpr uint64_t FIXED_STEP_MS = 16;  // 16ms (約60FPS相当の固定ステップ)
 	constexpr uint64_t DELTA_TIME_MAX_MS = 100; // delta_timeのクランプ上限（スパイク対策）
-	constexpr float    INITIAL_FADE_DURATION = 300.0f;
+	constexpr float    INITIAL_FADE_DURATION = 200.0f;
 }
 
 static uint64_t g_accumulator = 0; // 固定ステップ更新用のタイムアキュムレータ

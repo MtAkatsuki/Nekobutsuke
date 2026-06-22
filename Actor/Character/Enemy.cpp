@@ -29,31 +29,17 @@ namespace {
 
 void Enemy::init(){}
 
-void Enemy::Init(int sequenceNumber) {
-	std::string numStr = std::to_string(sequenceNumber);
-	std::string frontName = "enemy_front_" + numStr;
-	std::string backName = "enemy_back_" + numStr;
-	std::string dirPath = "Assets/model/character/";
-
-	// モデル読み込みのサブルーチン
-	auto LoadModel = [&](const std::string& name) {
-		std::string fullPath = dirPath + name + ".obj";
-		if (!std::filesystem::exists(fullPath)) return;
-		auto mesh = std::make_unique<CStaticMesh>();
-		mesh->Load(fullPath.c_str(), dirPath.c_str());
-		auto renderer = std::make_unique<CStaticMeshRenderer>();
+void Enemy::Init() {
+	{
+		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
+		mesh->Load("Assets/model/character/Cat/Cat_01.obj", "Assets/model/character/Cat");
+		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
 		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>(name, std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(name, std::move(renderer));
-		};
-
-	LoadModel(frontName);
-	LoadModel(backName);
-
-	m_EnemyShader = MeshManager::getShader<CShader>("unlightshader");
-	auto* frontR = MeshManager::getRenderer<CStaticMeshRenderer>(frontName);
-	auto* backR = MeshManager::getRenderer<CStaticMeshRenderer>(backName);
-	SetModelRenderers(frontR, backR);
+		MeshManager::RegisterMesh<CStaticMesh>("enemy_mesh", std::move(mesh));
+		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("enemy_mesh", std::move(renderer));
+	}
+	auto* renderer = MeshManager::getRenderer<CStaticMeshRenderer>("enemy_mesh");
+	SetModelRenderer(renderer);
 
 	m_actionUI = std::make_unique<EnemyActionUI>();
 	m_actionUI->Init(m_context);
@@ -88,9 +74,9 @@ void Enemy::Update(uint64_t dt) {
 	Unit::Update(dt);
 	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 
-	UpdateFlipAnimation(deltaSeconds);
+	UpdateFacingRotation(deltaSeconds);
 
-	if (m_pendingCharge && !m_isFlipping) {
+	if (m_pendingCharge && !m_isTurning) {
 		// 蓄力（突進準備）が保留されており、かつ反転アニメーションが完了（false）した場合
 		m_pendingCharge = false;
 		m_isCharging = true;
@@ -208,7 +194,7 @@ void Enemy::OnDraw(uint64_t dt) {
 			* Matrix4x4::CreateRotationY(m_srt.rot.y)
 			* Matrix4x4::CreateTranslation(m_srt.pos + m_shakeOffset); // オフセットを加算
 		Renderer::SetWorldMatrix(&shakeWorld);
-		if (m_currRenderer) m_currRenderer->Draw();
+		if (m_Renderer) m_Renderer->Draw();
 	}
 	else {
 		DrawModel();
@@ -436,14 +422,14 @@ void Enemy::StartCharge(Unit* target) {
 		m_lockedGridX = target->GetUnitGridX();
 		m_lockedGridZ = target->GetUnitGridZ();
 		// 前の段階で残っていた反転（フリップ）状態を強制的に中断し、SetFacing が確実に適用されるようにする
-		m_isFlipping = false;
+		m_isTurning = false;
 		//向きの再設定
 		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
 		SetFacingFromVector(targetPos - myPos);
 	}
 
-	if (m_isFlipping) {
+	if (m_isTurning) {
 		// 反転アニメーション中の場合は、突進前の「震え演出」を保留にする
 		m_pendingCharge = true;
 		m_isCharging = false;

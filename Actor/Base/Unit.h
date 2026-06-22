@@ -80,12 +80,12 @@ public:
 	void StartSlideAnimation(const Vector3& targetPos);
 	bool UpdateSlideAnimation(uint64_t dt);
 
-	void UpdateFlipAnimation(float dt);
+	void UpdateFacingRotation(float dt);
 
 	// ---------------------------------------------------------
 	// レンダリングとUI (Rendering & UI)
 	// ---------------------------------------------------------
-	void SetModelRenderers(CStaticMeshRenderer* front, CStaticMeshRenderer* back);
+	void SetModelRenderer(CStaticMeshRenderer* r);
 	void DrawModel();
 	virtual void DrawUI();
 	void DrawPushPreview(Direction pushDir);
@@ -102,18 +102,8 @@ protected:
 	// メンバー変数 (Member Variables)
 	// =========================================================
 
-	// フリップアニメーションの挙動スタイル
-	enum class FlipStyle {
-		None,
-		Simple, // 0 -> 90 -> 0 (北向き背面用)
-		Swing   // 0 -> 90 -> -90 -> 0 (左右鏡像反転用)
-	};
-	FlipStyle m_currentFlipStyle = FlipStyle::Swing;
-
 	// --- レンダリング関連 ---
-	CStaticMeshRenderer* m_frontRenderer = nullptr;
-	CStaticMeshRenderer* m_backRenderer = nullptr;
-	CStaticMeshRenderer* m_currRenderer = nullptr;
+	CStaticMeshRenderer* m_Renderer = nullptr;
 
 	std::unique_ptr<HPBar> m_hpBar;
 
@@ -144,12 +134,6 @@ protected:
 	Vector3 m_slideEndPos;
 	float m_slideTimer = 0.0f;
 
-	bool m_isFlipping = false;
-	float m_flipTimer = 0.0f;
-	Direction m_nextFacing = Direction::South;
-	bool m_hasSwappedMesh = false;
+	bool m_isTurning = false;
 
-	// 左右の向きの記憶（true = 東/南の右向き、false = 西の左向き）
-	// 北(背面)を向いた際も、直前の左右の視覚的傾向を維持するために使用する
-	bool m_isFacingRight = true;
 };

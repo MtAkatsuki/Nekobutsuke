@@ -548,11 +548,9 @@ void MapManager::SpawnDynamicEntities(const std::vector<std::vector<std::string>
 				unitsToSpawn.push_back(std::move(ally));
 			}
 			else if (token[0] == 'E') {
-				int typeID = 0;
-				if (token.length() > 1) typeID = std::stoi(token.substr(1));
 
 				auto enemy = std::make_unique<Enemy>(context);
-				enemy->Init(typeID);
+				enemy->Init();
 				enemy->SetGridPosition(x, z);
 				enemy->setPosition(worldPos);
 				enemy->UpdateWorldMatrix();
