@@ -129,7 +129,7 @@ bool Unit::IsValidMoveTarget(int targetX, int targetZ) {
 	return m_context->GetMapManager()->IsWalkable(targetX, targetZ);
 }
 
-void Unit::OnPushed(Direction pushDir) {
+void Unit::OnPushed(Direction pushDir, Unit* attacker) {
 	if (m_currentHP <= 0) return;
 
 	DirOffset offset = DirOffset::From(pushDir);
@@ -151,10 +151,10 @@ void Unit::OnPushed(Direction pushDir) {
 		Vector3 obstaclePos = map->GetWorldPosition(targetX, targetZ);
 		StartBumpAnimation(obstaclePos);
 
-		TakeDamage(m_onPushDamage, nullptr);
+		TakeDamage(m_onPushDamage, attacker);
 		if (obstacleUnit) {
 			// 連鎖衝突：ぶつかられたユニットもダメージを受ける
-			obstacleUnit->TakeDamage(m_onPushDamage, this);
+			obstacleUnit->TakeDamage(m_onPushDamage, attacker);
 		}
 	}
 	else {

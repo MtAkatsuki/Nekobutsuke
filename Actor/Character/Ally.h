@@ -31,7 +31,7 @@ public:
     void TakeDamage(int damage, Unit* attacker) override;
     virtual void StartTurn() override;
     void OnTurnChanged(TurnState state) override;
-    virtual void OnPushed(Direction pushDir) override;
+    virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
 
     void TriggerEscape();
     bool IsEscapeDone() const { return m_escapeState == EscapeState::Done; }

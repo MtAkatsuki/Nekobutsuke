@@ -39,7 +39,7 @@ public:
     // ---------------------------------------------------------
     void EnemyStartAction();
     virtual void OnTurnChanged(TurnState state) override;
-    virtual void OnPushed(Direction pushDir) override;
+    virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
     virtual void TakeDamage(int damage, Unit* attacker) override;
 
     // ---------------------------------------------------------

@@ -74,6 +74,7 @@ public:
 	// ---------------------------------------------------------
 	void debugUICamera();
 	void drawGridDebugText();
+	Enemy* SpawnDebugEnemyInFront(int hp = -1);
 
 private:
 	// =========================================================

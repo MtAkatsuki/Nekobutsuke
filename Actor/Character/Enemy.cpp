@@ -129,7 +129,7 @@ void Enemy::Update(uint64_t dt) {
 					Unit* victim = targetTile->occupant;
 
 					// 1. 先に押し出し（ノックバック）の物理効果を発生させる
-					victim->OnPushed(this->m_facing);
+					victim->OnPushed(this->m_facing,this);
 
 					// 2. その後、ダメージ処理を実行（m_enemyDamage を実際のダメージ変数や数値に置き換え）
 					victim->TakeDamage(m_enemyDamage, this);
@@ -253,8 +253,10 @@ void Enemy::OnTurnChanged(TurnState state) {
 	if (state == TurnState::EnemyPhase) StartTurn();
 }
 
-void Enemy::OnPushed(Direction pushDir) {
+void Enemy::OnPushed(Direction pushDir, Unit* attacker) {
 	if (m_currentHP <= 0 || m_state == EnemyState::DEAD_FLYING) return;
+
+	if (attacker) m_hitSourcePos = attacker->getSRT().pos;
 
 	m_state = EnemyState::KNOCKBACK;
 	int oldX = m_gridX;
@@ -442,13 +444,6 @@ void Enemy::StartCharge(Unit* target) {
 	EnemyEndAction();
 }
 
-void Enemy::ReleaseChargeAttack() {
-	m_state = EnemyState::ATTACKING;
-	Vector3 targetGridPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-	StartAttackAnimation(targetGridPos);
-	m_attackTimer = 0.0f;
-	m_isCharging = false;
-}
 
 void Enemy::Die() {
 	m_state = EnemyState::DEAD_FLYING;
@@ -469,6 +464,9 @@ void Enemy::Die() {
 	Vector3 flyDir = Vector3(diff.x * 1.8f, 0.6f, diff.z * 1.8f);
 	m_deathVelocity = flyDir * DEATH_FLY_FORCE;
 	m_deathSpin = Vector3(death_spin_dist(gen), death_spin_dist(gen), death_spin_dist(gen));
+
+	if (m_context && m_context->GetCamera())
+		m_context->GetCamera()->PlayKillCam(m_hitSourcePos, m_srt.pos);
 }
 
 void Enemy::DeathFlyingUpdate(float deltaSeconds) {
@@ -556,4 +554,15 @@ void Enemy::OnDrawOverlay(uint64_t dt) {
 			lockedTile->occupant->DrawPushPreview(m_facing);
 		}
 	}
+}
+
+void Enemy::ReleaseChargeAttack() {
+	m_state = EnemyState::ATTACKING;
+	Vector3 targetGridPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+	StartAttackAnimation(targetGridPos);
+	m_attackTimer = 0.0f;
+	m_isCharging = false;
+
+	if (m_context && m_context->GetCamera())
+		m_context->GetCamera()->PlayAttackZoom((m_srt.pos + targetGridPos) * 0.5f);
 }

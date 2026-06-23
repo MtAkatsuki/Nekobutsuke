@@ -88,7 +88,10 @@ void GameScene::update(uint64_t deltatime)
 	// 4. メインロジック・エンティティ更新
 	if (m_gameUIManager) m_gameUIManager->Update(deltatime);
 	ProcessEscapeEvent();
-	UpdateGameObjects(deltatime);
+	// 世界だけ slow-mo（相机/UI は等速）：KillSlow 中 worldScale<1
+	float    worldScale = m_camera ? m_camera->GetTimeScale() : 1.0f;
+	uint64_t worldDelta = static_cast<uint64_t>(deltatime * worldScale);
+	UpdateGameObjects(worldDelta);
 	ProcessAllyTacticalDialogue();
 
 	// 5. サブシステムとゲーム進行状態の評価
@@ -812,7 +815,7 @@ void GameScene::TurnChangeCheck()
 	}
 
 	// 2. フィールド上のブロック判定（敵の死亡・行動アニメーション中か）
-	if (em->IsAnyEnemyDying() || em->IsAnyEnemyAnimating()) {
+	if (em->IsAnyEnemyDying() || em->IsAnyEnemyAnimating()|| (m_camera && m_camera->IsCinematic())){
 		return; // アニメーション終了までターン交代を待機
 	}
 
@@ -1209,6 +1212,31 @@ void GameScene::debugUICamera() {
 		Camera::SaveConfig();
 	}
 
+	// ===== アタックカメラ =====
+	ImGui::Spacing();
+	if (ImGui::CollapsingHeader("Attack Cam")) {
+		ImGui::SliderFloat("AttackZoom Radius", &Camera::ATTACKZOOM_RADIUS, 5.0f, 40.0f, "%.1f");
+		ImGui::SliderFloat("AttackZoom Hold", &Camera::ATTACKZOOM_HOLD, 0.1f, 2.0f, "%.2f");
+		ImGui::SliderFloat("Attack Lead", &Camera::ATTACK_ZOOM_LEAD, 0.0f, 1.0f, "%.2f");
+		if (ImGui::Button("Test Attack Cam", ImVec2(-1, 30))) {
+			SpawnDebugEnemyInFront(-1); 
+			m_player->DebugForceAttack(m_player->GetFacing());
+		}
+	}
+
+	// ===== キールカメラ =====
+	ImGui::Spacing();
+	if (ImGui::CollapsingHeader("Kill Cam")) {
+		ImGui::SliderFloat("KillCam Radius", &Camera::KILLCAM_RADIUS, 5.0f, 40.0f, "%.1f");
+		ImGui::SliderFloat("KillCam Elevation", &Camera::KILLCAM_ELEVATION, -1.5f, 0.0f, "%.3f");
+		ImGui::SliderFloat("Shoulder Yaw", &Camera::KILLCAM_SHOULDER_YAW, -1.5f, 1.5f, "%.3f");
+		ImGui::SliderFloat("KillCam Lead", &Camera::KILLCAM_LEAD, 0.0f, 1.0f, "%.2f");
+		ImGui::SliderFloat("KillCam Hold (slow)", &Camera::KILLCAM_HOLD, 0.2f, 3.0f, "%.2f");
+		ImGui::SliderFloat("Time Scale", &Camera::KILLCAM_TIME_SCALE, 0.05f, 1.0f, "%.2f");
+		if (ImGui::Button("Test Kill Cam", ImVec2(-1, 30))) {
+			SpawnDebugEnemyInFront(1); 
+			m_player->DebugForceAttack(m_player->GetFacing());
+		}
 	ImGui::End();
 }
 
@@ -1268,7 +1296,28 @@ void GameScene::drawGridDebugText()
 	drawList->AddText(ImVec2(s3.x, s3.y), boundCol, "BOUND MAX");
 }
 
+Enemy* GameScene::SpawnDebugEnemyInFront(int hp) {
+	if (!m_player || !m_context || !m_MapManager) return nullptr;
 
+	DirOffset o = DirOffset::From(m_player->GetFacing());
+	int gx = m_player->GetUnitGridX() + o.x;
+	int gz = m_player->GetUnitGridZ() + o.z;
+	Tile* t = m_MapManager->GetTile(gx, gz);
+	if (!t) return nullptr;
+
+	auto enemy = std::make_unique<Enemy>(m_context);
+	enemy->Init();
+	enemy->SetGridPosition(gx, gz);
+	enemy->setPosition(m_MapManager->GetWorldPosition(gx, gz));
+	enemy->UpdateWorldMatrix();
+	if (hp > 0) enemy->DebugSetHP(hp);
+
+	t->occupant = enemy.get();
+	Enemy* raw = enemy.get();
+	if (m_context->GetEnemyManager()) m_context->GetEnemyManager()->RegisterEnemy(raw);
+	AddObject(std::move(enemy));
+	return raw;
+}
 
 
 

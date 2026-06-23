@@ -140,6 +140,15 @@ void Player::Update(uint64_t dt) {
 		}
 		break;
 
+	case PlayerState::ANIM_ATTACK_WINDUP: {
+		m_attackWindupTimer += deltaSeconds;
+		float lead = m_attackIsLethal ? Camera::KILLCAM_LEAD : Camera::ATTACK_ZOOM_LEAD;
+		if (m_attackWindupTimer >= lead) {
+			PerformAttackStrike();   
+		}
+		break;
+	}
+
 	case PlayerState::ANIM_ATTACK:
 		if (UpdateAttackAnimation(dt, nullptr)) {
 			EndTurn(); 
@@ -191,7 +200,7 @@ void Player::StartCelebration() {
 	SetFacing(Direction::South);
 }
 
-void Player::OnPushed(Direction pushDir) {
+void Player::OnPushed(Direction pushDir, Unit* attacker) {
 	if (m_currentHP <= 0) return;
 	m_state = PlayerState::KNOCKBACK;
 	if (m_context && m_context->GetUIManager()) m_context->GetUIManager()->CloseMenu();
@@ -365,7 +374,36 @@ void Player::ExecuteMove() {
 }
 
 void Player::ExecuteAttack() {
-	// m_attackDirで攻撃を実行
+	DirOffset offset = DirOffset::From(m_attackDir);
+	int targetX = m_gridX + offset.x;
+	int targetZ = m_gridZ + offset.z;
+	Tile* targetTile = m_context->GetMapManager()->GetTile(targetX, targetZ);
+	Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(targetX, targetZ);
+
+	m_attackIsLethal = false;
+	if (targetTile && targetTile->occupant && targetTile->occupant != this) {
+		Unit* victim = targetTile->occupant;
+		bool isPush = (m_selectedAttackType == AttackType::Push);
+		int dmg = victim->CalculateExpectedDamage(m_playerDamage, isPush, m_attackDir);
+		m_attackIsLethal = (victim->GetHP() - dmg <= 0);
+
+		if (m_context && m_context->GetCamera()) {
+			if (m_attackIsLethal)
+				m_context->GetCamera()->PlayKillCam(m_srt.pos, victim->getSRT().pos);
+			else
+				m_context->GetCamera()->PlayAttackZoom((m_srt.pos + targetPos) * 0.5f);
+		}
+	}
+	else if (m_context && m_context->GetCamera()) {
+		m_context->GetCamera()->PlayAttackZoom((m_srt.pos + targetPos) * 0.5f);
+
+		m_attackWindupTimer = 0.0f;
+		m_state = PlayerState::ANIM_ATTACK_WINDUP;
+	}
+}
+
+
+void Player::PerformAttackStrike() {
 	DirOffset offset = DirOffset::From(m_attackDir);
 	int targetX = m_gridX + offset.x;
 	int targetZ = m_gridZ + offset.z;
@@ -374,16 +412,11 @@ void Player::ExecuteAttack() {
 	Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(targetX, targetZ);
 	StartAttackAnimation(targetPos);
 
-	// ダメージ処理
 	if (targetTile && targetTile->occupant && targetTile->occupant != this) {
-
 		Unit* victim = targetTile->occupant;
-		// 1. 先に移動および衝突判定を実行（この時点ではHPは減少せず、正常に KNOCKBACK 状態へ遷移）
 		if (m_selectedAttackType == AttackType::Push) {
-			victim->OnPushed(m_attackDir);
+			victim->OnPushed(m_attackDir, this);
 		}
-
-		// 2. 今回の攻撃による基本ダメージをリザルトとして適用
 		victim->TakeDamage(m_playerDamage, this);
 	}
 	m_state = PlayerState::ANIM_ATTACK;
@@ -914,4 +947,11 @@ void Player::playerResourceLoader() {
 	else {
 		std::cerr << "CRITICAL ERROR: 'lightshaderSpecular' not found! Check shader file paths." << std::endl;
 	}
+}
+
+void Player::DebugForceAttack(Direction dir, AttackType type) {
+	m_attackDir = dir;
+	m_selectedAttackType = type;
+	SetFacing(dir);
+	ExecuteAttack();
 }

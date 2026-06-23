@@ -160,7 +160,7 @@ void Ally::OnTurnChanged(TurnState state) {
     }
 }
 
-void Ally::OnPushed(Direction pushDir) {
+void Ally::OnPushed(Direction pushDir, Unit* attacker) {
     if (IsEscaping()) return;
 
     m_isKnockedBack = true;

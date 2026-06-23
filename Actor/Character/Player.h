@@ -21,6 +21,7 @@ enum class PlayerState {
     ANIM_MOVE,          // 移動アニメーション進行中
     ATTACK_DIR_SELECT,  // 攻撃方向選択中 (WASDで方向切り替え)
     ANIM_ATTACK,        // 攻撃アニメーション進行中
+    ANIM_ATTACK_WINDUP,
     WAITING,            // 敵/味方ターン中の待機状態
     ANIM_CELEBRATE,     // クリア時の勝利アニメーション
     KNOCKBACK           // 敵からのノックバック被弾中
@@ -61,8 +62,13 @@ public:
     // フローとイベント (Flow & Events)
     // ---------------------------------------------------------
     void StartCelebration();
-    virtual void OnPushed(Direction pushDir) override;
+    virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
     virtual void SetPreviewDamage(int dmg) override;
+
+    // ---------------------------------------------------------
+	// Debug / テスト用 (Debug / Testing)
+    // ---------------------------------------------------------
+    void DebugForceAttack(Direction dir, AttackType type = AttackType::Push);
 
 protected:
     virtual void StartTurn() override;
@@ -82,6 +88,7 @@ private:
     void SwitchToMoveSelect();
     void SwitchToAttackDirSelect(AttackType type);
     void ExecuteMove();
+    void PerformAttackStrike();
     void ExecuteAttack();
 
     // --- 入力ハンドラ (Input Handlers) ---
@@ -127,6 +134,7 @@ private:
     Direction m_attackDir = Direction::North;
     int m_playerDamage = 1;
     bool m_canAttack = false;
+    float m_attackWindupTimer = 0.0f;
 
     // --- フラグ ---
     bool m_hasActioned = false;
@@ -134,6 +142,7 @@ private:
     bool m_hasMoved = false;
     bool m_isZoomedIn = false;
     bool m_isWaitingTurnStart = false;
+    bool  m_attackIsLethal = false;
 
     // --- 勝利演出 ---
     int m_jumpCount = 0;

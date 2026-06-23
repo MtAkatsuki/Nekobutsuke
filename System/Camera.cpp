@@ -15,6 +15,13 @@ namespace {
 
 	// --- 設定ファイル名 ---
 	const std::string CONFIG_FILE_NAME = "nekobutsuke_camera.ini";
+
+	float UnwrapNear(float ref, float angle) {
+		float d = angle - ref;
+		while (d > PI) { angle -= 2.0f * PI; d -= 2.0f * PI; }
+		while (d < -PI) { angle += 2.0f * PI; d += 2.0f * PI; }
+		return angle;
+	}
 }
 
 void Camera::Init()
@@ -27,6 +34,23 @@ void Camera::Dispose()
 }
 
 void Camera::Update(float dt) {
+
+	if (m_cinePhase != CinePhase::None) {
+		m_cinePhaseTimer += dt;
+		switch (m_cinePhase) {
+		case CinePhase::AttackZoom:
+			if (m_cinePhaseTimer >= ATTACKZOOM_HOLD) RestoreCineReturn();
+			break;
+		case CinePhase::KillLead:
+			if (m_cinePhaseTimer >= KILLCAM_LEAD) { m_cinePhase = CinePhase::KillSlow; m_cinePhaseTimer = 0.0f; }
+			break;
+		case CinePhase::KillSlow:
+			if (m_cinePhaseTimer >= KILLCAM_HOLD) RestoreCineReturn();
+			break;
+		default: break;
+		}
+	}
+
 	// 1. フレームレートに依存しない平滑化（Lerp）係数の計算
 	
 	// t = 1 - f^dt
@@ -190,3 +214,50 @@ void Camera::LoadConfig() {
 	std::cerr << "[Camera] Config Loaded Successfully." << std::endl;
 }
 
+void Camera::CaptureCineReturn() {
+	if (m_cinePhase != CinePhase::None) return;
+	m_cineReturnState = m_state;
+	m_cineReturnLookAt = m_targetLookAt;
+	m_cineReturnRadius = m_targetRadius;
+	m_cineReturnAzimuth = m_targetAzimuth;
+	m_cineReturnElevation = m_targetElevation;
+}
+
+void Camera::RestoreCineReturn() {
+	m_cinePhase = CinePhase::None;
+	m_cinePhaseTimer = 0.0f;
+	m_state = m_cineReturnState;
+	m_targetLookAt = m_cineReturnLookAt;
+	m_targetRadius = m_cineReturnRadius;
+	m_targetAzimuth = m_cineReturnAzimuth;
+	m_targetElevation = m_cineReturnElevation;
+}
+
+void Camera::PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos) {
+	if (m_cinePhase == CinePhase::KillLead || m_cinePhase == CinePhase::KillSlow) return;
+	CaptureCineReturn();
+
+	Vector3 d = victimPos - attackerPos; d.y = 0.0f;
+	if (d.LengthSquared() < 0.0001f) d = Vector3(0, 0, 1); else d.Normalize();
+
+	float targetAzim = atan2f(d.z, d.x) + KILLCAM_SHOULDER_YAW;
+	targetAzim = UnwrapNear(m_azimuth, targetAzim);
+
+	m_targetLookAt = victimPos; 
+	m_targetRadius = KILLCAM_RADIUS;
+	m_targetAzimuth = targetAzim;
+	m_targetElevation = KILLCAM_ELEVATION;
+
+	m_state = CameraState::Cinematic;
+	m_cinePhase = CinePhase::KillLead;
+	m_cinePhaseTimer = 0.0f;
+}
+
+void Camera::PlayAttackZoom(const Vector3& focusPos) {
+	CaptureCineReturn();
+	m_targetLookAt = focusPos; 
+	m_targetRadius = ATTACKZOOM_RADIUS;
+	m_state = CameraState::Cinematic;
+	m_cinePhase = CinePhase::AttackZoom;
+	m_cinePhaseTimer = 0.0f;
+}

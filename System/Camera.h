@@ -10,8 +10,11 @@ enum class CameraState {
     BaseView,       // 全体俯瞰（特定の対象を追跡しない固定視点）
     Tracking,       // 追跡（プレイヤーやカーソルをフォロー）
     ActionFocus,    // アクションフォーカス（攻撃方向の演出用など）
-    TargetFocus       // 特写ズーム（チュートリアル/脱出演出時の17.0fなど）
+    TargetFocus,       // 特写ズーム（チュートリアル/脱出演出時の17.0fなど）
+    Cinematic
 };
+
+enum class CinePhase { None, AttackZoom, KillLead, KillSlow };
 
 // =========================================================
 // Camera クラス
@@ -63,6 +66,9 @@ public:
     // シーン中心へのショートカットコマンド
     void SetLookAtCenter() { SetLookat(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z)); }
     void SetTargetToCenter() { SetTargetLookAt(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z)); }
+	//攻撃演出用のカメラ制御
+    void PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos);
+    void PlayAttackZoom(const Vector3& focusPos);
 
     // ---------------------------------------------------------
     // カメラ制御：4方向回転 (Quarter-View Rotation)
@@ -115,11 +121,18 @@ public:
     float GetBoundMinZ() const { return m_minZ; }
     float GetBoundMaxZ() const { return m_maxZ; }
 
+    bool IsCinematic() const { return m_cinePhase != CinePhase::None; }
+    // 世界の時間スケール（KillSlow 中だけ <1、相机/UI は読まない）
+    float GetTimeScale() const { return (m_cinePhase == CinePhase::KillSlow) ? KILLCAM_TIME_SCALE : 1.0f; }
+    void CaptureCineReturn();
+    void RestoreCineReturn();
     // ---------------------------------------------------------
     // 設定管理 (Config Management)
     // ---------------------------------------------------------
     static void SaveConfig();
     static void LoadConfig();
+
+
 
 public:
     // ==========================================
@@ -141,6 +154,17 @@ public:
     static inline float BASE_ELEVATION = -1.08f;
     static inline float BOUND_PADDING = -2.0f;
 
+	// 攻撃演出用のカメラパラメータ
+    static inline float KILLCAM_RADIUS = 13.0f;
+    static inline float KILLCAM_ELEVATION = -1.35f;  
+    static inline float KILLCAM_SHOULDER_YAW = 0.45f; 
+    static inline float KILLCAM_HOLD = 1.2f;
+    static inline float ATTACKZOOM_RADIUS = 15.0f;
+    static inline float ATTACKZOOM_HOLD = 0.7f;
+    static inline float KILLCAM_LEAD = 0.25f;
+    static inline float KILLCAM_TIME_SCALE = 0.3f;
+    static inline float ATTACK_ZOOM_LEAD = 0.15f;
+
 protected:
     // --- トランスフォーム・行列 ---
     Vector3   m_position{ 0.0f, 0.0f, 0.0f };
@@ -158,6 +182,15 @@ protected:
     float m_targetAzimuth = 1.58f;
     float m_elevation = -1.08f;
     float m_targetElevation = -1.08f;
+
+    // --- シネマティック演出用変数 ---
+    CinePhase   m_cinePhase = CinePhase::None;
+    float       m_cinePhaseTimer = 0.0f;
+    CameraState m_cineReturnState = CameraState::BaseView;
+    Vector3     m_cineReturnLookAt{};
+    float       m_cineReturnRadius = BASE_RADIUS;
+    float       m_cineReturnAzimuth = BASE_AZIMUTH;
+    float       m_cineReturnElevation = BASE_ELEVATION;
 
     // --- 動作制限・状態 ---
     float m_minX = -100.0f;

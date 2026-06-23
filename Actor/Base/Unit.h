@@ -57,14 +57,14 @@ public:
 	virtual void TakeDamage(int damage, Unit* attacker);
 
 	// 押し出し（ノックバック）を受けた際の処理。壁衝突時は false を返す想定など、派生クラスで拡張可能
-	virtual void OnPushed(Direction pushDir);
+	virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr);
 
 	// 押し出しを伴う攻撃を受けた際、壁や罠による二次ダメージを含めた最終被ダメージを算出
 	int CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir);
 
 	// 攻撃プレビューヒントのダメージ値を設定（UI描画用）
 	virtual void SetPreviewDamage(int dmg) { m_previewDamage = dmg; }
-
+	void DebugSetHP(int hp) { m_currentHP = hp; }
 	bool IsValidMoveTarget(int targetX, int targetZ);
 
 	// ---------------------------------------------------------
