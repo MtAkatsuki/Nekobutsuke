@@ -224,7 +224,7 @@ void GameScene::resourceLoader() {
 	// 1. シェーダー (Shaders)
 	{
 		std::unique_ptr<CShader> shader = std::make_unique<CShader>();
-		shader->Create("shader/unlitTextureVS.hlsl", "shader/unlitTexturePS.hlsl");
+		shader->Create("shader/ToonVS.hlsl", "shader/ToonVS.hlsl");
 		MeshManager::RegisterShader<CShader>("unlightshader", std::move(shader));
 	}
 

@@ -90,6 +90,14 @@ struct LIGHT
     Color Ambient;         ///< 環境光の色
 };
 
+// 構造体（HLSL側のToonBufferとメンバー単位で一致、サイズ64バイト）
+struct TOONPARAM {
+    Color   ShadowColor;   // rgba = 4つのfloat
+    Color   RimColor;      // .a = RimStrength
+    Color   OutlineColor;  // .a = OutlineWidth
+    Vector4 ToonParams;    // x = 閾値0、y = 閾値1、z = ソフト境界、w = RimPower
+};
+
 /**
  * @struct SUBSET
  * @brief メッシュのサブセット（マテリアル毎）情報を保持する構造体
@@ -160,6 +168,9 @@ private:
     static ComPtr<ID3D11SamplerState> m_SamplerStateAniso; // 3D家具用の異方性（スムーズ）サンプラー
     static ComPtr<ID3D11SamplerState> m_SamplerStatePoint; // ピクセルアート風（シャープ）なキャラクター用のポイントサンプラー
     static ComPtr<ID3D11SamplerState> m_SamplerStateUI;
+
+    static ComPtr<ID3D11Buffer> m_ToonBuffer;
+
 public:
     static void Init();
     static void Uninit();
@@ -188,4 +199,6 @@ public:
 
     static void SetPixelArtMode(bool isPixelArt); // サンプリングモード切り替え用インターフェース
     static void SetUISamplerMode(bool isUi);
+
+    static void SetToonParam(TOONPARAM param);
 };

@@ -230,6 +230,22 @@ void Renderer::Init()
     light.Diffuse = Color(1.5f, 1.5f, 1.5f, 1.0f);
     SetLight(light);
 
+
+	// --- Toonパラメータ初期化 ---
+    bufferDesc.ByteWidth = sizeof(TOONPARAM);
+    m_Device->CreateBuffer(&bufferDesc, nullptr, m_ToonBuffer.GetAddressOf());
+
+    TOONPARAM toon{};
+
+    toon.ShadowColor = Color(0.45f, 0.45f, 0.55f, 1.0f); // やや寒色寄りの暗部カラー、調整用パラメータ
+    toon.RimColor = Color(1.0f, 1.0f, 1.0f, 1.0f);    // a = RimStrength（step2）
+    toon.OutlineColor = Color(0.0f, 0.0f, 0.0f, 0.03f);   // a = OutlineWidth（step3）
+    toon.ToonParams = Vector4(0.5f, 0.8f, 0.05f, 4.0f); // 閾値0 / 閾値1 / ソフト境界 / RimPower
+
+    SetToonParam(toon);
+
+    m_DeviceContext->VSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
+    m_DeviceContext->PSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
     // --- マテリアル初期化 ---
     MATERIAL material{};
     material.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -520,4 +536,10 @@ void Renderer::SetUISamplerMode(bool isUi) {
         // 異方性サンプラーをバインドし、3Dテクスチャを滑らかにする
         m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateAniso.GetAddressOf());
     }
+}
+
+void Renderer::SetToonParam(TOONPARAM param) {
+    m_DeviceContext->UpdateSubresource(m_ToonBuffer.Get(), 0, nullptr, &param, 0, 0);
+    m_DeviceContext->VSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
+    m_DeviceContext->PSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
 }
