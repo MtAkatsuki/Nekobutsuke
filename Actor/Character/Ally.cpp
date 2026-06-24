@@ -9,16 +9,17 @@
 #include "../../GamePlay/Manager/EffectManager.h"
 
 namespace {
-    // ‰‰oEƒoƒ‰ƒ“ƒX—p’è”
+    // æ¼”å‡ºãƒ»ãƒãƒ©ãƒ³ã‚¹ç”¨å®šæ•°
     const int INITIAL_HP = 4;
-    const int MAX_DIG_COUNT = 3;           // ÌŒ@ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌU‚è‰º‚ë‚µ‰ñ”
-    const float DIG_SPEED = 15.0f;         // ÌŒ@ƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘¬“x
-    const float DIG_HIT_ANGLE = 0.4f;      // ÌŒ@ƒGƒtƒFƒNƒg‚ğ”­¶‚³‚¹‚éè‡’lŠp“xiƒ‰ƒWƒAƒ“j
-    const float FADE_OUT_SPEED = 1.0f;     // ’Eo‚ÌƒtƒF[ƒhƒAƒEƒg‘¬“x
+    const int MAX_DIG_COUNT = 3;           // æ¡æ˜ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®æŒ¯ã‚Šä¸‹ã‚ã—å›æ•°
+    const float DIG_SPEED = 15.0f;         // æ¡æ˜ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®é€Ÿåº¦
+    const float DIG_HIT_ANGLE = 0.4f;      // æ¡æ˜ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã‚’ç™ºç”Ÿã•ã›ã‚‹é–¾å€¤è§’åº¦ï¼ˆãƒ©ã‚¸ã‚¢ãƒ³ï¼‰
+    const float FADE_OUT_SPEED = 1.0f;     // è„±å‡ºæ™‚ã®ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆé€Ÿåº¦
 }
 
 void Ally::Init() 
-{   //ƒ‚ƒfƒ‹ŠÖ˜A‚Ìƒ\[ƒX‚ğƒ[ƒh
+{
+    //ãƒ¢ãƒ‡ãƒ«é–¢é€£ã®ã‚½ãƒ¼ã‚¹ã‚’ãƒ­ãƒ¼ãƒ‰
 
     // ---  Model Front ---
     {
@@ -36,11 +37,11 @@ void Ally::Init()
     SetModelRenderer(renderer);
 
 
-    //‰ŠúƒXƒe[ƒ^ƒX‚ğİ’u
+    //åˆæœŸã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã‚’è¨­ç½®
     m_maxHP = INITIAL_HP;
     m_currentHP = m_maxHP;
     m_team = Team::Ally;
-    m_maxMovePoints = 0;// –¡•û‚Í©—§ˆÚ“®‚µ‚È‚¢
+    m_maxMovePoints = 0;// å‘³æ–¹ã¯è‡ªç«‹ç§»å‹•ã—ãªã„
     m_currentMovePoints = m_maxMovePoints;
     m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
     SetFacing(Direction::South);
@@ -52,19 +53,24 @@ void Ally::Update(uint64_t deltatime) {
     Unit::Update(deltatime);
     float dt = static_cast<float>(deltatime) / 1000.0f;
 
-    // ’Eo‰‰oF“§–¾‰»ƒtƒF[ƒY
+    if (m_isDeadFlying) {
+        UpdateDeathFly(dt);
+        return;
+    }
+
+    // å‡ºæ¼”å‡ºï¼šé€æ˜åŒ–ãƒ•ã‚§ãƒ¼ã‚º
     if (m_escapeState == EscapeState::Fading && m_escapeAlpha > 0.0f) {
         m_escapeAlpha -= dt * FADE_OUT_SPEED;
         if (m_escapeAlpha <= 0.0f) {
             m_escapeAlpha = 0.0f;
-            m_escapeState = EscapeState::Done; // Š®‘S‚ÉÁ¸
+            m_escapeState = EscapeState::Done; // å…¨ã«æ¶ˆå¤±
 
-            // è—L‚µ‚Ä‚¢‚½ƒ^ƒCƒ‹‚ğ‰ğ•ú
+            // å æœ‰ã—ã¦ã„ãŸã‚¿ã‚¤ãƒ«ã‚’è§£æ”¾
             if (m_context && m_context->GetMapManager()) {
                 Tile* t = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
                 if (t && t->occupant == this) t->occupant = nullptr;
             }
-            // ‚«o‚µUI‚ğ•Â‚¶‚é
+            //  å¹ãå‡ºã—UIã‚’é–‰ã˜ã‚‹
             if (m_context && m_context->GetDialogueUI()) {
                 m_context->GetDialogueUI()->HideDialogue();
             }
@@ -75,14 +81,14 @@ void Ally::Update(uint64_t deltatime) {
     if (m_isTurning) { UpdateWorldMatrix(); return; }
 
 
-    // ƒmƒbƒNƒoƒbƒN’†‚ÌƒXƒ‰ƒCƒfƒBƒ“ƒOXVi—Dæj
+    // ãƒãƒƒã‚¯ãƒãƒƒã‚¯ä¸­ã®ã‚¹ãƒ©ã‚¤ãƒ‡ã‚£ãƒ³ã‚°æ›´æ–°ï¼ˆå„ªå…ˆï¼‰
     if (m_isKnockedBack) {
         if (m_slideEndPos.LengthSquared() > 0.001f) {
             if (UpdateSlideAnimation(deltatime)) {
                 m_isKnockedBack = false;
                 m_slideEndPos = Vector3(0, 0, 0);
 
-                // ‰Ÿ‚µo‚³‚ê‚½æ‚Ìƒ^ƒCƒ‹‚ÉƒMƒ~ƒbƒNiã©‚È‚Çj‚ª‚ ‚é‚©ƒ`ƒFƒbƒN
+                // æŠ¼ã—å‡ºã•ã‚ŒãŸå…ˆã®ã‚¿ã‚¤ãƒ«ã«ã‚®ãƒŸãƒƒã‚¯ï¼ˆç½ ãªã©ï¼‰ãŒã‚ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
                 Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
                 if (currentTile && currentTile->structure) {
                     std::cout << "[Ally] Knocked into an event/trap!" << std::endl;
@@ -91,7 +97,7 @@ void Ally::Update(uint64_t deltatime) {
             }
         }
         else {
-            // ÀÛ‚ÌˆÚ“®‚ª”­¶‚µ‚È‚©‚Á‚½ê‡i—áF‘¦À‚É•Ç‚ÉÕ“Ë‚µ‚½‚È‚Çj
+            // å®Ÿéš›ã®ç§»å‹•ãŒç™ºç”Ÿã—ãªã‹ã£ãŸå ´åˆï¼ˆä¾‹ï¼šå³åº§ã«å£ã«è¡çªã—ãŸãªã©ï¼‰
             m_isKnockedBack = false;
         }
 
@@ -113,7 +119,7 @@ void Ally::OnDraw(uint64_t deltatime) {
     Renderer::SetWorldMatrix(&m_WorldMatrix);
 
     if (m_isEscaping) {
-        // ƒAƒ‹ƒtƒ@ƒuƒŒƒ“ƒh—p‚Ìƒ}ƒeƒŠƒAƒ‹ƒI[ƒo[ƒ‰ƒCƒh
+        // ã‚¢ãƒ«ãƒ•ã‚¡ãƒ–ãƒ¬ãƒ³ãƒ‰ç”¨ã®ãƒãƒ†ãƒªã‚¢ãƒ«ã‚ªãƒ¼ãƒãƒ¼ãƒ©ã‚¤ãƒ‰
         auto OverrideAlpha = [this](CStaticMeshRenderer* renderer) {
             if (!renderer || !renderer->GetMaterial(0)) return;
             MATERIAL m = renderer->GetMaterial(0)->GetData();
@@ -132,7 +138,7 @@ void Ally::OnDraw(uint64_t deltatime) {
         RestoreAlpha(m_Renderer);
     }
     else {
-        // ’Êíó‘Ô‚Í‚»‚Ì‚Ü‚Ü•`‰æ
+       // é€šå¸¸çŠ¶æ…‹ã¯ãã®ã¾ã¾æç”»
         DrawModel();
     }
 
@@ -141,11 +147,25 @@ void Ally::OnDraw(uint64_t deltatime) {
 
 void Ally::TakeDamage(int damage, Unit* attacker) {
     Unit::TakeDamage(damage, attacker);
+    if (m_currentHP <= 0 && !m_isEscaping && !m_isDeadFlying) {
+        m_isDeadFlying = true;
+        if (m_context && m_context->GetMapManager()) {
+            Tile* myTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+            if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
+        }
+        StartDeathFly();
+        if (m_context && m_context->GetCamera())
+            m_context->GetCamera()->PlayKillCam(m_hitSourcePos, m_srt.pos);
+    }
+}
+
+void Ally::OnDeathFlyComplete() {
+    Destroy();
 }
 
 void Ally::StartTurn() {
     if (m_currentHP <= 0) return;
-	// ƒ^[ƒ“ŠJnAÌŒ@ƒAƒjƒ[ƒVƒ‡ƒ“Às‚·‚é
+    // ã‚¿ãƒ¼ãƒ³é–‹å§‹æ™‚ã€æ¡æ˜ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å®Ÿè¡Œã™ã‚‹
     std::cout << "[Ally] Start Turn: Start Digging!" << std::endl;
     m_isDigging = true;
     m_digTimer = 0.0f;
@@ -167,13 +187,13 @@ void Ally::OnPushed(Direction pushDir, Unit* attacker) {
     Unit::OnPushed(pushDir);
 }
 
-// ’‡ŠÔ‚ª’Eo‚·‚éÛ‚Ìˆ—B“G‚©‚ç‚ÌUŒ‚‚ğ–h~‚µAè—Lƒ^ƒCƒ‹‚ğ‰ğ•ú‚·‚éB
+// ä»²é–“ãŒè„±å‡ºã™ã‚‹éš›ã®å‡¦ç†ã€‚æ•µã‹ã‚‰ã®æ”»æ’ƒã‚’é˜²æ­¢ã—ã€å æœ‰ã‚¿ã‚¤ãƒ«ã‚’è§£æ”¾ã™ã‚‹ã€‚
 void Ally::TriggerEscape() {
     if (m_isEscaping) return;
     m_isEscaping = true;
-    m_currentHP = 0; // –³“G‰»
+    m_currentHP = 0; // ç„¡æ•µåŒ–
 
-    // ÌŒ@‚ğ‹­§ŠJn
+    // æ¡æ˜ã‚’å¼·åˆ¶é–‹å§‹
     m_isDigging = true;
     m_digTimer = 0.0f;
     m_digCount = 0;
@@ -182,7 +202,7 @@ void Ally::TriggerEscape() {
 
     m_escapeState = EscapeState::Digging;
 
-    // ’Eoƒ_ƒCƒAƒƒO‚ğ•\¦i-1.0f‚ğ“n‚µ‚Ä©“®Á¸‚ğ–³Œø‰»j
+    // è„±å‡ºãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã‚’è¡¨ç¤ºï¼ˆ - 1.0fã‚’æ¸¡ã—ã¦è‡ªå‹•æ¶ˆå¤±ã‚’ç„¡åŠ¹åŒ–ï¼‰
     if (m_context && m_context->GetDialogueUI()) {
         m_context->GetDialogueUI()->ShowDialogue(m_srt.pos, DialogueType::Escape, -1.0f);
     }
@@ -191,11 +211,11 @@ void Ally::TriggerEscape() {
 void Ally::UpdateDiggingAnimation(float dt) {
     m_digTimer += dt;
 
-    // ³Œ·”g‚É‚æ‚éƒcƒ‹ƒnƒV‚ÌU‚è‰º‚ë‚µƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“
+    // æ­£å¼¦æ³¢ã«ã‚ˆã‚‹ãƒ„ãƒ«ãƒã‚·ã®æŒ¯ã‚Šä¸‹ã‚ã—ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³
     float angle = sinf(m_digTimer * DIG_SPEED) * 0.5f;
     m_srt.rot.z = angle;
 
-    // U‚è‰º‚ë‚µ‚½uŠÔ‚ÌƒCƒ“ƒpƒNƒg”»’è
+    // æŒ¯ã‚Šä¸‹ã‚ã—ãŸç¬é–“ã®ã‚¤ãƒ³ãƒ‘ã‚¯ãƒˆåˆ¤å®š
     if (angle > DIG_HIT_ANGLE && !m_hasTriggeredEffect) {
         AudioManager::GetInstance().PlaySE("DigSE", 2.6f);
         if (m_context->GetEffectManager()) {
@@ -207,16 +227,16 @@ void Ally::UpdateDiggingAnimation(float dt) {
         m_digCount++;
     }
 
-    // ƒgƒŠƒK[ƒtƒ‰ƒO‚ÌƒŠƒZƒbƒgi”½‘Î‘¤‚ÉU‚è–ß‚µ‚½Û‚ÉƒŠƒZƒbƒgj
+    // ãƒˆãƒªã‚¬ãƒ¼ãƒ•ãƒ©ã‚°ã®ãƒªã‚»ãƒƒãƒˆï¼ˆåå¯¾å´ã«æŒ¯ã‚Šæˆ»ã—ãŸéš›ã«ãƒªã‚»ãƒƒãƒˆï¼‰
     if (angle < 0.0f) {
         m_hasTriggeredEffect = false;
     }
 
-    // I—¹”»’è
+    // çµ‚äº†åˆ¤å®š
     if (m_digCount >= MAX_DIG_COUNT && angle < 0.1f && angle > -0.1f) {
         m_isDigging = false;
         m_srt.rot.z = 0.0f;
-        // ---’Eoƒ‚[ƒh‚Å‚ÌÌŒ@Š®—¹ŒãAƒtƒF[ƒhƒAƒEƒgó‘Ô‚Ö‘JˆÚ ---
+        // ---è„±å‡ºãƒ¢ãƒ¼ãƒ‰ã§ã®æ¡æ˜å®Œäº†å¾Œã€ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆçŠ¶æ…‹ã¸é·ç§» ---
         if (m_escapeState == EscapeState::Digging) {
             m_escapeState = EscapeState::Fading;
         }

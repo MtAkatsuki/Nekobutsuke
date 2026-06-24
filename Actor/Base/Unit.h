@@ -16,9 +16,9 @@ class Tile;
 class CStaticMeshRenderer;
 
 // =========================================================
-// Unit ƒNƒ‰ƒX
-// ƒvƒŒƒCƒ„[A“GA–¡•û‚È‚ÇA”Õ–Êã‚ğˆÚ“®‚µí“¬‚ğs‚¤ƒGƒ“ƒeƒBƒeƒB‚Ì‹¤’ÊŠî’êƒNƒ‰ƒX
-// HPŠÇ—AƒOƒŠƒbƒhÀ•WAƒ_ƒ[ƒWŒvZA‹¤—LƒAƒjƒ[ƒVƒ‡ƒ“iƒmƒbƒNƒoƒbƒN“™j‚ğ’S‚¤
+// Unit ã‚¯ãƒ©ã‚¹
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã€æ•µã€å‘³æ–¹ãªã©ã€ç›¤é¢ä¸Šã‚’ç§»å‹•ã—æˆ¦é—˜ã‚’è¡Œã†ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®å…±é€šåŸºåº•ã‚¯ãƒ©ã‚¹
+// HPç®¡ç†ã€ã‚°ãƒªãƒƒãƒ‰åº§æ¨™ã€ãƒ€ãƒ¡ãƒ¼ã‚¸è¨ˆç®—ã€å…±æœ‰ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ï¼ˆãƒãƒƒã‚¯ãƒãƒƒã‚¯ç­‰ï¼‰ã‚’æ‹…ã†
 // =========================================================
 class Unit : public GameObject {
 public:
@@ -34,12 +34,12 @@ public:
 	virtual ~Unit() = default;
 
 	// ---------------------------------------------------------
-	// ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+	// ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
 	// ---------------------------------------------------------
 	virtual void Update(uint64_t delta) override;
 
 	// ---------------------------------------------------------
-	// ƒRƒAƒXƒe[ƒ^ƒXEƒQƒbƒ^[ (Core Status)
+	// ã‚³ã‚¢ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ãƒ»ã‚²ãƒƒã‚¿ãƒ¼ (Core Status)
 	// ---------------------------------------------------------
 	int GetHP() const { return m_currentHP; }
 	int GetMaxHP() const { return m_maxHP; }
@@ -52,23 +52,23 @@ public:
 	virtual void ResetMovePoints() { m_currentMovePoints = m_maxMovePoints; }
 
 	// ---------------------------------------------------------
-	// í“¬‚Æ•¨—Š±Â (Combat & Physics)
+	// æˆ¦é—˜ã¨ç‰©ç†å¹²æ¸‰ (Combat & Physics)
 	// ---------------------------------------------------------
 	virtual void TakeDamage(int damage, Unit* attacker);
 
-	// ‰Ÿ‚µo‚µiƒmƒbƒNƒoƒbƒNj‚ğó‚¯‚½Û‚Ìˆ—B•ÇÕ“Ë‚Í false ‚ğ•Ô‚·‘z’è‚È‚ÇA”h¶ƒNƒ‰ƒX‚ÅŠg’£‰Â”\
+	// æŠ¼ã—å‡ºã—ï¼ˆãƒãƒƒã‚¯ãƒãƒƒã‚¯ï¼‰ã‚’å—ã‘ãŸéš›ã®å‡¦ç†ã€‚å£è¡çªæ™‚ã¯ false ã‚’è¿”ã™æƒ³å®šãªã©ã€æ´¾ç”Ÿã‚¯ãƒ©ã‚¹ã§æ‹¡å¼µå¯èƒ½
 	virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr);
 
-	// ‰Ÿ‚µo‚µ‚ğ”º‚¤UŒ‚‚ğó‚¯‚½ÛA•Ç‚âã©‚É‚æ‚é“ñŸƒ_ƒ[ƒW‚ğŠÜ‚ß‚½ÅI”íƒ_ƒ[ƒW‚ğZo
+	// æŠ¼ã—å‡ºã—ã‚’ä¼´ã†æ”»æ’ƒã‚’å—ã‘ãŸéš›ã€å£ã‚„ç½ ã«ã‚ˆã‚‹äºŒæ¬¡ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’å«ã‚ãŸæœ€çµ‚è¢«ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’ç®—å‡º
 	int CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir);
 
-	// UŒ‚ƒvƒŒƒrƒ…[ƒqƒ“ƒg‚Ìƒ_ƒ[ƒW’l‚ğİ’èiUI•`‰æ—pj
+	// æ”»æ’ƒãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ãƒ’ãƒ³ãƒˆã®ãƒ€ãƒ¡ãƒ¼ã‚¸å€¤ã‚’è¨­å®šï¼ˆUIæç”»ç”¨ï¼‰
 	virtual void SetPreviewDamage(int dmg) { m_previewDamage = dmg; }
 	void DebugSetHP(int hp) { m_currentHP = hp; }
 	bool IsValidMoveTarget(int targetX, int targetZ);
 
 	// ---------------------------------------------------------
-	// ƒAƒjƒ[ƒVƒ‡ƒ“§Œä (Animation System)
+	// ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³åˆ¶å¾¡ (Animation System)
 	// ---------------------------------------------------------
 	void SetFacingFromVector(const Vector3& dir);
 	void SetFacing(Direction newDir);
@@ -83,7 +83,14 @@ public:
 	void UpdateFacingRotation(float dt);
 
 	// ---------------------------------------------------------
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒO‚ÆUI (Rendering & UI)
+	// æ­»äº¡é£›å‡ºæ¼”å‡º (Death Fly)
+	// ---------------------------------------------------------
+	void StartDeathFly();
+	void UpdateDeathFly(float delta);
+	virtual void OnDeathFlyComplete();
+
+	// ---------------------------------------------------------
+	// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã¨UI (Rendering & UI)
 	// ---------------------------------------------------------
 	void SetModelRenderer(CStaticMeshRenderer* r);
 	void DrawModel();
@@ -99,15 +106,15 @@ protected:
 
 protected:
 	// =========================================================
-	// ƒƒ“ƒo[•Ï” (Member Variables)
+	// ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•° (Member Variables)
 	// =========================================================
 
-	// --- ƒŒƒ“ƒ_ƒŠƒ“ƒOŠÖ˜A ---
+	// --- ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°é–¢é€£ ---
 	CStaticMeshRenderer* m_Renderer = nullptr;
 
 	std::unique_ptr<HPBar> m_hpBar;
 
-	// --- ƒRƒAƒXƒe[ƒ^ƒX ---
+	// --- ã‚³ã‚¢ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ ---
 	Team m_team;
 	int m_maxHP = 5;
 	int m_currentHP = 5;
@@ -119,21 +126,26 @@ protected:
 	Direction m_facing;
 
 	int m_previewDamage = 0;
-	int m_onPushDamage = 2;  // ƒmƒbƒNƒoƒbƒN•ÇÕ“Ë‚ÌŠî–{ƒ_ƒ[ƒW—Ê
+	int m_onPushDamage = 2;  // ãƒãƒƒã‚¯ãƒãƒƒã‚¯å£è¡çªæ™‚ã®åŸºæœ¬ãƒ€ãƒ¡ãƒ¼ã‚¸é‡
 
 	Vector3 m_targetRot = { 0.0f, 0.0f, 0.0f };
 	Vector3 m_targetWorldPos;
 
-	// --- ƒAƒjƒ[ƒVƒ‡ƒ“§Œäƒf[ƒ^ ---
+	// --- ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³åˆ¶å¾¡ãƒ‡ãƒ¼ã‚¿ ---
 	Vector3 m_animStartPos;
 	Vector3 m_animLungePos;
 	float m_animTimer = 0.0f;
-	bool m_hasAnimHit = false; // UŒ‚‚Ì‘½’iƒqƒbƒg–h~ƒtƒ‰ƒO
+	bool m_hasAnimHit = false; // æ”»æ’ƒã®å¤šæ®µãƒ’ãƒƒãƒˆé˜²æ­¢ãƒ•ãƒ©ã‚°
 
 	Vector3 m_slideStartPos;
 	Vector3 m_slideEndPos;
 	float m_slideTimer = 0.0f;
 
 	bool m_isTurning = false;
+
+	// --- æ­»äº¡é£›å‡º ---
+	Vector3 m_hitSourcePos = {};
+	Vector3 m_deathVelocity = {};
+	Vector3 m_deathSpin = {};
 
 };

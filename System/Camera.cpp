@@ -42,7 +42,14 @@ void Camera::Update(float dt) {
 			if (m_cinePhaseTimer >= ATTACKZOOM_HOLD) RestoreCineReturn();
 			break;
 		case CinePhase::KillLead:
-			if (m_cinePhaseTimer >= KILLCAM_LEAD) { m_cinePhase = CinePhase::KillSlow; m_cinePhaseTimer = 0.0f; }
+			if (m_cinePhaseTimer >= KILLCAM_LEAD) {
+				m_cinePhase = CinePhase::KillSlow;
+				m_cinePhaseTimer = 0.0f;
+				// その場で見上げる：カメラ位置を固定し、注視点だけ上へ振る（Pitchのみ）
+				m_killCamPitch = true;
+				m_killCamPos = m_position;
+				m_targetLookAt = m_lookat + Vector3(0.0f, KILLCAM_PITCH_LIFT, 0.0f);  // 注視点を上へ
+			}
 			break;
 		case CinePhase::KillSlow:
 			if (m_cinePhaseTimer >= KILLCAM_HOLD) RestoreCineReturn();
@@ -52,9 +59,9 @@ void Camera::Update(float dt) {
 	}
 
 	// 1. フレームレートに依存しない平滑化（Lerp）係数の計算
-	
+
 	// t = 1 - f^dt
-	
+
 	// f = e^ln(f)-> f^dt = e^ln(f)*dt
 	float t = 1.0f - std::expf(-m_lerpSpeed * dt);
 
@@ -73,13 +80,19 @@ void Camera::Update(float dt) {
 	LerpFunc(m_azimuth, m_targetAzimuth);
 	LerpFunc(m_elevation, m_targetElevation);
 
-	// 3. 極座標からデカルト座標（ワールド座標）への変換
-	CPolor3D polor(m_radius, m_elevation, m_azimuth);
-	Vector3 offset = polor.ToCartesian();
-	m_position = m_lookat + offset;
+	// 3. 極座標 → デカルト座標（pitchモード時はカメラ位置を固定し、注視点上昇で見上げのみ）
+	if (m_killCamPitch) {
+		m_position = m_killCamPos;
+		m_up = Vector3(0.0f, 1.0f, 0.0f);   // LookAtLH が水平基準で正しく仰角を作る
+	}
+	else {
+		CPolor3D polor(m_radius, m_elevation, m_azimuth);
+		Vector3 offset = polor.ToCartesian();
+		m_position = m_lookat + offset;
 
-	CPolor3D polorup(1.0f, m_elevation + PI / 2.0f, m_azimuth);
-	m_up = polorup.ToCartesian();
+		CPolor3D polorup(1.0f, m_elevation + PI / 2.0f, m_azimuth);
+		m_up = polorup.ToCartesian();
+	}
 }
 
 void Camera::Draw(){
@@ -96,6 +109,7 @@ void Camera::Draw(){
 }
 
 void Camera::ChangeState(CameraState state, const Vector3& targetPos) {
+	if (IsCinematic()) return;// 演出中はカメラ制御を奪わせない（HOLD を最後まで守る）
 	m_state = state;
 
 	switch (state) {
@@ -122,6 +136,7 @@ void Camera::ChangeState(CameraState state, const Vector3& targetPos) {
 }
 
 void Camera::UpdateTrackingTarget(const Vector3& targetPos) {
+	if (IsCinematic()) return;   // 演出中は追従で注視点を上書きしない
 	if (m_state == CameraState::Tracking ||
 		m_state == CameraState::TargetFocus ||
 		m_state == CameraState::ActionFocus) {
@@ -163,8 +178,18 @@ void Camera::SaveConfig() {
 	if (file.is_open()) {
 		file << "ZOOM_RADIUS=" << ZOOM_RADIUS << "\n";
 		file << "BOUND_PADDING=" << BOUND_PADDING << "\n";
-		file << "BASE_AZIMUTH=" << BASE_AZIMUTH << "\n"; 
-		file << "BASE_ELEVATION=" << BASE_ELEVATION << "\n"; 
+		file << "BASE_AZIMUTH=" << BASE_AZIMUTH << "\n";
+		file << "BASE_ELEVATION=" << BASE_ELEVATION << "\n";
+		file << "KILLCAM_RADIUS=" << KILLCAM_RADIUS << "\n";
+		file << "KILLCAM_ELEVATION=" << KILLCAM_ELEVATION << "\n";
+		file << "KILLCAM_SHOULDER_YAW=" << KILLCAM_SHOULDER_YAW << "\n";
+		file << "KILLCAM_LEAD=" << KILLCAM_LEAD << "\n";
+		file << "KILLCAM_HOLD=" << KILLCAM_HOLD << "\n";
+		file << "KILLCAM_TIME_SCALE=" << KILLCAM_TIME_SCALE << "\n";
+		file << "ATTACKZOOM_RADIUS=" << ATTACKZOOM_RADIUS << "\n";
+		file << "ATTACKZOOM_HOLD=" << ATTACKZOOM_HOLD << "\n";
+		file << "ATTACK_ZOOM_LEAD=" << ATTACK_ZOOM_LEAD << "\n";
+		file << "KILLCAM_PITCH_LIFT=" << KILLCAM_PITCH_LIFT << "\n";
 		file.close();
 		std::cerr << "[Camera] Config Saved to nekobutsuke_camera.ini" << std::endl;
 	}
@@ -202,7 +227,17 @@ void Camera::LoadConfig() {
 				if (key == "ZOOM_RADIUS") ZOOM_RADIUS = value;
 				else if (key == "BOUND_PADDING") BOUND_PADDING = value;
 				else if (key == "BASE_AZIMUTH") BASE_AZIMUTH = value;
-				else if (key == "BASE_ELEVATION") BASE_ELEVATION = value; 
+				else if (key == "BASE_ELEVATION") BASE_ELEVATION = value;
+				else if (key == "KILLCAM_RADIUS") KILLCAM_RADIUS = value;
+				else if (key == "KILLCAM_ELEVATION") KILLCAM_ELEVATION = value;
+				else if (key == "KILLCAM_SHOULDER_YAW") KILLCAM_SHOULDER_YAW = value;
+				else if (key == "KILLCAM_LEAD") KILLCAM_LEAD = value;
+				else if (key == "KILLCAM_HOLD") KILLCAM_HOLD = value;
+				else if (key == "KILLCAM_TIME_SCALE") KILLCAM_TIME_SCALE = value;
+				else if (key == "ATTACKZOOM_RADIUS") ATTACKZOOM_RADIUS = value;
+				else if (key == "ATTACKZOOM_HOLD") ATTACKZOOM_HOLD = value;
+				else if (key == "ATTACK_ZOOM_LEAD") ATTACK_ZOOM_LEAD = value;
+				else if (key == "KILLCAM_PITCH_LIFT") KILLCAM_PITCH_LIFT = value;
 			}
 			catch (const std::exception& e) {
 				// 数値への変換に失敗した場合のみエラーを出力
@@ -224,6 +259,13 @@ void Camera::CaptureCineReturn() {
 }
 
 void Camera::RestoreCineReturn() {
+	// pitchモードから戻る時、現在のカメラ位置を起点に通常モデルへ連続接続（ポップ防止）
+	if (m_killCamPitch) {
+		CPolor3D polor(m_radius, m_elevation, m_azimuth);
+		m_lookat = m_killCamPos - polor.ToCartesian();  // pos = lookat+offset が m_killCamPos と一致
+		m_killCamPitch = false;
+	}
+
 	m_cinePhase = CinePhase::None;
 	m_cinePhaseTimer = 0.0f;
 	m_state = m_cineReturnState;
@@ -261,3 +303,4 @@ void Camera::PlayAttackZoom(const Vector3& focusPos) {
 	m_cinePhase = CinePhase::AttackZoom;
 	m_cinePhaseTimer = 0.0f;
 }
+

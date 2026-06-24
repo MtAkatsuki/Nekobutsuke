@@ -14,8 +14,6 @@ namespace {
 	const int INITIAL_HP = 5;
 	const int INITIAL_MOVE_POINTS = 4;
 	const float MOVE_SPEED = 5.0f;
-	const float DEATH_GRAVITY = 50.0f;         // 死亡時の重力加速度
-	const float DEATH_FLY_FORCE = 20.0f;       // 吹き飛び時の初速
 	const float CHARGE_SHAKE_AMP = 0.01f;      // 蓄力時の震え幅
 	const float ATTACK_DELAY = 0.1f;           // 攻撃開始前のディレイ
 	const int ATTACK_RANGE = 1;				   // 攻撃範囲（グリッド単位）
@@ -23,7 +21,6 @@ namespace {
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<float> shake_dist(-CHARGE_SHAKE_AMP, CHARGE_SHAKE_AMP);
-	std::uniform_real_distribution<float> death_spin_dist(0.0f, 10.0f);
 }
 
 
@@ -456,35 +453,20 @@ void Enemy::Die() {
 		if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
 	}
 
-	Vector3 diff = m_srt.pos - m_hitSourcePos;
-	diff.y = 0.0f;
-	if (diff.LengthSquared() > 0.001f) diff.Normalize();
-	else diff = Vector3(0, 0, 1);
-
-	Vector3 flyDir = Vector3(diff.x * 1.8f, 0.6f, diff.z * 1.8f);
-	m_deathVelocity = flyDir * DEATH_FLY_FORCE;
-	m_deathSpin = Vector3(death_spin_dist(gen), death_spin_dist(gen), death_spin_dist(gen));
+	StartDeathFly();
 
 	if (m_context && m_context->GetCamera())
 		m_context->GetCamera()->PlayKillCam(m_hitSourcePos, m_srt.pos);
 }
 
 void Enemy::DeathFlyingUpdate(float deltaSeconds) {
-	if (m_isDead) return;
-	//重力の影響(v = v0 + at)
-	m_deathVelocity.y -= (DEATH_GRAVITY * deltaSeconds);
+	Unit::UpdateDeathFly(deltaSeconds);
+}
 
-	//位置の更新(p = p0 + vt)
-	m_srt.pos += m_deathVelocity * deltaSeconds;
-	m_srt.rot += m_deathSpin * deltaSeconds;
-
-	if (m_srt.pos.y < -20.0f) {
-		if (m_context && m_context->GetEnemyManager()) {
-			m_context->GetEnemyManager()->RemoveEnemy(this);
-		}
-		Destroy();
-	}
-	UpdateWorldMatrix();
+void Enemy::OnDeathFlyComplete() {
+	if (m_context && m_context->GetEnemyManager())
+		m_context->GetEnemyManager()->RemoveEnemy(this);
+	Destroy();
 }
 
 void Enemy::DrawUI() {

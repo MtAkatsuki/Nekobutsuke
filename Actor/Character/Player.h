@@ -13,18 +13,19 @@ class Enemy;
 
 // =========================================================
 // PlayerState
-// ƒvƒŒƒCƒ„[‚ÌƒXƒe[ƒgƒ}ƒVƒ“’è‹`
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ³å®šç¾©
 // =========================================================
 enum class PlayerState {
-    MENU_MAIN,          // ƒƒCƒ“ƒƒjƒ…[•\¦’† (“ü—Í‘Ò‚¿)
-    MOVE_SELECT,        // ˆÚ“®ƒ‚[ƒh (WASD‚ÅƒJ[ƒ\ƒ‹ˆÚ“®)
-    ANIM_MOVE,          // ˆÚ“®ƒAƒjƒ[ƒVƒ‡ƒ“is’†
-    ATTACK_DIR_SELECT,  // UŒ‚•ûŒü‘I‘ğ’† (WASD‚Å•ûŒüØ‚è‘Ö‚¦)
-    ANIM_ATTACK,        // UŒ‚ƒAƒjƒ[ƒVƒ‡ƒ“is’†
+    MENU_MAIN,          // ãƒ¡ã‚¤ãƒ³ãƒ¡ãƒ‹ãƒ¥ãƒ¼è¡¨ç¤ºä¸­ (å…¥åŠ›å¾…ã¡)
+    MOVE_SELECT,        // ç§»å‹•ãƒ¢ãƒ¼ãƒ‰ (WASDã§ã‚«ãƒ¼ã‚½ãƒ«ç§»å‹•)
+    ANIM_MOVE,          // ç§»å‹•ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³é€²è¡Œä¸­
+    ATTACK_DIR_SELECT,  // æ”»æ’ƒæ–¹å‘é¸æŠä¸­ (WASDã§æ–¹å‘åˆ‡ã‚Šæ›¿ãˆ)
+    ANIM_ATTACK,        // æ”»æ’ƒã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³é€²è¡Œä¸­
     ANIM_ATTACK_WINDUP,
-    WAITING,            // “G/–¡•ûƒ^[ƒ“’†‚Ì‘Ò‹@ó‘Ô
-    ANIM_CELEBRATE,     // ƒNƒŠƒA‚ÌŸ—˜ƒAƒjƒ[ƒVƒ‡ƒ“
-    KNOCKBACK           // “G‚©‚ç‚ÌƒmƒbƒNƒoƒbƒN”í’e’†
+    WAITING,            // æ•µ/å‘³æ–¹ã‚¿ãƒ¼ãƒ³ä¸­ã®å¾…æ©ŸçŠ¶æ…‹
+	DEAD_FLYING,        // æ­»äº¡é£›è¡Œä¸­ (æ­»äº¡æ™‚ã®æ¼”å‡º)
+    ANIM_CELEBRATE,     // ã‚¯ãƒªã‚¢æ™‚ã®å‹åˆ©ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³
+    KNOCKBACK           // æ•µã‹ã‚‰ã®ãƒãƒƒã‚¯ãƒãƒƒã‚¯è¢«å¼¾ä¸­
 };
 
 enum class AttackType {
@@ -33,15 +34,15 @@ enum class AttackType {
 };
 
 // =========================================================
-// Player ƒNƒ‰ƒX
-// ƒvƒŒƒCƒ„[‘€ì‚ÌƒCƒ“ƒ^[ƒtƒF[ƒX‚ÆAó‘Ô‘JˆÚiƒXƒe[ƒgƒ}ƒVƒ“j‚ğ’S‚¤
+// Player ã‚¯ãƒ©ã‚¹
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼æ“ä½œã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹ã¨ã€çŠ¶æ…‹é·ç§»ï¼ˆã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ³ï¼‰ã‚’æ‹…ã†
 // =========================================================
 class Player : public Unit {
 public:
     using Unit::Unit;
 
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
     // ---------------------------------------------------------
     void init() override {}
     void Init();
@@ -50,7 +51,7 @@ public:
     void OnDraw(uint64_t delta) override;
 
     // ---------------------------------------------------------
-    // ó‘Ô‚ÆƒNƒGƒŠ (Status & Queries)
+    // çŠ¶æ…‹ã¨ã‚¯ã‚¨ãƒª (Status & Queries)
     // ---------------------------------------------------------
     PlayerState GetState() const { return m_state; }
     int GetCurrentMovePoints() const { return m_currentMovePoints; }
@@ -59,14 +60,15 @@ public:
     bool IsCelebrationDone() const { return m_isCelebrationDone; }
 
     // ---------------------------------------------------------
-    // ƒtƒ[‚ÆƒCƒxƒ“ƒg (Flow & Events)
+    // ãƒ•ãƒ­ãƒ¼ã¨ã‚¤ãƒ™ãƒ³ãƒˆ (Flow & Events)
     // ---------------------------------------------------------
     void StartCelebration();
     virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
     virtual void SetPreviewDamage(int dmg) override;
+    virtual void OnDeathFlyComplete() override;
 
     // ---------------------------------------------------------
-	// Debug / ƒeƒXƒg—p (Debug / Testing)
+	// Debug / ãƒ†ã‚¹ãƒˆç”¨ (Debug / Testing)
     // ---------------------------------------------------------
     void DebugForceAttack(Direction dir, AttackType type = AttackType::Push);
 
@@ -74,6 +76,7 @@ protected:
     virtual void StartTurn() override;
     virtual void EndTurn() override;
     virtual void TakeDamage(int damage, Unit* attacker) override;
+    virtual void Die();
     virtual void OnTurnChanged(TurnState state) override;
 
     virtual void OnDrawFloorUI(uint64_t delta) override;
@@ -83,7 +86,7 @@ protected:
 private:
     void playerResourceLoader();
 
-    // --- ó‘Ô‘JˆÚ (State Transitions) ---
+    // --- çŠ¶æ…‹é·ç§» (State Transitions) ---
     void SwitchToMenuMain();
     void SwitchToMoveSelect();
     void SwitchToAttackDirSelect(AttackType type);
@@ -91,18 +94,18 @@ private:
     void PerformAttackStrike();
     void ExecuteAttack();
 
-    // --- “ü—Íƒnƒ“ƒhƒ‰ (Input Handlers) ---
+    // --- å…¥åŠ›ãƒãƒ³ãƒ‰ãƒ© (Input Handlers) ---
     void HandleMenuInput();
     void HandleMoveInput(float dt);
     void HandleAttackDirInput(float dt);
 
-    // --- •`‰æ•â• (Rendering Helpers) ---
+    // --- æç”»è£œåŠ© (Rendering Helpers) ---
     void DrawGhost();
     void DrawPathLine();
     void DrawAttackWarningFloor();
     void DrawAttackWarningOverlay();
 
-    // --- ƒ†[ƒeƒBƒŠƒeƒB (Utilities) ---
+    // --- ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ (Utilities) ---
     float CalculateLineRotation(int dx, int dz);
     float CalculateCornerRotation(int dx1, int dz1, int dx2, int dz2);
     Unit* GetTargetInLine(int range);
@@ -111,7 +114,7 @@ private:
     void UpdateCelebration(float dt);
 
     // =========================================================
-    // ƒƒ“ƒo[•Ï”
+    // ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•°
     // =========================================================
     CShader* m_PlayerShader = nullptr;
 
@@ -119,7 +122,7 @@ private:
     PlayerState m_nextState = PlayerState::WAITING;
     bool canControl = false;
 
-    // --- ˆÚ“®EƒpƒX ---
+    // --- ç§»å‹•ãƒ»ãƒ‘ã‚¹ ---
     int m_startGridX = 0;
     int m_startGridZ = 0;
     int m_previewGridX = 0;
@@ -129,27 +132,28 @@ private:
     std::vector<Tile*> m_currentPath;
     int m_pathAnimIndex = 0;
 
-    // --- í“¬EUŒ‚ ---
+    // --- æˆ¦é—˜ãƒ»æ”»æ’ƒ ---
     AttackType m_selectedAttackType = AttackType::Normal;
     Direction m_attackDir = Direction::North;
     int m_playerDamage = 1;
     bool m_canAttack = false;
     float m_attackWindupTimer = 0.0f;
 
-    // --- ƒtƒ‰ƒO ---
+    // --- ãƒ•ãƒ©ã‚° ---
     bool m_hasActioned = false;
     bool m_isRotating = false;
     bool m_hasMoved = false;
     bool m_isZoomedIn = false;
     bool m_isWaitingTurnStart = false;
     bool  m_attackIsLethal = false;
+    bool  m_isDebugAttack = false;
 
-    // --- Ÿ—˜‰‰o ---
+    // --- å‹åˆ©æ¼”å‡º ---
     int m_jumpCount = 0;
     float m_jumpTimer = 0.0f;
     bool m_isCelebrationDone = false;
 
-    // --- •`‰æ—p ---
+    // --- æç”»ç”¨ ---
     CStaticMeshRenderer* m_PathLineRenderer = nullptr;
     CStaticMeshRenderer* m_PathCornerRenderer = nullptr;
 };

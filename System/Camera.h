@@ -164,6 +164,7 @@ public:
     static inline float KILLCAM_LEAD = 0.25f;
     static inline float KILLCAM_TIME_SCALE = 0.3f;
     static inline float ATTACK_ZOOM_LEAD = 0.15f;
+    static inline float KILLCAM_PITCH_LIFT = 9.0f;   // KillSlow：その場で見上げる量（注視点を上へ持ち上げる高さ）
 
 protected:
     // --- トランスフォーム・行列 ---
@@ -186,6 +187,8 @@ protected:
     // --- シネマティック演出用変数 ---
     CinePhase   m_cinePhase = CinePhase::None;
     float       m_cinePhaseTimer = 0.0f;
+    bool        m_killCamPitch = false;   // KillSlow：その場見上げモード
+    Vector3     m_killCamPos{};           // 固定するカメラ位置
     CameraState m_cineReturnState = CameraState::BaseView;
     Vector3     m_cineReturnLookAt{};
     float       m_cineReturnRadius = BASE_RADIUS;

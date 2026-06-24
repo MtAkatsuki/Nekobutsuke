@@ -151,7 +151,14 @@ void Player::Update(uint64_t dt) {
 
 	case PlayerState::ANIM_ATTACK:
 		if (UpdateAttackAnimation(dt, nullptr)) {
-			EndTurn(); 
+			if (m_isDebugAttack) {
+				m_isDebugAttack = false;
+				if (canControl) SwitchToMenuMain();
+				else m_state = PlayerState::WAITING;
+			}
+			else {
+				EndTurn();
+			}
 		}
 		break;
 
@@ -180,6 +187,10 @@ void Player::Update(uint64_t dt) {
 		break;
 
 	case PlayerState::WAITING:
+		break;
+
+	case PlayerState::DEAD_FLYING:
+		UpdateDeathFly(deltaSeconds);
 		break;
 	}
 
@@ -238,6 +249,24 @@ void Player::EndTurn() {
 
 void Player::TakeDamage(int damage, Unit* attacker) {
 	Unit::TakeDamage(damage, attacker);
+	if (m_currentHP <= 0 && m_state != PlayerState::DEAD_FLYING) {
+		Die();
+	}
+}
+
+void Player::Die() {
+	m_state = PlayerState::DEAD_FLYING;
+	if (m_context && m_context->GetMapManager()) {
+		Tile* myTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+		if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
+	}
+	StartDeathFly();
+	if (m_context && m_context->GetCamera())
+		m_context->GetCamera()->PlayKillCam(m_hitSourcePos, m_srt.pos);
+}
+
+void Player::OnDeathFlyComplete() {
+	Destroy();
 }
 
 void Player::OnTurnChanged(TurnState state) {
@@ -396,10 +425,10 @@ void Player::ExecuteAttack() {
 	}
 	else if (m_context && m_context->GetCamera()) {
 		m_context->GetCamera()->PlayAttackZoom((m_srt.pos + targetPos) * 0.5f);
-
-		m_attackWindupTimer = 0.0f;
-		m_state = PlayerState::ANIM_ATTACK_WINDUP;
 	}
+
+	m_attackWindupTimer = 0.0f;
+	m_state = PlayerState::ANIM_ATTACK_WINDUP;
 }
 
 
@@ -952,6 +981,7 @@ void Player::playerResourceLoader() {
 void Player::DebugForceAttack(Direction dir, AttackType type) {
 	m_attackDir = dir;
 	m_selectedAttackType = type;
+	m_isDebugAttack = true;
 	SetFacing(dir);
 	ExecuteAttack();
 }

@@ -62,6 +62,7 @@ void GameScene::Init() {
 	m_isSceneChanging = false;
 	m_isGameOverProcessing = false;
 	m_gameOverTimer = 0.0f;
+	m_debugEnemy = nullptr;
 }
 
 // シーンの更新処理：表示・ロジック・フロー制御の優先度順に実行
@@ -729,7 +730,8 @@ bool GameScene::ProcessGameOverFlow(float deltaSeconds)
 	m_gameOverTimer += deltaSeconds;
 
 
-	if (m_gameOverTimer >= GAMEOVER_WAIT_DURATION) {
+	bool cineFinished = !m_context || !m_context->GetCamera() || !m_context->GetCamera()->IsCinematic();
+	if (m_gameOverTimer >= GAMEOVER_WAIT_DURATION && cineFinished) {
 		m_isSceneChanging = true;
 
 		SceneManager::GetInstance().SetCurrentScene(
@@ -1189,23 +1191,20 @@ void GameScene::debugUICamera() {
 	}
 
 	ImGui::Spacing();
-	ImGui::Text("HP Bar Tuning (Real-Time)");
-	ImGui::Separator();
-
-
-	ImGui::SliderFloat("HP Y Offset", &HPBar::s_hpBarOffsetY, 0.0f, 4.0f, "%.2f");
-	ImGui::SliderFloat("HP Heart Size", &HPBar::s_hpBarTexSize, 10.0f, 60.0f, "%.1f");
-	ImGui::SliderFloat("HP Heart Gap", &HPBar::s_hpBarGap, 0.0f, 15.0f, "%.1f");
-	// カメラ回転UIの位置とスケールの調整
-	if (m_gameUIManager) {
-		ImGui::Spacing();
-		ImGui::Text("Camera Rotate UI Tuning");
-		ImGui::Separator();
-		ImGui::SliderFloat("Rotate UI X", &m_gameUIManager->GetCameraRotatePos().x, 0.0f, 1920.0f, "%.1f");
-		ImGui::SliderFloat("Rotate UI Y", &m_gameUIManager->GetCameraRotatePos().y, 0.0f, 1080.0f, "%.1f");
-		ImGui::SliderFloat("Rotate UI Scale", &m_gameUIManager->GetCameraRotateScale(), 0.1f, 3.0f, "%.2f");
+	if (ImGui::CollapsingHeader("HP Bar")) {
+		ImGui::SliderFloat("HP Y Offset", &HPBar::s_hpBarOffsetY, 0.0f, 4.0f, "%.2f");
+		ImGui::SliderFloat("HP Heart Size", &HPBar::s_hpBarTexSize, 10.0f, 60.0f, "%.1f");
+		ImGui::SliderFloat("HP Heart Gap", &HPBar::s_hpBarGap, 0.0f, 15.0f, "%.1f");
+		// カメラ回転UIの位置とスケールの調整
+		if (m_gameUIManager) {
+			ImGui::Spacing();
+			ImGui::Text("Camera Rotate UI Tuning");
+			ImGui::Separator();
+			ImGui::SliderFloat("Rotate UI X", &m_gameUIManager->GetCameraRotatePos().x, 0.0f, 1920.0f, "%.1f");
+			ImGui::SliderFloat("Rotate UI Y", &m_gameUIManager->GetCameraRotatePos().y, 0.0f, 1080.0f, "%.1f");
+			ImGui::SliderFloat("Rotate UI Scale", &m_gameUIManager->GetCameraRotateScale(), 0.1f, 3.0f, "%.2f");
+		}
 	}
-
 	ImGui::Spacing();
 	// 4. 設定をローカルの INI ファイルに一括保存
 	if (ImGui::Button("Save Config to Local", ImVec2(-1, 30))) {
@@ -1216,7 +1215,7 @@ void GameScene::debugUICamera() {
 	ImGui::Spacing();
 	if (ImGui::CollapsingHeader("Attack Cam")) {
 		ImGui::SliderFloat("AttackZoom Radius", &Camera::ATTACKZOOM_RADIUS, 5.0f, 40.0f, "%.1f");
-		ImGui::SliderFloat("AttackZoom Hold", &Camera::ATTACKZOOM_HOLD, 0.1f, 2.0f, "%.2f");
+		ImGui::SliderFloat("AttackZoom Hold", &Camera::ATTACKZOOM_HOLD, 0.1f, 3.0f, "%.2f");
 		ImGui::SliderFloat("Attack Lead", &Camera::ATTACK_ZOOM_LEAD, 0.0f, 1.0f, "%.2f");
 		if (ImGui::Button("Test Attack Cam", ImVec2(-1, 30))) {
 			SpawnDebugEnemyInFront(-1); 
@@ -1233,15 +1232,19 @@ void GameScene::debugUICamera() {
 		ImGui::SliderFloat("KillCam Lead", &Camera::KILLCAM_LEAD, 0.0f, 1.0f, "%.2f");
 		ImGui::SliderFloat("KillCam Hold (slow)", &Camera::KILLCAM_HOLD, 0.2f, 3.0f, "%.2f");
 		ImGui::SliderFloat("Time Scale", &Camera::KILLCAM_TIME_SCALE, 0.05f, 1.0f, "%.2f");
+		ImGui::SliderFloat("Pitch Lift (look up)", &Camera::KILLCAM_PITCH_LIFT, 0.0f, 30.0f, "%.1f");
+
 		if (ImGui::Button("Test Kill Cam", ImVec2(-1, 30))) {
-			SpawnDebugEnemyInFront(1); 
+			SpawnDebugEnemyInFront(1);
 			m_player->DebugForceAttack(m_player->GetFacing());
 		}
+	}
 	ImGui::End();
 }
 
 void GameScene::drawGridDebugText()
 {
+	if (m_context) return;
 	if (!m_MapManager) return;
 
 	ImDrawList* drawList = ImGui::GetForegroundDrawList();
@@ -1299,6 +1302,17 @@ void GameScene::drawGridDebugText()
 Enemy* GameScene::SpawnDebugEnemyInFront(int hp) {
 	if (!m_player || !m_context || !m_MapManager) return nullptr;
 
+	// 前回テストで残ったデバッグ敵を除去し、スタックを防ぐ
+	if (m_debugEnemy) {
+		if (m_context->GetEnemyManager())
+			m_context->GetEnemyManager()->RemoveEnemy(m_debugEnemy);          // AI/管理リストから外す
+		Tile* prev = m_MapManager->GetTile(
+			m_debugEnemy->GetUnitGridX(), m_debugEnemy->GetUnitGridZ());
+		if (prev && prev->occupant == m_debugEnemy) prev->occupant = nullptr;  // 占有マスを解放
+		m_debugEnemy->Destroy();   // m_isDead を立てる → 描画ループ (if !IsDead) が自動でスキップ
+		m_debugEnemy = nullptr;
+	}
+
 	DirOffset o = DirOffset::From(m_player->GetFacing());
 	int gx = m_player->GetUnitGridX() + o.x;
 	int gz = m_player->GetUnitGridZ() + o.z;
@@ -1316,6 +1330,7 @@ Enemy* GameScene::SpawnDebugEnemyInFront(int hp) {
 	Enemy* raw = enemy.get();
 	if (m_context->GetEnemyManager()) m_context->GetEnemyManager()->RegisterEnemy(raw);
 	AddObject(std::move(enemy));
+	m_debugEnemy = raw;
 	return raw;
 }
 

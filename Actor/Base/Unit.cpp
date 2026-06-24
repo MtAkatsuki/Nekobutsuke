@@ -6,6 +6,7 @@
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../Actor/Gimmick/Trap.h"
 #include <cmath>
+#include <random>
 
 namespace {
 	// ---------------------------------------------------------
@@ -27,6 +28,13 @@ namespace {
 	const float MODEL_FORWARD_OFFSET = 0.0f;	// ← モデル導入後の一回限り標定
 
 	const float ARROW_Y_OFFSET = 0.08f;          // プレビュー矢印のZファイティング防止用浮かし幅
+
+	// 死亡飛出
+	const float DEATH_GRAVITY = 50.0f;
+	const float DEATH_FLY_FORCE = 30.0f;
+	std::random_device death_rd;
+	std::mt19937 death_gen(death_rd());
+	std::uniform_real_distribution<float> death_spin_dist(0.0f, 10.0f);
 }
 
 Unit::Unit(GameContext* context) : GameObject(context) {
@@ -69,6 +77,7 @@ void Unit::OnTurnChanged(TurnState state) {}
 void Unit::TakeDamage(int damage, Unit* attacker) {
 	if (damage < 0) return;
 	m_currentHP = std::max(0, m_currentHP - damage);
+	if (attacker) m_hitSourcePos = attacker->getSRT().pos;
 
 	// 視覚的重複の回避：複数回ダメージを受けた際、エフェクトや数字が
 	
@@ -382,4 +391,39 @@ void Unit::DrawPushPreview(Direction pushDir) {
 		effectPos.y += HIT_EFFECT_Y_OFFSET;
 		m_context->GetEffectManager()->DrawStaticHitPreview(effectPos);
 	}
+}
+
+void Unit::StartDeathFly() {
+	Vector3 diff = m_srt.pos - m_hitSourcePos;
+	diff.y = 0.0f;
+	if (diff.LengthSquared() > 0.001f) diff.Normalize();
+	else diff = Vector3(0, 0, 1);
+
+	Vector3 flyDir = Vector3(diff.x * 1.8f, 0.6f, diff.z * 1.8f);
+	m_deathVelocity = flyDir * DEATH_FLY_FORCE;
+	m_deathSpin = Vector3(death_spin_dist(death_gen), death_spin_dist(death_gen), death_spin_dist(death_gen));
+}
+
+void Unit::UpdateDeathFly(float delta) {
+	if (m_isDead) return;
+
+	Camera* cam = (m_context) ? m_context->GetCamera() : nullptr;
+
+	// ① スロー演出の影響を打ち消し、飛翔は常に実時間で進める
+	if (cam) {
+		float scale = cam->GetTimeScale();
+		if (scale > 0.0001f) delta /= scale;
+	}
+
+	// ② 物理更新（重力→速度→位置・回転）
+	m_deathVelocity.y -= DEATH_GRAVITY * delta;
+	m_srt.pos += m_deathVelocity * delta;
+	m_srt.rot += m_deathSpin * delta; 
+
+	if (m_srt.pos.y < -20.0f) OnDeathFlyComplete();
+	UpdateWorldMatrix();
+}
+
+void Unit::OnDeathFlyComplete() {
+	Destroy();
 }

@@ -4,16 +4,16 @@
 #include "../../System/CStaticMeshRenderer.h"
 
 // =========================================================
-// Ally ƒNƒ‰ƒX
-// ƒvƒŒƒCƒ„[‚ÌŒì‰q‘ÎÛ‚Æ‚È‚é–¡•ûƒ†ƒjƒbƒgiƒlƒYƒ~jB
-// “Æ©‚Ì’EoiÌŒ@jƒAƒjƒ[ƒVƒ‡ƒ“‚Æ–³“Gó‘Ô‚Ì§Œä‚ğ‚ÂB
+// Ally ã‚¯ãƒ©ã‚¹
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®è­·è¡›å¯¾è±¡ã¨ãªã‚‹å‘³æ–¹ãƒ¦ãƒ‹ãƒƒãƒˆï¼ˆãƒã‚ºãƒŸï¼‰ã€‚
+// ç‹¬è‡ªã®è„±å‡ºï¼ˆæ¡æ˜ï¼‰ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã¨ç„¡æ•µçŠ¶æ…‹ã®åˆ¶å¾¡ã‚’æŒã¤ã€‚
 // =========================================================
 class Ally : public Unit {
 public:
     using Unit::Unit;
 
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
     // ---------------------------------------------------------
     void init() override {}
     void Init();
@@ -21,14 +21,15 @@ public:
     void Update(uint64_t delta) override;
 
     // ---------------------------------------------------------
-    // ƒŒƒ“ƒ_ƒŠƒ“ƒO (Rendering)
+    // ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚° (Rendering)
     // ---------------------------------------------------------
     void OnDraw(uint64_t delta) override;
 
     // ---------------------------------------------------------
-    // ƒtƒ[§ŒäEƒCƒxƒ“ƒg (Flow & Events)
+    // ãƒ•ãƒ­ãƒ¼åˆ¶å¾¡ãƒ»ã‚¤ãƒ™ãƒ³ãƒˆ (Flow & Events)
     // ---------------------------------------------------------
     void TakeDamage(int damage, Unit* attacker) override;
+    virtual void OnDeathFlyComplete() override;
     virtual void StartTurn() override;
     void OnTurnChanged(TurnState state) override;
     virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
@@ -43,17 +44,17 @@ private:
     void UpdateDiggingAnimation(float dt);
 
     // =========================================================
-    // ƒƒ“ƒo[•Ï”
+    // ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•°
     // =========================================================
     CShader* m_shader = nullptr;
 
-    // --- ÌŒ@ƒAƒjƒ[ƒVƒ‡ƒ“ ---
+    // --- æ¡æ˜ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ ---
     bool m_isDigging = false;
     float m_digTimer = 0.0f;
     int m_digCount = 0;
     bool m_hasTriggeredEffect = false;
 
-    // --- ’EoƒVƒXƒeƒ€ ---
+    // --- è„±å‡ºã‚·ã‚¹ãƒ†ãƒ  ---
     enum class EscapeState {
         None,
         Digging,
@@ -64,4 +65,5 @@ private:
     bool m_isEscaping = false;
     float m_escapeAlpha = 1.0f;
     bool m_isKnockedBack = false;
+    bool m_isDeadFlying = false;
 };

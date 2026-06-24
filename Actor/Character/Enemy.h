@@ -7,7 +7,7 @@
 
 // =========================================================
 // EnemyState
-// “G‚ÌƒXƒe[ƒgƒ}ƒVƒ“’è‹`
+// æ•µã®ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ³å®šç¾©
 // =========================================================
 enum class EnemyState {
     IDLE,
@@ -18,15 +18,15 @@ enum class EnemyState {
 };
 
 // =========================================================
-// Enemy ƒNƒ‰ƒX
-// “Æ©‚ÌAIƒƒWƒbƒN‚ÆAƒ`ƒƒ[ƒWi’~—ÍjUŒ‚‚ÌƒVƒXƒeƒ€‚ğ‚Â“Gƒ†ƒjƒbƒg
+// Enemy ã‚¯ãƒ©ã‚¹
+// ç‹¬è‡ªã®AIãƒ­ã‚¸ãƒƒã‚¯ã¨ã€ãƒãƒ£ãƒ¼ã‚¸ï¼ˆè“„åŠ›ï¼‰æ”»æ’ƒã®ã‚·ã‚¹ãƒ†ãƒ ã‚’æŒã¤æ•µãƒ¦ãƒ‹ãƒƒãƒˆ
 // =========================================================
 class Enemy : public Unit {
 public:
     using Unit::Unit;
 
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
     // ---------------------------------------------------------
     void init() override;
     void Init();
@@ -35,7 +35,7 @@ public:
     void OnDraw(uint64_t delta) override;
 
     // ---------------------------------------------------------
-    // ƒtƒ[§Œä (Flow Control)
+    // ãƒ•ãƒ­ãƒ¼åˆ¶å¾¡ (Flow Control)
     // ---------------------------------------------------------
     void EnemyStartAction();
     virtual void OnTurnChanged(TurnState state) override;
@@ -43,7 +43,7 @@ public:
     virtual void TakeDamage(int damage, Unit* attacker) override;
 
     // ---------------------------------------------------------
-    // ƒXƒe[ƒ^ƒXEƒNƒGƒŠ (Status Queries)
+    // ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ãƒ»ã‚¯ã‚¨ãƒª (Status Queries)
     // ---------------------------------------------------------
     void SetDisplayOrder(int order) { m_displayOrder = order; }
     bool IsIdle() const { return m_state == EnemyState::IDLE; }
@@ -59,7 +59,7 @@ public:
     }
 
     // ---------------------------------------------------------
-    // UI ƒŒƒ“ƒ_ƒŠƒ“ƒO (UI Rendering)
+    // UI ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚° (UI Rendering)
     // ---------------------------------------------------------
     virtual void DrawUI() override;
 
@@ -69,7 +69,7 @@ protected:
 
 private:
     // ---------------------------------------------------------
-    // “à•”AIEƒƒWƒbƒN (Internal AI Logic)
+    // å†…éƒ¨AIãƒ»ãƒ­ã‚¸ãƒƒã‚¯ (Internal AI Logic)
     // ---------------------------------------------------------
     void SetInitialFacingToPlayer();
     void ExecuteAI();
@@ -81,9 +81,10 @@ private:
     void ReleaseChargeAttack();
     void Die();
     void DeathFlyingUpdate(float delta);
+    virtual void OnDeathFlyComplete() override;
 
     // =========================================================
-    // ƒƒ“ƒo[•Ï”
+    // ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•°
     // =========================================================
     CShader* m_EnemyShader = nullptr;
     CStaticMeshRenderer* m_pushArrowRenderer = nullptr;
@@ -95,23 +96,18 @@ private:
     int m_enemyDamage = 2;
     int m_displayOrder = 0;
 
-    // --- ƒpƒXEˆÚ“® ---
+    // --- ãƒ‘ã‚¹ãƒ»ç§»å‹• ---
     std::vector<Tile*> m_currentPath;
     std::vector<Tile*> m_moveRangeTiles;
     int m_pathIndex = 0;
     Vector3 m_targetWorldPos;
 
-    // --- UŒ‚Eƒ`ƒƒ[ƒW ---
+    // --- æ”»æ’ƒãƒ»ãƒãƒ£ãƒ¼ã‚¸ ---
     float m_attackTimer = 0.0f;
     bool m_isMyTurn = false;
     int m_lockedGridX = -1;
     int m_lockedGridZ = -1;
     bool m_isCharging = false;
     bool m_pendingCharge = false;
-    Vector3 m_hitSourcePos = Vector3(0, 0, 0);
-    Vector3 m_shakeOffset = Vector3(0, 0, 0); // y’Ç‰ÁzƒŒƒ“ƒ_ƒŠƒ“ƒO•ª—£—p‚Ì—h‚êƒIƒtƒZƒbƒg
-
-    // --- €–SE•¨— ---
-    Vector3 m_deathVelocity = Vector3(0, 0, 0);
-    Vector3 m_deathSpin = Vector3(0, 0, 0);
+    Vector3 m_shakeOffset = Vector3(0, 0, 0); // ã€è¿½åŠ ã€‘ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°åˆ†é›¢ç”¨ã®æºã‚Œã‚ªãƒ•ã‚»ãƒƒãƒˆ
 };

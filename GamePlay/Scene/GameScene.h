@@ -170,6 +170,7 @@ private:
 	// --- ゲームエンティティ ---
 	std::vector<std::unique_ptr<GameObject>> m_GameObjectList;
 	std::array<Enemy*, ENEMYMAX> m_enemies;
+	Enemy* m_debugEnemy = nullptr;// 直近のテスト用エネミー（次回スポーン時に掃除）
 	Player* m_player = nullptr;
 	Ally* m_ally = nullptr;
 	std::unique_ptr<Background> m_background;
