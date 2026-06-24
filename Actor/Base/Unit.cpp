@@ -35,6 +35,10 @@ namespace {
 	std::random_device death_rd;
 	std::mt19937 death_gen(death_rd());
 	std::uniform_real_distribution<float> death_spin_dist(0.0f, 10.0f);
+
+	// ノックバック（スライディング）演出パラメータ
+	const float SLIDE_ARC_HEIGHT = 1.2f;   // ノックバック曲線の頂点高さ（落下時の弧の高さ）
+	const float SLIDE_TUMBLE_TURNS = 0.0f;  // 転がる回転の回数（1.0 = 360度1回転）
 }
 
 Unit::Unit(GameContext* context) : GameObject(context) {
@@ -267,6 +271,18 @@ void Unit::StartSlideAnimation(const Vector3& targetPos) {
 	m_slideEndPos = targetPos;
 	m_animTimer = 0.0f;
 	m_slideTimer = 0.0f;
+
+	// ノックバックの方向に応じて、回転軸と回転方向を決定する
+	float dx = m_slideEndPos.x - m_slideStartPos.x;
+	float dz = m_slideEndPos.z - m_slideStartPos.z;
+	if (fabsf(dz) >= fabsf(dx)) {        
+
+		m_slideTumbleSign = (dz >= 0.0f) ? 1.0f : -1.0f;
+	}
+	else {                               
+		m_slideTumbleOnX = false;
+		m_slideTumbleSign = (dx >= 0.0f) ? 1.0f : -1.0f;
+	}
 }
 
 bool Unit::UpdateSlideAnimation(uint64_t dt) {
@@ -276,9 +292,17 @@ bool Unit::UpdateSlideAnimation(uint64_t dt) {
 	if (m_slideTimer < TIME_SLIDE) {
 		float t = m_slideTimer / TIME_SLIDE;
 		// EaseOutQuadの適用:「最初は速く、停止直前はゆっくり」という自然な減速感を作る
-		t = 1.0f - std::pow(1.0f - t, 2.0f);
+		float tEase = 1.0f - std::pow(1.0f - t, 2.0f);
 
-		m_srt.pos = Vector3::Lerp(m_slideStartPos, m_slideEndPos, t);
+		Vector3 p = Vector3::Lerp(m_slideStartPos, m_slideEndPos, tEase);
+		//放物線を描くようにY座標を調整することで、ノックバック中の浮き上がりと落下を表現
+		//t=0/1は常に0->落下点は影響されない
+		p.y += SLIDE_ARC_HEIGHT * 4.0f * t * (1.0f - t);
+		m_srt.pos = p;
+		// 回転アニメーションの計算：t増加ともに、整数回転、着地時に元の角度に戻るようにする
+		float angle = m_slideTumbleSign * SLIDE_TUMBLE_TURNS * 2.0f * PI * t;
+		if (m_slideTumbleOnX) m_srt.rot.x = angle;
+		else                  m_srt.rot.z = angle;
 
 		UpdateWorldMatrix();
 		Renderer::SetWorldMatrix(&m_WorldMatrix);
@@ -286,6 +310,8 @@ bool Unit::UpdateSlideAnimation(uint64_t dt) {
 	}
 	else {
 		m_srt.pos = m_slideEndPos;
+		m_srt.rot.x = 0.0f;   // 意外な残留回転を防ぐため、X軸とZ軸の回転をリセット
+		m_srt.rot.z = 0.0f;
 		UpdateWorldMatrix();
 		Renderer::SetWorldMatrix(&m_WorldMatrix);
 		return true;

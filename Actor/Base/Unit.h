@@ -140,6 +140,8 @@ protected:
 	Vector3 m_slideStartPos;
 	Vector3 m_slideEndPos;
 	float m_slideTimer = 0.0f;
+	bool  m_slideTumbleOnX = true;  // ノックバックされた時の翻転軸（X軸かZ軸か）を決定するフラグ
+	float m_slideTumbleSign = 1.0f; // ノックバック時の翻転方向を決定する符号（+1 or -1）
 
 	bool m_isTurning = false;
 
