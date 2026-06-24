@@ -456,7 +456,7 @@ void Enemy::Die() {
 	StartDeathFly();
 
 	if (m_context && m_context->GetCamera())
-		m_context->GetCamera()->PlayKillCam(m_hitSourcePos, m_srt.pos);
+		m_context->GetCamera()->PlayKillCam(m_hitSourcePos, m_srt.pos,true);
 }
 
 void Enemy::DeathFlyingUpdate(float deltaSeconds) {

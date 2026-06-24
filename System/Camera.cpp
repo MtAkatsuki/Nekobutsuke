@@ -275,7 +275,7 @@ void Camera::RestoreCineReturn() {
 	m_targetElevation = m_cineReturnElevation;
 }
 
-void Camera::PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos) {
+void Camera::PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, bool immediate) {
 	if (m_cinePhase == CinePhase::KillLead || m_cinePhase == CinePhase::KillSlow) return;
 	CaptureCineReturn();
 
@@ -285,14 +285,36 @@ void Camera::PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos) {
 	float targetAzim = atan2f(d.z, d.x) + KILLCAM_SHOULDER_YAW;
 	targetAzim = UnwrapNear(m_azimuth, targetAzim);
 
-	m_targetLookAt = victimPos; 
+	m_targetLookAt = victimPos;
 	m_targetRadius = KILLCAM_RADIUS;
 	m_targetAzimuth = targetAzim;
 	m_targetElevation = KILLCAM_ELEVATION;
 
 	m_state = CameraState::Cinematic;
-	m_cinePhase = CinePhase::KillLead;
-	m_cinePhaseTimer = 0.0f;
+
+	if (immediate) {
+		// 反応式（敵/環境/味方の致死）：肩越しポーズへ瞬間スナップし、即・死亡聚焦(KillSlow)へ
+		m_lookat = m_targetLookAt;
+		m_radius = m_targetRadius;
+		m_azimuth = m_targetAzimuth;
+		m_elevation = m_targetElevation;
+
+		// この肩越しポーズのカメラ位置を確定（pitchモードの基準位置）
+		CPolor3D polor(m_radius, m_elevation, m_azimuth);
+		m_position = m_lookat + polor.ToCartesian();
+
+		// KillLead を飛ばして直接 KillSlow（その場見上げ）
+		m_cinePhase = CinePhase::KillSlow;
+		m_cinePhaseTimer = 0.0f;
+		m_killCamPitch = true;
+		m_killCamPos = m_position;
+		m_targetLookAt = m_lookat + Vector3(0.0f, KILLCAM_PITCH_LIFT, 0.0f);
+	}
+	else {
+		// 予測式（自軍攻撃）：KILLCAM_LEAD かけて肩越しへ寄せる（蓄勢）
+		m_cinePhase = CinePhase::KillLead;
+		m_cinePhaseTimer = 0.0f;
+	}
 }
 
 void Camera::PlayAttackZoom(const Vector3& focusPos) {

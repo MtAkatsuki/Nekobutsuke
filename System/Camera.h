@@ -67,7 +67,7 @@ public:
     void SetLookAtCenter() { SetLookat(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z)); }
     void SetTargetToCenter() { SetTargetLookAt(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z)); }
 	//çUåÇââèoópÇÃÉJÉÅÉâêßå‰
-    void PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos);
+    void PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, bool immediate = false);
     void PlayAttackZoom(const Vector3& focusPos);
 
     // ---------------------------------------------------------
