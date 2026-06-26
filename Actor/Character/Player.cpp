@@ -658,12 +658,7 @@ void Player::DrawGhost() {
 
 	m_Renderer->Draw();
 
-	MATERIAL restore = old;
-	restore.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
-	restore.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
-	restore.Emission = Color(0.1f, 0.1f, 0.1f, 1.0f);
-	restore.TextureEnable = TRUE;
-	mtrl->SetMaterial(restore);
+	mtrl->SetMaterial(old);
 
 	UpdateWorldMatrix();
 	Renderer::SetWorldMatrix(&m_WorldMatrix);

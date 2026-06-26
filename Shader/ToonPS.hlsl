@@ -17,7 +17,8 @@ float4 main(in PS_IN3 In) : SV_Target
     }
 
     // --- N*L（Half-Lambert）---
-    float3 N = normalize(In.Normal);
+    // flat shading：世界座標の画面微分から面法線を再構成 → 低ポリの面を立てる
+    float3 N = normalize(cross(ddx(In.WPos), ddy(In.WPos)));
     float3 L = -normalize(Light.Direction.xyz); 
     float ndl = dot(N, L) * 0.5f + 0.5f; // [-1,1] → [0,1],暗い側を少し明るくするために 0.5f を足す
 
@@ -27,8 +28,8 @@ float4 main(in PS_IN3 In) : SV_Target
                + smoothstep(ToonParams.y - soft, ToonParams.y + soft, ndl) * 0.5f;
 
     // --- 明暗はrampで輝度を制御し、ライトの1.5倍HDR値は掛けない；さらにフレームワークの環境光を加算 ---
-    float3 lit = albedo.rgb * lerp(ShadowColor.rgb, float3(1, 1, 1), band);
-    lit += albedo.rgb * Light.Ambient.rgb;
+    float3 lit = albedo.rgb * lerp(ShadowColor.rgb, float3(0.82, 0.82, 0.82), band) * Light.Diffuse.rgb;
+
 
     return float4(lit, albedo.a);
 }

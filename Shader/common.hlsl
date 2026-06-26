@@ -41,11 +41,6 @@ cbuffer LightBuffer : register(b4)
     LIGHT Light;
 };
 
-#define MAX_BONE 400
-cbuffer BoneMatrixBuffer : register(b5)
-{
-    matrix BoneMatrix[MAX_BONE];
-}
 
 cbuffer LINEWIDTH : register(b6)
 {
@@ -53,6 +48,13 @@ cbuffer LINEWIDTH : register(b6)
     float3 PADDING;
 };
 
+cbuffer ToonBuffer : register(b7)
+{
+    float4 ShadowColor; // .rgb = 暗部カラー、.a = 予約
+    float4 RimColor; // .rgb = リムライトカラー、.a = RimStrength
+    float4 OutlineColor; // .rgb = アウトラインカラー、.a = OutlineWidth
+    float4 ToonParams; // x = 閾値0、y = 閾値1、z = ソフト境界幅、w = RimPower
+};
 
 struct VS_IN
 {

@@ -224,22 +224,17 @@ void GameScene::resourceLoader() {
 	// 1. シェーダー (Shaders)
 	{
 		std::unique_ptr<CShader> shader = std::make_unique<CShader>();
-		shader->Create("shader/ToonVS.hlsl", "shader/ToonVS.hlsl");
+		shader->Create("shader/ToonVS.hlsl", "shader/ToonPS.hlsl");
 		MeshManager::RegisterShader<CShader>("unlightshader", std::move(shader));
 	}
 
 	// 2. マップ・地形モデル (Map & Terrain Models)
 	{
 		std::unique_ptr<CStaticMesh> smesh = std::make_unique<CStaticMesh>();
-		smesh->Load("Assets/model/obj/floor_1x1x1.obj", "Assets/model/obj/");
+		smesh->Load("Assets/model/backgroud/floorFull.obj", "Assets/model/backgroud/");
 		std::unique_ptr<CStaticMeshRenderer> srenderer = std::make_unique<CStaticMeshRenderer>();
 		srenderer->Init(*smesh);
-		if (srenderer->GetMaterial(0)) {
-			MATERIAL m = srenderer->GetMaterial(0)->GetData();
-			m.Diffuse = Color(1, 1, 1, 1);
-			m.TextureEnable = TRUE;
-			srenderer->GetMaterial(0)->SetMaterial(m);
-		}
+
 		MeshManager::RegisterMesh<CStaticMesh>("floor_mesh", std::move(smesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("floor_mesh", std::move(srenderer));
 	}
@@ -286,19 +281,14 @@ void GameScene::resourceLoader() {
 		smesh_prop->Load("Assets/model/obj/prop_plane.obj", "Assets/model/obj/");
 		std::unique_ptr<CStaticMeshRenderer> srender_prop = std::make_unique<CStaticMeshRenderer>();
 		srender_prop->Init(*smesh_prop);
-		if (auto* mat = srender_prop->GetMaterial(0)) {
-			MATERIAL m = mat->GetData();
-			m.Diffuse = Color(1, 1, 1, 1);
-			m.TextureEnable = FALSE;
-			mat->SetMaterial(m);
-		}
+
 		MeshManager::RegisterMesh("prop_plane_mesh", std::move(smesh_prop));
 		MeshManager::RegisterMeshRenderer("prop_plane_mesh", std::move(srender_prop));
 	}
 
 	// 専用家具モデルの一括ロード
 	const std::vector<std::pair<std::string, std::string>> propModels = {
-		{"sofa_yoko_mesh", "Assets/model/obj/sofa_yoko.obj"},
+		{"sofa_yoko_mesh", "Assets/model/obj/loungeSofa.obj"},
 		{"cattower_mesh",  "Assets/model/obj/cattower.obj"},
 		{"bookshelf_mesh", "Assets/model/obj/bookshelf.obj"},
 		{"table_mesh",     "Assets/model/obj/table.obj"}
@@ -309,12 +299,7 @@ void GameScene::resourceLoader() {
 		mesh->Load(pair.second, "Assets/model/obj/");
 		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
 		renderer->Init(*mesh);
-		if (auto* mat = renderer->GetMaterial(0)) {
-			MATERIAL m = mat->GetData();
-			m.Diffuse = Color(1, 1, 1, 1);
-			m.TextureEnable = TRUE;
-			mat->SetMaterial(m);
-		}
+
 		MeshManager::RegisterMesh<CStaticMesh>(pair.first, std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(pair.first, std::move(renderer));
 	}
@@ -1161,6 +1146,27 @@ void GameScene::debugUICamera() {
 	if (ImGui::SliderFloat("Bound Padding", &Camera::BOUND_PADDING, -10.0f, 10.0f, "%.1f")) {
 		// リアルタイムで境界を再計算し、デバッグ表示を更新
 		RecalculateCameraBounds();
+	}
+	// === デバッグ用：ライティング調整 ===
+	if (ImGui::CollapsingHeader("Light / Toon")) {
+		LIGHT lt = Renderer::GetLight();            
+		float dir[3] = { lt.Direction.x, lt.Direction.y, lt.Direction.z };
+		float intensity = lt.Diffuse.x;
+		float ambient = lt.Ambient.x;
+
+		bool ch = false;
+		ch |= ImGui::SliderFloat3("Light Dir", dir, -1.0f, 1.0f);
+		ch |= ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 3.0f);
+		ch |= ImGui::SliderFloat("Ambient", &ambient, 0.0f, 1.0f);
+
+		if (ch) {
+			Vector4 d(dir[0], dir[1], dir[2], 0.0f);
+			d.Normalize(); 
+			lt.Direction = d;
+			lt.Diffuse = Color(intensity, intensity, intensity, 1.0f);
+			lt.Ambient = Color(ambient, ambient, ambient, 1.0f);
+			Renderer::SetLight(lt); 
+		}
 	}
 
 	// === デバッグ用：勝利アニメーションと「WIN」テキストの強制発動 ===

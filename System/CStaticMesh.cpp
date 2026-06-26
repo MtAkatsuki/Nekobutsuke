@@ -1,7 +1,7 @@
 #include    "commontypes.h"
 #include	"CStaticMesh.h"
 #include	"AssimpPerse.h"
-
+#include <iostream>
 void CStaticMesh::Load(std::string filename, std::string texturedirectory)
 {
 	std::vector<GM31::GE::myAssimp::SUBSET> subsets{};					// サブセット情報
@@ -41,7 +41,7 @@ void CStaticMesh::Load(std::string filename, std::string texturedirectory)
 				vertex.BoneName[i] = "";
 			}
 
-			for (int i = 0; i < v.bonecnt; i++) 
+			for (int i = 0; i < v.bonecnt; i++)
 			{
 				vertex.BoneIndex[i] = v.BoneIndex[i];
 				vertex.BoneWeight[i] = v.BoneWeight[i];
@@ -96,4 +96,19 @@ void CStaticMesh::Load(std::string filename, std::string texturedirectory)
 
 		m_materials.emplace_back(material);
 	}
+
+	// === debug: subset / material  ===
+	//{
+	//	std::string msg = "[MESH] " + filename
+	//		+ "\nsubsets=" + std::to_string(m_subsets.size())
+	//		+ "  materials=" + std::to_string(m_materials.size()) + "\n";
+	//	for (size_t i = 0; i < m_subsets.size(); ++i) {
+	//		msg += "subset[" + std::to_string(i) + "] name=" + m_subsets[i].MtrlName
+	//			+ "  MaterialIdx=" + std::to_string(m_subsets[i].MaterialIdx);
+	//		if (m_subsets[i].MaterialIdx >= (int)m_materials.size()) msg += "  <<< OOB!";
+	//		msg += "\n";
+	//	}
+	//	if (filename.find("Mouse") != std::string::npos)   // Mouseだけ
+	//		MessageBoxA(NULL, msg.c_str(), "MESH DEBUG", MB_OK);
+	//}
 }

@@ -78,6 +78,7 @@ void gamedraw(uint64_t deltatime){
 	Renderer::Begin();
 
 	SceneManager::GetInstance().Draw(deltatime);
+	Renderer::ResolveToBackbuffer();
 
 	if (DebugUI::IsVisible()) {
 		DebugUI::Draw();
@@ -85,7 +86,7 @@ void gamedraw(uint64_t deltatime){
 	}
 
 	// --- レンダリングパイプライン終了 ---
-	Renderer::End();
+	Renderer::Present();
 }
 
 void gamedispose(){

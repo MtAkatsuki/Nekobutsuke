@@ -37,7 +37,7 @@ namespace {
 	std::uniform_real_distribution<float> death_spin_dist(0.0f, 10.0f);
 
 	// ノックバック（スライディング）演出パラメータ
-	const float SLIDE_ARC_HEIGHT = 1.2f;   // ノックバック曲線の頂点高さ（落下時の弧の高さ）
+	const float SLIDE_ARC_HEIGHT = 1.0f;   // ノックバック曲線の頂点高さ（落下時の弧の高さ）
 	const float SLIDE_TUMBLE_TURNS = 0.0f;  // 転がる回転の回数（1.0 = 360度1回転）
 }
 
@@ -335,17 +335,6 @@ void Unit::UpdateFacingRotation(float dt) {
 
 void Unit::SetModelRenderer(CStaticMeshRenderer* r) {
 	m_Renderer = r;
-
-
-		if (auto* mat = m_Renderer->GetMaterial(0)) {
-			MATERIAL m = mat->GetData();
-			m.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
-			m.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
-			m.Emission = Color(0.1f, 0.1f, 0.1f, 1.0f);
-			m.TextureEnable = TRUE;
-			mat->SetMaterial(m);
-		}
-
 
 	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_srt.rot = Vector3(0.0f, 0.0f, 0.0f);

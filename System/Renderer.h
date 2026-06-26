@@ -171,11 +171,21 @@ private:
 
     static ComPtr<ID3D11Buffer> m_ToonBuffer;
 
+    static const int SSAA_SCALE = 2;
+    static ComPtr<ID3D11Texture2D>          m_SceneColorTex;
+    static ComPtr<ID3D11RenderTargetView>   m_SceneRTV;
+    static ComPtr<ID3D11ShaderResourceView> m_SceneSRV;
+    static ComPtr<ID3D11Texture2D>          m_SceneDepthTex;
+    static ComPtr<ID3D11DepthStencilView>   m_SceneDSV;
+
 public:
     static void Init();
     static void Uninit();
     static void Begin();
-    static void End();
+    /*static void End();*/
+    static void ResolveToBackbuffer();   // 2x→1x ダウンサンプル
+    static void Present();               // Present だけ
+
     static void SetDepthEnable(bool Enable);
     static void SetDepthAllwaysWrite();
     static void SetATCEnable(bool Enable);

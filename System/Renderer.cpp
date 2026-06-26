@@ -8,11 +8,18 @@
 
 #include <stdexcept>
 #include "Renderer.h"
+#include "CShader.h"
 #include "../Core/Application.h"
+#include "CVertexBuffer.h"
 
 //------------------------------------------------------------------------------
 // スタティックメンバ変数の初期化
 //------------------------------------------------------------------------------
+
+namespace {
+    CShader                  g_downsampleShader;
+    CVertexBuffer<VERTEX_3D> g_fsQuadVB;   // 全画面クアッド
+}
 
 D3D_FEATURE_LEVEL       Renderer::m_FeatureLevel = D3D_FEATURE_LEVEL_11_0;
 
@@ -32,12 +39,19 @@ ComPtr<ID3D11Buffer> Renderer::m_ViewBuffer;
 ComPtr<ID3D11Buffer> Renderer::m_ProjectionBuffer;
 ComPtr<ID3D11Buffer> Renderer::m_MaterialBuffer;
 ComPtr<ID3D11Buffer> Renderer::m_LightBuffer;
+ComPtr<ID3D11Buffer> Renderer::m_ToonBuffer;
 
 ComPtr<ID3D11DepthStencilState> Renderer::m_DepthStateEnable;
 ComPtr<ID3D11DepthStencilState> Renderer::m_DepthStateDisable;
 
 ComPtr<ID3D11BlendState> Renderer::m_BlendState[MAX_BLENDSTATE];
 ComPtr<ID3D11BlendState> Renderer::m_BlendStateATC;
+
+ComPtr<ID3D11Texture2D>          Renderer::m_SceneColorTex;
+ComPtr<ID3D11RenderTargetView>   Renderer::m_SceneRTV;
+ComPtr<ID3D11ShaderResourceView> Renderer::m_SceneSRV;
+ComPtr<ID3D11Texture2D>          Renderer::m_SceneDepthTex;
+ComPtr<ID3D11DepthStencilView>   Renderer::m_SceneDSV;
 
 LIGHT Renderer::m_Light;
 
@@ -224,10 +238,10 @@ void Renderer::Init()
     // --- ライト初期化 ---
     LIGHT light{};
     light.Enable = true;
-    light.Direction = Vector4(0.5f, -1.0f, 0.8f, 0.0f);
+    light.Direction = Vector4(-0.137f, -0.885f, 0.445f, 0.0f);
     light.Direction.Normalize();
     light.Ambient = Color(0.2f, 0.2f, 0.2f, 1.0f);
-    light.Diffuse = Color(1.5f, 1.5f, 1.5f, 1.0f);
+    light.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
     SetLight(light);
 
 
@@ -238,9 +252,9 @@ void Renderer::Init()
     TOONPARAM toon{};
 
     toon.ShadowColor = Color(0.45f, 0.45f, 0.55f, 1.0f); // やや寒色寄りの暗部カラー、調整用パラメータ
-    toon.RimColor = Color(1.0f, 1.0f, 1.0f, 1.0f);    // a = RimStrength（step2）
-    toon.OutlineColor = Color(0.0f, 0.0f, 0.0f, 0.03f);   // a = OutlineWidth（step3）
-    toon.ToonParams = Vector4(0.5f, 0.8f, 0.05f, 4.0f); // 閾値0 / 閾値1 / ソフト境界 / RimPower
+    toon.RimColor = Color(1.0f, 1.0f, 1.0f, 1.0f);    // a = RimStrength
+    toon.OutlineColor = Color(0.0f, 0.0f, 0.0f, 0.03f);   // a = OutlineWidth
+    toon.ToonParams = Vector4(0.5f, 0.8f, 0.01f, 4.0f); // 閾値0 / 閾値1 / ソフト境界 / RimPower
 
     SetToonParam(toon);
 
@@ -268,6 +282,39 @@ void Renderer::Init()
     uiSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
     m_Device->CreateSamplerState(&uiSamplerDesc, m_SamplerStateUI.GetAddressOf());
+
+    UINT sw = Application::GetWidth() * SSAA_SCALE;
+    UINT sh = Application::GetHeight() * SSAA_SCALE;
+
+    // オフスクリーンカラー（RTV + SRV）
+    D3D11_TEXTURE2D_DESC sc{};
+    sc.Width = sw; sc.Height = sh; sc.MipLevels = 1; sc.ArraySize = 1;
+    sc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; sc.SampleDesc.Count = 1;
+    sc.Usage = D3D11_USAGE_DEFAULT;
+    sc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    m_Device->CreateTexture2D(&sc, nullptr, m_SceneColorTex.GetAddressOf());
+    m_Device->CreateRenderTargetView(m_SceneColorTex.Get(), nullptr, m_SceneRTV.GetAddressOf());
+    m_Device->CreateShaderResourceView(m_SceneColorTex.Get(), nullptr, m_SceneSRV.GetAddressOf());
+
+    // オフスクリーン深度（2x, 非MS）
+    D3D11_TEXTURE2D_DESC sd{};
+    sd.Width = sw; sd.Height = sh; sd.MipLevels = 1; sd.ArraySize = 1;
+    sd.Format = DXGI_FORMAT_D32_FLOAT; sd.SampleDesc.Count = 1;
+    sd.Usage = D3D11_USAGE_DEFAULT; sd.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    m_Device->CreateTexture2D(&sd, nullptr, m_SceneDepthTex.GetAddressOf());
+    D3D11_DEPTH_STENCIL_VIEW_DESC sdsv{};
+    sdsv.Format = DXGI_FORMAT_D32_FLOAT; sdsv.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    m_Device->CreateDepthStencilView(m_SceneDepthTex.Get(), &sdsv, m_SceneDSV.GetAddressOf());
+
+    // 全画面クアッド（トライアングルストリップ用に4頂点、NDC直接指定）
+    std::vector<VERTEX_3D> quad(4);
+    quad[0].Position = Vector3(-1.0f, -1.0f, 0.0f); quad[0].TexCoord = Vector2(0.0f, 1.0f); // 左下
+    quad[1].Position = Vector3(-1.0f, 1.0f, 0.0f); quad[1].TexCoord = Vector2(0.0f, 0.0f); // 左上
+    quad[2].Position = Vector3(1.0f, -1.0f, 0.0f); quad[2].TexCoord = Vector2(1.0f, 1.0f); // 右下
+    quad[3].Position = Vector3(1.0f, 1.0f, 0.0f); quad[3].TexCoord = Vector2(1.0f, 0.0f); // 右上
+    g_fsQuadVB.Create(quad);
+
+    g_downsampleShader.Create("shader/FullScreenVS.hlsl", "shader/FullScreenPS.hlsl");
 
 }
 
@@ -297,6 +344,12 @@ void Renderer::Uninit()
     m_Device.Reset();
     m_SamplerStateAniso.Reset();
     m_SamplerStatePoint.Reset();
+
+    m_SceneSRV.Reset();
+    m_SceneRTV.Reset();
+    m_SceneColorTex.Reset();
+    m_SceneDSV.Reset();
+    m_SceneDepthTex.Reset();
 }
 
 /**
@@ -308,11 +361,18 @@ void Renderer::Uninit()
  *
  * 毎フレーム必ず呼び出して、前のフレームの残像を消します。
  */
-void Renderer::Begin()
-{
+void Renderer::Begin() {
     float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), clearColor);
-    m_DeviceContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+    m_DeviceContext->OMSetRenderTargets(1, m_SceneRTV.GetAddressOf(), m_SceneDSV.Get());
+
+    D3D11_VIEWPORT vp{};
+    vp.Width = (float)(Application::GetWidth() * SSAA_SCALE);
+    vp.Height = (float)(Application::GetHeight() * SSAA_SCALE);
+    vp.MaxDepth = 1.0f;
+    m_DeviceContext->RSSetViewports(1, &vp);
+
+    m_DeviceContext->ClearRenderTargetView(m_SceneRTV.Get(), clearColor);
+    m_DeviceContext->ClearDepthStencilView(m_SceneDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
 /**
@@ -321,8 +381,36 @@ void Renderer::Begin()
  * @details
  * Presentでバックバッファとフロントバッファを入れ替えます。
  */
-void Renderer::End()
-{
+//void Renderer::End()
+//{
+//    m_SwapChain->Present(1, 0);
+//}
+
+void Renderer::ResolveToBackbuffer() {
+    // 1x バックバッファへ（深度なし）
+    m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), nullptr);
+    D3D11_VIEWPORT vp{};
+    vp.Width = (float)Application::GetWidth();
+    vp.Height = (float)Application::GetHeight();
+    vp.MaxDepth = 1.0f;
+    m_DeviceContext->RSSetViewports(1, &vp);
+
+    // 全画面三角形でダウンサンプル（線形サンプラ=2x2平均）
+    g_downsampleShader.SetGPU();                  // VS/PS + VERTEX_3D入力レイアウトをbind
+    g_fsQuadVB.SetGPU();                          // クアッドVBをbind
+    Renderer::DisableCulling(false);
+    SetDepthEnable(false);
+    m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    m_DeviceContext->PSSetShaderResources(0, 1, m_SceneSRV.GetAddressOf());
+    m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateAniso.GetAddressOf()); // linear
+    m_DeviceContext->Draw(4, 0);                  // strip = 2三角形 = 全画面
+
+    // 次フレームでRTVに戻る為SRVを外す
+    ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+    m_DeviceContext->PSSetShaderResources(0, 1, nullSRV);
+}
+
+void Renderer::Present() {
     m_SwapChain->Present(1, 0);
 }
 

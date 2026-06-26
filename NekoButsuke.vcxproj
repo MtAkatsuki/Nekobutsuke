@@ -48,7 +48,6 @@
     <ClCompile Include="System\AssimpPerse.cpp" />
     <ClCompile Include="System\Audio\AudioManager.cpp" />
     <ClCompile Include="System\BackgroundTransition.cpp" />
-    <ClCompile Include="System\BoneCombMatrix.cpp" />
     <ClCompile Include="System\BoxDrawer.cpp" />
     <ClCompile Include="System\C3DShape.cpp" />
     <ClCompile Include="System\Camera.cpp" />
@@ -121,7 +120,6 @@
     <ClInclude Include="System\AssimpPerse.h" />
     <ClInclude Include="System\Audio\AudioManager.h" />
     <ClInclude Include="System\BackgroundTransition.h" />
-    <ClInclude Include="System\BoneCombMatrix.h" />
     <ClInclude Include="System\BoxDrawer.h" />
     <ClInclude Include="System\C3DShape.h" />
     <ClInclude Include="System\Camera.h" />
@@ -204,6 +202,18 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shader\FullScreenPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\FullScreenVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="Shader\ToonPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>

@@ -151,9 +151,6 @@
     <ClCompile Include="System\BackgroundTransition.cpp">
       <Filter>System</Filter>
     </ClCompile>
-    <ClCompile Include="System\BoneCombMatrix.cpp">
-      <Filter>System</Filter>
-    </ClCompile>
     <ClCompile Include="System\BoxDrawer.cpp">
       <Filter>System</Filter>
     </ClCompile>
@@ -363,9 +360,6 @@
     <ClInclude Include="System\BackgroundTransition.h">
       <Filter>System</Filter>
     </ClInclude>
-    <ClInclude Include="System\BoneCombMatrix.h">
-      <Filter>System</Filter>
-    </ClInclude>
     <ClInclude Include="System\BoxDrawer.h">
       <Filter>System</Filter>
     </ClInclude>
@@ -573,6 +567,12 @@
       <Filter>Shader</Filter>
     </FxCompile>
     <FxCompile Include="Shader\ToonPS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\FullScreenVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\FullScreenPS.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
   </ItemGroup>
