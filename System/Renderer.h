@@ -170,6 +170,7 @@ private:
     static ComPtr<ID3D11SamplerState> m_SamplerStateUI;
 
     static ComPtr<ID3D11Buffer> m_ToonBuffer;
+    static TOONPARAM m_ToonParam;
 
     static const int SSAA_SCALE = 2;
     static ComPtr<ID3D11Texture2D>          m_SceneColorTex;
@@ -203,6 +204,7 @@ public:
         m_DeviceContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
     }
     static void DisableCulling(bool cullflag = false);
+    static void SetCullFront();
     static void SetFillMode(D3D11_FILL_MODE FillMode);
 
     static LIGHT GetLight();
@@ -210,5 +212,6 @@ public:
     static void SetPixelArtMode(bool isPixelArt); // サンプリングモード切り替え用インターフェース
     static void SetUISamplerMode(bool isUi);
 
+    static TOONPARAM GetToonParam();
     static void SetToonParam(TOONPARAM param);
 };

@@ -103,6 +103,7 @@ protected:
 	virtual void OnTurnChanged(TurnState state);
 	virtual void StartTurn();
 	virtual void EndTurn();
+	void DrawOutline();
 
 protected:
 	// =========================================================

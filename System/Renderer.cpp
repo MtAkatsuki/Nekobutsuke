@@ -40,6 +40,7 @@ ComPtr<ID3D11Buffer> Renderer::m_ProjectionBuffer;
 ComPtr<ID3D11Buffer> Renderer::m_MaterialBuffer;
 ComPtr<ID3D11Buffer> Renderer::m_LightBuffer;
 ComPtr<ID3D11Buffer> Renderer::m_ToonBuffer;
+TOONPARAM Renderer::m_ToonParam;
 
 ComPtr<ID3D11DepthStencilState> Renderer::m_DepthStateEnable;
 ComPtr<ID3D11DepthStencilState> Renderer::m_DepthStateDisable;
@@ -253,7 +254,7 @@ void Renderer::Init()
 
     toon.ShadowColor = Color(0.45f, 0.45f, 0.55f, 1.0f); // やや寒色寄りの暗部カラー、調整用パラメータ
     toon.RimColor = Color(1.0f, 1.0f, 1.0f, 1.0f);    // a = RimStrength
-    toon.OutlineColor = Color(0.0f, 0.0f, 0.0f, 0.03f);   // a = OutlineWidth
+    toon.OutlineColor = Color(0.0f, 0.0f, 0.0f, 0.0003f);   // a = OutlineWidth
     toon.ToonParams = Vector4(0.5f, 0.8f, 0.01f, 4.0f); // 閾値0 / 閾値1 / ソフト境界 / RimPower
 
     SetToonParam(toon);
@@ -525,6 +526,25 @@ LIGHT Renderer::GetLight()
     return m_Light;
 }
 
+
+TOONPARAM Renderer::GetToonParam()
+{
+    return m_ToonParam;
+}
+
+void Renderer::SetCullFront()
+{
+    D3D11_RASTERIZER_DESC rd{};
+    rd.FillMode = D3D11_FILL_SOLID;
+    rd.CullMode = D3D11_CULL_FRONT;   //背面線だけ描画
+    rd.FrontCounterClockwise = FALSE;
+    rd.DepthClipEnable = TRUE;
+    rd.MultisampleEnable = TRUE;
+    ComPtr<ID3D11RasterizerState> rs;
+    m_Device->CreateRasterizerState(&rd, rs.GetAddressOf());
+    m_DeviceContext->RSSetState(rs.Get());
+}
+
 /**
  * @brief 指定したブレンドステートをセットします。
  * @param nBlendState 使用するブレンドステートの種類
@@ -627,6 +647,7 @@ void Renderer::SetUISamplerMode(bool isUi) {
 }
 
 void Renderer::SetToonParam(TOONPARAM param) {
+    m_ToonParam = param;
     m_DeviceContext->UpdateSubresource(m_ToonBuffer.Get(), 0, nullptr, &param, 0, 0);
     m_DeviceContext->VSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
     m_DeviceContext->PSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());

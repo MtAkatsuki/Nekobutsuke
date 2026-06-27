@@ -333,6 +333,12 @@ void GameScene::resourceLoader() {
 		MeshManager::RegisterMesh<CStaticMesh>("escape_cube_mesh", std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("escape_cube_mesh", std::move(renderer));
 	}
+	// 5. 輪郭線シェーダー (Outline Shader)
+	{
+		std::unique_ptr<CShader> outline = std::make_unique<CShader>();
+		outline->Create("shader/OutlineVS.hlsl", "shader/OutlinePS.hlsl");
+		MeshManager::RegisterShader<CShader>("outlineshader", std::move(outline));
+	}
 
 	// 各種ナビゲーション矢印のロード
 	auto LoadArrowMesh = [](const std::string& name, const std::string& path) {
@@ -1138,6 +1144,18 @@ void GameScene::debugUICamera() {
 		m_camera->SetTargetRadius(Camera::ZOOM_RADIUS);
 		m_camera->UpdateTargetAzimuth();
 		m_camera->SetTargetElevation(Camera::BASE_ELEVATION);
+	}
+
+	if (ImGui::CollapsingHeader("Outline")) {
+		TOONPARAM tp = Renderer::GetToonParam();
+		bool ch = false;
+		ch |= ImGui::SliderFloat("Width", &tp.OutlineColor.w, 0.0f, 0.001f, "%.4f");
+		float col[3] = { tp.OutlineColor.x, tp.OutlineColor.y, tp.OutlineColor.z };
+		if (ImGui::ColorEdit3("Color", col)) {
+			tp.OutlineColor.x = col[0]; tp.OutlineColor.y = col[1]; tp.OutlineColor.z = col[2];
+			ch = true;
+		}
+		if (ch) Renderer::SetToonParam(tp); 
 	}
 
 	ImGui::Separator();

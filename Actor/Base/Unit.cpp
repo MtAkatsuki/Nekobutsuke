@@ -344,6 +344,22 @@ void Unit::DrawModel() {
 	if (!m_Renderer) return;
 	Renderer::SetWorldMatrix(&m_WorldMatrix);
 	m_Renderer->Draw();
+	DrawOutline();
+}
+
+void Unit::DrawOutline()
+{
+	if (Renderer::GetToonParam().OutlineColor.w <= 0.0001f) return;  // 幅0 = 無効化（不要な1回分のDrawを省略）
+	auto* outline = MeshManager::getShader<CShader>("outlineshader");
+	if (!outline) return;
+
+	outline->SetGPU();          // アウトライン用VS/PSへ切り替え
+	Renderer::SetCullFront();   // 表面をカリングし、裏面シェルのみ描画
+	m_Renderer->Draw();         // 同じmeshを外側へ拡張して再描画
+
+	// 復元：トゥーンシェーディング + 通常の裏面カリング
+	MeshManager::getShader<CShader>("unlightshader")->SetGPU();
+	Renderer::DisableCulling(true);  // true = CULL_BACK
 }
 
 void Unit::DrawUI() {
