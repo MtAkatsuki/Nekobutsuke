@@ -104,6 +104,7 @@ protected:
 	virtual void StartTurn();
 	virtual void EndTurn();
 	void DrawOutline();
+	void DrawBlobShadow();
 
 protected:
 	// =========================================================

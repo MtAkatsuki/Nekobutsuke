@@ -90,12 +90,13 @@ struct LIGHT
     Color Ambient;         ///< 環境光の色
 };
 
-// 構造体（HLSL側のToonBufferとメンバー単位で一致、サイズ64バイト）
+// 構造体（HLSL側のToonBufferとメンバー単位で一致、サイズ80バイト）
 struct TOONPARAM {
     Color   ShadowColor;   // rgba = 4つのfloat
     Color   RimColor;      // .a = RimStrength
     Color   OutlineColor;  // .a = OutlineWidth
     Vector4 ToonParams;    // x = 閾値0、y = 閾値1、z = ソフト境界、w = RimPower
+    Color   SkyColor;
 };
 
 /**
@@ -110,6 +111,8 @@ struct SUBSET {
     unsigned int VertexBase = 0;///< 頂点ベース
     unsigned int MaterialIdx = 0;///< マテリアルインデックス
 };
+//Vignette
+struct POSTFX { float Vignette; float Pad[3]; };
 
 /**
  * @enum EBlendState
@@ -179,6 +182,11 @@ private:
     static ComPtr<ID3D11Texture2D>          m_SceneDepthTex;
     static ComPtr<ID3D11DepthStencilView>   m_SceneDSV;
 
+    static ComPtr<ID3D11Buffer> m_PostFXBuffer;  
+    static POSTFX m_PostFX;
+
+
+
 public:
     static void Init();
     static void Uninit();
@@ -189,6 +197,7 @@ public:
 
     static void SetDepthEnable(bool Enable);
     static void SetDepthAllwaysWrite();
+    static void SetDepthReadOnly();
     static void SetATCEnable(bool Enable);
     static void SetWorldViewProjection2D();
     static void SetWorldMatrix(Matrix4x4* WorldMatrix);
@@ -214,4 +223,8 @@ public:
 
     static TOONPARAM GetToonParam();
     static void SetToonParam(TOONPARAM param);
+
+    static void   SetPostFX(POSTFX p);
+    static POSTFX GetPostFX();
+    static void DrawVignette();
 };

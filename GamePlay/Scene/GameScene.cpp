@@ -9,9 +9,10 @@
 #include "../../System/scenemanager.h"
 #include "../../System//FadeTransition.h"
 #include "../../System/BackgroundTransition.h"
-#include "../../GamePlay/Manager/MapManager.h"
-#include "../../Core/GameContext.h"
+#include "../../System/ZFightTunables.h"
 #include "../../System/Audio/AudioManager.h"
+#include "../../Core/GameContext.h"
+#include "../../GamePlay/Manager/MapManager.h"
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../GamePlay/Manager/EnemyManager.h"
 #include "../../UI/Component/HPBar.h"
@@ -124,6 +125,7 @@ void GameScene::draw(uint64_t deltatime) {
 	DrawTacticalOverlays(deltatime);
 
 	// 7. エフェクトと2DスクリーンUI
+	Renderer::DrawVignette();
 	DrawDamageAndHitEffects();
 	DrawScreenSpaceUI();
 }
@@ -338,6 +340,12 @@ void GameScene::resourceLoader() {
 		std::unique_ptr<CShader> outline = std::make_unique<CShader>();
 		outline->Create("shader/OutlineVS.hlsl", "shader/OutlinePS.hlsl");
 		MeshManager::RegisterShader<CShader>("outlineshader", std::move(outline));
+	}
+	// 6. Blob影シェーダー (Blob Shadow Shader)
+	{
+		std::unique_ptr<CShader> blobshadow = std::make_unique<CShader>();
+		blobshadow->Create("shader/BlobVS.hlsl", "shader/BlobPS.hlsl");
+		MeshManager::RegisterShader<CShader>("blobshader", std::move(blobshadow));
 	}
 
 	// 各種ナビゲーション矢印のロード
@@ -1115,6 +1123,23 @@ void GameScene::debugUICamera() {
 
 	ImGui::Begin("Player Camera Tuning");
 
+	if (ImGui::CollapsingHeader("Z-Fight Offsets")) {
+		ImGui::SliderFloat("Range Panel", &ZFight::RangePanel, 0.0f, 0.5f, "%.3f");
+		ImGui::SliderFloat("Arrow", &ZFight::Arrow, 0.0f, 0.5f, "%.3f");
+		ImGui::SliderFloat("Path Line", &ZFight::PathLine, 0.0f, 0.5f, "%.3f");
+		ImGui::SliderFloat("Ghost", &ZFight::Ghost, 0.0f, 0.5f, "%.3f");
+		ImGui::SliderFloat("Enemy Arrow", &ZFight::EnemyArrow, 0.0f, 0.5f, "%.3f");
+		ImGui::SliderFloat("Blob Shadow", &ZFight::Blob, 0.0f, 0.5f, "%.3f");
+		ImGui::SliderFloat("Trap", &ZFight::Trap, 0.0f, 1.0f, "%.3f");
+	}
+
+	if (ImGui::CollapsingHeader("PostFX")) {
+		POSTFX p = Renderer::GetPostFX();
+		bool ch = false;
+		ch |= ImGui::SliderFloat("Vignette", &p.Vignette, 0.0f, 2.0f, "%.2f");
+		if (ch) Renderer::SetPostFX(p);
+	}
+
 	// 1. 現在がプレイヤーターン（操作フェーズ）かチェック
 	bool isPlayerPhase = false;
 	if (m_context && m_context->GetTurnManager()) {
@@ -1175,7 +1200,6 @@ void GameScene::debugUICamera() {
 		bool ch = false;
 		ch |= ImGui::SliderFloat3("Light Dir", dir, -1.0f, 1.0f);
 		ch |= ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 3.0f);
-		ch |= ImGui::SliderFloat("Ambient", &ambient, 0.0f, 1.0f);
 
 		if (ch) {
 			Vector4 d(dir[0], dir[1], dir[2], 0.0f);
@@ -1185,6 +1209,16 @@ void GameScene::debugUICamera() {
 			lt.Ambient = Color(ambient, ambient, ambient, 1.0f);
 			Renderer::SetLight(lt); 
 		}
+	}
+
+	if (ImGui::CollapsingHeader("Hemisphere")) {
+		TOONPARAM tp = Renderer::GetToonParam();
+		bool ch = false;
+		float sky[3] = { tp.SkyColor.x,    tp.SkyColor.y,    tp.SkyColor.z };
+		float ground[3] = { tp.ShadowColor.x, tp.ShadowColor.y, tp.ShadowColor.z };
+		if (ImGui::ColorEdit3("Sky (up)", sky)) { tp.SkyColor.x = sky[0];      tp.SkyColor.y = sky[1];      tp.SkyColor.z = sky[2];      ch = true; }
+		if (ImGui::ColorEdit3("Ground (dn)", ground)) { tp.ShadowColor.x = ground[0]; tp.ShadowColor.y = ground[1]; tp.ShadowColor.z = ground[2]; ch = true; }
+		if (ch) Renderer::SetToonParam(tp);
 	}
 
 	// === デバッグ用：勝利アニメーションと「WIN」テキストの強制発動 ===

@@ -1,11 +1,11 @@
 #include "Trap.h"
 #include "../../System/Meshmanager.h"
+#include "../../System/ZFightTunables.h"
 #include "../Base/Unit.h"
 #include <iostream>
 
 namespace {
     // 演出・バランス用定数
-    const float TRAP_Y_OFFSET = 0.4f;       // 地面に埋まらないための初期Yオフセット
     const float TRAP_INITIAL_SCALE = 0.5f;  // トラップの基準スケール
     const float ANIM_DURATION = 0.5f;       // 消失アニメーションの再生時間（秒）
 }
@@ -22,7 +22,7 @@ void Trap::Init(MapModelType type, Vector3 position) {
     m_srt.scale = Vector3(TRAP_INITIAL_SCALE, TRAP_INITIAL_SCALE, TRAP_INITIAL_SCALE);
     m_srt.rot = Vector3(0.0f, 0.0f, 0.0f);
     m_srt.pos = position;
-    m_srt.pos.y += TRAP_Y_OFFSET;
+    m_srt.pos.y += ZFight::Trap;
 
     // アニメーション計算用の基準スケールと透明度を保存
     m_initialScale = m_srt.scale;

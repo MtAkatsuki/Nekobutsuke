@@ -11,6 +11,7 @@
 #include "../../System/RandomEngine.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../System/Meshmanager.h"
+#include "../../System/ZFightTunables.h"
 #include "../../Actor/Character/Player.h"
 #include "../../Actor/Character/Enemy.h"
 #include "../../Actor/Character/Ally.h"
@@ -20,7 +21,6 @@
 namespace {
 	// 視覚的オフセット（Zファイティング防止・パースペクティブ調整用）
 	const float VISUAL_Z_OFFSET = -0.3f;
-	const float HEIGHT_OFFSET_RANGE_PANEL = 0.05f;
 }
 
 void MapManager::Init(GameContext* context) {
@@ -311,7 +311,7 @@ void MapManager::DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX
 	for (Tile* t : tiles)
 	{
 		Vector3 pos = GetWorldPosition(t->gridX, t->gridZ);
-		pos.y += HEIGHT_OFFSET_RANGE_PANEL;//少し浮かせて描画
+		pos.y += ZFight::RangePanel; //少し浮かせて描画
 
 		//見やすいために少し小さくする
 		Matrix4x4 world = Matrix4x4::CreateScale(0.9f) * Matrix4x4::CreateTranslation(pos);

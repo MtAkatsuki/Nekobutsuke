@@ -1,5 +1,6 @@
 #include "Enemy.h"    
 #include "../../System/meshmanager.h"
+#include "../../System/ZFightTunables.h"
 #include "../../Core/GameContext.h"
 #include "../../GamePlay/Scene/GameScene.h"
 #include "../../GamePlay/Manager/MapManager.h"
@@ -505,7 +506,7 @@ void Enemy::OnDrawOverlay(uint64_t dt) {
 		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
 		Vector3 arrowPos = myPos + (targetPos - myPos) * 0.35f;
-		arrowPos.y += 0.15f; // Overlayレイヤー内での浮かせ具合を調整
+		arrowPos.y += ZFight::EnemyArrow; // Overlayレイヤー内での浮かせ具合を調整
 
 		Vector3 diff = targetPos - myPos;
 		float rotY = 0.0f;

@@ -283,6 +283,9 @@
     <ClCompile Include="System\imgui\imgui_widgets.cpp">
       <Filter>System\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="System\ZFightTunables.cpp">
+      <Filter>System</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h">
@@ -561,6 +564,9 @@
     <ClInclude Include="System\imgui\imstb_truetype.h">
       <Filter>System\imgui</Filter>
     </ClInclude>
+    <ClInclude Include="System\ZFightTunables.h">
+      <Filter>System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\ToonVS.hlsl">
@@ -579,6 +585,15 @@
       <Filter>Shader</Filter>
     </FxCompile>
     <FxCompile Include="Shader\OutlinePS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\BlobVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\BlobPS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\VignettePS.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
   </ItemGroup>

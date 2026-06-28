@@ -54,6 +54,7 @@ cbuffer ToonBuffer : register(b7)
     float4 RimColor; // .rgb = リムライトカラー、.a = RimStrength
     float4 OutlineColor; // .rgb = アウトラインカラー、.a = OutlineWidth
     float4 ToonParams; // x = 閾値0、y = 閾値1、z = ソフト境界幅、w = RimPower
+    float4 SkyColor;
 };
 
 struct VS_IN

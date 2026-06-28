@@ -5,6 +5,7 @@
 #include "../../UI/System/DamageNumberManager.h"
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../Actor/Gimmick/Trap.h"
+#include "../../System/ZFightTunables.h"
 #include <cmath>
 #include <random>
 
@@ -27,7 +28,7 @@ namespace {
 	const float FACING_LERP_SPEED = 14.0f;		// 12〜18 で手触り調整
 	const float MODEL_FORWARD_OFFSET = 0.0f;	// ← モデル導入後の一回限り標定
 
-	const float ARROW_Y_OFFSET = 0.08f;          // プレビュー矢印のZファイティング防止用浮かし幅
+	const float BLOB_SIZE = 1.3f;                // Blob影のスケール（半径）
 
 	// 死亡飛出
 	const float DEATH_GRAVITY = 50.0f;
@@ -342,6 +343,7 @@ void Unit::SetModelRenderer(CStaticMeshRenderer* r) {
 
 void Unit::DrawModel() {
 	if (!m_Renderer) return;
+	DrawBlobShadow();
 	Renderer::SetWorldMatrix(&m_WorldMatrix);
 	m_Renderer->Draw();
 	DrawOutline();
@@ -360,6 +362,30 @@ void Unit::DrawOutline()
 	// 復元：トゥーンシェーディング + 通常の裏面カリング
 	MeshManager::getShader<CShader>("unlightshader")->SetGPU();
 	Renderer::DisableCulling(true);  // true = CULL_BACK
+}
+
+void Unit::DrawBlobShadow() {
+	Vector3 p = m_srt.pos;
+	p.y = ZFight::Blob;  // 地面から少し浮かせる：z-fight防止（Ghostの0.015と同じ考え方）
+	Matrix4x4 w = Matrix4x4::CreateScale(BLOB_SIZE, 1.0f, BLOB_SIZE)
+		* Matrix4x4::CreateTranslation(p);
+	Renderer::SetWorldMatrix(&w);
+
+	auto* blob = MeshManager::getShader<CShader>("blobshader");
+	auto* mesh = MeshManager::getRenderer<CStaticMeshRenderer>("range_panel_mesh");
+	if (!blob || !mesh) return;
+
+	blob->SetGPU();
+	Renderer::SetBlendState(BS_ALPHABLEND);
+	Renderer::DisableCulling(false);
+	Renderer::SetDepthReadOnly();
+	mesh->Draw();
+
+	// 復元：トゥーン + ブレンド無効
+	Renderer::SetDepthEnable(true); 
+	Renderer::DisableCulling(true);
+	Renderer::SetBlendState(BS_NONE);
+	MeshManager::getShader<CShader>("unlightshader")->SetGPU();
 }
 
 void Unit::DrawUI() {
@@ -392,7 +418,7 @@ void Unit::DrawPushPreview(Direction pushDir) {
 
 	// 描画位置を現在地と対象地の間に設定
 	Vector3 arrowPos = myPos + (targetPos - myPos) * 0.2f;
-	arrowPos.y += ARROW_Y_OFFSET;
+	arrowPos.y += ZFight::Arrow;
 
 	float rotY = 0.0f;
 	if (offset.x == 1)       rotY = 0.0f;

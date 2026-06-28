@@ -27,8 +27,12 @@ float4 main(in PS_IN3 In) : SV_Target
     float band = smoothstep(ToonParams.x - soft, ToonParams.x + soft, ndl) * 0.5f
                + smoothstep(ToonParams.y - soft, ToonParams.y + soft, ndl) * 0.5f;
 
+    // 半球環境光：法線のy成分で天/地を補間（上向き=Sky, 下向き=Ground）
+    float hemi_t = N.y * 0.5f + 0.5f; // [-1,1]→[0,1]
+    float3 ambient = lerp(ShadowColor.rgb, SkyColor.rgb, hemi_t); // 下=Ground, 上=Sky
+    
     // --- 明暗はrampで輝度を制御し、ライトの1.5倍HDR値は掛けない；さらにフレームワークの環境光を加算 ---
-    float3 lit = albedo.rgb * lerp(ShadowColor.rgb, float3(0.82, 0.82, 0.82), band) * Light.Diffuse.rgb;
+    float3 lit = albedo.rgb * lerp(ambient, float3(0.82, 0.82, 0.82), band) * Light.Diffuse.rgb;
 
 
     return float4(lit, albedo.a);

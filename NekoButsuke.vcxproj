@@ -86,6 +86,7 @@
     <ClCompile Include="System\Utility.cpp" />
     <ClCompile Include="System\Utility\ScreenToWorld.cpp" />
     <ClCompile Include="System\Utility\WorldToScreen.cpp" />
+    <ClCompile Include="System\ZFightTunables.cpp" />
     <ClCompile Include="UI\Component\DialogueUI.cpp" />
     <ClCompile Include="UI\Component\EnemyActionUI.cpp" />
     <ClCompile Include="UI\Component\HPBar.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="System\Utility\FpsControl.h" />
     <ClInclude Include="System\Utility\ScreenToWorld.h" />
     <ClInclude Include="System\Utility\WorldToScreen.h" />
+    <ClInclude Include="System\ZFightTunables.h" />
     <ClInclude Include="UI\Component\DialogueUI.h" />
     <ClInclude Include="UI\Component\EnemyActionUI.h" />
     <ClInclude Include="UI\Component\HPBar.h" />
@@ -202,6 +204,18 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shader\BlobPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\BlobVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="Shader\FullScreenPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
@@ -237,6 +251,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\VignettePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
     </FxCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">

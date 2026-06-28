@@ -7,6 +7,7 @@
 #include	"../../UI/System/GameUIManager.h"
 #include	"../../System//IScene.h"
 #include    "../../System/CSprite.h"
+#include	"../../System/ZFightTunables.h"
 #include	"../../GamePlay/Manager/EnemyManager.h"
 #include	"../Character/Enemy.h"
 #include	"../Gimmick/Trap.h"
@@ -22,7 +23,6 @@ namespace {
 
 	// 描画関連の定数
 	const float GHOST_ALPHA = 0.6f;        // 幽霊（残像）の透明度
-	const float PATH_Y_OFFSET = 0.06f;     // 床から少し浮かす（Z-Fighting防止）
 	const float UI_INPUT_COOLDOWN = 0.15f; // WASDの連続入力防止時間
 
 	// ジャンプ（祝賀）アニメーション
@@ -644,7 +644,7 @@ void Player::HandleAttackDirInput(float dt) {
 void Player::DrawGhost() {
 
 	Vector3 ghostPos = m_context->GetMapManager()->GetWorldPosition(m_startGridX, m_startGridZ);
-	ghostPos.y += 0.015f;
+	ghostPos.y += ZFight::Ghost;
 
 	Matrix4x4 ghostWorld = Matrix4x4::CreateScale(m_srt.scale) * Matrix4x4::CreateRotationY(m_srt.rot.y) * Matrix4x4::CreateTranslation(ghostPos);
 
@@ -696,7 +696,7 @@ void Player::DrawPathLine() {
 		Tile* nextTile = (i + 1 < m_currentPath.size()) ? m_currentPath[i + 1] : nullptr;
 
 		Vector3 pos = m_context->GetMapManager()->GetWorldPosition(currTile->gridX, currTile->gridZ);
-		pos.y += PATH_Y_OFFSET;
+		pos.y += ZFight::PathLine;
 
 		float rotY = 0.0f;
 		CStaticMeshRenderer* rendererToUse = nullptr;

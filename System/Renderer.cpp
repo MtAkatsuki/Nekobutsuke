@@ -18,6 +18,7 @@
 
 namespace {
     CShader                  g_downsampleShader;
+    CShader                  g_vignetteShader;
     CVertexBuffer<VERTEX_3D> g_fsQuadVB;   // 全画面クアッド
 }
 
@@ -53,6 +54,9 @@ ComPtr<ID3D11RenderTargetView>   Renderer::m_SceneRTV;
 ComPtr<ID3D11ShaderResourceView> Renderer::m_SceneSRV;
 ComPtr<ID3D11Texture2D>          Renderer::m_SceneDepthTex;
 ComPtr<ID3D11DepthStencilView>   Renderer::m_SceneDSV;
+
+ComPtr<ID3D11Buffer> Renderer::m_PostFXBuffer;
+POSTFX Renderer::m_PostFX;
 
 LIGHT Renderer::m_Light;
 
@@ -239,10 +243,10 @@ void Renderer::Init()
     // --- ライト初期化 ---
     LIGHT light{};
     light.Enable = true;
-    light.Direction = Vector4(-0.137f, -0.885f, 0.445f, 0.0f);
+    light.Direction = Vector4(-0.407f, -0.825f, 0.391f, 0.0f);
     light.Direction.Normalize();
-    light.Ambient = Color(0.2f, 0.2f, 0.2f, 1.0f);
-    light.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
+    light.Ambient = Color(0.0f, 0.0f, 0.0f, 1.0f);
+    light.Diffuse = Color(1.268f, 1.268f, 1.268f, 1.0f);
     SetLight(light);
 
 
@@ -252,15 +256,23 @@ void Renderer::Init()
 
     TOONPARAM toon{};
 
-    toon.ShadowColor = Color(0.45f, 0.45f, 0.55f, 1.0f); // やや寒色寄りの暗部カラー、調整用パラメータ
+    toon.ShadowColor = Color(0.710f, 0.557f, 0.482f, 1.0f); // Ground（下方向）：やや暖色系
     toon.RimColor = Color(1.0f, 1.0f, 1.0f, 1.0f);    // a = RimStrength
     toon.OutlineColor = Color(0.0f, 0.0f, 0.0f, 0.0003f);   // a = OutlineWidth
     toon.ToonParams = Vector4(0.5f, 0.8f, 0.01f, 4.0f); // 閾値0 / 閾値1 / ソフト境界 / RimPower
+    toon.SkyColor = Color(0.000f, 0.439f, 1.000f, 1.0f); // Sky（上方向）：やや寒色系
 
     SetToonParam(toon);
 
     m_DeviceContext->VSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
     m_DeviceContext->PSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
+
+    // --- PostFX初期化 ---
+    bufferDesc.ByteWidth = sizeof(POSTFX);
+    m_Device->CreateBuffer(&bufferDesc, nullptr, m_PostFXBuffer.GetAddressOf());
+    POSTFX pf{ 1.1f, {} };
+    SetPostFX(pf);
+
     // --- マテリアル初期化 ---
     MATERIAL material{};
     material.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -316,6 +328,7 @@ void Renderer::Init()
     g_fsQuadVB.Create(quad);
 
     g_downsampleShader.Create("shader/FullScreenVS.hlsl", "shader/FullScreenPS.hlsl");
+    g_vignetteShader.Create("shader/FullScreenVS.hlsl", "shader/VignettePS.hlsl");
 
 }
 
@@ -600,6 +613,17 @@ void Renderer::SetFillMode(D3D11_FILL_MODE FillMode)
     m_DeviceContext->RSSetState(rs.Get());
 }
 
+void Renderer::SetDepthReadOnly()
+{
+    D3D11_DEPTH_STENCIL_DESC d{};
+    d.DepthEnable = TRUE;                           // 深度テストON：壁・家具による遮蔽は維持
+    d.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // ★ 深度書き込みOFF：Blob同士の干渉を防止
+    d.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+    ComPtr<ID3D11DepthStencilState> s;
+    m_Device->CreateDepthStencilState(&d, s.GetAddressOf());
+    m_DeviceContext->OMSetDepthStencilState(s.Get(), 0);
+}
+
 /**
  * @brief 深度テストを常にパスさせる設定に変更します。
  *
@@ -651,4 +675,24 @@ void Renderer::SetToonParam(TOONPARAM param) {
     m_DeviceContext->UpdateSubresource(m_ToonBuffer.Get(), 0, nullptr, &param, 0, 0);
     m_DeviceContext->VSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
     m_DeviceContext->PSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
+}
+
+void Renderer::SetPostFX(POSTFX p) {
+    m_PostFX = p;
+    m_DeviceContext->UpdateSubresource(m_PostFXBuffer.Get(), 0, nullptr, &p, 0, 0);
+    m_DeviceContext->PSSetConstantBuffers(6, 1, m_PostFXBuffer.GetAddressOf()); // b6
+}
+
+POSTFX Renderer::GetPostFX() { return m_PostFX; }
+
+void Renderer::DrawVignette() {
+    g_vignetteShader.SetGPU();
+    g_fsQuadVB.SetGPU();
+    m_DeviceContext->PSSetConstantBuffers(6, 1, m_PostFXBuffer.GetAddressOf());
+    DisableCulling(false);
+    SetDepthEnable(false);
+    SetBlendState(BS_ALPHABLEND);
+    m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    m_DeviceContext->Draw(4, 0);
+    SetBlendState(BS_NONE);
 }
