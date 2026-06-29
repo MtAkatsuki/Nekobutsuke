@@ -255,12 +255,7 @@ void GameScene::resourceLoader() {
 		mesh->Load("Assets/model/obj/trap.obj", "Assets/model/obj/");
 		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
 		renderer->Init(*mesh);
-		if (auto* mat = renderer->GetMaterial(0)) {
-			MATERIAL m = mat->GetData();
-			m.Diffuse = Color(1, 1, 1, 1);
-			m.TextureEnable = TRUE;
-			mat->SetMaterial(m);
-		}
+
 		MeshManager::RegisterMesh<CStaticMesh>("trap_mesh", std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("trap_mesh", std::move(renderer));
 	}
@@ -291,9 +286,9 @@ void GameScene::resourceLoader() {
 	// 専用家具モデルの一括ロード
 	const std::vector<std::pair<std::string, std::string>> propModels = {
 		{"sofa_yoko_mesh", "Assets/model/obj/loungeSofa.obj"},
-		{"cattower_mesh",  "Assets/model/obj/cattower.obj"},
-		{"bookshelf_mesh", "Assets/model/obj/bookshelf.obj"},
-		{"table_mesh",     "Assets/model/obj/table.obj"}
+		{"cattower_mesh",  "Assets/model/obj/coatRackStanding.obj"},
+		{"bookshelf_mesh", "Assets/model/obj/bookcaseClosedDoors.obj"},
+		{"table_mesh",     "Assets/model/obj/tableCloth.obj"}
 	};
 
 	for (const auto& pair : propModels) {

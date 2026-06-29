@@ -34,7 +34,7 @@ namespace {
 void Player::Init() {
 	playerResourceLoader();
 
-	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
+	m_srt.scale = Vector3(0.8f, 0.8f, 0.8f);
 	m_srt.rot = Vector3(0, 0, 0);
 
 	m_state = PlayerState::WAITING;
@@ -650,15 +650,19 @@ void Player::DrawGhost() {
 
 	Renderer::SetWorldMatrix(&ghostWorld);
 
-	CMaterial* mtrl = m_Renderer->GetMaterial(0);
-	MATERIAL old = mtrl->GetData();
-	MATERIAL gray = old;
-	gray.Diffuse = Color(1.0f, 1.0f, 1.0f, GHOST_ALPHA); //”¼“§–¾
-	mtrl->SetMaterial(gray);
+	for (int i = 0; CMaterial * mtrl = m_Renderer->GetMaterial(i); ++i) {
+		MATERIAL m = mtrl->GetData();
+		m.Diffuse.w = GHOST_ALPHA;
+		mtrl->SetMaterial(m);
+	}
 
 	m_Renderer->Draw();
 
-	mtrl->SetMaterial(old);
+	for (int i = 0; CMaterial * mtrl = m_Renderer->GetMaterial(i); ++i) {
+		MATERIAL m = mtrl->GetData();
+		m.Diffuse.w = 1.0f;
+		mtrl->SetMaterial(m);
+	}
 
 	UpdateWorldMatrix();
 	Renderer::SetWorldMatrix(&m_WorldMatrix);

@@ -25,10 +25,12 @@ namespace {
 void EnemyActionUI::Init(GameContext* context) {
     m_context = context;
 
-    m_numSprites.push_back(std::make_unique<CSprite>(48, 48, "Assets/texture/ui/ui_num_1.png"));
-    m_numSprites.push_back(std::make_unique<CSprite>(48, 48, "Assets/texture/ui/ui_num_2.png"));
-    m_numSprites.push_back(std::make_unique<CSprite>(48, 48, "Assets/texture/ui/ui_num_3.png"));
-    m_numSprites.push_back(std::make_unique<CSprite>(48, 48, "Assets/texture/ui/ui_num_4.png"));
+    for (int i = 1; i < 10; i++) {
+        std::string dirPath = "Assets/texture/ui/ui_num_";
+        std::string num = std::to_string(i);
+        std::string fullPath = dirPath + num + ".png";
+        m_numSprites.push_back(std::make_unique<CSprite>(48, 48, fullPath));
+    }
 
     m_state = AnimState::Entrance;
     m_animTimer = 0.0f;

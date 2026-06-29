@@ -151,5 +151,6 @@ protected:
 	Vector3 m_hitSourcePos = {};
 	Vector3 m_deathVelocity = {};
 	Vector3 m_deathSpin = {};
+	bool m_isDeathFlying = false;
 
 };

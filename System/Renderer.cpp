@@ -260,7 +260,7 @@ void Renderer::Init()
     toon.RimColor = Color(1.0f, 1.0f, 1.0f, 1.0f);    // a = RimStrength
     toon.OutlineColor = Color(0.0f, 0.0f, 0.0f, 0.0003f);   // a = OutlineWidth
     toon.ToonParams = Vector4(0.5f, 0.8f, 0.01f, 4.0f); // 閾値0 / 閾値1 / ソフト境界 / RimPower
-    toon.SkyColor = Color(0.000f, 0.439f, 1.000f, 1.0f); // Sky（上方向）：やや寒色系
+    toon.SkyColor = Color(0.537f, 0.737f, 1.000f, 0.992f); // Sky（上方向）：やや寒色系
 
     SetToonParam(toon);
 
@@ -270,7 +270,7 @@ void Renderer::Init()
     // --- PostFX初期化 ---
     bufferDesc.ByteWidth = sizeof(POSTFX);
     m_Device->CreateBuffer(&bufferDesc, nullptr, m_PostFXBuffer.GetAddressOf());
-    POSTFX pf{ 1.1f, {} };
+    POSTFX pf{ 1.44f, {} };
     SetPostFX(pf);
 
     // --- マテリアル初期化 ---

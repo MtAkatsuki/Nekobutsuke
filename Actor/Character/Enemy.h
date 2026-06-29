@@ -52,6 +52,7 @@ public:
     int GetLockedGridX() const { return m_lockedGridX; }
     int GetLockedGridZ() const { return m_lockedGridZ; }
     int GetEnemyDamage() const { return m_enemyDamage; }
+    void SetInitialFacingToPlayer();
 
     void ResetCharge() {
         m_isCharging = false;
@@ -71,7 +72,7 @@ private:
     // ---------------------------------------------------------
     // 内部AI・ロジック (Internal AI Logic)
     // ---------------------------------------------------------
-    void SetInitialFacingToPlayer();
+    
     void ExecuteAI();
     void EnemyEndAction();
     void EnemyStartMoveTo(std::vector<Tile*> path);

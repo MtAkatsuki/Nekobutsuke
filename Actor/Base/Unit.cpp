@@ -343,7 +343,7 @@ void Unit::SetModelRenderer(CStaticMeshRenderer* r) {
 
 void Unit::DrawModel() {
 	if (!m_Renderer) return;
-	DrawBlobShadow();
+	if (!m_isDeathFlying) DrawBlobShadow();
 	Renderer::SetWorldMatrix(&m_WorldMatrix);
 	m_Renderer->Draw();
 	DrawOutline();
@@ -434,6 +434,7 @@ void Unit::DrawPushPreview(Direction pushDir) {
 	Color arrowColor = isBlocked ? Color(1.0f, 1.0f, 0.0f, 0.7f) : Color(0.6f, 0.6f, 0.6f, 0.9f);
 
 	Renderer::SetWorldMatrix(&world);
+	Renderer::DisableCulling(false);
 	if (auto* mat = pushArrowRenderer->GetMaterial(0)) {
 		MATERIAL old = mat->GetData();
 		MATERIAL temp = old;
@@ -442,6 +443,7 @@ void Unit::DrawPushPreview(Direction pushDir) {
 		pushArrowRenderer->Draw();
 		mat->SetMaterial(old);
 	}
+	Renderer::DisableCulling(true);
 
 	if (isBlocked && m_context->GetEffectManager()) {
 		Vector3 effectPos = targetPos;
@@ -451,6 +453,7 @@ void Unit::DrawPushPreview(Direction pushDir) {
 }
 
 void Unit::StartDeathFly() {
+	m_isDeathFlying = true;
 	Vector3 diff = m_srt.pos - m_hitSourcePos;
 	diff.y = 0.0f;
 	if (diff.LengthSquared() > 0.001f) diff.Normalize();

@@ -24,7 +24,7 @@ namespace {
 }
 
 void MapManager::Init(GameContext* context) {
-	m_mapWidth = 9;
+	m_mapWidth = 12;
 	m_mapDepth = 9;
 	m_tileSize = 1.0f;
 	m_tileOffsets.x = 0.5f * -(float(GetMapWidth()) * m_tileSize);
@@ -559,6 +559,12 @@ void MapManager::SpawnDynamicEntities(const std::vector<std::vector<std::string>
 				if (context->GetEnemyManager()) context->GetEnemyManager()->RegisterEnemy(enemy.get());
 				unitsToSpawn.push_back(std::move(enemy));
 			}
+		}
+	}
+
+	if (context->GetEnemyManager()) {
+		for (Enemy* e : context->GetEnemyManager()->GetAllEnemies()) {
+			if (e) e->SetInitialFacingToPlayer();
 		}
 	}
 

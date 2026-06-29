@@ -102,15 +102,6 @@ void Prop::OnDraw(uint64_t delta) {
     Renderer::SetDepthEnable(true);
     Renderer::SetWorldMatrix(&m_WorldMatrix);
 
-    // CPU側で計算された m_currentAlpha をマテリアルへ適用（GPUへ転送）
-    if (auto* mat = m_renderer->GetMaterial(0)) {
-        MATERIAL m = mat->GetData();
-        m.TextureEnable = TRUE;
-        m.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
-        m.Diffuse = Color(1.0f, 1.0f, 1.0f, m_currentAlpha);
-        mat->SetMaterial(m);
-    }
-
     m_renderer->Draw();
     Renderer::SetBlendState(BS_NONE);
 }
@@ -119,7 +110,7 @@ void Prop::GetDimensions(MapModelType type, int& outW, int& outD) {
     switch (type) {
     case MapModelType::PROP_SOFA_YOKO:    outW = 3; outD = 1; break;
     case MapModelType::PROP_SOFA_TATE:    outW = 1; outD = 3; break;
-    case MapModelType::PROP_TABLE:        outW = 2; outD = 2; break;
+    case MapModelType::PROP_TABLE:        outW = 3; outD = 2; break;
     case MapModelType::PROP_BOOKSHELF:    outW = 2; outD = 1; break;
     case MapModelType::PROP_CATTOWER:     outW = 2; outD = 1; break;
     default:                              outW = 1; outD = 1; break;

@@ -42,7 +42,7 @@ void Enemy::Init() {
 	m_actionUI = std::make_unique<EnemyActionUI>();
 	m_actionUI->Init(m_context);
 
-	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
+	m_srt.scale = Vector3(0.8f, 0.8f, 0.8f);
 	m_srt.rot = Vector3(0, 0, 0);
 	m_targetWorldPos = m_srt.pos;
 	m_moveSpeed = MOVE_SPEED;
@@ -54,8 +54,6 @@ void Enemy::Init() {
 	m_team = Team::Enemy;
 	m_state = EnemyState::IDLE;
 	m_isDead = false;
-	//初期向き：プレイヤーの方を向く
-	SetInitialFacingToPlayer();
 
 	m_pushArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_push_mesh");
 	m_attackArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_attack_mesh");
@@ -183,7 +181,7 @@ void Enemy::Update(uint64_t dt) {
 }
 
 void Enemy::OnDraw(uint64_t dt) {
-	Renderer::SetPixelArtMode(true);
+
 	if (m_EnemyShader != nullptr) m_EnemyShader->SetGPU();
 
 	// 蓄力中の震えは `m_srt.pos` を直接汚染せず、描画用の一時的な Matrix で処理する
@@ -198,7 +196,6 @@ void Enemy::OnDraw(uint64_t dt) {
 		DrawModel();
 	}
 
-	Renderer::SetPixelArtMode(false);
 }
 
 void Enemy::SetInitialFacingToPlayer() {
@@ -231,6 +228,9 @@ void Enemy::SetInitialFacingToPlayer() {
 		// finalDir が West なら「South -> West」の反転アニメーションが開始される
 		// finalDir が South の場合は静止を維持する（仕様通り）
 		SetFacing(finalDir);
+
+		m_srt.rot.y = m_targetRot.y;
+		UpdateWorldMatrix();
 	}
 }
 

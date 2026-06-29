@@ -55,7 +55,7 @@ void CStaticMeshRenderer::Draw()
 
 CMaterial* CStaticMeshRenderer::GetMaterial(int index)
 {
-	if (index >= 0 && index <= m_Materiales.size())
+	if (index >= 0 && index < m_Materiales.size())
 	{
 		return m_Materiales[index].get();
 	}

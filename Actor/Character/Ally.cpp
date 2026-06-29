@@ -21,10 +21,9 @@ void Ally::Init()
 {
     //モデル関連のソースをロード
 
-    // ---  Model Front ---
     {
         std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-        mesh->Load("Assets/model/character/Mouse/Mouse_01.obj", "Assets/model/character/Mouse");
+        mesh->Load("Assets/model/character/Mouse/Mouse_Ally.obj", "Assets/model/character/Mouse");
         std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
         renderer->Init(*mesh);
         MeshManager::RegisterMesh<CStaticMesh>("ally_mesh", std::move(mesh));
@@ -43,7 +42,7 @@ void Ally::Init()
     m_team = Team::Ally;
     m_maxMovePoints = 0;// 味方は自立移動しない
     m_currentMovePoints = m_maxMovePoints;
-    m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
+    m_srt.scale = Vector3(0.8f, 0.8f, 0.8f);
     SetFacing(Direction::South);
     UpdateWorldMatrix();
 
