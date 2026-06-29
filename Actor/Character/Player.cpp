@@ -961,7 +961,7 @@ void Player::playerResourceLoader() {
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("player_mesh", std::move(renderer));
 	}
 
-	m_PlayerShader = MeshManager::getShader<CShader>("unlightshader");
+	m_PlayerShader = MeshManager::getShader<CShader>("toonshader");
 	m_PathLineRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
 	m_PathCornerRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_corner_mesh");
 

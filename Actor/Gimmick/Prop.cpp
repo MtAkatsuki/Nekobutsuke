@@ -1,5 +1,6 @@
 #include "Prop.h"
 #include "../../System/meshmanager.h"
+#include "../../System/ZFightTunables.h"
 #include "../../Core/GameContext.h"
 #include "../Character/Player.h"      
 #include "../../Actor/Character/Ally.h"        
@@ -92,7 +93,9 @@ void Prop::Update(uint64_t delta) {
 void Prop::OnDraw(uint64_t delta) {
     if (!m_renderer) return;
 
-    auto shader = MeshManager::getShader<CShader>("unlightshader");
+    DrawPropShadow();
+
+    auto shader = MeshManager::getShader<CShader>("toonshader");
     if (shader) {
         shader->SetGPU();
     }
@@ -115,4 +118,28 @@ void Prop::GetDimensions(MapModelType type, int& outW, int& outD) {
     case MapModelType::PROP_CATTOWER:     outW = 2; outD = 1; break;
     default:                              outW = 1; outD = 1; break;
     }
+}
+
+void Prop::DrawPropShadow() {
+    auto* blob = MeshManager::getShader<CShader>("blobshader");
+    auto* mesh = MeshManager::getRenderer<CStaticMeshRenderer>("range_panel_mesh"); // 1x1 plane
+    if (!blob || !mesh) return;
+
+    Vector3 p = m_srt.pos;              // Prop‚Ìpos‚Íè—L”ÍˆÍ‚Ì’†SˆÊ’uiInit“à‚Åoffset‰ÁŽZÏ‚Ýj
+    p.y = ZFight::Blob;
+    float gx = m_sizeX;
+    float gz = m_sizeZ;
+    Matrix4x4 w = Matrix4x4::CreateScale(gx, 1.0f, gz) * Matrix4x4::CreateTranslation(p);
+    Renderer::SetWorldMatrix(&w);
+
+    blob->SetGPU();
+    Renderer::SetBlendState(BS_ALPHABLEND);
+    Renderer::DisableCulling(false);   // •Ð–Êplane ¨ —¼–Ê•`‰æ
+    Renderer::SetDepthReadOnly();      // ƒLƒƒƒ‰ƒNƒ^[‚â‘¼‚Ì‰e‚Æ‚Ìz-fighting‚ð–hŽ~
+    mesh->Draw();
+
+    Renderer::SetDepthEnable(true);
+    Renderer::DisableCulling(true);
+    Renderer::SetBlendState(BS_NONE);
+    MeshManager::getShader<CShader>("toonshader")->SetGPU(); // toon‚Ö•œŒ³
 }

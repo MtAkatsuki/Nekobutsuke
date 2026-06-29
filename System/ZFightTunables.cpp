@@ -1,5 +1,5 @@
 namespace ZFight {
-	float RangePanel = 0.052f;   // 予告・範囲表示パネル
+	float RangePanel = 0.04f;   // 予告・範囲表示パネル
 	float Arrow = 0.09f;        // 攻撃・移動プレビュー矢印
 	float PathLine = 0.07f;     // 移動経路ライン
 	float Ghost = 0.035f;       // 移動プレビュー残像

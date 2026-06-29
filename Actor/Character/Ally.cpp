@@ -31,7 +31,7 @@ void Ally::Init()
     }
 
 
-    m_shader = MeshManager::getShader<CShader>("unlightshader");
+    m_shader = MeshManager::getShader<CShader>("toonshader");
     auto* renderer = MeshManager::getRenderer<CStaticMeshRenderer>("ally_mesh");
     SetModelRenderer(renderer);
 

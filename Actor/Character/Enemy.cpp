@@ -36,6 +36,7 @@ void Enemy::Init() {
 		MeshManager::RegisterMesh<CStaticMesh>("enemy_mesh", std::move(mesh));
 		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("enemy_mesh", std::move(renderer));
 	}
+	m_EnemyShader = MeshManager::getShader<CShader>("toonshader");
 	auto* renderer = MeshManager::getRenderer<CStaticMeshRenderer>("enemy_mesh");
 	SetModelRenderer(renderer);
 
@@ -325,14 +326,27 @@ void Enemy::ExecuteAI() {
 	}
 	else {
 		MapManager* map = m_context->GetMapManager();
-		auto path = map->FindPaths(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ(), false);
+		int tx = target->GetUnitGridX(), tz = target->GetUnitGridZ();
 
-		//見つかった道の長さと移動力を比較する、そして移動力と同じ長さになる
-		if (path.size() > m_currentMovePoints) { path.resize(m_currentMovePoints); }
+		// targetをgoalとして扱う：FindPathsはtarget隣接マスで停止する（意図した仕様）
+		auto path = map->FindPaths(m_gridX, m_gridZ, tx, tz, false);
+		if (path.empty()) { EnemyEndAction(); return; }   // 到達不可：行動終了、残留pathを参照してonMoveFinishedを呼ばない
 
-		// --- 移動ポイントを消費する前に、現在の移動可能範囲を取得 ---
-		m_moveRangeTiles = map->GetReachableTiles(this->m_gridX, this->m_gridZ, m_currentMovePoints);
+		// 「行動力の範囲内」で、目標に最も近づける移動先を選択
+		int limit = std::min((int)path.size(), m_currentMovePoints);
+		int bestIdx = -1;
+		int bestD = map->CalculateDistance(m_gridX, m_gridZ, tx, tz); // 初期位置の距離を基準にする
+
+		for (int i = 0; i < limit; ++i) {
+			int d = map->CalculateDistance(path[i]->gridX, path[i]->gridZ, tx, tz);
+			if (d < bestD) { bestD = d; bestIdx = i; }    // より近づく地点のみ採用
+		}
+
+		if (bestIdx < 0) { EnemyEndAction(); return; }    // 範囲内に近づける地点なし：移動しない（残留pathを参照しない）
+
+		path.resize(bestIdx + 1);                         // 「最も近い移動先」まで経路を切り詰める
 		m_currentMovePoints -= (int)path.size();
+
 		EnemyStartMoveTo(path);
 	}
 }

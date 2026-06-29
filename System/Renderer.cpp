@@ -243,10 +243,10 @@ void Renderer::Init()
     // --- ライト初期化 ---
     LIGHT light{};
     light.Enable = true;
-    light.Direction = Vector4(-0.407f, -0.825f, 0.391f, 0.0f);
+    light.Direction = Vector4(-0.701f, -0.710f, 0.067f, 0.0f);
     light.Direction.Normalize();
     light.Ambient = Color(0.0f, 0.0f, 0.0f, 1.0f);
-    light.Diffuse = Color(1.268f, 1.268f, 1.268f, 1.0f);
+    light.Diffuse = Color(1.386f, 1.386f, 1.386f, 1.0f);
     SetLight(light);
 
 
@@ -256,11 +256,11 @@ void Renderer::Init()
 
     TOONPARAM toon{};
 
-    toon.ShadowColor = Color(0.710f, 0.557f, 0.482f, 1.0f); // Ground（下方向）：やや暖色系
+    toon.ShadowColor = Color(0.235f, 0.098f, 0.015f, 1.0f); // Ground（下方向）：やや暖色系
     toon.RimColor = Color(1.0f, 1.0f, 1.0f, 1.0f);    // a = RimStrength
     toon.OutlineColor = Color(0.0f, 0.0f, 0.0f, 0.0003f);   // a = OutlineWidth
     toon.ToonParams = Vector4(0.5f, 0.8f, 0.01f, 4.0f); // 閾値0 / 閾値1 / ソフト境界 / RimPower
-    toon.SkyColor = Color(0.537f, 0.737f, 1.000f, 0.992f); // Sky（上方向）：やや寒色系
+    toon.SkyColor = Color(0.674f, 0.741f, 0.835f, 1.0f); // Sky（上方向）：やや寒色系
 
     SetToonParam(toon);
 

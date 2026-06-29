@@ -28,7 +28,7 @@ namespace {
 	const float FACING_LERP_SPEED = 14.0f;		// 12〜18 で手触り調整
 	const float MODEL_FORWARD_OFFSET = 0.0f;	// ← モデル導入後の一回限り標定
 
-	const float BLOB_SIZE = 1.3f;                // Blob影のスケール（半径）
+	const float BLOB_SIZE = 1.2f;                // Blob影のスケール（半径）
 
 	// 死亡飛出
 	const float DEATH_GRAVITY = 50.0f;
@@ -360,7 +360,7 @@ void Unit::DrawOutline()
 	m_Renderer->Draw();         // 同じmeshを外側へ拡張して再描画
 
 	// 復元：トゥーンシェーディング + 通常の裏面カリング
-	MeshManager::getShader<CShader>("unlightshader")->SetGPU();
+	MeshManager::getShader<CShader>("toonshader")->SetGPU();
 	Renderer::DisableCulling(true);  // true = CULL_BACK
 }
 
@@ -385,7 +385,7 @@ void Unit::DrawBlobShadow() {
 	Renderer::SetDepthEnable(true); 
 	Renderer::DisableCulling(true);
 	Renderer::SetBlendState(BS_NONE);
-	MeshManager::getShader<CShader>("unlightshader")->SetGPU();
+	MeshManager::getShader<CShader>("toonshader")->SetGPU();
 }
 
 void Unit::DrawUI() {

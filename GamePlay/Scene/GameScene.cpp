@@ -216,9 +216,9 @@ void GameScene::InitializeCamera() {
 void GameScene::LoadGameResources() {
 	AudioManager::GetInstance().PlayBGM("Game", true, 2.0f);
 	resourceLoader();
-	m_tileShader = MeshManager::getShader<CShader>("unlightshader");
+	m_tileShader = MeshManager::getShader<CShader>("toonshader");
 	if (m_tileShader == nullptr) {
-		std::cerr << "   [FATAL] Shader 'unlightshader' is NULL!" << std::endl;
+		std::cerr << "   [FATAL] Shader 'toonshader' is NULL!" << std::endl;
 	}
 }
 
@@ -227,7 +227,7 @@ void GameScene::resourceLoader() {
 	{
 		std::unique_ptr<CShader> shader = std::make_unique<CShader>();
 		shader->Create("shader/ToonVS.hlsl", "shader/ToonPS.hlsl");
-		MeshManager::RegisterShader<CShader>("unlightshader", std::move(shader));
+		MeshManager::RegisterShader<CShader>("toonshader", std::move(shader));
 	}
 
 	// 2. マップ・地形モデル (Map & Terrain Models)
@@ -804,6 +804,8 @@ void GameScene::TurnChangeCheck()
 {
 	TurnManager* tm = m_context->GetTurnManager();
 	EnemyManager* em = m_context->GetEnemyManager();
+	// ゲームオーバー確定後はターンを進めない（切替時に Player/Enemy Phase 演出が誤再生されるのを防ぐ）
+	if (m_isGameOverProcessing || CheckGameOverCondition()) return;
 
 	// 1. ターン交代の必要がない、または敵が全滅している場合は処理しない
 	if (!tm->IsTurnChangeRequested() || em->AreAllEnemiesDead()) {
