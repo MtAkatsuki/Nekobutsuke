@@ -226,5 +226,7 @@ public:
 
     static void   SetPostFX(POSTFX p);
     static POSTFX GetPostFX();
-    static void DrawVignette();
+    static void DrawVignette(); 
+    
+    static inline bool s_shadowEnabled = true;
 };

@@ -121,6 +121,7 @@ void Prop::GetDimensions(MapModelType type, int& outW, int& outD) {
 }
 
 void Prop::DrawPropShadow() {
+    if (!Renderer::s_shadowEnabled) return;
     auto* blob = MeshManager::getShader<CShader>("blobshader");
     auto* mesh = MeshManager::getRenderer<CStaticMeshRenderer>("range_panel_mesh"); // 1x1 plane
     if (!blob || !mesh) return;

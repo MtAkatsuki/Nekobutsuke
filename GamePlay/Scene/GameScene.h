@@ -182,6 +182,7 @@ private:
 	std::unique_ptr<TutorialUI> m_tutorialUI;
 	std::unique_ptr<CSprite> m_escapeMarkerSprite;
 	std::unique_ptr<CSprite> m_winTextSprite;
+	bool m_showActionUI = true;
 
 	// --- ゲーム進行状態フラグ ---
 	bool m_isGameStarted = false;

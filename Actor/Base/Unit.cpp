@@ -365,6 +365,7 @@ void Unit::DrawOutline()
 }
 
 void Unit::DrawBlobShadow() {
+	if (!Renderer::s_shadowEnabled) return;
 	Vector3 p = m_srt.pos;
 	p.y = ZFight::Blob;  // 地面から少し浮かせる：z-fight防止（Ghostの0.015と同じ考え方）
 	Matrix4x4 w = Matrix4x4::CreateScale(BLOB_SIZE, 1.0f, BLOB_SIZE)

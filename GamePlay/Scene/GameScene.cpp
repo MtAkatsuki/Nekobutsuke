@@ -1000,7 +1000,7 @@ void GameScene::DrawScreenSpaceUI() {
 	}
 
 	// --- 3. 画面固定のシステムUI (高層) ---
-	if (m_gameUIManager) m_gameUIManager->Draw();
+	if (m_gameUIManager && m_showActionUI) m_gameUIManager->Draw();
 	if (m_turnCounter) m_turnCounter->Draw();
 	if (m_tutorialUI && !m_isGameStarted) m_tutorialUI->Draw();
 
@@ -1119,6 +1119,46 @@ void GameScene::debugUICamera() {
 	if (!m_isDebugCameraEnabled) return;
 
 	ImGui::Begin("Player Camera Tuning");
+	if (ImGui::CollapsingHeader("Compare")) {
+		TOONPARAM tp = Renderer::GetToonParam();
+		bool changed = false;
+
+		ImGui::Checkbox("Action UI", &m_showActionUI);
+
+		// アウトライン
+		static bool outlineOn = true;
+		static float savedW = tp.OutlineColor.w;
+		if (ImGui::Checkbox("Outline", &outlineOn)) {
+			if (!outlineOn) { savedW = tp.OutlineColor.w; tp.OutlineColor.w = 0.0f; }
+			else { tp.OutlineColor.w = savedW; }
+			changed = true;
+		}
+
+		// 半球光（OFF時：SkyをGroundに合わせ、単色ambientへ退化）
+		static bool hemiOn = true;
+		static Color savedSky = tp.SkyColor;
+		if (ImGui::Checkbox("Hemisphere", &hemiOn)) {
+			if (!hemiOn) { savedSky = tp.SkyColor; tp.SkyColor = tp.ShadowColor; }
+			else { tp.SkyColor = savedSky; }
+			changed = true;
+		}
+
+		// 方向光によるトゥーン階調（OFF時：閾値を1以上へ移動し、bandを常に0にして環境光のみ表示）
+		static bool lightOn = true;
+		static Vector4 savedTP = tp.ToonParams;
+		if (ImGui::Checkbox("Directional Light", &lightOn)) {
+			if (!lightOn) { savedTP = tp.ToonParams; tp.ToonParams.x = 2.0f; tp.ToonParams.y = 2.0f; }
+			else { tp.ToonParams = savedTP; }
+			changed = true;
+		}
+
+		static bool shadowOn = true;
+		if (ImGui::Checkbox("Shadow", &shadowOn)) {
+			Renderer::s_shadowEnabled = shadowOn;
+		}
+
+		if (changed) Renderer::SetToonParam(tp);
+	}
 
 	if (ImGui::CollapsingHeader("Z-Fight Offsets")) {
 		ImGui::SliderFloat("Range Panel", &ZFight::RangePanel, 0.0f, 0.5f, "%.3f");
