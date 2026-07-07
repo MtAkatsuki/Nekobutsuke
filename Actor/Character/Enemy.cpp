@@ -8,7 +8,7 @@
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../GamePlay/Manager/EnemyManager.h"
 #include <iostream>
-#include <random>
+#include "../../System/RandomEngine.h"
 
 namespace {
 	// 演出・バランス用定数
@@ -18,10 +18,6 @@ namespace {
 	const float CHARGE_SHAKE_AMP = 0.01f;      // 蓄力時の震え幅
 	const float ATTACK_DELAY = 0.1f;           // 攻撃開始前のディレイ
 	const int ATTACK_RANGE = 1;				   // 攻撃範囲（グリッド単位）
-
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<float> shake_dist(-CHARGE_SHAKE_AMP, CHARGE_SHAKE_AMP);
 }
 
 //Spawnファクトリー
@@ -85,7 +81,10 @@ void Enemy::Update(uint64_t dt) {
 
 	// 蓄力（チャージ）中の震えオフセットを計算
 	if (m_isCharging) {
-		m_shakeOffset = Vector3(shake_dist(gen), 0.0f, shake_dist(gen));
+		auto& rng = RandomEngine::tls();
+		m_shakeOffset = Vector3(
+			static_cast<float>(rng.uniformReal(-CHARGE_SHAKE_AMP, CHARGE_SHAKE_AMP)), 0.0f,
+			static_cast<float>(rng.uniformReal(-CHARGE_SHAKE_AMP, CHARGE_SHAKE_AMP)));
 	}
 	else {
 		m_shakeOffset = Vector3(0, 0, 0);

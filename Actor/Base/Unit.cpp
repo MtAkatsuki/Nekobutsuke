@@ -7,7 +7,7 @@
 #include "../../Actor/Gimmick/Trap.h"
 #include "../../System/ZFightTunables.h"
 #include <cmath>
-#include <random>
+#include "../../System/RandomEngine.h"
 
 namespace {
 	// ---------------------------------------------------------
@@ -33,9 +33,6 @@ namespace {
 	// 死亡飛出
 	const float DEATH_GRAVITY = 50.0f;
 	const float DEATH_FLY_FORCE = 30.0f;
-	std::random_device death_rd;
-	std::mt19937 death_gen(death_rd());
-	std::uniform_real_distribution<float> death_spin_dist(0.0f, 10.0f);
 
 	// ノックバック（スライディング）演出パラメータ
 	const float SLIDE_ARC_HEIGHT = 1.0f;   // ノックバック曲線の頂点高さ（落下時の弧の高さ）
@@ -85,10 +82,11 @@ void Unit::TakeDamage(int damage, Unit* attacker) {
 	
 	// 完全に重なって見えなくなるのを防ぐため、ランダムなオフセットを加える
 	if (m_context && m_context->GetEffectManager()) {
+		auto& rng = RandomEngine::tls();
 		Vector3 hitPos = m_srt.pos;
 		hitPos.y += HIT_EFFECT_Y_OFFSET;
-		hitPos.x += ((rand() % 10) / 10.0f - 0.5f) * HIT_POS_RANDOM_SPREAD;
-		hitPos.z += ((rand() % 10) / 10.0f - 0.5f) * HIT_POS_RANDOM_SPREAD;
+		hitPos.x += static_cast<float>(rng.uniformReal(-0.5, 0.5)) * HIT_POS_RANDOM_SPREAD;
+		hitPos.z += static_cast<float>(rng.uniformReal(-0.5, 0.5)) * HIT_POS_RANDOM_SPREAD;
 
 		m_context->GetEffectManager()->SpawnHitEffect(hitPos);
 	}
@@ -96,7 +94,7 @@ void Unit::TakeDamage(int damage, Unit* attacker) {
 	if (m_context && m_context->GetDamageManager()) {
 		Vector3 headPos = m_srt.pos;
 		headPos.y += DAMAGE_NUM_Y_OFFSET;
-		headPos.x += ((rand() % 10) / 10.0f - 0.5f) * DAMAGE_NUM_RANDOM_SPREAD;
+		headPos.x += static_cast<float>(RandomEngine::tls().uniformReal(-0.5, 0.5)) * DAMAGE_NUM_RANDOM_SPREAD;
 
 		m_context->GetDamageManager()->SpawnDamage(headPos, damage);
 	}
@@ -459,7 +457,11 @@ void Unit::StartDeathFly() {
 
 	Vector3 flyDir = Vector3(diff.x * 1.8f, 0.6f, diff.z * 1.8f);
 	m_deathVelocity = flyDir * DEATH_FLY_FORCE;
-	m_deathSpin = Vector3(death_spin_dist(death_gen), death_spin_dist(death_gen), death_spin_dist(death_gen));
+	auto& rng = RandomEngine::tls();
+	m_deathSpin = Vector3(
+		static_cast<float>(rng.uniformReal(0.0, 10.0)),
+		static_cast<float>(rng.uniformReal(0.0, 10.0)),
+		static_cast<float>(rng.uniformReal(0.0, 10.0)));
 }
 
 void Unit::UpdateDeathFly(float delta) {

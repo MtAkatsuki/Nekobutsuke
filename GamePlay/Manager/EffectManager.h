@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <memory>
-#include <random>
 #include "../../System/CSprite.h"
 
 class GameContext;
@@ -86,6 +85,4 @@ private:
     // パーティクルのオブジェクトプール（実行時の動的なメモリ確保を抑えるためのコンテナ）
     std::vector<EffectParticle> m_particles;
 
-    // ランダムな飛び散り方向・速度を決定するための乱数生成器
-    std::mt19937 m_gen;
 };

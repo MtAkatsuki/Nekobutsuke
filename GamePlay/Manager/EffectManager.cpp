@@ -3,6 +3,7 @@
 #include "../../System/Camera.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../Core/Application.h"
+#include "../../System/RandomEngine.h"
 
 namespace {
     // --- パーティクル・物理シミュレーション用の調整パラメータ ---
@@ -27,9 +28,6 @@ void EffectManager::Init(GameContext* context) {
 
     //  ヒットエフェクト画像の読み込み (Index = 4)
     m_textures.push_back(std::make_unique<CSprite>(120, 120, "Assets/texture/effect/hit_effect.png"));
-
-    std::random_device rd;
-    m_gen = std::mt19937(rd());
 }
 
 void EffectManager::Update(float dt) {
@@ -89,23 +87,22 @@ void EffectManager::SpawnRubble(const Vector3& worldPos, int count) {
     if (screenPos.x < -50 || screenPos.x > sw + 50 || screenPos.y < -50 || screenPos.y > sh + 50) return;
 
     // 2. パーティクルの生成
-    std::uniform_real_distribution<float> distVelX(-150.0f, 150.0f);
-    std::uniform_real_distribution<float> distVelY(-400.0f, -200.0f);
-    std::uniform_real_distribution<float> distScale(0.5f, 1.2f);
-    std::uniform_int_distribution<int> distTex(0, 3);
+    auto& rng = RandomEngine::tls();
 
     for (int i = 0; i < count; ++i) {
         EffectParticle p; 
         p.active = true;
         p.type = ParticleType::RUBBLE;
         p.pos = screenPos;
-        p.velocity = Vector2(distVelX(m_gen), distVelY(m_gen));
+        p.velocity = Vector2(
+            static_cast<float>(rng.uniformReal(RUBBLE_MIN_VEL_X, RUBBLE_MAX_VEL_X)),
+            static_cast<float>(rng.uniformReal(RUBBLE_MIN_VEL_Y, RUBBLE_MAX_VEL_Y)));
         p.rotation = 0.0f;
-        p.rotSpeed = distVelX(m_gen) * 0.05f; // ランダムな自転速度
-        p.scale = distScale(m_gen);
+        p.rotSpeed = static_cast<float>(rng.uniformReal(RUBBLE_MIN_VEL_X, RUBBLE_MAX_VEL_X)) * 0.05f; // ランダムな自転速度
+        p.scale = static_cast<float>(rng.uniformReal(0.5, 1.2));
         p.lifeTime = 1.0f;
         p.maxLifeTime = 1.0f;
-        p.textureIndex = distTex(m_gen);
+        p.textureIndex = rng.uniformInt(0, 3);
 
         m_particles.push_back(p);
     }
@@ -127,7 +124,7 @@ void EffectManager::SpawnHitEffect(const Vector3& worldPos) {
     p.type = ParticleType::HIT_EFFECT; // ヒットエフェクトとして設定
     p.pos = screenPos;
     p.velocity = Vector2(0, 0); // 移動なし
-    p.rotation = (float)(rand() % 360) * 3.14159f / 180.0f; // ランダムな初期角度
+    p.rotation = static_cast<float>(RandomEngine::tls().uniformInt(0, 359)) * 3.14159f / 180.0f;// ランダムな初期角度
     p.rotSpeed = 0.0f;
     p.scale = 0.5f; // 初期サイズ
     p.maxLifeTime = 0.25f; // 持続時間は短めに設定
