@@ -20,7 +20,7 @@
 #include "../../UI/System/DamageNumberManager.h"
 #include "../../UI/Component/DialogueUI.h"
 #include <stdio.h> // for sprintf_s
-#include <iostream>
+#include "../../Core/DebugLog.h"
 
 
 namespace {
@@ -48,7 +48,7 @@ GameScene::GameScene()
 
 // シーンの初期化：処理の全体フローを「目次化」して可読性を高める
 void GameScene::Init() {
-	std::cerr << "=== GameScene::Init Start ===" << std::endl;
+	DBG_ERROR("=== GameScene::Init Start ===");
 
 	ResetManagers();            // 1. 残留データのクリーンアップ（前回のゾンビコールバック対策）
 	InitializeCamera();         // 2. カメラの初期化とフォーカス設定
@@ -191,7 +191,7 @@ void GameScene::ResetManagers() {
 	// 二重の安全策：前ゲームの残留コールバックやエフェクトを強制消去し、不具合を防止
 	if (m_context) {
 		if (m_context->GetTurnManager()) {
-			std::cerr << "   [Init] Clearing Turn Observers..." << std::endl;
+			DBG_ERROR("   [Init] Clearing Turn Observers...");
 			m_context->GetTurnManager()->ClearObservers();
 		}
 		if (m_context->GetEnemyManager()) m_context->GetEnemyManager()->ClearAll();
@@ -218,7 +218,7 @@ void GameScene::LoadGameResources() {
 	resourceLoader();
 	m_tileShader = MeshManager::getShader<CShader>("toonshader");
 	if (m_tileShader == nullptr) {
-		std::cerr << "   [FATAL] Shader 'toonshader' is NULL!" << std::endl;
+		DBG_ERROR("   [FATAL] Shader 'toonshader' is NULL!");
 	}
 }
 
@@ -366,15 +366,15 @@ void GameScene::resourceLoader() {
 void GameScene::InitializeMap() {
 	m_MapManager->SetScene(this);
 	m_MapManager->Init(m_context);
-	std::cerr << "   [GameScene] MapManager OK." << std::endl;
+	DBG_ERROR("   [GameScene] MapManager OK.");
 	m_MapManager->LoadLevel("Assets/level/level_01.csv", m_context);
 
 	// マップサイズに基づき、カメラの表示崩れを防ぐ境界範囲を自動計算
 	RecalculateCameraBounds();
-	std::cerr << "   [GameScene] Camera Bounds Auto-Calculated." << std::endl;
+	DBG_ERROR("   [GameScene] Camera Bounds Auto-Calculated.");
 	m_background = std::make_unique<Background>();
 	m_background->Init();
-	std::cerr << "   [GameScene] Background OK" << std::endl;
+	DBG_ERROR("   [GameScene] Background OK");
 }
 
 void GameScene::SetupGameEntities() {
@@ -427,7 +427,7 @@ void GameScene::SetupUserInterface() {
 }
 
 void GameScene::InitializeDebugFeatures() {
-	std::cerr << "   [GameScene] Registering DebugUI..." << std::endl;
+	DBG_ERROR("   [GameScene] Registering DebugUI...");
 
 	DebugUI::RedistDebugFunction([this]() { debugUICamera(); });
 	DebugUI::RedistDebugFunction([this]() { drawGridDebugText(); });
@@ -560,7 +560,7 @@ bool GameScene::HandlePreGameBlocking(uint64_t deltatime, float deltaSeconds) {
 		if (m_camera) m_camera->SetTargetRadius(Camera::BASE_RADIUS);
 
 		if (m_context && m_context->GetTurnManager()) {
-			std::cout << "[GameScene] FadeIn Complete. Start Player Phase!" << std::endl;
+			DBG_ERROR("[GameScene] FadeIn Complete. Start Player Phase!");
 			m_context->GetTurnManager()->SetState(TurnState::PlayerPhase);
 		}
 	}
@@ -718,7 +718,7 @@ bool GameScene::ProcessGameOverFlow(float deltaSeconds)
 	if (!m_isGameOverProcessing) {
 		m_isGameOverProcessing = true;
 		m_gameOverTimer = 0.0f;
-		std::cout << "[GameScene] GameOver detected! Waiting for animation..." << std::endl;
+		DBG_ERROR("[GameScene] GameOver detected! Waiting for animation...");
 	}
 
 	m_gameOverTimer += deltaSeconds;
@@ -866,9 +866,8 @@ void GameScene::CheckAndTriggerEscapeEvent()
 			if (m_dialogueUI) {
 				m_dialogueUI->ShowDialogue(m_ally->getSRT().pos, DialogueType::Escape);
 			}
-
-			std::cout << "[GameEvent] Survival Phase Ended. Escape Triggered at ("
-				<< m_escapeGridX << ", " << m_escapeGridZ << ")." << std::endl;
+			DBG_ERROR("[GameEvent] Survival Phase Ended. Escape Triggered at ("
+				<< m_escapeGridX << ", " << m_escapeGridZ << ").");
 		}
 	}
 }

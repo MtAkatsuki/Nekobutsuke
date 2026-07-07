@@ -108,8 +108,8 @@ public:
 
     CameraState GetState() const { return m_state; }
 
-    Matrix4x4 GetViewMatrix() const { return m_viewmtx; }
-    Matrix4x4 GetProjMatrix() const { return m_projmtx; }
+    const Matrix4x4& GetViewMatrix() const { return m_viewmtx; }
+    const Matrix4x4& GetProjMatrix() const { return m_projmtx; }
 
     Vector3 GetPosition()     const { return m_position; }
     Vector3 GetLookat()       const { return m_lookat; }

@@ -104,6 +104,7 @@
     <ClInclude Include="Actor\Gimmick\Prop.h" />
     <ClInclude Include="Actor\Gimmick\Trap.h" />
     <ClInclude Include="Core\Application.h" />
+    <ClInclude Include="Core\DebugLog.h" />
     <ClInclude Include="Core\Game.h" />
     <ClInclude Include="Core\GameContext.h" />
     <ClInclude Include="Core\main.h" />

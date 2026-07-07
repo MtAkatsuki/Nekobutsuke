@@ -567,6 +567,9 @@
     <ClInclude Include="System\ZFightTunables.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="Core\DebugLog.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\ToonVS.hlsl">

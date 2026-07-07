@@ -2,7 +2,7 @@
 #include "../System/imgui/imgui_impl_win32.h"
 #include "Game.h"
 #include <stdexcept>
-#include <iostream>
+#include "DebugLog.h"
 
 namespace {
     // --- 設定・定数 (Magic Numbers) ---
@@ -116,21 +116,20 @@ void Application::MainLoop()
 
     try
     {
-        std::cerr << "Calling gameinit()..." << std::endl;
+        DBG_ERROR("Calling gameinit()...");
         gameinit();
-        std::cerr << "gameinit() finished successfully." << std::endl;
+        DBG_ERROR("gameinit() finished successfully.");
     }
     catch (const std::exception& e)
     {
-  
-        std::cerr << "!!! FATAL ERROR !!!" << std::endl;
-        std::cerr << "Exception caught: " << e.what() << std::endl;
+        DBG_ERROR("!!! FATAL ERROR !!!");
+        DBG_ERROR("Exception caught: " << e.what());
         system("PAUSE"); 
         return; 
     }
     catch (...)
     {
-        std::cerr << "!!! UNKNOWN ERROR !!!" << std::endl;
+        DBG_ERROR("!!! UNKNOWN ERROR !!!");
         system("PAUSE");
         return;
     }

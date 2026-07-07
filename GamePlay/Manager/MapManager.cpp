@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
-#include <iostream>
+#include "../../Core/DebugLog.h"
 #include "../../Actor/Base/GameObject.h"
 #include "../../GamePlay/Scene/GameScene.h"
 #include "MapManager.h"
@@ -341,7 +341,7 @@ std::vector<std::vector<std::string>> MapManager::ParseCSV(const std::string& fi
 
 	// ファイルのオープンに失敗した場合のエラー処理
 	if (!file.is_open()) {
-		std::cerr << "[Error] Failed to open CSV: " << filePath << std::endl;
+		DBG_ERROR("[Error] Failed to open CSV: ");
 		return grid;
 	}
 

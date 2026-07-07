@@ -5,7 +5,6 @@
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../Core/Application.h"
 #include <cmath>
-#include <iostream>
 
 namespace {
     // --- ƒƒjƒ…[İ’è ---

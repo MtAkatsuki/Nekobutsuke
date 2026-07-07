@@ -2,7 +2,7 @@
 #include "../../System/Meshmanager.h"
 #include "../../System/ZFightTunables.h"
 #include "../Base/Unit.h"
-#include <iostream>
+#include "../../Core/DebugLog.h"
 
 namespace {
     // 演出・バランス用定数
@@ -93,8 +93,7 @@ void Trap::OnEnter(Unit* unit) {
     if (m_hasActivated) return;
 
     if (unit) {
-        std::cout << "[Trap] TRAP ACTIVATED! Unit took damage." << std::endl;
-
+        DBG_ERROR("[Trap] TRAP ACTIVATED! Unit took damage.");
         // ユニットにトラップダメージを適用（攻撃者=nullptr）
         unit->TakeDamage(m_trapDamage, nullptr);
 

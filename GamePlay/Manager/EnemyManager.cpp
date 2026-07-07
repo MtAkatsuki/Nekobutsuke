@@ -1,7 +1,7 @@
 #include "EnemyManager.h"
 #include "../../Core/GameContext.h"
 #include "TurnManager.h"
-#include <iostream>
+#include "../../Core/DebugLog.h"
 
 namespace {
 	const float ACT_INTERVAL = 0.5f; // 敵の行動と行動の間のインターバル待機時間
@@ -95,8 +95,7 @@ void EnemyManager::ClearAll() {
 	m_state = EnemyPhaseState::IDLE;
 	m_currentActorIndex = 0;
 	m_phaseTimer = 0.0f;
-
-	std::cout << "[EnemyManager] ClearAll called. State reset." << std::endl;
+	DBG_ERROR("[EnemyManager] ClearAll called. State reset.");
 }
 
 void EnemyManager::RegisterEnemy(Enemy* enemy) {
@@ -111,10 +110,11 @@ void EnemyManager::RemoveEnemy(Enemy* enemy) {
 	if (it != m_enemies.end()) {
 		m_enemies.erase(it, m_enemies.end());
 		ResortAndRenumber();
-		std::cerr << "[Manager Debug] RemoveEnemy SUCCESS. Size: " << oldSize << " -> " << m_enemies.size() << std::endl; 
+		DBG_ERROR("[Manager Debug] RemoveEnemy SUCCESS. Size: " << oldSize << " -> " << m_enemies.size());
+
 	}
 	else {
-		std::cerr << "[Manager Debug] RemoveEnemy FAILED. Enemy pointer not found in list!" << std::endl; 
+		DBG_ERROR("[Manager Debug] RemoveEnemy FAILED. Enemy pointer not found in list!");
 	}
 }
 

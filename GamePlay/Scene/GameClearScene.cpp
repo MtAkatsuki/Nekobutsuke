@@ -6,7 +6,7 @@
 #include "../../System/SceneClassFactory.h"
 #include "../../System/Audio/AudioManager.h"
 #include "../../System/BackgroundTransition.h"
-#include <iostream>
+#include "../../Core/DebugLog.h"
 
 namespace {
     // --- íËêîíËã`  ---
@@ -17,7 +17,6 @@ namespace {
 }
 
 void GameClearScene::Init() {
-    std::cerr << "=== GameClearScene::Init() CALLED ===" << std::endl;
 
     if (!m_image) {
         m_image = std::make_unique<CSprite>(SCREEN_WIDTH, SCREEN_HEIGHT, "Assets/texture/gameclear.png");
@@ -28,10 +27,10 @@ void GameClearScene::Init() {
     AudioManager::GetInstance().PlayBGM("Clear", false, 1.0f);
 
     if (m_image) {
-        std::cerr << "=== GameClearScene m_image Created Successfully ===" << std::endl;
+        DBG_ERROR("=== GameClearScene m_image Created Successfully ===");
     }
     else {
-        std::cerr << "=== FATAL: m_image Creation FAILED ===" << std::endl;
+        DBG_ERROR("=== FATAL: m_image Creation FAILED ===");
     }
 }
 
@@ -64,7 +63,7 @@ void GameClearScene::dispose() {
 
 void GameClearScene::draw(uint64_t deltatime) {
     if (!m_image) {
-        std::cerr << "[Warning] GameClearScene::draw called but m_image is NULL!" << std::endl;
+        DBG_ERROR("[Warning] GameClearScene::draw called but m_image is NULL!");
         return;
     }
 

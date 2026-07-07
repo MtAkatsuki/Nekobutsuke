@@ -68,7 +68,7 @@ public:
 	// ---------------------------------------------------------
 	// ゲッター / セッター
 	// ---------------------------------------------------------
-	SRT getSRT() const { return m_srt; }
+	const SRT& getSRT() const { return m_srt; }
 	void setSRT(const SRT& srt) { m_srt = srt; }
 	void setPosition(const Vector3& pos) { m_srt.pos = pos; }
 

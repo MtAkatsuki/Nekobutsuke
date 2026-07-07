@@ -7,7 +7,6 @@
 #include "../../UI/System/DamageNumberManager.h"
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../GamePlay/Manager/EnemyManager.h"
-#include <iostream>
 #include "../../System/RandomEngine.h"
 
 namespace {

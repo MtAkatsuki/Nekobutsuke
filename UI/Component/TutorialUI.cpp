@@ -1,7 +1,6 @@
 #include "TutorialUI.h"
 #include "../../System/CDirectInput.h"
 #include "../../Core/Application.h"
-#include <iostream>
 
 namespace {
     const float ANIM_SPEED = 5.0f;  // フェードイン・アウトの速度

@@ -12,7 +12,7 @@
 #include	"../Character/Enemy.h"
 #include	"../Gimmick/Trap.h"
 #include	<cmath>
-#include	<iostream>
+#include	"../../Core/DebugLog.h"
 
 namespace {
 	// バランス・演出用の定数
@@ -980,10 +980,10 @@ void Player::playerResourceLoader() {
 
 
 	if (m_PlayerShader) {
-		std::cerr << "Player Shader Loaded Successfully." << std::endl;
+		DBG_ERROR("Player Shader Loaded Successfully.");
 	}
 	else {
-		std::cerr << "CRITICAL ERROR: 'lightshaderSpecular' not found! Check shader file paths." << std::endl;
+		DBG_ERROR("CRITICAL ERROR: 'lightshaderSpecular' not found! Check shader file paths.");
 	}
 }
 

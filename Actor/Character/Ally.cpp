@@ -7,6 +7,7 @@
 #include "../../UI/Component/DialogueUI.h"
 #include "../../System/Audio/AudioManager.h"
 #include "../../GamePlay/Manager/EffectManager.h"
+#include "../../Core/DebugLog.h"
 
 namespace {
     // 演出・バランス用定数
@@ -100,7 +101,7 @@ void Ally::Update(uint64_t deltatime) {
                 // 押し出された先のタイルにギミック（罠など）があるかチェック
                 Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
                 if (currentTile && currentTile->structure) {
-                    std::cout << "[Ally] Knocked into an event/trap!" << std::endl;
+                    DBG_TRACE("[Ally] Knocked into an event/trap!");
                     currentTile->structure->OnEnter(this);
                 }
             }
@@ -175,7 +176,7 @@ void Ally::OnDeathFlyComplete() {
 void Ally::StartTurn() {
     if (m_currentHP <= 0) return;
     // ターン開始時、採掘アニメーション実行する
-    std::cout << "[Ally] Start Turn: Start Digging!" << std::endl;
+    DBG_ERROR("[Ally] Start Turn: Start Digging!");
     m_isDigging = true;
     m_digTimer = 0.0f;
     m_digCount = 0;

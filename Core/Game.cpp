@@ -7,7 +7,7 @@
 #include "../Core/GameContext.h"
 #include "../System/FadeTransition.h"
 #include "../System/BoxDrawer.h"
-#include "Application.h"
+#include "DebugLog.h"
 
 #include <iostream>
 
@@ -23,34 +23,34 @@ static uint64_t g_accumulator = 0; // 固定ステップ更新用のタイムアキュムレータ
 
 void gameinit()
 {
-	std::cerr << "[Step 1] Initializing Renderer..." << std::endl;
+	DBG_TRACE("[Step 1] Initializing Renderer...");
 	Renderer::Init();
-	std::cerr << "[Step 1] OK." << std::endl;
+	DBG_TRACE("[Step 1] OK.");
 
 	BoxDrawerInit();
 
-	std::cerr << "[Step 2] Initializing DirectInput..." << std::endl;
+	DBG_TRACE("[Step 2] Initializing DirectInput...");
 	CDirectInput::GetInstance().Init(
 		Application::GetHInstance(),
 		Application::GetWindow(),
 		Application::GetWidth(),
 		Application::GetHeight());
-	std::cerr << "[Step 2] OK." << std::endl;
+	DBG_TRACE("[Step 2] OK.");
 
-	std::cerr << "[Step 3] Initializing DebugUI..." << std::endl;
+	DBG_TRACE("[Step 3] Initializing DebugUI...");
 
 	DebugUI::Init(Renderer::GetDevice(), Renderer::GetDeviceContext());
-	std::cerr << "[Step 3] OK." << std::endl;
+	DBG_TRACE("[Step 3] OK.");
 
-	std::cerr << "[Step 4] Initializing SceneManager..." << std::endl;
+	DBG_TRACE("[Step 4] Initializing SceneManager...");
 	SceneManager::GetInstance().Init();
-	std::cerr << "[Step 4] OK." << std::endl;
+	DBG_TRACE("[Step 4] OK.");
 
-	std::cerr << "[Step 5] Setting Current Scene..." << std::endl;
+	DBG_TRACE("[Step 5] Setting Current Scene...");
 	
 	SceneManager::GetInstance().SetCurrentScene("TitleScene",
 		std::make_unique<FadeTransition>(INITIAL_FADE_DURATION, FadeTransition::Mode::FadeInOnly));
-	std::cerr << "[Step 5] OK." << std::endl;
+	DBG_TRACE("[Step 5] OK.");
 }
 
 void gameupdate(uint64_t deltatime){
