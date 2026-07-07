@@ -24,8 +24,15 @@ namespace {
 	std::uniform_real_distribution<float> shake_dist(-CHARGE_SHAKE_AMP, CHARGE_SHAKE_AMP);
 }
 
-
-void Enemy::init(){}
+//Spawnファクトリー
+std::unique_ptr<Enemy> Enemy::Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos) {
+	auto e = std::unique_ptr<Enemy>(new Enemy(ctx));
+	e->Init();
+	e->SetGridPosition(gridX, gridZ);
+	e->setPosition(worldPos);
+	e->UpdateWorldMatrix();
+	return e;
+}
 
 void Enemy::Init() {
 	{
@@ -63,9 +70,6 @@ void Enemy::Init() {
 	UpdateWorldMatrix();
 }
 
-void Enemy::dispose() {
-
-}
 
 void Enemy::Update(uint64_t dt) {
 	Unit::Update(dt);

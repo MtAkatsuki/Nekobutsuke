@@ -33,8 +33,7 @@ public:
 	// ---------------------------------------------------------
 	// ライフサイクル (Lifecycle)
 	// ---------------------------------------------------------
-	void init() override {}
-	void dispose() override {}
+	void Dispose() override {}
 	virtual void Init(MapModelType type, Vector3 position);
 	virtual void Update(uint64_t delta) override;
 	void OnDraw(uint64_t delta) override;

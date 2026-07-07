@@ -39,14 +39,13 @@ enum class AttackType {
 // =========================================================
 class Player : public Unit {
 public:
-    using Unit::Unit;
-
+    
     // ---------------------------------------------------------
     // ライフサイクル (Lifecycle)
     // ---------------------------------------------------------
-    void init() override {}
-    void Init();
-    void dispose() override {}
+    static std::unique_ptr<Player> Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos);
+
+    void Dispose() override {}
     virtual void Update(uint64_t delta) override;
     void OnDraw(uint64_t delta) override;
 
@@ -73,6 +72,8 @@ public:
     void DebugForceAttack(Direction dir, AttackType type = AttackType::Push);
 
 protected:
+    using Unit::Unit;
+
     virtual void StartTurn() override;
     virtual void EndTurn() override;
     virtual void TakeDamage(int damage, Unit* attacker) override;
@@ -84,6 +85,7 @@ protected:
     virtual void OnDrawOverlay(uint64_t delta) override;
 
 private:
+    void Init();
     void playerResourceLoader();
 
     // --- 状態遷移 (State Transitions) ---

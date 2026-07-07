@@ -48,9 +48,6 @@ Unit::Unit(GameContext* context) : GameObject(context) {
 			[this](TurnState state) { this->OnTurnChanged(state); }
 		);
 	}
-	else {
-		std::cerr << "[Error] Unit created but TurnManager is NULL! Observer failed." << std::endl;
-	}
 
 	m_hpBar = std::make_unique<HPBar>();
 	m_hpBar->Init(context);

@@ -526,34 +526,27 @@ void MapManager::SpawnDynamicEntities(const std::vector<std::vector<std::string>
 			if (token == "P") {
 				Player* pPlayer = context->GetPlayer();
 				if (!pPlayer) {
-					auto newPlayer = std::make_unique<Player>(context);
-					newPlayer->Init();
+					auto newPlayer = Player::Spawn(context, x, z, worldPos);
 					pPlayer = newPlayer.get();
 					context->SetPlayer(pPlayer);
 					unitsToSpawn.push_back(std::move(newPlayer));
 				}
-				pPlayer->SetGridPosition(x, z);
-				pPlayer->setPosition(worldPos);
-				pPlayer->UpdateWorldMatrix();
+				else {
+					pPlayer->SetGridPosition(x, z); 
+					pPlayer->setPosition(worldPos);
+					pPlayer->UpdateWorldMatrix();
+				}
 				GetTile(x, z)->occupant = pPlayer;
 			}
 			else if (token == "A") {
-				auto ally = std::make_unique<Ally>(context);
-				ally->Init();
-				ally->SetGridPosition(x, z);
-				ally->setPosition(worldPos);
-				ally->UpdateWorldMatrix();
+				auto ally = Ally::Spawn(context, x, z, worldPos);
 				GetTile(x, z)->occupant = ally.get();
 				context->SetAlly(ally.get());
 				unitsToSpawn.push_back(std::move(ally));
 			}
 			else if (token[0] == 'E') {
 
-				auto enemy = std::make_unique<Enemy>(context);
-				enemy->Init();
-				enemy->SetGridPosition(x, z);
-				enemy->setPosition(worldPos);
-				enemy->UpdateWorldMatrix();
+				auto enemy = Enemy::Spawn(context, x, z, worldPos);
 				GetTile(x, z)->occupant = enemy.get();
 
 				if (context->GetEnemyManager()) context->GetEnemyManager()->RegisterEnemy(enemy.get());

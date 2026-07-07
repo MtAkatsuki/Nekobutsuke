@@ -10,14 +10,12 @@
 // =========================================================
 class Ally : public Unit {
 public:
-    using Unit::Unit;
 
     // ---------------------------------------------------------
     // ライフサイクル (Lifecycle)
     // ---------------------------------------------------------
-    void init() override {}
-    void Init();
-    void dispose() override {}
+    static std::unique_ptr<Ally> Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos);
+    void Dispose() override {}
     void Update(uint64_t delta) override;
 
     // ---------------------------------------------------------
@@ -40,7 +38,11 @@ public:
         return m_escapeState == EscapeState::Digging || m_escapeState == EscapeState::Fading;
     }
 
+protected:
+    using Unit::Unit;
+
 private:
+    void Init();
     void UpdateDiggingAnimation(float dt);
 
     // =========================================================

@@ -23,14 +23,12 @@ enum class EnemyState {
 // =========================================================
 class Enemy : public Unit {
 public:
-    using Unit::Unit;
-
     // ---------------------------------------------------------
     // ライフサイクル (Lifecycle)
     // ---------------------------------------------------------
-    void init() override;
-    void Init();
-    void dispose() override;
+    static std::unique_ptr<Enemy> Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos);
+ 
+    void Dispose() override {}
     virtual void Update(uint64_t delta) override;
     void OnDraw(uint64_t delta) override;
 
@@ -65,10 +63,14 @@ public:
     virtual void DrawUI() override;
 
 protected:
+    using Unit::Unit;
+
     virtual void OnDrawOverlay(uint64_t delta) override;
     virtual void OnDrawFloorUI(uint64_t delta) override;
 
 private:
+    void Init();
+
     // ---------------------------------------------------------
     // 内部AI・ロジック (Internal AI Logic)
     // ---------------------------------------------------------

@@ -31,6 +31,16 @@ namespace {
 	const int MAX_JUMP_COUNT = 6;
 }
 
+//Spawnファクトリー
+std::unique_ptr<Player> Player::Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos) {
+	auto p = std::unique_ptr<Player>(new Player(ctx)); 
+	p->Init(); 
+	p->SetGridPosition(gridX, gridZ);
+	p->setPosition(worldPos);
+	p->UpdateWorldMatrix();
+	return p; 
+}
+
 void Player::Init() {
 	playerResourceLoader();
 

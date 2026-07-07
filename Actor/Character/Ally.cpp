@@ -17,6 +17,16 @@ namespace {
     const float FADE_OUT_SPEED = 1.0f;     // 脱出時のフェードアウト速度
 }
 
+//Spawnファクトリー
+std::unique_ptr<Ally> Ally::Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos) {
+    auto a = std::unique_ptr<Ally>(new Ally(ctx));
+    a->Init();
+    a->SetGridPosition(gridX, gridZ);
+    a->setPosition(worldPos);
+    a->UpdateWorldMatrix();
+    return a;
+}
+
 void Ally::Init() 
 {
     //モデル関連のソースをロード

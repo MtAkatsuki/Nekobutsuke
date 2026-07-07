@@ -1414,11 +1414,7 @@ Enemy* GameScene::SpawnDebugEnemyInFront(int hp) {
 	Tile* t = m_MapManager->GetTile(gx, gz);
 	if (!t) return nullptr;
 
-	auto enemy = std::make_unique<Enemy>(m_context);
-	enemy->Init();
-	enemy->SetGridPosition(gx, gz);
-	enemy->setPosition(m_MapManager->GetWorldPosition(gx, gz));
-	enemy->UpdateWorldMatrix();
+	auto enemy = Enemy::Spawn(m_context, gx, gz, m_MapManager->GetWorldPosition(gx, gz));
 	if (hp > 0) enemy->DebugSetHP(hp);
 
 	t->occupant = enemy.get();
