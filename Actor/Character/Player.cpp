@@ -1,4 +1,5 @@
 #include	"Player.h"	
+#include    "PlayerActionView.h"
 #include    "../../System/CDirectInput.h"
 #include	"../../System/meshmanager.h"
 #include	"../../GamePlay/Scene/GameScene.h"	
@@ -11,8 +12,8 @@
 #include	"../../GamePlay/Manager/EnemyManager.h"
 #include	"../Character/Enemy.h"
 #include	"../Gimmick/Trap.h"
-#include	<cmath>
 #include	"../../Core/DebugLog.h"
+#include	<cmath>
 
 namespace {
 	// バランス・演出用の定数
@@ -22,7 +23,6 @@ namespace {
 	const int ATTACK_RANGE = 1;            // 攻撃距離
 
 	// 描画関連の定数
-	const float GHOST_ALPHA = 0.6f;        // 幽霊（残像）の透明度
 	const float UI_INPUT_COOLDOWN = 0.15f; // WASDの連続入力防止時間
 
 	// ジャンプ（祝賀）アニメーション
@@ -41,8 +41,13 @@ std::unique_ptr<Player> Player::Spawn(GameContext* ctx, int gridX, int gridZ, co
 	return p; 
 }
 
+Player::~Player() = default;
+
 void Player::Init() {
 	playerResourceLoader();
+
+	m_actionView = std::make_unique<PlayerActionView>();
+	m_actionView->Init(m_context);
 
 	m_srt.scale = Vector3(0.8f, 0.8f, 0.8f);
 	m_srt.rot = Vector3(0, 0, 0);
@@ -65,6 +70,7 @@ void Player::Init() {
 
 	UpdateWorldMatrix();
 }
+
 
 void Player::Update(uint64_t dt) {
 	Unit::Update(dt);
@@ -292,24 +298,27 @@ void Player::OnDrawFloorUI(uint64_t dt) {
 	if (m_PlayerShader != nullptr) m_PlayerShader->SetGPU();
 
 	if (m_state == PlayerState::MOVE_SELECT) {
-		m_context->GetMapManager()->DrawColoredTiles(m_moveRangeTiles, Color(0, 1, 0, 0.4f));
-		DrawPathLine();
+		m_actionView->DrawMoveRange(m_moveRangeTiles);
+		m_actionView->DrawPathLine(m_currentPath, m_startGridX, m_startGridZ);
 	}
 	else if (m_state == PlayerState::ATTACK_DIR_SELECT) {
-		DrawAttackWarningFloor(); // 赤い警告エリア（床面）
+		m_actionView->DrawAttackWarningFloor(m_gridX, m_gridZ, m_attackDir); // 赤い警告エリア（床面）
 	}
 }
 
 void Player::OnDrawTransparent(uint64_t dt) {
 	if (m_state == PlayerState::MOVE_SELECT) {
-		DrawGhost();
+		UpdateWorldMatrix(); 
+		m_actionView->DrawGhost(m_Renderer, m_srt.scale, m_srt.rot.y,
+			m_startGridX, m_startGridZ, m_WorldMatrix);
 	}
 }
 
 void Player::OnDrawOverlay(uint64_t dt) {
 	if (m_state == PlayerState::ATTACK_DIR_SELECT) {
 		// 攻撃プレビュー（敵のノックバック予測を含む最前面UI）を表示
-		DrawAttackWarningOverlay();
+		bool isPush = (m_selectedAttackType == AttackType::Push);
+		m_actionView->DrawAttackWarningOverlay(m_gridX, m_gridZ, m_attackDir, isPush, this);
 	}
 }
 
@@ -651,192 +660,6 @@ void Player::HandleAttackDirInput(float dt) {
 	}
 }
 
-void Player::DrawGhost() {
-
-	Vector3 ghostPos = m_context->GetMapManager()->GetWorldPosition(m_startGridX, m_startGridZ);
-	ghostPos.y += ZFight::Ghost;
-
-	Matrix4x4 ghostWorld = Matrix4x4::CreateScale(m_srt.scale) * Matrix4x4::CreateRotationY(m_srt.rot.y) * Matrix4x4::CreateTranslation(ghostPos);
-
-	Renderer::SetWorldMatrix(&ghostWorld);
-
-	for (int i = 0; CMaterial * mtrl = m_Renderer->GetMaterial(i); ++i) {
-		MATERIAL m = mtrl->GetData();
-		m.Diffuse.w = GHOST_ALPHA;
-		mtrl->SetMaterial(m);
-	}
-
-	m_Renderer->Draw();
-
-	for (int i = 0; CMaterial * mtrl = m_Renderer->GetMaterial(i); ++i) {
-		MATERIAL m = mtrl->GetData();
-		m.Diffuse.w = 1.0f;
-		mtrl->SetMaterial(m);
-	}
-
-	UpdateWorldMatrix();
-	Renderer::SetWorldMatrix(&m_WorldMatrix);
-}
-
-void Player::DrawPathLine() {
-	// スタートポイントは描画しない
-	if (m_currentPath.empty()) return;
-
-	// 目的地が危険（トラップ）かどうかをチェック
-	bool isDanger = false;
-	if (!m_currentPath.empty()) {
-		Tile* destTile = m_currentPath.back();
-		if (destTile && destTile->structure && destTile->structure->GetType() == MapModelType::TRAP) {
-			// trap ポインタにキャストし、既に発動済みかどうかを判定
-			Trap* trap = dynamic_cast<Trap*>(destTile->structure);
-			if (trap && !trap->IsActivated()) {
-				isDanger = true; // 未発動のトラップのみ、赤色の危険ルートとして表示する
-			}
-		}
-	}
-
-	Color normalColor(1.0f, 1.0f, 1.0f, 1.0f); // 白色（通常時）
-	Color dangerColor(1.0f, 0.0f, 0.0f, 1.0f); // 赤色（危険時）
-	Color targetColor = isDanger ? dangerColor : normalColor;
-
-	Tile* startTile = m_context->GetMapManager()->GetTile(m_startGridX, m_startGridZ);
-	//スタートポイントので、i=1から
-	for (size_t i = 0; i < m_currentPath.size(); ++i) {
-		Tile* currTile = m_currentPath[i];
-		if (currTile->gridX == m_startGridX && currTile->gridZ == m_startGridZ) continue;
-
-		// もし i=0 なら、前の点はスタートポイント、通常の前の点
-		Tile* prevTile = (i == 0) ? startTile : m_currentPath[i - 1];
-		Tile* nextTile = (i + 1 < m_currentPath.size()) ? m_currentPath[i + 1] : nullptr;
-
-		Vector3 pos = m_context->GetMapManager()->GetWorldPosition(currTile->gridX, currTile->gridZ);
-		pos.y += ZFight::PathLine;
-
-		float rotY = 0.0f;
-		CStaticMeshRenderer* rendererToUse = nullptr;
-
-		//モデルの種類と回転を確認
-		if (nextTile) {
-			//中間タイル
-
-			//入るの方向(Prev -> Curr)
-			int dxIn = currTile->gridX - prevTile->gridX;
-			int dzIn = currTile->gridZ - prevTile->gridZ;
-			// 出るの方向(Curr -> Next)
-			int dxOut = nextTile->gridX - currTile->gridX;
-			int dzOut = nextTile->gridZ - currTile->gridZ;
-
-			if (dxIn == dxOut && dzIn == dzOut) {
-				// 直線：もし入ると出るの方向が一致なら
-				rendererToUse = m_PathLineRenderer;
-				rotY = CalculateLineRotation(dxIn, dzIn);
-			}
-			else {
-				// 直角：入ると出るの方向が同じじゃない
-				rendererToUse = m_PathCornerRenderer;
-				// 入口隣のタイルと出口隣のタイルの相対中心偏移
-				int n1x = prevTile->gridX - currTile->gridX;
-				int n1z = prevTile->gridZ - currTile->gridZ;
-				int n2x = nextTile->gridX - currTile->gridX;
-				int n2z = nextTile->gridZ - currTile->gridZ;
-				rotY = CalculateCornerRotation(n1x, n1z, n2x, n2z);
-			}
-		}
-		else {
-			// ゴールタイル
-
-			// 直線を使って、回転して、前進方向を指す
-			int dx = currTile->gridX - prevTile->gridX;
-			int dz = currTile->gridZ - prevTile->gridZ;
-
-			rendererToUse = m_PathLineRenderer;
-			rotY = CalculateLineRotation(dx, dz);
-		}
-
-		// 描画
-		if (rendererToUse) {
-			Matrix4x4 world = Matrix4x4::CreateScale(Vector3(1.0f, 1.0f, 1.0f))
-				* Matrix4x4::CreateRotationY(rotY)
-				* Matrix4x4::CreateTranslation(pos);
-
-			Renderer::SetWorldMatrix(&world);
-			if (auto* mat = rendererToUse->GetMaterial(0)) {
-				MATERIAL original = mat->GetData();
-				MATERIAL temp = original;
-				temp.Diffuse = targetColor;
-				mat->SetMaterial(temp);
-				rendererToUse->Draw();
-				mat->SetMaterial(original);
-			}
-			else {
-				rendererToUse->Draw();
-			}
-		}
-	}
-}
-
-void Player::DrawAttackWarningFloor() {
-	//全て攻撃できる方向のヒントUIの描画
-	std::vector<Tile*> neighbors;
-	int dx[] = { 0, 0, -1, 1 };
-	int dz[] = { 1, -1, 0, 0 };//四方向
-	for (int i = 0; i < 4; ++i) {
-		Tile* t = m_context->GetMapManager()->GetTile(m_gridX + dx[i], m_gridZ + dz[i]);
-		if (t) neighbors.push_back(t);
-	}
-	m_context->GetMapManager()->DrawColoredTiles(neighbors, Color(0.9f, 0.0f, 0.0f, 0.2f));
-	//現在選択したタイル（攻撃方向）を描画
-	DirOffset offset = DirOffset::From(m_attackDir);
-	Tile* target = m_context->GetMapManager()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
-	if (target) {
-		std::vector<Tile*> one{ target };
-		m_context->GetMapManager()->DrawColoredTiles(one, Color(0.9f, 0.0f, 0.0f, 0.8f));
-	}
-}
-
-void Player::DrawAttackWarningOverlay() {
-	DirOffset offset = DirOffset::From(m_attackDir);
-	Tile* target = m_context->GetMapManager()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
-	// === ノックバックUIプレビューをトリガー ===
-	if (target && m_selectedAttackType == AttackType::Push && target->occupant && target->occupant != this) {
-		target->occupant->DrawPushPreview(m_attackDir);
-	}
-}
-
-float Player::CalculateLineRotation(int dx, int dz) {
-	// dx, dzはパスの方向
-	if (dx == 1) return 0.0f;           // 右（デフォルト）
-	if (dx == -1) return PI;            // 左 (180度)
-	if (dz == 1) return -PI / 2.0f;     // 上 (-90度、反時計回り90度にZ+を指す)
-	if (dz == -1) return PI / 2.0f;     // 下 (+90度)
-	return 0.0f;
-}
-
-float Player::CalculateCornerRotation(int dx1, int dz1, int dx2, int dz2) {
-	// dx1, dz1: 隣タイル１と現在のタイルの相対中心偏移
-	// dx2, dz2: 隣タイル２と現在のタイルの相対中心偏移
-
-	//繋がっているの二つの方向を判断
-	bool left = (dx1 == -1 || dx2 == -1);
-	bool right = (dx1 == 1 || dx2 == 1);
-	bool up = (dz1 == 1 || dz2 == 1);
-	bool down = (dz1 == -1 || dz2 == -1);
-
-	// デフォルト：Left + Down -> Rot 0
-	if (left && down) return 0.0f;
-
-	// Down + Right -> Rot -90 (270)
-	if (down && right) return -PI / 2.0f;
-
-	// Right + Up -> Rot 180
-	if (right && up) return PI;
-
-	// Up + Left -> Rot 90
-	if (up && left) return PI / 2.0f;
-
-	return 0.0f;
-}
-
 Unit* Player::GetTargetInLine(int range) {
 	for (int i = 1; i <= range; ++i) {
 		int checkX = m_gridX + (DirOffset::From(m_facing).x * i);
@@ -972,8 +795,6 @@ void Player::playerResourceLoader() {
 	}
 
 	m_PlayerShader = MeshManager::getShader<CShader>("toonshader");
-	m_PathLineRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
-	m_PathCornerRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_corner_mesh");
 
 	auto* renderer = MeshManager::getRenderer<CStaticMeshRenderer>("player_mesh");
 	SetModelRenderer(renderer);

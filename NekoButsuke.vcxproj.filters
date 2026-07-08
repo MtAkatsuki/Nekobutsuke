@@ -289,6 +289,9 @@
     <ClCompile Include="GamePlay\Scene\GameSceneDebugUI.cpp">
       <Filter>GamePlay\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Actor\Character\PlayerActionView.cpp">
+      <Filter>Actor\Character</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h">
@@ -575,6 +578,9 @@
     </ClInclude>
     <ClInclude Include="GamePlay\Scene\GameSceneDebugUI.h">
       <Filter>GamePlay\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Actor\Character\PlayerActionView.h">
+      <Filter>Actor\Character</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

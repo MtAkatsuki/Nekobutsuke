@@ -10,6 +10,7 @@
 
 class MapManager;
 class Enemy;
+class PlayerActionView;
 
 // =========================================================
 // PlayerState
@@ -48,6 +49,7 @@ public:
     void Dispose() override {}
     virtual void Update(uint64_t delta) override;
     void OnDraw(uint64_t delta) override;
+    ~Player() override;
 
     // ---------------------------------------------------------
     // 状態とクエリ (Status & Queries)
@@ -101,15 +103,8 @@ private:
     void HandleMoveInput(float dt);
     void HandleAttackDirInput(float dt);
 
-    // --- 描画補助 (Rendering Helpers) ---
-    void DrawGhost();
-    void DrawPathLine();
-    void DrawAttackWarningFloor();
-    void DrawAttackWarningOverlay();
 
     // --- ユーティリティ (Utilities) ---
-    float CalculateLineRotation(int dx, int dz);
-    float CalculateCornerRotation(int dx1, int dz1, int dx2, int dz2);
     Unit* GetTargetInLine(int range);
     bool UpdatePathMovement(float dt);
     void CalculateMovePreviewDamage();
@@ -156,6 +151,5 @@ private:
     bool m_isCelebrationDone = false;
 
     // --- 描画用 ---
-    CStaticMeshRenderer* m_PathLineRenderer = nullptr;
-    CStaticMeshRenderer* m_PathCornerRenderer = nullptr;
+    std::unique_ptr<PlayerActionView> m_actionView;
 };
