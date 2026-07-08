@@ -44,6 +44,7 @@
     <ClCompile Include="GamePlay\Scene\GameClearScene.cpp" />
     <ClCompile Include="GamePlay\Scene\GameOverScene.cpp" />
     <ClCompile Include="GamePlay\Scene\GameScene.cpp" />
+    <ClCompile Include="GamePlay\Scene\GameSceneDebugUI.cpp" />
     <ClCompile Include="GamePlay\Scene\TitleScene.cpp" />
     <ClCompile Include="System\AssimpPerse.cpp" />
     <ClCompile Include="System\Audio\AudioManager.cpp" />
@@ -117,6 +118,7 @@
     <ClInclude Include="GamePlay\Scene\GameClearScene.h" />
     <ClInclude Include="GamePlay\Scene\GameOverScene.h" />
     <ClInclude Include="GamePlay\Scene\GameScene.h" />
+    <ClInclude Include="GamePlay\Scene\GameSceneDebugUI.h" />
     <ClInclude Include="GamePlay\Scene\TitleScene.h" />
     <ClInclude Include="System\AimOrientation.h" />
     <ClInclude Include="System\AssimpPerse.h" />

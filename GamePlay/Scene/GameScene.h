@@ -22,6 +22,7 @@ class TurnManager;
 class GameUIManager;
 class DamageNumberManager;
 class DialogueUI;
+class GameSceneDebugUI;
 
 // =========================================================
 // ゲーム開始時やターン開始時の導入シネマティック状態
@@ -44,7 +45,8 @@ class GameScene : public IScene {
 public:
 	static constexpr uint32_t ENEMYMAX = 3;
 
-	virtual ~GameScene() {}
+	virtual ~GameScene();
+	friend class GameSceneDebugUI;   // デバッグ UI に内部状態(調参対象)への直接アクセスを許可
 
 	// コピーコンストラクタ・代入演算子の無効化（安全設計）
 	GameScene(const GameScene&) = delete;
@@ -68,13 +70,6 @@ public:
 	void AddObject(std::unique_ptr<GameObject> obj) {
 		m_GameObjectList.push_back(std::move(obj));
 	}
-
-	// ---------------------------------------------------------
-	// デバッグ及びツール用関数 (Debug & Tools)
-	// ---------------------------------------------------------
-	void debugUICamera();
-	void drawGridDebugText();
-	Enemy* SpawnDebugEnemyInFront(int hp = -1);
 
 private:
 	// =========================================================
@@ -170,7 +165,6 @@ private:
 	// --- ゲームエンティティ ---
 	std::vector<std::unique_ptr<GameObject>> m_GameObjectList;
 	std::array<Enemy*, ENEMYMAX> m_enemies;
-	Enemy* m_debugEnemy = nullptr;// 直近のテスト用エネミー（次回スポーン時に掃除）
 	Player* m_player = nullptr;
 	Ally* m_ally = nullptr;
 	std::unique_ptr<Background> m_background;
@@ -182,6 +176,7 @@ private:
 	std::unique_ptr<TutorialUI> m_tutorialUI;
 	std::unique_ptr<CSprite> m_escapeMarkerSprite;
 	std::unique_ptr<CSprite> m_winTextSprite;
+	std::unique_ptr<GameSceneDebugUI> m_debugUI;
 	bool m_showActionUI = true;
 
 	// --- ゲーム進行状態フラグ ---
@@ -206,7 +201,6 @@ private:
 	IntroState m_introState = IntroState::Idle;
 	bool m_needsTurnCounterAnim = false;
 	bool m_shouldShowDebugEscape = false;
-	bool m_isDebugCameraEnabled = true;
 
 	// --- 定数パラメータ ---
 	const float START_WAIT_TIME = 1.0f;

@@ -21,6 +21,7 @@
 #include "../../UI/Component/DialogueUI.h"
 #include <stdio.h> // for sprintf_s
 #include "../../Core/DebugLog.h"
+#include "GameSceneDebugUI.h"
 
 
 namespace {
@@ -39,7 +40,7 @@ GameScene::GameScene()
 {
 
 }
-
+GameScene::~GameScene() = default;
 // ---------------------------------------------------------
 
 // IScene 継承ライフサイクル (Lifecycle Overrides)
@@ -63,7 +64,6 @@ void GameScene::Init() {
 	m_isSceneChanging = false;
 	m_isGameOverProcessing = false;
 	m_gameOverTimer = 0.0f;
-	m_debugEnemy = nullptr;
 }
 
 // シーンの更新処理：表示・ロジック・フロー制御の優先度順に実行
@@ -429,8 +429,9 @@ void GameScene::SetupUserInterface() {
 void GameScene::InitializeDebugFeatures() {
 	DBG_ERROR("   [GameScene] Registering DebugUI...");
 
-	DebugUI::RedistDebugFunction([this]() { debugUICamera(); });
-	DebugUI::RedistDebugFunction([this]() { drawGridDebugText(); });
+	m_debugUI = std::make_unique<GameSceneDebugUI>(*this);
+	DebugUI::RedistDebugFunction([this]() { m_debugUI->DrawCameraTuningWindow(); });
+	DebugUI::RedistDebugFunction([this]() { m_debugUI->DrawGridDebugText(); });
 }
 
 
@@ -1112,316 +1113,6 @@ void GameScene::DrawWinText() {
 	Renderer::SetBlendState(BS_NONE);
 	Renderer::SetDepthEnable(true);
 	Renderer::SetUISamplerMode(false);
-}
-
-void GameScene::debugUICamera() {
-	if (!m_isDebugCameraEnabled) return;
-
-	ImGui::Begin("Player Camera Tuning");
-	if (ImGui::CollapsingHeader("Compare")) {
-		TOONPARAM tp = Renderer::GetToonParam();
-		bool changed = false;
-
-		ImGui::Checkbox("Action UI", &m_showActionUI);
-
-		// アウトライン
-		static bool outlineOn = true;
-		static float savedW = tp.OutlineColor.w;
-		if (ImGui::Checkbox("Outline", &outlineOn)) {
-			if (!outlineOn) { savedW = tp.OutlineColor.w; tp.OutlineColor.w = 0.0f; }
-			else { tp.OutlineColor.w = savedW; }
-			changed = true;
-		}
-
-		// 半球光（OFF時：SkyをGroundに合わせ、単色ambientへ退化）
-		static bool hemiOn = true;
-		static Color savedSky = tp.SkyColor;
-		if (ImGui::Checkbox("Hemisphere", &hemiOn)) {
-			if (!hemiOn) { savedSky = tp.SkyColor; tp.SkyColor = tp.ShadowColor; }
-			else { tp.SkyColor = savedSky; }
-			changed = true;
-		}
-
-		// 方向光によるトゥーン階調（OFF時：閾値を1以上へ移動し、bandを常に0にして環境光のみ表示）
-		static bool lightOn = true;
-		static Vector4 savedTP = tp.ToonParams;
-		if (ImGui::Checkbox("Directional Light", &lightOn)) {
-			if (!lightOn) { savedTP = tp.ToonParams; tp.ToonParams.x = 2.0f; tp.ToonParams.y = 2.0f; }
-			else { tp.ToonParams = savedTP; }
-			changed = true;
-		}
-
-		static bool shadowOn = true;
-		if (ImGui::Checkbox("Shadow", &shadowOn)) {
-			Renderer::s_shadowEnabled = shadowOn;
-		}
-
-		if (changed) Renderer::SetToonParam(tp);
-	}
-
-	if (ImGui::CollapsingHeader("Z-Fight Offsets")) {
-		ImGui::SliderFloat("Range Panel", &ZFight::RangePanel, 0.0f, 0.5f, "%.3f");
-		ImGui::SliderFloat("Arrow", &ZFight::Arrow, 0.0f, 0.5f, "%.3f");
-		ImGui::SliderFloat("Path Line", &ZFight::PathLine, 0.0f, 0.5f, "%.3f");
-		ImGui::SliderFloat("Ghost", &ZFight::Ghost, 0.0f, 0.5f, "%.3f");
-		ImGui::SliderFloat("Enemy Arrow", &ZFight::EnemyArrow, 0.0f, 0.5f, "%.3f");
-		ImGui::SliderFloat("Blob Shadow", &ZFight::Blob, 0.0f, 0.5f, "%.3f");
-		ImGui::SliderFloat("Trap", &ZFight::Trap, 0.0f, 1.0f, "%.3f");
-	}
-
-	if (ImGui::CollapsingHeader("PostFX")) {
-		POSTFX p = Renderer::GetPostFX();
-		bool ch = false;
-		ch |= ImGui::SliderFloat("Vignette", &p.Vignette, 0.0f, 2.0f, "%.2f");
-		if (ch) Renderer::SetPostFX(p);
-	}
-
-	// 1. 現在がプレイヤーターン（操作フェーズ）かチェック
-	bool isPlayerPhase = false;
-	if (m_context && m_context->GetTurnManager()) {
-		isPlayerPhase = (m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase);
-	}
-
-	// プレイヤーターンでない場合は、赤色の警告を表示して操作をロックする
-	if (!isPlayerPhase) {
-		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Tuning only available in Player Phase.");
-		ImGui::End();
-		return;
-	}
-
-	// 2. プレイヤーターン中：実際のカメラパラメータを読み取ってバインド
-	ImGui::Text("Action Camera Parameters");
-	ImGui::Separator();
-
-	bool changed = false;
-
-	// Camera クラスのグローバル inline 変数に直接バインド
-	if (ImGui::SliderFloat("Zoom Radius", &Camera::ZOOM_RADIUS, 10.0f, 50.0f, "%.1f")) changed = true;
-	if (ImGui::SliderFloat("Azimuth", &Camera::BASE_AZIMUTH, -3.14159f, 3.14159f, "%.4f")) changed = true;
-	if (ImGui::SliderFloat("Elevation", &Camera::BASE_ELEVATION, -1.5f, 1.5f, "%.4f")) changed = true;
-
-	// 3. コアメカニズム：パラメータが変更されたら、新しい値をカメラの【目標値 (Target)】に設定
-	if (changed && m_camera) {
-		m_camera->SetTargetRadius(Camera::ZOOM_RADIUS);
-		m_camera->UpdateTargetAzimuth();
-		m_camera->SetTargetElevation(Camera::BASE_ELEVATION);
-	}
-
-	if (ImGui::CollapsingHeader("Outline")) {
-		TOONPARAM tp = Renderer::GetToonParam();
-		bool ch = false;
-		ch |= ImGui::SliderFloat("Width", &tp.OutlineColor.w, 0.0f, 0.001f, "%.4f");
-		float col[3] = { tp.OutlineColor.x, tp.OutlineColor.y, tp.OutlineColor.z };
-		if (ImGui::ColorEdit3("Color", col)) {
-			tp.OutlineColor.x = col[0]; tp.OutlineColor.y = col[1]; tp.OutlineColor.z = col[2];
-			ch = true;
-		}
-		if (ch) Renderer::SetToonParam(tp); 
-	}
-
-	ImGui::Separator();
-
-	// 境界（バウンディングボックス）のパディング設定もこのパネルで一括管理
-	if (ImGui::SliderFloat("Bound Padding", &Camera::BOUND_PADDING, -10.0f, 10.0f, "%.1f")) {
-		// リアルタイムで境界を再計算し、デバッグ表示を更新
-		RecalculateCameraBounds();
-	}
-	// === デバッグ用：ライティング調整 ===
-	if (ImGui::CollapsingHeader("Light / Toon")) {
-		LIGHT lt = Renderer::GetLight();            
-		float dir[3] = { lt.Direction.x, lt.Direction.y, lt.Direction.z };
-		float intensity = lt.Diffuse.x;
-		float ambient = lt.Ambient.x;
-
-		bool ch = false;
-		ch |= ImGui::SliderFloat3("Light Dir", dir, -1.0f, 1.0f);
-		ch |= ImGui::SliderFloat("Light Intensity", &intensity, 0.0f, 3.0f);
-
-		if (ch) {
-			Vector4 d(dir[0], dir[1], dir[2], 0.0f);
-			d.Normalize(); 
-			lt.Direction = d;
-			lt.Diffuse = Color(intensity, intensity, intensity, 1.0f);
-			lt.Ambient = Color(ambient, ambient, ambient, 1.0f);
-			Renderer::SetLight(lt); 
-		}
-	}
-
-	if (ImGui::CollapsingHeader("Hemisphere")) {
-		TOONPARAM tp = Renderer::GetToonParam();
-		bool ch = false;
-		float sky[3] = { tp.SkyColor.x,    tp.SkyColor.y,    tp.SkyColor.z };
-		float ground[3] = { tp.ShadowColor.x, tp.ShadowColor.y, tp.ShadowColor.z };
-		if (ImGui::ColorEdit3("Sky (up)", sky)) { tp.SkyColor.x = sky[0];      tp.SkyColor.y = sky[1];      tp.SkyColor.z = sky[2];      ch = true; }
-		if (ImGui::ColorEdit3("Ground (dn)", ground)) { tp.ShadowColor.x = ground[0]; tp.ShadowColor.y = ground[1]; tp.ShadowColor.z = ground[2]; ch = true; }
-		if (ch) Renderer::SetToonParam(tp);
-	}
-
-	// === デバッグ用：勝利アニメーションと「WIN」テキストの強制発動 ===
-	ImGui::Text("Debug Actions");
-	if (ImGui::Button("Test Win Animation & Text", ImVec2(-1, 30))) {
-		if (m_player) {
-			// プレイヤーの「お祝い状態」を直接開始
-			m_player->StartCelebration();
-
-			// 演出のテスト用にカメラのズームインも合わせて確認
-
-			if (m_camera) {
-				m_camera->ChangeState(CameraState::TargetFocus, m_player->getSRT().pos);
-			}
-
-		}
-	}
-
-	// === デバッグ用：脱出出口と指示画像の強制発動 ===
-	ImGui::Text("Debug Escape");
-	if (ImGui::Button("Test Escape Model & Text", ImVec2(-1, 30))) {
-		m_shouldShowDebugEscape = !m_shouldShowDebugEscape;
-		m_turnCounter->SetTurn(0);
-		if (m_shouldShowDebugEscape && m_ally) {
-			m_escapeGridX = m_ally->GetUnitGridX();
-			m_escapeGridZ = m_ally->GetUnitGridZ();
-		}
-	}
-
-	ImGui::Spacing();
-	if (ImGui::CollapsingHeader("HP Bar")) {
-		ImGui::SliderFloat("HP Y Offset", &HPBar::s_hpBarOffsetY, 0.0f, 4.0f, "%.2f");
-		ImGui::SliderFloat("HP Heart Size", &HPBar::s_hpBarTexSize, 10.0f, 60.0f, "%.1f");
-		ImGui::SliderFloat("HP Heart Gap", &HPBar::s_hpBarGap, 0.0f, 15.0f, "%.1f");
-		// カメラ回転UIの位置とスケールの調整
-		if (m_gameUIManager) {
-			ImGui::Spacing();
-			ImGui::Text("Camera Rotate UI Tuning");
-			ImGui::Separator();
-			ImGui::SliderFloat("Rotate UI X", &m_gameUIManager->GetCameraRotatePos().x, 0.0f, 1920.0f, "%.1f");
-			ImGui::SliderFloat("Rotate UI Y", &m_gameUIManager->GetCameraRotatePos().y, 0.0f, 1080.0f, "%.1f");
-			ImGui::SliderFloat("Rotate UI Scale", &m_gameUIManager->GetCameraRotateScale(), 0.1f, 3.0f, "%.2f");
-		}
-	}
-	ImGui::Spacing();
-	// 4. 設定をローカルの INI ファイルに一括保存
-	if (ImGui::Button("Save Config to Local", ImVec2(-1, 30))) {
-		Camera::SaveConfig();
-	}
-
-	// ===== アタックカメラ =====
-	ImGui::Spacing();
-	if (ImGui::CollapsingHeader("Attack Cam")) {
-		ImGui::SliderFloat("AttackZoom Radius", &Camera::ATTACKZOOM_RADIUS, 5.0f, 40.0f, "%.1f");
-		ImGui::SliderFloat("AttackZoom Hold", &Camera::ATTACKZOOM_HOLD, 0.1f, 3.0f, "%.2f");
-		ImGui::SliderFloat("Attack Lead", &Camera::ATTACK_ZOOM_LEAD, 0.0f, 1.0f, "%.2f");
-		if (ImGui::Button("Test Attack Cam", ImVec2(-1, 30))) {
-			SpawnDebugEnemyInFront(-1); 
-			m_player->DebugForceAttack(m_player->GetFacing());
-		}
-	}
-
-	// ===== キールカメラ =====
-	ImGui::Spacing();
-	if (ImGui::CollapsingHeader("Kill Cam")) {
-		ImGui::SliderFloat("KillCam Radius", &Camera::KILLCAM_RADIUS, 5.0f, 40.0f, "%.1f");
-		ImGui::SliderFloat("KillCam Elevation", &Camera::KILLCAM_ELEVATION, -1.5f, 0.0f, "%.3f");
-		ImGui::SliderFloat("Shoulder Yaw", &Camera::KILLCAM_SHOULDER_YAW, -1.5f, 1.5f, "%.3f");
-		ImGui::SliderFloat("KillCam Lead", &Camera::KILLCAM_LEAD, 0.0f, 1.0f, "%.2f");
-		ImGui::SliderFloat("KillCam Hold (slow)", &Camera::KILLCAM_HOLD, 0.2f, 3.0f, "%.2f");
-		ImGui::SliderFloat("Time Scale", &Camera::KILLCAM_TIME_SCALE, 0.05f, 1.0f, "%.2f");
-		ImGui::SliderFloat("Pitch Lift (look up)", &Camera::KILLCAM_PITCH_LIFT, 0.0f, 30.0f, "%.1f");
-
-		if (ImGui::Button("Test Kill Cam", ImVec2(-1, 30))) {
-			SpawnDebugEnemyInFront(1);
-			m_player->DebugForceAttack(m_player->GetFacing());
-		}
-	}
-	ImGui::End();
-}
-
-void GameScene::drawGridDebugText()
-{
-	if (m_context) return;
-	if (!m_MapManager) return;
-
-	ImDrawList* drawList = ImGui::GetForegroundDrawList();
-
-	const auto& allTiles = m_MapManager->GetAllTiles();
-	// タイル数を検査する
-	ImGui::Text("Tiles: %d", allTiles.size());
-
-	Matrix4x4 view = m_camera->GetViewMatrix();
-	Matrix4x4 proj = m_camera->GetProjMatrix();
-	float screenWidth = static_cast<float>(Application::GetWidth());
-	float screenHeight = static_cast<float>(Application::GetHeight());
-
-	for (const auto& tile : allTiles)
-	{
-		Vector3 worldPos = m_MapManager->GetWorldPosition(tile);
-		Vector2 screenPos = WorldToScreen(worldPos, view, proj, screenWidth, screenHeight);
-
-		if (screenPos.x < 0 || screenPos.x > screenWidth ||
-			screenPos.y < 0 || screenPos.y > screenHeight)
-		{
-			continue;
-		}
-
-		char textBuf[32];
-		sprintf_s(textBuf, sizeof(textBuf), "[%d,%d]\n(%.1f, %.1f, %.1f)",
-			tile.gridX, tile.gridZ,
-			worldPos.x, worldPos.y, worldPos.z);
-		drawList->AddText(ImVec2(screenPos.x, screenPos.y), IM_COL32(255, 0, 0, 255), textBuf);
-	}
-
-	// ====== 【新規】赤色のカメラ境界線 (Camera Bounds) を描画 ======
-	Vector3 p1(m_camera->GetBoundMinX(), 0.1f, m_camera->GetBoundMinZ());
-	Vector3 p2(m_camera->GetBoundMaxX(), 0.1f, m_camera->GetBoundMinZ());
-	Vector3 p3(m_camera->GetBoundMaxX(), 0.1f, m_camera->GetBoundMaxZ());
-	Vector3 p4(m_camera->GetBoundMinX(), 0.1f, m_camera->GetBoundMaxZ());
-
-	// ワールド座標からスクリーン座標へ変換
-	Vector2 s1 = WorldToScreen(p1, view, proj, screenWidth, screenHeight);
-	Vector2 s2 = WorldToScreen(p2, view, proj, screenWidth, screenHeight);
-	Vector2 s3 = WorldToScreen(p3, view, proj, screenWidth, screenHeight);
-	Vector2 s4 = WorldToScreen(p4, view, proj, screenWidth, screenHeight);
-
-	ImU32 boundCol = IM_COL32(255, 0, 0, 255); // 赤色
-	drawList->AddLine(ImVec2(s1.x, s1.y), ImVec2(s2.x, s2.y), boundCol, 2.0f);
-	drawList->AddLine(ImVec2(s2.x, s2.y), ImVec2(s3.x, s3.y), boundCol, 2.0f);
-	drawList->AddLine(ImVec2(s3.x, s3.y), ImVec2(s4.x, s4.y), boundCol, 2.0f);
-	drawList->AddLine(ImVec2(s4.x, s4.y), ImVec2(s1.x, s1.y), boundCol, 2.0f);
-
-	// 境界ラベルの描画
-	drawList->AddText(ImVec2(s1.x, s1.y), boundCol, "BOUND MIN");
-	drawList->AddText(ImVec2(s3.x, s3.y), boundCol, "BOUND MAX");
-}
-
-Enemy* GameScene::SpawnDebugEnemyInFront(int hp) {
-	if (!m_player || !m_context || !m_MapManager) return nullptr;
-
-	// 前回テストで残ったデバッグ敵を除去し、スタックを防ぐ
-	if (m_debugEnemy) {
-		if (m_context->GetEnemyManager())
-			m_context->GetEnemyManager()->RemoveEnemy(m_debugEnemy);          // AI/管理リストから外す
-		Tile* prev = m_MapManager->GetTile(
-			m_debugEnemy->GetUnitGridX(), m_debugEnemy->GetUnitGridZ());
-		if (prev && prev->occupant == m_debugEnemy) prev->occupant = nullptr;  // 占有マスを解放
-		m_debugEnemy->Destroy();   // m_isDead を立てる → 描画ループ (if !IsDead) が自動でスキップ
-		m_debugEnemy = nullptr;
-	}
-
-	DirOffset o = DirOffset::From(m_player->GetFacing());
-	int gx = m_player->GetUnitGridX() + o.x;
-	int gz = m_player->GetUnitGridZ() + o.z;
-	Tile* t = m_MapManager->GetTile(gx, gz);
-	if (!t) return nullptr;
-
-	auto enemy = Enemy::Spawn(m_context, gx, gz, m_MapManager->GetWorldPosition(gx, gz));
-	if (hp > 0) enemy->DebugSetHP(hp);
-
-	t->occupant = enemy.get();
-	Enemy* raw = enemy.get();
-	if (m_context->GetEnemyManager()) m_context->GetEnemyManager()->RegisterEnemy(raw);
-	AddObject(std::move(enemy));
-	m_debugEnemy = raw;
-	return raw;
 }
 
 

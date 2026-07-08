@@ -286,6 +286,9 @@
     <ClCompile Include="System\ZFightTunables.cpp">
       <Filter>System</Filter>
     </ClCompile>
+    <ClCompile Include="GamePlay\Scene\GameSceneDebugUI.cpp">
+      <Filter>GamePlay\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h">
@@ -569,6 +572,9 @@
     </ClInclude>
     <ClInclude Include="Core\DebugLog.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlay\Scene\GameSceneDebugUI.h">
+      <Filter>GamePlay\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
