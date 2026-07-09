@@ -23,19 +23,7 @@ class GameUIManager;
 class DamageNumberManager;
 class DialogueUI;
 class GameSceneDebugUI;
-
-// =========================================================
-// ゲーム開始時やターン開始時の導入シネマティック状態
-// =========================================================
-enum class IntroState {
-	Idle,                // 待機状態
-	TurnCounterFlying,   // ターンカウントUIのポップアップ・移動中
-	CameraToAlly,        // カメラが味方（ネズミ）へスムーズに移動
-	WaitingAllyDialogue, // カメラが到着し、味方のセリフ演出が完了するのを待機
-	CameraToBase,        // カメラが一度全体俯瞰（BaseView）へ戻る
-	CameraToPlayer,      // カメラがプレイヤーへ戻る
-	Finished             // すべての導入演出が完了
-};
+class IntroDirector;
 
 // =========================================================
 // GameScene クラス
@@ -95,7 +83,6 @@ private:
 	void UpdateCoreTimers(float deltaSeconds);
 	void UpdateCameraFocus(float deltaSeconds);
 	void UpdateTurnIntroSequence(uint64_t deltatime, float deltaSeconds);
-	void UpdateIntroSequence(float deltaSeconds);
 
 	// ---------------------------------------------------------
 	// 更新サブルーチン：フロー制御インターセプト (Flow Control Interceptors)
@@ -177,6 +164,7 @@ private:
 	std::unique_ptr<CSprite> m_escapeMarkerSprite;
 	std::unique_ptr<CSprite> m_winTextSprite;
 	std::unique_ptr<GameSceneDebugUI> m_debugUI;
+	std::unique_ptr<IntroDirector> m_introDirector;
 	bool m_showActionUI = true;
 
 	// --- ゲーム進行状態フラグ ---
@@ -195,10 +183,8 @@ private:
 	float m_startDelayTimer = 0.0f;
 	float m_gameOverTimer = 0.0f;
 	float m_gameClearTimer = 0.0f;
-	float m_introTimer = 0.0f;
 
 	// --- 演出・デバッグ制御 ---
-	IntroState m_introState = IntroState::Idle;
 	bool m_needsTurnCounterAnim = false;
 	bool m_shouldShowDebugEscape = false;
 

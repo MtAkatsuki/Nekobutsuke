@@ -1,4 +1,6 @@
 #include "GameScene.h"
+#include "GameSceneDebugUI.h"
+#include "IntroDirector.h"
 #include "../../System/Utility/ScreenToWorld.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../System/CDirectInput.h"
@@ -12,6 +14,7 @@
 #include "../../System/ZFightTunables.h"
 #include "../../System/Audio/AudioManager.h"
 #include "../../Core/GameContext.h"
+#include "../../Core/DebugLog.h"
 #include "../../GamePlay/Manager/MapManager.h"
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../GamePlay/Manager/EnemyManager.h"
@@ -20,15 +23,12 @@
 #include "../../UI/System/DamageNumberManager.h"
 #include "../../UI/Component/DialogueUI.h"
 #include <stdio.h> // for sprintf_s
-#include "../../Core/DebugLog.h"
-#include "GameSceneDebugUI.h"
+
 
 
 namespace {
 	// 演出用定数
 	const int INITIAL_TURN_COUNT = 5;                  // 初期ターン数（脱出イベントまでのカウントダウン開始値）
-	const float CAMERA_ARRIVAL_TOLERANCE = 0.2f;       // カメラ位置到達判定の許容誤差
-	const float CAMERA_HOVER_DURATION = 0.5f;          // カメラ俯瞰時のホバリング（待機）時間
 	const float ESCAPE_MARKER_BASE_Y = 1.5f;           // 脱出アイコンのY軸ベース座標
 	const float FADE_TIME_GAMEOVER = 1000.0f;          // 敗北時の暗転時間（ms）
 	const float FADE_TIME_CLEAR = 300.0f;              // 勝利時のホワイトアウト時間（ms）
@@ -424,6 +424,8 @@ void GameScene::SetupUserInterface() {
 	m_dialogueUI = m_context->GetDialogueUI();
 	m_damageNumberManager = m_context->GetDamageManager();
 	m_gameUIManager = m_context->GetUIManager();
+	// 導入演出の進行管理（TurnCounter生成後に初期化）
+	m_introDirector = std::make_unique<IntroDirector>(m_context, m_turnCounter.get());
 }
 
 void GameScene::InitializeDebugFeatures() {
@@ -463,79 +465,13 @@ void GameScene::UpdateTurnIntroSequence(uint64_t deltatime, float deltaSeconds) 
 
 		// 開幕の演出制御：第1ターン開始時、戦局全体を見せるカメラ演出を挿入
 		
-		// 意図しないキャラ移動を防ぐため、演出中は入力をロックする
-		if (m_remainingTurns == INITIAL_TURN_COUNT && m_introState == IntroState::Idle) {
-			m_introState = IntroState::TurnCounterFlying;
-			if (m_gameUIManager) {
-				m_gameUIManager->SetEventBlock(true);
-			}
+		if (m_remainingTurns == INITIAL_TURN_COUNT && m_introDirector && m_introDirector->IsIdle()) {
+			m_introDirector->Start();
 		}
 	}
 
 	if (m_turnCounter) m_turnCounter->Update(deltatime);
-	UpdateIntroSequence(deltaSeconds);
-}
-
-void GameScene::UpdateIntroSequence(float deltaSeconds) {
-
-	if (m_introState == IntroState::Idle || m_introState == IntroState::Finished) {
-		return;
-	}
-
-	if (m_introState == IntroState::TurnCounterFlying) {
-		if (m_turnCounter && !m_turnCounter->IsAnimating()) {
-			m_introState = IntroState::CameraToAlly;
-			if (m_ally) {
-				m_camera->ChangeState(CameraState::TargetFocus, m_ally->getSRT().pos);
-			}
-		}
-	}
-	else if (m_introState == IntroState::CameraToAlly) {
-		if (m_camera) {
-			Vector3 diff = m_camera->GetLookat() - m_camera->GetTargetLookAt();
-			if (diff.Length() < 0.2f) {
-				m_introState = IntroState::WaitingAllyDialogue;
-			}
-		}
-	}
-	else if (m_introState == IntroState::WaitingAllyDialogue) {
-		// 吹き出し（ダイアログ）の演出完了を待ってからカメラを戻す
-		if (m_isAllyTalked && m_dialogueUI && !m_dialogueUI->IsShowing()) {
-			m_introState = IntroState::CameraToBase;
-			m_introTimer = 0.0f;
-			if (m_camera) {
-				m_camera->ChangeState(CameraState::BaseView);
-			}
-		}
-	}
-
-	// === Baseカメラへの移動と懸停（ホバリング） ===
-	else if (m_introState == IntroState::CameraToBase) {
-		if (m_camera) {
-			Vector3 diff = m_camera->GetLookat() - m_camera->GetTargetLookAt();
-			if (diff.Length() < 0.2f) {
-				m_introTimer += deltaSeconds;
-
-				if (m_introTimer >= 0.5f) {
-					m_introTimer = 0.0f;
-					m_introState = IntroState::CameraToPlayer;
-					if (m_player) {
-						m_camera->ChangeState(CameraState::Tracking, m_player->getSRT().pos);
-					}
-				}
-			}
-		}
-	}
-	else if (m_introState == IntroState::CameraToPlayer) {
-		if (m_camera) {
-			Vector3 diff = m_camera->GetLookat() - m_camera->GetTargetLookAt();
-			if (diff.Length() < 0.2f) {
-				m_introState = IntroState::Finished;
-				// 運鏡演出が終了。プレイヤーの操作ロックを解除し、操作メニューを表示
-				if (m_gameUIManager) m_gameUIManager->SetEventBlock(false);
-			}
-		}
-	}
+	if (m_introDirector) m_introDirector->Update(deltaSeconds, m_isAllyTalked);
 }
 
 
