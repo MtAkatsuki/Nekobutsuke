@@ -102,33 +102,37 @@ void Unit::TakeDamage(int damage, Unit* attacker) {
 	OnHpChanged();
 }
 
+int Unit::SimulatePushChainDamage(MapManager* map, int fromX, int fromZ,
+	Direction pushDir, int collisionDamage,
+	const Unit* ignoreOccupant) {
+	if (!map) return 0;
+
+	DirOffset offset = DirOffset::From(pushDir);
+	int pushX = fromX + offset.x;
+	int pushZ = fromZ + offset.z;
+
+	bool isBlocked = !map->IsWalkable(pushX, pushZ);
+	Tile* nextTile = map->GetTile(pushX, pushZ);
+	if (nextTile && nextTile->occupant && nextTile->occupant != ignoreOccupant) isBlocked = true;
+
+	if (isBlocked) {
+		// 壁や他のユニットに衝突する場合
+		return collisionDamage;
+	}
+	// 衝突せずスムーズに押し出される場合、足元の未発動の罠を確認
+	if (Trap* trap = Trap::GetArmedTrap(nextTile)) {
+		return trap->GetTrapDamage();
+	}
+	return 0;
+}
+
 int Unit::CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir) {
 	int expectedDamage = baseDamage;
 
 	// 押し出し攻撃の場合、移動先の状況によって追加の連鎖ダメージを予測する
 	if (isPush && m_context && m_context->GetMapManager()) {
-		DirOffset offset = DirOffset::From(pushDir);
-		int pushX = m_gridX + offset.x;
-		int pushZ = m_gridZ + offset.z;
-
-		bool isBlocked = !m_context->GetMapManager()->IsWalkable(pushX, pushZ);
-		Tile* nextTile = m_context->GetMapManager()->GetTile(pushX, pushZ);
-		if (nextTile && nextTile->occupant) isBlocked = true;
-
-		if (isBlocked) {
-			// 壁や他のユニットに激突する場合
-			expectedDamage += m_onPushDamage;
-		}
-		else if (nextTile && nextTile->structure) {
-			// 衝突せずスムーズに押し出される場合、足元のギミック（罠）を確認
-			if (nextTile->structure->GetType() == MapModelType::TRAP) {
-				Trap* trap = dynamic_cast<Trap*>(nextTile->structure);
-				// 未発動の罠であれば、トラップダメージが加算されると予測
-				if (trap && !trap->IsActivated()) {
-					expectedDamage += trap->GetTrapDamage();
-				}
-			}
-		}
+		expectedDamage += SimulatePushChainDamage(
+			m_context->GetMapManager(), m_gridX, m_gridZ, pushDir, m_onPushDamage);
 	}
 	return expectedDamage;
 }

@@ -12,7 +12,7 @@
 
 class MapManager;
 class TurnManager;
-class Tile;
+struct Tile;
 class CStaticMeshRenderer;
 
 // =========================================================
@@ -62,6 +62,12 @@ public:
 	// 押し出しを伴う攻撃を受けた際、壁や罠による二次ダメージを含めた最終被ダメージを算出
 	int CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir);
 
+	// (fromX, fromZ) から pushDir 方向へ押し出された場合の連鎖ダメージ（衝突 or 罠）を予測。
+	// 実結算と移動プレビューが同一ルールを共有するための static 純関数。
+	// ignoreOccupant: 占有判定から除外するユニット（プレビュー時、移動後に空く自分自身のマス対策）
+	static int SimulatePushChainDamage(MapManager* map, int fromX, int fromZ,
+		Direction pushDir, int collisionDamage,
+		const Unit* ignoreOccupant = nullptr);
 	// 攻撃プレビューヒントのダメージ値を設定（UI描画用）
 	virtual void SetPreviewDamage(int dmg) { m_previewDamage = dmg; }
 	void DebugSetHP(int hp) { m_currentHP = hp; }

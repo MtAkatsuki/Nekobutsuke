@@ -712,48 +712,25 @@ void Player::CalculateMovePreviewDamage() {
 	int expectedDamage = 0;
 	MapManager* map = m_context->GetMapManager();
 
-	// 1. 予測：未発動の罠を踏んでしまうか
-	Tile* previewTile = map->GetTile(m_previewGridX, m_previewGridZ);
-	if (previewTile && previewTile->structure && previewTile->structure->GetType() == MapModelType::TRAP) {
-		Trap* trap = dynamic_cast<Trap*>(previewTile->structure);
-		if (trap && !trap->IsActivated()) {
-			expectedDamage += trap->GetTrapDamage(); // トラップの固定ダメージ
-		}
+	// 1. 予測：移動先が未発動の罠を踏んでしまうか
+	if (Trap* trap = Trap::GetArmedTrap(map->GetTile(m_previewGridX, m_previewGridZ))) {
+		expectedDamage += trap->GetTrapDamage();
 	}
 
 	// 2. 予測：敵の攻撃ロックオン範囲に侵入してしまうか
 	if (m_context->GetEnemyManager()) {
 		const auto& enemies = m_context->GetEnemyManager()->GetAllEnemies();
 		for (auto* enemy : enemies) {
-			// 敵が溜め攻撃中で、かつプレイヤーの移動予測先をロックオンしている場合
+			// 敵がチャージ攻撃中で、かつプレイヤーの移動予定位置をロックオンしている場合
 			if (enemy->IsCharging() &&
 				enemy->GetLockedGridX() == m_previewGridX &&
 				enemy->GetLockedGridZ() == m_previewGridZ)
 			{
-				int enemyDmg = enemy->GetEnemyDamage();
-
-				// 敵に押し出された後の連鎖衝突ダメージをシミュレート
-				DirOffset offset = DirOffset::From(enemy->GetFacing());
-				int pushX = m_previewGridX + offset.x;
-				int pushZ = m_previewGridZ + offset.z;
-
-				bool isBlocked = !map->IsWalkable(pushX, pushZ);
-				Tile* nextTile = map->GetTile(pushX, pushZ);
-
-				// 押し出される先に誰か（自分以外）がいる場合は衝突とみなす
-				if (nextTile && nextTile->occupant && nextTile->occupant != this) isBlocked = true;
-
-				if (isBlocked) {
-					enemyDmg += m_onPushDamage; 
-				}
-				// 敵に押し出されて罠にハマる連帯ダメージ
-				else if (nextTile && nextTile->structure && nextTile->structure->GetType() == MapModelType::TRAP) {
-					Trap* pushTrap = dynamic_cast<Trap*>(nextTile->structure);
-					if (pushTrap && !pushTrap->IsActivated()) {
-						enemyDmg += pushTrap->GetTrapDamage(); 
-					}
-				}
-				expectedDamage += enemyDmg;
+				// 押し出された後の連鎖衝突／罠ダメージを予測位置からシミュレート
+				// （自分は移動済みの想定 → 占有判定から自身を除外）
+				expectedDamage += enemy->GetEnemyDamage()
+					+ SimulatePushChainDamage(map, m_previewGridX, m_previewGridZ,
+						enemy->GetFacing(), m_onPushDamage, this);
 			}
 		}
 	}

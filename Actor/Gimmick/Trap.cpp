@@ -3,6 +3,7 @@
 #include "../../System/ZFightTunables.h"
 #include "../Base/Unit.h"
 #include "../../Core/DebugLog.h"
+#include "../../GamePlay/Manager/MapManager.h"
 
 namespace {
     // 演出・バランス用定数
@@ -110,4 +111,12 @@ void Trap::GetDimensions(MapModelType type, int& outW, int& outD)
     switch (type) {
     case MapModelType::TRAP: default: outW = 1; outD = 1; break;
     }
+}
+
+Trap* Trap::GetArmedTrap(const Tile* tile) {
+    if (!tile || !tile->structure) return nullptr;
+    if (tile->structure->GetType() != MapModelType::TRAP) return nullptr;
+
+    Trap* trap = dynamic_cast<Trap*>(tile->structure);
+    return (trap && !trap->IsActivated()) ? trap : nullptr;
 }

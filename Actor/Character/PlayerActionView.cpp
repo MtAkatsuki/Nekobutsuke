@@ -61,16 +61,7 @@ void PlayerActionView::DrawPathLine(const std::vector<Tile*>& path, int startGX,
     if (path.empty()) return;
 
     // 目的地が危険（罠）かどうかをチェック
-    bool isDanger = false;
-    {
-        Tile* destTile = path.back();
-        if (destTile && destTile->structure && destTile->structure->GetType() == MapModelType::TRAP) {
-            Trap* trap = dynamic_cast<Trap*>(destTile->structure);
-            if (trap && !trap->IsActivated()) {
-                isDanger = true; // 未発動の罠のみ、赤色の危険ルートとして表示
-            }
-        }
-    }
+    bool isDanger = (Trap::GetArmedTrap(path.back()) != nullptr);
 
     Color normalColor(1.0f, 1.0f, 1.0f, 1.0f); // 白（通常時）
     Color dangerColor(1.0f, 0.0f, 0.0f, 1.0f); // 赤（危険時）

@@ -6,7 +6,7 @@
 
 class GameContext;
 class CStaticMeshRenderer;
-class Tile;
+struct Tile;
 class Unit;
 
 class PlayerActionView {

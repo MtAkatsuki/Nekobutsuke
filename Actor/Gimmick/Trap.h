@@ -7,6 +7,7 @@
 // マップ上の罠ギミック。ユニットが進入(OnEnter)した際にダメージを与え、
 // 発動後はアニメーションを伴って消滅する。
 // =========================================================
+struct Tile;
 class Trap : public MapObject {
 public:
 	using MapObject::MapObject;
@@ -28,7 +29,8 @@ public:
 	void OnEnter(Unit* unit) override;
 
 	static void GetDimensions(MapModelType type, int& outW, int& outD);
-
+	// タイル上に「未発動の罠」があればそれを返す（なければ nullptr）
+	static Trap* GetArmedTrap(const Tile* tile);
 	bool IsActivated() const { return m_hasActivated; }
 	int GetTrapDamage() const { return m_trapDamage; }
 
