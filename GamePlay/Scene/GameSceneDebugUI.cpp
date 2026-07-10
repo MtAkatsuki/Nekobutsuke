@@ -242,63 +242,6 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
     ImGui::End();
 }
 
-void GameSceneDebugUI::DrawGridDebugText() {
-    GameContext* m_context = m_scene.m_context;
-    MapManager* m_MapManager = m_scene.m_MapManager;
-    Camera* m_camera = m_scene.m_camera;
-
-    if (m_context) return;   // ¦Œ»ó‚±‚±‚Åí‚É returniŽÀŽ¿–³ŒøjB‹““®ˆÛŽ‚Ì‚½‚ßŒ´Œ^‚Ì‚Ü‚Ü
-    if (!m_MapManager) return;
-
-    ImDrawList* drawList = ImGui::GetForegroundDrawList();
-
-    const auto& allTiles = m_MapManager->GetAllTiles();
-    ImGui::Text("Tiles: %d", allTiles.size());
-
-    Matrix4x4 view = m_camera->GetViewMatrix();
-    Matrix4x4 proj = m_camera->GetProjMatrix();
-    float screenWidth = static_cast<float>(Application::GetWidth());
-    float screenHeight = static_cast<float>(Application::GetHeight());
-
-    for (const auto& tile : allTiles)
-    {
-        Vector3 worldPos = m_MapManager->GetWorldPosition(tile);
-        Vector2 screenPos = WorldToScreen(worldPos, view, proj, screenWidth, screenHeight);
-
-        if (screenPos.x < 0 || screenPos.x > screenWidth ||
-            screenPos.y < 0 || screenPos.y > screenHeight)
-        {
-            continue;
-        }
-
-        char textBuf[32];
-        sprintf_s(textBuf, sizeof(textBuf), "[%d,%d]\n(%.1f, %.1f, %.1f)",
-            tile.gridX, tile.gridZ,
-            worldPos.x, worldPos.y, worldPos.z);
-        drawList->AddText(ImVec2(screenPos.x, screenPos.y), IM_COL32(255, 0, 0, 255), textBuf);
-    }
-
-    // ====== ÔF‚ÌƒJƒƒ‰‹«ŠE (Camera Bounds) ‚ð•`‰æ ======
-    Vector3 p1(m_camera->GetBoundMinX(), 0.1f, m_camera->GetBoundMinZ());
-    Vector3 p2(m_camera->GetBoundMaxX(), 0.1f, m_camera->GetBoundMinZ());
-    Vector3 p3(m_camera->GetBoundMaxX(), 0.1f, m_camera->GetBoundMaxZ());
-    Vector3 p4(m_camera->GetBoundMinX(), 0.1f, m_camera->GetBoundMaxZ());
-
-    Vector2 s1 = WorldToScreen(p1, view, proj, screenWidth, screenHeight);
-    Vector2 s2 = WorldToScreen(p2, view, proj, screenWidth, screenHeight);
-    Vector2 s3 = WorldToScreen(p3, view, proj, screenWidth, screenHeight);
-    Vector2 s4 = WorldToScreen(p4, view, proj, screenWidth, screenHeight);
-
-    ImU32 boundCol = IM_COL32(255, 0, 0, 255);
-    drawList->AddLine(ImVec2(s1.x, s1.y), ImVec2(s2.x, s2.y), boundCol, 2.0f);
-    drawList->AddLine(ImVec2(s2.x, s2.y), ImVec2(s3.x, s3.y), boundCol, 2.0f);
-    drawList->AddLine(ImVec2(s3.x, s3.y), ImVec2(s4.x, s4.y), boundCol, 2.0f);
-    drawList->AddLine(ImVec2(s4.x, s4.y), ImVec2(s1.x, s1.y), boundCol, 2.0f);
-
-    drawList->AddText(ImVec2(s1.x, s1.y), boundCol, "BOUND MIN");
-    drawList->AddText(ImVec2(s3.x, s3.y), boundCol, "BOUND MAX");
-}
-
 Enemy* GameSceneDebugUI::SpawnDebugEnemyInFront(int hp) {
     Player* m_player = m_scene.m_player;
     GameContext* m_context = m_scene.m_context;

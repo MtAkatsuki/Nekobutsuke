@@ -1,11 +1,8 @@
 #pragma once
 
-#include <array>
 #include <memory>
-
 #include "../../System/IScene.h"
 #include "../../System/SceneClassFactory.h"
-#include "../../System/DirectWrite.h"
 #include "../../System/RandomEngine.h"
 #include "../../Actor/Character/Enemy.h"
 #include "../../Actor/Character/Player.h"
@@ -18,7 +15,6 @@
 class GameContext;
 class Camera;
 class MapManager;
-class TurnManager;
 class GameUIManager;
 class DamageNumberManager;
 class DialogueUI;
@@ -32,7 +28,6 @@ class GameResultJudge;
 // =========================================================
 class GameScene : public IScene {
 public:
-	static constexpr uint32_t ENEMYMAX = 3;
 
 	virtual ~GameScene();
 	friend class GameSceneDebugUI;   // デバッグ UI に内部状態(調参対象)への直接アクセスを許可
@@ -134,15 +129,12 @@ private:
 	GameContext* m_context = nullptr;
 	Camera* m_camera = nullptr;
 	MapManager* m_MapManager = nullptr;
-	TurnManager* m_turnManager = nullptr;
 	GameUIManager* m_gameUIManager = nullptr;
 	DamageNumberManager* m_damageNumberManager = nullptr;
 	CShader* m_tileShader = nullptr;
-	std::unique_ptr<DirectWrite> m_directwrite;
 
 	// --- ゲームエンティティ ---
 	std::vector<std::unique_ptr<GameObject>> m_GameObjectList;
-	std::array<Enemy*, ENEMYMAX> m_enemies;
 	Player* m_player = nullptr;
 	Ally* m_ally = nullptr;
 	std::unique_ptr<Background> m_background;
@@ -178,11 +170,6 @@ private:
 
 	// --- 定数パラメータ ---
 	const float START_WAIT_TIME = 1.0f;
-
-	// デバッグ用マウスピッキング座標
-	Vector3 m_pickuppos{ 0,0,0 };
-	Vector3 m_farpoint{};
-	Vector3 m_nearpoint{};
 };
 
 REGISTER_CLASS(GameScene)

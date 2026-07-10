@@ -86,8 +86,6 @@ void Player::Init() {
 	m_maxHP = INITIAL_HP;
 	m_currentHP = m_maxHP;
 
-	m_hasActioned = false;
-	m_isRotating = false;
 	m_team = Team::Player;
 
 	UpdateWorldMatrix();
@@ -609,20 +607,6 @@ void Player::HandleAttackDirInput(float dt) {
 	}
 }
 
-Unit* Player::GetTargetInLine(int range) {
-	for (int i = 1; i <= range; ++i) {
-		int checkX = m_gridX + (DirOffset::From(m_facing).x * i);
-		int checkZ = m_gridZ + (DirOffset::From(m_facing).z * i);
-		Tile* tile = m_context->GetMapManager()->GetTile(checkX, checkZ);
-		if (!tile) break;
-		if (tile->occupant != nullptr) {
-			Unit* targetUnit = dynamic_cast<Unit*>(tile->occupant);
-			if (targetUnit) return targetUnit;
-			return nullptr;
-		}
-	}
-	return nullptr;
-}
 
 bool Player::UpdatePathMovement(float dt) {
 	if (m_currentPath.empty()) return true; //パスは空なら終了
@@ -703,7 +687,7 @@ void Player::UpdateCelebration(float dt) {
 		m_jumpCount++;
 	}
 
-	if (m_jumpCount >= 6) {
+	if (m_jumpCount >= MAX_JUMP_COUNT) {
 		m_srt.pos.y = basePos.y; // 確実に接地させる
 		m_isCelebrationDone = true;
 	}

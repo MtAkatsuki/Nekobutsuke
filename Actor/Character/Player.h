@@ -105,7 +105,6 @@ private:
 
 
     // --- ユーティリティ (Utilities) ---
-    Unit* GetTargetInLine(int range);
     bool UpdatePathMovement(float dt);
     void CalculateMovePreviewDamage();
     void UpdateCelebration(float dt);
@@ -137,8 +136,6 @@ private:
     float m_attackWindupTimer = 0.0f;
 
     // --- フラグ ---
-    bool m_hasActioned = false;
-    bool m_isRotating = false;
     bool m_hasMoved = false;
     bool m_isZoomedIn = false;
     bool m_isWaitingTurnStart = false;

@@ -2,10 +2,8 @@
 #include "GameSceneDebugUI.h"
 #include "IntroDirector.h"
 #include "GameResultJudge.h"
-#include "../../System/Utility/ScreenToWorld.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../System/CDirectInput.h"
-#include "../../System/SphereDrawer.h"
 #include "../../System/DebugUI.h"
 #include "../../System/CPolar3D.h"
 #include "../../System/meshmanager.h"
@@ -172,7 +170,6 @@ void GameScene::SetGameContext(GameContext* context) {
 	m_context = context;
 	if (m_context) {
 		m_MapManager = m_context->GetMapManager();
-		m_turnManager = m_context->GetTurnManager();
 	}
 }
 
@@ -354,7 +351,6 @@ void GameScene::InitializeDebugFeatures() {
 
 	m_debugUI = std::make_unique<GameSceneDebugUI>(*this);
 	DebugUI::RedistDebugFunction([this]() { m_debugUI->DrawCameraTuningWindow(); });
-	DebugUI::RedistDebugFunction([this]() { m_debugUI->DrawGridDebugText(); });
 }
 
 

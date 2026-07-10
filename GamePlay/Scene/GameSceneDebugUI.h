@@ -14,8 +14,7 @@ public:
     explicit GameSceneDebugUI(GameScene& scene) : m_scene(scene) {}
 
     // Debug UI の描画
-    void DrawCameraTuningWindow();  
-    void DrawGridDebugText();       
+    void DrawCameraTuningWindow();      
 
 private:
     // テスト用：プレイヤー前方へデバッグ用Enemyを生成（前回生成分は削除して重複生成を防止）
