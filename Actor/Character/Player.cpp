@@ -30,6 +30,27 @@ namespace {
 	const float JUMP_SPEED = 15.0f;
 	const float JUMP_HEIGHT = 0.5f;
 	const int MAX_JUMP_COUNT = 6;
+
+	// WASD / 矢印キーの方向入力を読む（スクリーン空間、上=+Z）。入力なしは {0,0}
+	DirOffset ReadDirectionalInput() {
+		auto& input = CDirectInput::GetInstance();
+		if (input.CheckKeyBuffer(DIK_W) || input.CheckKeyBuffer(DIK_UP))    return { 0,  1 };
+		if (input.CheckKeyBuffer(DIK_S) || input.CheckKeyBuffer(DIK_DOWN))  return { 0, -1 };
+		if (input.CheckKeyBuffer(DIK_A) || input.CheckKeyBuffer(DIK_LEFT))  return { -1, 0 };
+		if (input.CheckKeyBuffer(DIK_D) || input.CheckKeyBuffer(DIK_RIGHT)) return { 1,  0 };
+		return { 0, 0 };
+	}
+
+	// スクリーン空間の入力を、カメラの向きインデックス(0~3)に応じて
+	// ワールド格子方向へ回転する（DirOffset の回転代数を再利用）
+	DirOffset RotateInputByCamera(int camDir, DirOffset in) {
+		switch (camDir) {
+		case 1:  return in.MoveLeft();   // 正面右カメラ
+		case 2:  return in.MoveBack();   // 背面右カメラ
+		case 3:  return in.MoveRight();  // 背面左カメラ
+		default: return in;              // 正面左（基本カメラ）
+		}
+	}
 }
 
 //Spawnファクトリー
@@ -502,49 +523,17 @@ void Player::HandleMoveInput(float dt) {
 
 	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
 	else {
-		// 1. まず、プレイヤーの「絶対スクリーン入力」 (スクリーン空間入力) を取得する
-		int inX = 0, inZ = 0;
-		if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_W) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_UP)) inZ = 1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_S) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_DOWN)) inZ = -1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_A) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_LEFT)) inX = -1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_D) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_RIGHT)) inX = 1;
+		// スクリーン空間の入力を取得し、カメラの向きに応じてワールド格子方向へ変換
+		DirOffset in = ReadDirectionalInput();
+		if (in.x != 0 || in.z != 0) {
+			int camDir = (m_context && m_context->GetCamera())
+				? m_context->GetCamera()->GetNormalizedDirIndex() : 0;
+			DirOffset move = RotateInputByCamera(camDir, in);
 
-		if (inX != 0 || inZ != 0) {
-			// 2. カメラの現在の正規化されたインデックス (0, 1, 2, 3) を取得
-			int camDir = 0;
-			if (m_context && m_context->GetCamera()) {
-				camDir = m_context->GetCamera()->GetNormalizedDirIndex();
-			}
+			int nextX = m_previewGridX + move.x;
+			int nextZ = m_previewGridZ + move.z;
 
-			// 3. カメラの位置（向き）に応じて入力ベクトルを回転させる
-			int dx = 0, dz = 0;
-			switch (camDir) {
-			case 0:
-				// インデックス 0：正面左 (基本カメラ位置) 
-				dx = inX;
-				dz = inZ;
-				break;
-			case 1:
-				// インデックス 1：正面右 
-				dx = -inZ;
-				dz = inX;
-				break;
-			case 2:
-				// インデックス 2：背面右
-				dx = -inX;
-				dz = -inZ;
-				break;
-			case 3:
-				// インデックス 3：背面左 
-				dx = inZ;
-				dz = -inX;
-				break;
-			}
-
-			int nextX = m_previewGridX + dx;
-			int nextZ = m_previewGridZ + dz;
-
-			//移動できる範囲と予想移動先の検査
+			// 移動できる範囲と予想移動先の検証
 			bool inRange = false;
 			for (auto* t : m_moveRangeTiles) {
 				if (t->gridX == nextX && t->gridZ == nextZ) {
@@ -556,7 +545,7 @@ void Player::HandleMoveInput(float dt) {
 			if (inRange) {
 				m_previewGridX = nextX;
 				m_previewGridZ = nextZ;
-				m_inputCooldown = 0.15f;
+				m_inputCooldown = UI_INPUT_COOLDOWN;
 				// ルートの更新：startからpreviewまで
 				std::vector<Tile*> path = m_context->GetMapManager()->FindPaths(m_startGridX, m_startGridZ, m_previewGridX, m_previewGridZ, true);
 				m_currentPath.clear();
@@ -568,13 +557,11 @@ void Player::HandleMoveInput(float dt) {
 				m_currentPath.insert(m_currentPath.end(), path.begin(), path.end());
 				// 最後に目的地タイルを追加
 				Tile* destTile = m_context->GetMapManager()->GetTile(m_previewGridX, m_previewGridZ);
-				if (destTile)
-				{
+				if (destTile) {
 					m_currentPath.push_back(destTile);
 				}
 
-				Vector3 dirVec((float)dx, 0, (float)dz);
-				SetFacingFromVector(dirVec);
+				SetFacingFromVector(Vector3((float)move.x, 0, (float)move.z));
 
 				// 【カーソル移動】：カメラの目標注視点をカーソルのプレビュー位置に更新
 				Vector3 previewPos = m_context->GetMapManager()->GetWorldPosition(m_previewGridX, m_previewGridZ);
@@ -597,58 +584,19 @@ void Player::HandleAttackDirInput(float dt) {
 
 	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
 	else {
-		// 1. プレイヤーの「スクリーン空間入力」を取得する
-		int inX = 0, inZ = 0;
-		if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_W) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_UP)) inZ = 1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_S) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_DOWN)) inZ = -1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_A) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_LEFT)) inX = -1;
-		else if (CDirectInput::GetInstance().CheckKeyBuffer(DIK_D) || CDirectInput::GetInstance().CheckKeyBuffer(DIK_RIGHT)) inX = 1;
+		DirOffset in = ReadDirectionalInput();
+		if (in.x != 0 || in.z != 0) {
+			int camDir = (m_context && m_context->GetCamera())
+				? m_context->GetCamera()->GetNormalizedDirIndex() : 0;
+			DirOffset move = RotateInputByCamera(camDir, in);
 
-		if (inX != 0 || inZ != 0) {
-			// 2. カメラの正規化されたインデックスを取得
-			int camDir = 0;
-			if (m_context && m_context->GetCamera()) {
-				camDir = m_context->GetCamera()->GetNormalizedDirIndex();
-			}
+			// ワールド格子方向 → Direction 列挙（既存の FromVector を再利用）
+			m_attackDir = DirOffset::FromVector((float)move.x, (float)move.z);
 
-			// 3. カメラの向きに応じて入力ベクトルを回転させる
-			int dx = 0, dz = 0;
-			switch (camDir) {
-			case 0:
-				// インデックス 0：正面左 (基本カメラ位置)
-				dx = inX;
-				dz = inZ;
-				break;
-			case 1:
-				// インデックス 1：正面右 
-				dx = -inZ;
-				dz = inX;
-				break;
-			case 2:
-				// インデックス 2：背面右
-				dx = -inX;
-				dz = -inZ;
-				break;
-			case 3:
-				// インデックス 3：背面左 
-				dx = inZ;
-				dz = -inX;
-				break;
-			}
-
-			// 4. 回転後のワールド座標系ベクトルを Direction 列挙型にマッピングする
-			if (dz == 1) m_attackDir = Direction::North;
-			else if (dz == -1) m_attackDir = Direction::South;
-			else if (dx == -1) m_attackDir = Direction::West;
-			else if (dx == 1) m_attackDir = Direction::East;
-
-			// モデルの向きを攻撃方向に更新
+			// モデルの向きと戦術カメラのオフセットを攻撃方向に合わせて更新
 			DirOffset offset = DirOffset::From(m_attackDir);
 			SetFacingFromVector(Vector3((float)offset.x, 0, (float)offset.z));
-
-			// 【戦闘カメラの更新】：方向変更に合わせてカメラのオフセットを更新
 			if (m_context && m_context->GetCamera()) {
-				DirOffset offset = DirOffset::From(m_attackDir);
 				Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 2.5f;
 				m_context->GetCamera()->UpdateTrackingTarget(targetPos);
 			}
