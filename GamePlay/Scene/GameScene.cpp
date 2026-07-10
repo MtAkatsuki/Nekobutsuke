@@ -1,6 +1,7 @@
 #include "GameScene.h"
 #include "GameSceneDebugUI.h"
 #include "IntroDirector.h"
+#include "GameResultJudge.h"
 #include "../../System/Utility/ScreenToWorld.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../System/CDirectInput.h"
@@ -13,6 +14,7 @@
 #include "../../System/BackgroundTransition.h"
 #include "../../System/ZFightTunables.h"
 #include "../../System/Audio/AudioManager.h"
+#include "../../System/ModelRegistry.h"
 #include "../../Core/GameContext.h"
 #include "../../Core/DebugLog.h"
 #include "../../GamePlay/Manager/MapManager.h"
@@ -30,10 +32,6 @@ namespace {
 	// 演出用定数
 	const int INITIAL_TURN_COUNT = 5;                  // 初期ターン数（脱出イベントまでのカウントダウン開始値）
 	const float ESCAPE_MARKER_BASE_Y = 1.5f;           // 脱出アイコンのY軸ベース座標
-	const float FADE_TIME_GAMEOVER = 1000.0f;          // 敗北時の暗転時間（ms）
-	const float FADE_TIME_CLEAR = 300.0f;              // 勝利時のホワイトアウト時間（ms）
-	constexpr float FADE_IN_OUT_DURATION = 1000.0f;	   // フェードイン・アウトの合計時間（ms）
-	constexpr float BackgroundTransitionTime = 4000.0f;// 背景遷移のスクロール時間（ms）
 }
 
 GameScene::GameScene()
@@ -61,9 +59,7 @@ void GameScene::Init() {
 
 	m_isGameStarted = false;
 	m_startDelayTimer = 0.0f;
-	m_isSceneChanging = false;
-	m_isGameOverProcessing = false;
-	m_gameOverTimer = 0.0f;
+	m_resultJudge = std::make_unique<GameResultJudge>(m_context);  // 勝敗判定（毎回生成で状態を全リセット）
 }
 
 // シーンの更新処理：表示・ロジック・フロー制御の優先度順に実行
@@ -99,7 +95,7 @@ void GameScene::update(uint64_t deltatime)
 	// 5. サブシステムとゲーム進行状態の評価
 	UpdatePostEffectsAndAudio(deltatime, deltaSeconds);
 	TurnChangeCheck();
-	CheckGameStatus(deltaSeconds);
+	if (m_resultJudge) m_resultJudge->Update(deltaSeconds);
 }
 // 描画処理：戦術ゲーム特有のレイヤー仕様（Zオーダー）を厳守するパイプライン
 void GameScene::draw(uint64_t deltatime) {
@@ -223,142 +219,67 @@ void GameScene::LoadGameResources() {
 }
 
 void GameScene::resourceLoader() {
-	// 1. シェーダー (Shaders)
-	{
-		std::unique_ptr<CShader> shader = std::make_unique<CShader>();
-		shader->Create("shader/ToonVS.hlsl", "shader/ToonPS.hlsl");
-		MeshManager::RegisterShader<CShader>("toonshader", std::move(shader));
-	}
-
-	// 2. マップ・地形モデル (Map & Terrain Models)
-	{
-		std::unique_ptr<CStaticMesh> smesh = std::make_unique<CStaticMesh>();
-		smesh->Load("Assets/model/backgroud/floorFull.obj", "Assets/model/backgroud/");
-		std::unique_ptr<CStaticMeshRenderer> srenderer = std::make_unique<CStaticMeshRenderer>();
-		srenderer->Init(*smesh);
-
-		MeshManager::RegisterMesh<CStaticMesh>("floor_mesh", std::move(smesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("floor_mesh", std::move(srenderer));
-	}
-	{
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load("Assets/model/obj/1x1x1_wall.obj", "Assets/model/obj/");
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>("wall_mesh", std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("wall_mesh", std::move(renderer));
-	}
-
-	// 3. ギミック・プロップモデル (Gimmicks & Props)
-	{
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load("Assets/model/obj/trap.obj", "Assets/model/obj/");
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-
-		MeshManager::RegisterMesh<CStaticMesh>("trap_mesh", std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("trap_mesh", std::move(renderer));
-	}
-	{
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load("Assets/model/obj/trap_plane.obj", "Assets/model/obj/");
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-		if (auto* mat = renderer->GetMaterial(0)) {
-			MATERIAL m = mat->GetData();
-			m.Diffuse = Color(1, 1, 1, 1);
-			m.TextureEnable = FALSE;
-			mat->SetMaterial(m);
-		}
-		MeshManager::RegisterMesh<CStaticMesh>("trap_plane_mesh", std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("trap_plane_mesh", std::move(renderer));
-	}
-	{
-		std::unique_ptr<CStaticMesh> smesh_prop = std::make_unique<CStaticMesh>();
-		smesh_prop->Load("Assets/model/obj/prop_plane.obj", "Assets/model/obj/");
-		std::unique_ptr<CStaticMeshRenderer> srender_prop = std::make_unique<CStaticMeshRenderer>();
-		srender_prop->Init(*smesh_prop);
-
-		MeshManager::RegisterMesh("prop_plane_mesh", std::move(smesh_prop));
-		MeshManager::RegisterMeshRenderer("prop_plane_mesh", std::move(srender_prop));
-	}
-
-	// 専用家具モデルの一括ロード
-	const std::vector<std::pair<std::string, std::string>> propModels = {
-		{"sofa_yoko_mesh", "Assets/model/obj/loungeSofa.obj"},
-		{"cattower_mesh",  "Assets/model/obj/coatRackStanding.obj"},
-		{"bookshelf_mesh", "Assets/model/obj/bookcaseClosedDoors.obj"},
-		{"table_mesh",     "Assets/model/obj/tableCloth.obj"}
+	// 1. シェーダー（名前・VS・PS のテーブル駆動）
+	struct ShaderDef { const char* name; const char* vs; const char* ps; };
+	const ShaderDef shaderDefs[] = {
+		{"toonshader",    "shader/ToonVS.hlsl",    "shader/ToonPS.hlsl"},
+		{"outlineshader", "shader/OutlineVS.hlsl", "shader/OutlinePS.hlsl"},
+		{"blobshader",    "shader/BlobVS.hlsl",    "shader/BlobPS.hlsl"},
 	};
-
-	for (const auto& pair : propModels) {
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load(pair.second, "Assets/model/obj/");
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-
-		MeshManager::RegisterMesh<CStaticMesh>(pair.first, std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(pair.first, std::move(renderer));
+	for (const auto& s : shaderDefs) {
+		auto shader = std::make_unique<CShader>();
+		shader->Create(s.vs, s.ps);
+		MeshManager::RegisterShader<CShader>(s.name, std::move(shader));
 	}
 
-	// 4. 戦術UI・オーバーレイ用メッシュ (Tactical Overlays & Hints)
-	{
-		std::unique_ptr<CStaticMesh> smesh = std::make_unique<CStaticMesh>();
-		smesh->Load("Assets/model/obj/range_panel.obj", "Assets/model/obj/");
-		std::unique_ptr<CStaticMeshRenderer> srenderer = std::make_unique<CStaticMeshRenderer>();
-		srenderer->Init(*smesh);
-		if (srenderer->GetMaterial(0)) {
-			MATERIAL m = srenderer->GetMaterial(0)->GetData();
-			m.Diffuse = Color(1, 1, 1, 1);
-			m.TextureEnable = FALSE;
-			srenderer->GetMaterial(0)->SetMaterial(m);
-		}
-		MeshManager::RegisterMesh<CStaticMesh>("range_panel_mesh", std::move(smesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("range_panel_mesh", std::move(srenderer));
+	// 2. 無加工モデルの一括登録（追加は表に1行足すだけ）
+	struct ModelDef { const char* name; const char* path; const char* texDir; };
+	const ModelDef models[] = {
+		// --- マップ・地形 ---
+		{"floor_mesh",          "Assets/model/backgroud/floorFull.obj",     "Assets/model/backgroud/"},
+		{"wall_mesh",           "Assets/model/obj/1x1x1_wall.obj",          "Assets/model/obj/"},
+		// --- ギミック・プロップ ---
+		{"trap_mesh",           "Assets/model/obj/trap.obj",                "Assets/model/obj/"},
+		{"prop_plane_mesh",     "Assets/model/obj/prop_plane.obj",          "Assets/model/obj/"},
+		{"sofa_yoko_mesh",      "Assets/model/obj/loungeSofa.obj",          "Assets/model/obj/"},
+		{"cattower_mesh",       "Assets/model/obj/coatRackStanding.obj",    "Assets/model/obj/"},
+		{"bookshelf_mesh",      "Assets/model/obj/bookcaseClosedDoors.obj", "Assets/model/obj/"},
+		{"table_mesh",          "Assets/model/obj/tableCloth.obj",          "Assets/model/obj/"},
+		// --- 矢印ナビゲーション ---
+		{"arrow_straight_mesh", "Assets/model/obj/arrow_straight.obj",      "Assets/model/obj/"},
+		{"arrow_corner_mesh",   "Assets/model/obj/arrow_corner.obj",        "Assets/model/obj/"},
+		{"arrow_attack_mesh",   "Assets/model/obj/arrow_attack.obj",        "Assets/model/obj/"},
+		{"arrow_push_mesh",     "Assets/model/obj/arrow_push.obj",          "Assets/model/obj/"},
+	};
+	for (const auto& m : models) {
+		ModelRegistry::RegisterModel(m.name, m.path, m.texDir);
 	}
-	{
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load("Assets/model/obj/floor_1x1x1.obj", "Assets/model/obj/");
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-		if (auto* mat = renderer->GetMaterial(0)) {
+
+	// 3. マテリアル調整が要る例外モデル（差分をコールバックで注入）
+	// 白色・テクスチャ無効（頂点カラー/単色でタイル染めする戦術UI用）
+	auto whiteNoTex = [](CStaticMeshRenderer& r) {
+		if (auto* mat = r.GetMaterial(0)) {
 			MATERIAL m = mat->GetData();
-			m.Diffuse = Color(135.0f / 255.0f, 206.0f / 255.0f, 250.0f / 255.0f, 0.6f);
+			m.Diffuse = Color(1, 1, 1, 1);
 			m.TextureEnable = FALSE;
 			mat->SetMaterial(m);
 		}
-		MeshManager::RegisterMesh<CStaticMesh>("escape_cube_mesh", std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("escape_cube_mesh", std::move(renderer));
-	}
-	// 5. 輪郭線シェーダー (Outline Shader)
-	{
-		std::unique_ptr<CShader> outline = std::make_unique<CShader>();
-		outline->Create("shader/OutlineVS.hlsl", "shader/OutlinePS.hlsl");
-		MeshManager::RegisterShader<CShader>("outlineshader", std::move(outline));
-	}
-	// 6. Blob影シェーダー (Blob Shadow Shader)
-	{
-		std::unique_ptr<CShader> blobshadow = std::make_unique<CShader>();
-		blobshadow->Create("shader/BlobVS.hlsl", "shader/BlobPS.hlsl");
-		MeshManager::RegisterShader<CShader>("blobshader", std::move(blobshadow));
-	}
-
-	// 各種ナビゲーション矢印のロード
-	auto LoadArrowMesh = [](const std::string& name, const std::string& path) {
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load(path, "Assets/model/obj/");
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>(name, std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>(name, std::move(renderer));
 		};
+	ModelRegistry::RegisterModel("trap_plane_mesh", "Assets/model/obj/trap_plane.obj", "Assets/model/obj/", whiteNoTex);
+	ModelRegistry::RegisterModel("range_panel_mesh", "Assets/model/obj/range_panel.obj", "Assets/model/obj/", whiteNoTex);
 
-	LoadArrowMesh("arrow_straight_mesh", "Assets/model/obj/arrow_straight.obj");
-	LoadArrowMesh("arrow_corner_mesh", "Assets/model/obj/arrow_corner.obj");
-	LoadArrowMesh("arrow_attack_mesh", "Assets/model/obj/arrow_attack.obj");
-	LoadArrowMesh("arrow_push_mesh", "Assets/model/obj/arrow_push.obj");
+	// 脱出マス：空色・半透明
+	ModelRegistry::RegisterModel("escape_cube_mesh", "Assets/model/obj/floor_1x1x1.obj", "Assets/model/obj/",
+		[](CStaticMeshRenderer& r) {
+			if (auto* mat = r.GetMaterial(0)) {
+				MATERIAL m = mat->GetData();
+				m.Diffuse = Color(135.0f / 255.0f, 206.0f / 255.0f, 250.0f / 255.0f, 0.6f);
+				m.TextureEnable = FALSE;
+				mat->SetMaterial(m);
+			}
+		});
 
-	// 5. 2Dスプライト・UI画像 (2D Sprites & UI)
+	// 4. 2Dスプライト・UI画像
 	m_escapeMarkerSprite = std::make_unique<CSprite>(128, 128, "Assets/texture/ui/escape_marker.png");
 	m_winTextSprite = std::make_unique<CSprite>(308, 205, "Assets/texture/ui/win_text.png");
 }
@@ -538,7 +459,8 @@ void GameScene::UpdateEnvironmentAndDamageUI(uint64_t deltatime)
 void GameScene::HandleCameraRotationInput()
 {
 	// リザルト演出中やシーン遷移中は、カメラの不自然な回転を防ぐため入力を無視する
-	bool canRotate = (m_isGameStarted && !m_isGameOverProcessing && !m_isSceneChanging);
+	bool canRotate = (m_isGameStarted && m_resultJudge &&
+		!m_resultJudge->IsGameOverProcessing() && !m_resultJudge->IsSceneChanging());
 
 	if (m_gameUIManager) {
 		m_gameUIManager->SetCameraRotateVisible(canRotate);
@@ -613,125 +535,6 @@ void GameScene::UpdatePostEffectsAndAudio(uint64_t deltatime, float deltaSeconds
 	AudioManager::GetInstance().Update(deltaSeconds);
 }
 
-
-// ---------------------------------------------------------
-
-// 勝敗判定とシーン遷移 (Game Status & Transitions)
- 
-// ---------------------------------------------------------
-void GameScene::CheckGameStatus(float deltaSeconds)
-{
-	if (m_isSceneChanging) return;
-
-	// 敗北条件を優先監視。敗北処理進行中の場合は後続の勝利判定をスキップ
-	if (ProcessGameOverFlow(deltaSeconds)) return;
-
-	ProcessGameClearFlow(deltaSeconds);
-}
-
-bool GameScene::CheckGameOverCondition() const
-{
-	// 敗北条件1：味方の死亡判定（脱出フェーズに入り、安全圏にいる場合は死亡とみなさない）
-	bool isAllyDead = false;
-	if (m_context && m_context->GetAlly()) {
-		bool hpDepleted = (m_context->GetAlly()->GetHP() <= 0);
-		bool isSafe = (m_context->GetAlly()->IsEscaping() || m_context->GetAlly()->IsEscapeDone());
-		isAllyDead = (hpDepleted && !isSafe);
-	}
-
-	// 敗北条件2：プレイヤー自身の死亡
-	bool isPlayerDead = (m_player && m_player->GetHP() <= 0);
-
-	return (isAllyDead || isPlayerDead);
-}
-
-bool GameScene::ProcessGameOverFlow(float deltaSeconds)
-{
-	if (!CheckGameOverCondition() && !m_isGameOverProcessing) {
-		return false;
-	}
-
-	// 初回の敗北検知：状態をロックし、プレイヤーに「負けた」と認識させるためのウェイトを開始
-	if (!m_isGameOverProcessing) {
-		m_isGameOverProcessing = true;
-		m_gameOverTimer = 0.0f;
-		DBG_ERROR("[GameScene] GameOver detected! Waiting for animation...");
-	}
-
-	m_gameOverTimer += deltaSeconds;
-
-
-	bool cineFinished = !m_context || !m_context->GetCamera() || !m_context->GetCamera()->IsCinematic();
-	if (m_gameOverTimer >= GAMEOVER_WAIT_DURATION && cineFinished) {
-		m_isSceneChanging = true;
-
-		SceneManager::GetInstance().SetCurrentScene(
-			"GameOverScene",
-			std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BackgroundTransitionTime)
-		);
-	}
-	return true;
-}
-
-bool GameScene::CheckGameClearCondition() const
-{
-	// 勝利ルートA：盤面の敵をすべて排除した
-	bool isEnemyAnnihilated = (m_context && m_context->GetEnemyManager() &&
-		m_context->GetEnemyManager()->AreAllEnemiesDead());
-
-	// 勝利ルートB：指定ターンを耐え抜き、プレイヤーが脱出地点に到達（お祝いアニメ完了）した
-	bool isSurvivalEscaped = (m_player && m_player->IsCelebrationDone());
-
-	return (isEnemyAnnihilated || isSurvivalEscaped);
-}
-
-bool GameScene::IsFieldBusyForClear() const
-{
-	// 勝利条件を満たしていても「最後の攻撃」や「敵の消滅」が画面上で完了するまでは遷移させない
-
-	// 1. プレイヤーがアクション（移動・攻撃）を完了しているか
-	if (m_player) {
-		PlayerState pState = m_player->GetState();
-		if (pState == PlayerState::ANIM_MOVE || pState == PlayerState::ANIM_ATTACK) {
-			return true;
-		}
-	}
-
-	// 2. 敵の消滅アニメーションなどが残っていないか
-	if (m_context && m_context->GetEnemyManager()) {
-		if (m_context->GetEnemyManager()->IsAnyEnemyDying() ||
-			m_context->GetEnemyManager()->IsAnyEnemyAnimating()) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void GameScene::ProcessGameClearFlow(float deltaSeconds)
-{
-	if (!CheckGameClearCondition()) {
-		m_gameClearTimer = 0.0f;
-		return;
-	}
-
-	if (IsFieldBusyForClear()) {
-		return;
-	}
-
-	// すべてのアニメーションが終了したら、クリアの余韻（ウェイト）カウントを開始
-	m_gameClearTimer += deltaSeconds;
-
-	if (m_gameClearTimer >= GAMECLEAR_WAIT_DURATION && !m_isSceneChanging) {
-		m_isSceneChanging = true;
-
-		SceneManager::GetInstance().SetCurrentScene(
-			"GameClearScene",
-			std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BackgroundTransitionTime)
-		);
-	}
-}
-
 // ---------------------------------------------------------
  
 // ターン進行とイベント制御 (Turn Flow & Events)
@@ -742,7 +545,7 @@ void GameScene::TurnChangeCheck()
 	TurnManager* tm = m_context->GetTurnManager();
 	EnemyManager* em = m_context->GetEnemyManager();
 	// ゲームオーバー確定後はターンを進めない（切替時に Player/Enemy Phase 演出が誤再生されるのを防ぐ）
-	if (m_isGameOverProcessing || CheckGameOverCondition()) return;
+	if (m_resultJudge && (m_resultJudge->IsGameOverProcessing() || m_resultJudge->IsGameOverCondition())) return;
 
 	// 1. ターン交代の必要がない、または敵が全滅している場合は処理しない
 	if (!tm->IsTurnChangeRequested() || em->AreAllEnemiesDead()) {

@@ -295,6 +295,9 @@
     <ClCompile Include="GamePlay\Scene\IntroDirector.cpp">
       <Filter>GamePlay\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="GamePlay\Scene\GameResultJudge.cpp">
+      <Filter>GamePlay\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h">
@@ -587,6 +590,12 @@
     </ClInclude>
     <ClInclude Include="GamePlay\Scene\IntroDirector.h">
       <Filter>GamePlay\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlay\Scene\GameResultJudge.h">
+      <Filter>GamePlay\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="System\ModelRegistry.h">
+      <Filter>System</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

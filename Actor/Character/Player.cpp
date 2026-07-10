@@ -9,6 +9,7 @@
 #include	"../../System//IScene.h"
 #include    "../../System/CSprite.h"
 #include	"../../System/ZFightTunables.h"
+#include	"../../System/ModelRegistry.h"
 #include	"../../GamePlay/Manager/EnemyManager.h"
 #include	"../Character/Enemy.h"
 #include	"../Gimmick/Trap.h"
@@ -761,27 +762,13 @@ void Player::UpdateCelebration(float dt) {
 }
 
 void Player::playerResourceLoader() {
-	// ---  Model  ---
-	{
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load("Assets/model/character/Mouse/Mouse_01.obj", "Assets/model/character/Mouse");
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>("player_mesh", std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("player_mesh", std::move(renderer));
-	}
-
-	m_PlayerShader = MeshManager::getShader<CShader>("toonshader");
-
-	auto* renderer = MeshManager::getRenderer<CStaticMeshRenderer>("player_mesh");
+	auto* renderer = ModelRegistry::RegisterModel(
+		"player_mesh", "Assets/model/character/Mouse/Mouse_01.obj", "Assets/model/character/Mouse");
 	SetModelRenderer(renderer);
 
-
-	if (m_PlayerShader) {
-		DBG_ERROR("Player Shader Loaded Successfully.");
-	}
-	else {
-		DBG_ERROR("CRITICAL ERROR: 'lightshaderSpecular' not found! Check shader file paths.");
+	m_PlayerShader = MeshManager::getShader<CShader>("toonshader");
+	if (!m_PlayerShader) {
+		DBG_ERROR("CRITICAL ERROR: 'toonshader' not found! Check shader file paths.");
 	}
 }
 

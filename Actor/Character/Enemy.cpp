@@ -1,13 +1,15 @@
 #include "Enemy.h"    
 #include "../../System/meshmanager.h"
 #include "../../System/ZFightTunables.h"
+#include "../../System/RandomEngine.h"
+#include "../../System/ModelRegistry.h"
 #include "../../Core/GameContext.h"
 #include "../../GamePlay/Scene/GameScene.h"
 #include "../../GamePlay/Manager/MapManager.h"
 #include "../../UI/System/DamageNumberManager.h"
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../GamePlay/Manager/EnemyManager.h"
-#include "../../System/RandomEngine.h"
+
 
 namespace {
 	// 演出・バランス用定数
@@ -30,17 +32,9 @@ std::unique_ptr<Enemy> Enemy::Spawn(GameContext* ctx, int gridX, int gridZ, cons
 }
 
 void Enemy::Init() {
-	{
-		std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-		mesh->Load("Assets/model/character/Cat/Cat_01.obj", "Assets/model/character/Cat");
-		std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-		renderer->Init(*mesh);
-		MeshManager::RegisterMesh<CStaticMesh>("enemy_mesh", std::move(mesh));
-		MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("enemy_mesh", std::move(renderer));
-	}
+	SetModelRenderer(ModelRegistry::RegisterModel(
+		"enemy_mesh", "Assets/model/character/Cat/Cat_01.obj", "Assets/model/character/Cat"));
 	m_EnemyShader = MeshManager::getShader<CShader>("toonshader");
-	auto* renderer = MeshManager::getRenderer<CStaticMeshRenderer>("enemy_mesh");
-	SetModelRenderer(renderer);
 
 	m_actionUI = std::make_unique<EnemyActionUI>();
 	m_actionUI->Init(m_context);

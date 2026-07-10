@@ -24,6 +24,7 @@ class DamageNumberManager;
 class DialogueUI;
 class GameSceneDebugUI;
 class IntroDirector;
+class GameResultJudge;
 
 // =========================================================
 // GameScene クラス
@@ -102,16 +103,6 @@ private:
 	void UpdatePostEffectsAndAudio(uint64_t deltatime, float deltaSeconds);
 
 	// ---------------------------------------------------------
-	// 勝敗判定とシーン遷移 (Game Status & Transitions)
-	// ---------------------------------------------------------
-	void CheckGameStatus(float deltaSeconds);
-	bool CheckGameOverCondition() const;
-	bool ProcessGameOverFlow(float deltaSeconds);
-	bool CheckGameClearCondition() const;
-	bool IsFieldBusyForClear() const;
-	void ProcessGameClearFlow(float deltaSeconds);
-
-	// ---------------------------------------------------------
 	// ターン進行とイベント制御 (Turn Flow & Events)
 	// ---------------------------------------------------------
 	void TurnChangeCheck();
@@ -164,13 +155,12 @@ private:
 	std::unique_ptr<CSprite> m_escapeMarkerSprite;
 	std::unique_ptr<CSprite> m_winTextSprite;
 	std::unique_ptr<GameSceneDebugUI> m_debugUI;
+	std::unique_ptr<GameResultJudge> m_resultJudge;
 	std::unique_ptr<IntroDirector> m_introDirector;
 	bool m_showActionUI = true;
 
 	// --- ゲーム進行状態フラグ ---
 	bool m_isGameStarted = false;
-	bool m_isSceneChanging = false;
-	bool m_isGameOverProcessing = false;
 	bool m_isEscapeActive = false;
 	bool m_isAllyTalked = false;
 
@@ -181,8 +171,6 @@ private:
 
 	float m_uiAnimTimer = 0.0f;
 	float m_startDelayTimer = 0.0f;
-	float m_gameOverTimer = 0.0f;
-	float m_gameClearTimer = 0.0f;
 
 	// --- 演出・デバッグ制御 ---
 	bool m_needsTurnCounterAnim = false;
@@ -190,8 +178,6 @@ private:
 
 	// --- 定数パラメータ ---
 	const float START_WAIT_TIME = 1.0f;
-	const float GAMEOVER_WAIT_DURATION = 1.0f;
-	const float GAMECLEAR_WAIT_DURATION = 1.0f;
 
 	// デバッグ用マウスピッキング座標
 	Vector3 m_pickuppos{ 0,0,0 };

@@ -44,6 +44,7 @@
     <ClCompile Include="GamePlay\Scene\Background.cpp" />
     <ClCompile Include="GamePlay\Scene\GameClearScene.cpp" />
     <ClCompile Include="GamePlay\Scene\GameOverScene.cpp" />
+    <ClCompile Include="GamePlay\Scene\GameResultJudge.cpp" />
     <ClCompile Include="GamePlay\Scene\GameScene.cpp" />
     <ClCompile Include="GamePlay\Scene\GameSceneDebugUI.cpp" />
     <ClCompile Include="GamePlay\Scene\IntroDirector.cpp" />
@@ -120,6 +121,7 @@
     <ClInclude Include="GamePlay\Scene\Background.h" />
     <ClInclude Include="GamePlay\Scene\GameClearScene.h" />
     <ClInclude Include="GamePlay\Scene\GameOverScene.h" />
+    <ClInclude Include="GamePlay\Scene\GameResultJudge.h" />
     <ClInclude Include="GamePlay\Scene\GameScene.h" />
     <ClInclude Include="GamePlay\Scene\GameSceneDebugUI.h" />
     <ClInclude Include="GamePlay\Scene\IntroDirector.h" />
@@ -172,6 +174,7 @@
     <ClInclude Include="System\IScene.h" />
     <ClInclude Include="System\LineDrawer.h" />
     <ClInclude Include="System\Meshmanager.h" />
+    <ClInclude Include="System\ModelRegistry.h" />
     <ClInclude Include="System\noncopyable.h" />
     <ClInclude Include="System\RandomEngine.h" />
     <ClInclude Include="System\Renderer.h" />

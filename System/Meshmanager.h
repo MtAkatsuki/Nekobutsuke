@@ -57,4 +57,9 @@ public:
 	static T* getRenderer(std::string key) {
 		return static_cast<T*>(m_renderercontainer[key].get());
 	}
+
+	// “o˜^Ï‚İ”»’èB
+	static bool ContainsRenderer(const std::string& key) {
+		return m_renderercontainer.contains(key);
+	}
 };

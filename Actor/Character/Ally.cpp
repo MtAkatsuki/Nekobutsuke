@@ -6,6 +6,7 @@
 #include "../../Core/Application.h"
 #include "../../UI/Component/DialogueUI.h"
 #include "../../System/Audio/AudioManager.h"
+#include "../../System/ModelRegistry.h"
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../Core/DebugLog.h"
 
@@ -31,20 +32,9 @@ std::unique_ptr<Ally> Ally::Spawn(GameContext* ctx, int gridX, int gridZ, const 
 void Ally::Init() 
 {
     //モデル関連のソースをロード
-
-    {
-        std::unique_ptr<CStaticMesh> mesh = std::make_unique<CStaticMesh>();
-        mesh->Load("Assets/model/character/Mouse/Mouse_Ally.obj", "Assets/model/character/Mouse");
-        std::unique_ptr<CStaticMeshRenderer> renderer = std::make_unique<CStaticMeshRenderer>();
-        renderer->Init(*mesh);
-        MeshManager::RegisterMesh<CStaticMesh>("ally_mesh", std::move(mesh));
-        MeshManager::RegisterMeshRenderer<CStaticMeshRenderer>("ally_mesh", std::move(renderer));
-    }
-
-
+    SetModelRenderer(ModelRegistry::RegisterModel(
+        "ally_mesh", "Assets/model/character/Mouse/Mouse_Ally.obj", "Assets/model/character/Mouse"));
     m_shader = MeshManager::getShader<CShader>("toonshader");
-    auto* renderer = MeshManager::getRenderer<CStaticMeshRenderer>("ally_mesh");
-    SetModelRenderer(renderer);
 
 
     //初期ステータスを設置
