@@ -232,7 +232,7 @@ void Ally::UpdateDiggingAnimation(float dt) {
             m_context->GetEffectManager()->SpawnRubble(footPos, RUBBLE_SPAWN_COUNT);
         }
         m_hasTriggeredEffect = true;
-        m_digCount++;
+        ++m_digCount;
     }
 
     // トリガーフラグのリセット（反対側に振り戻した際にリセット）

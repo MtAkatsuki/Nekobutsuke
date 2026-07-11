@@ -44,11 +44,11 @@ public:
 
         Vector3 Normal;
 
-        for (unsigned int y = 0; y <= m_divY; y++) {
+        for (unsigned int y = 0; y <= m_divY; ++y) {
             elevation = (PI * (float)y) / (float)m_divY;
             float r = m_radius * sinf(elevation);
 
-            for (unsigned int x = 0; x <= m_divX; x++) {
+            for (unsigned int x = 0; x <= m_divX; ++x) {
                 azimuth = (2 * PI * (float)x) / (float)m_divX;
 
                 VERTEX_3D v;
@@ -77,8 +77,8 @@ public:
 
         m_indices.clear();
 
-        for (unsigned int y = 0; y < m_divY; y++) {
-            for (unsigned int x = 0; x < m_divX; x++) {
+        for (unsigned int y = 0; y < m_divY; ++y) {
+            for (unsigned int x = 0; x < m_divX; ++x) {
                 int count = (m_divX + 1) * y + x;
 
                 // 上三角形

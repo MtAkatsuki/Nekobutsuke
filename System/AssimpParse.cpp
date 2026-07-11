@@ -32,7 +32,7 @@ namespace myAssimp{
 		ptree->m_nodedata = std::string(node->mName.C_Str());
 //		std::cerr << node->mName.C_Str() << std::endl;
 
-		for (unsigned int n = 0; n < node->mNumChildren; n++)
+		for (unsigned int n = 0; n < node->mNumChildren; ++n)
 		{
 			std::unique_ptr<CTreeNode<std::string>> pchild = std::make_unique<CTreeNode<std::string>>();
 			pchild->m_parent = ptree;
@@ -62,7 +62,7 @@ namespace myAssimp{
 
 		std::cerr << node->mName.C_Str() << std::endl;
 
-		for (unsigned int n = 0; n < node->mNumChildren; n++)
+		for (unsigned int n = 0; n < node->mNumChildren; ++n)
 		{
 			CreateEmptyBoneDictionary(node->mChildren[n]);
 		}
@@ -74,7 +74,7 @@ namespace myAssimp{
 		std::vector<BONE> bones;		// このサブセットメッシュで使用されているボーンコンテナ
 
 		// ボーン数分ループ
-		for (unsigned int bidx = 0; bidx < mesh->mNumBones; bidx++) {
+		for (unsigned int bidx = 0; bidx < mesh->mNumBones; ++bidx) {
 
 			BONE bone{};
 
@@ -98,7 +98,7 @@ namespace myAssimp{
 
 			// ウェイト情報抽出
 			bone.weights.clear();
-			for (unsigned int widx = 0; widx < mesh->mBones[bidx]->mNumWeights; widx++) {
+			for (unsigned int widx = 0; widx < mesh->mBones[bidx]->mNumWeights; ++widx) {
 
 				WEIGHT w;
 				w.meshname = bone.meshname;										// メッシュ名
@@ -126,7 +126,7 @@ namespace myAssimp{
 		for (auto& vtbl : g_vertices) {
 			for (auto& v : vtbl) {
 				v.bonecnt = 0;
-				for (int b = 0; b < 4; b++) {
+				for (int b = 0; b < 4; ++b) {
 					v.BoneIndex[b] = -1;
 					v.BoneWeight[b] = 0.0f;
 					v.BoneName[b] = "";
@@ -152,11 +152,11 @@ namespace myAssimp{
 					g_vertices[subsetid][w.vertexindex].BoneIndex[idx] = g_BoneDictionary[w.bonename].idx;
 
 					//ボーンの配列番号をセット
-					idx++;
+					++idx;
 					assert(idx <= 4);
 				}
 			}
-			subsetid++;				// 次のメッシュへ
+			++subsetid;				// 次のメッシュへ
 		}
 	}
 
@@ -171,11 +171,11 @@ namespace myAssimp{
 		for (auto& data : g_BoneDictionary) 
 		{											
 			data.second.idx = num;					
-			num++;									
+			++num;									
 		}					
 
 		// メッシュ数分ループ
-		for (unsigned int m = 0; m < pScene->mNumMeshes; m++)
+		for (unsigned int m = 0; m < pScene->mNumMeshes; ++m)
 		{
 			aiMesh* mesh = pScene->mMeshes[m];
 
@@ -209,7 +209,7 @@ namespace myAssimp{
 		g_diffuseTextures.resize(pScene->mNumMaterials);
 
 		// マテリアル数文ループ
-		for (unsigned int m = 0; m < pScene->mNumMaterials; m++)
+		for (unsigned int m = 0; m < pScene->mNumMaterials; ++m)
 		{
 			aiMaterial* material = pScene->mMaterials[m];
 
@@ -262,7 +262,7 @@ namespace myAssimp{
 			// このマテリアルに紐づいているディフューズテクスチャ数分ループ
 			std::vector<std::string> texpaths{};
 
-			for (unsigned int t = 0; t < material->GetTextureCount(aiTextureType_DIFFUSE); t++)
+			for (unsigned int t = 0; t < material->GetTextureCount(aiTextureType_DIFFUSE); ++t)
 			{
 				aiString path{};
 
@@ -380,7 +380,7 @@ namespace myAssimp{
 
 		g_vertices.resize(pScene->mNumMeshes);
 
-		for (unsigned int m = 0; m < pScene->mNumMeshes; m++)
+		for (unsigned int m = 0; m < pScene->mNumMeshes; ++m)
 		{
 			aiMesh* mesh = pScene->mMeshes[m];
 
@@ -388,7 +388,7 @@ namespace myAssimp{
 			std::string meshname = std::string(mesh->mName.C_Str());
 
 			//　頂点数分ループ
-			for (unsigned int vidx = 0; vidx < mesh->mNumVertices; vidx++)
+			for (unsigned int vidx = 0; vidx < mesh->mNumVertices; ++vidx)
 			{
 				// 頂点データ
 				VERTEX	v{};
@@ -438,7 +438,7 @@ namespace myAssimp{
 		// メッシュ数文ループ
 		// インデックスデータ作成
 		g_indices.resize(pScene->mNumMeshes);
-		for (unsigned int m = 0; m < pScene->mNumMeshes; m++)
+		for (unsigned int m = 0; m < pScene->mNumMeshes; ++m)
 		{
 			aiMesh* mesh = pScene->mMeshes[m];
 
@@ -446,7 +446,7 @@ namespace myAssimp{
 			std::string meshname = std::string(mesh->mName.C_Str());
 
 			// インデックス数分ループ
-			for (unsigned int fidx = 0; fidx < mesh->mNumFaces; fidx++)
+			for (unsigned int fidx = 0; fidx < mesh->mNumFaces; ++fidx)
 			{
 				aiFace face = mesh->mFaces[fidx];
 
@@ -454,7 +454,7 @@ namespace myAssimp{
  				assert(face.mNumIndices <= 3);	// 三角形以下であればOK（縮退ポリゴン）
 
 				// インデックスデータを追加
-				for (unsigned int i = 0; i < face.mNumIndices; i++)
+				for (unsigned int i = 0; i < face.mNumIndices; ++i)
 				{
 					g_indices[m].push_back(face.mIndices[i]);
 				}
@@ -463,7 +463,7 @@ namespace myAssimp{
 
 		// サブセット情報を生成
 		g_subsets.resize(pScene->mNumMeshes);
-		for (unsigned int m = 0; m < g_subsets.size(); m++)
+		for (unsigned int m = 0; m < g_subsets.size(); ++m)
 		{
 			g_subsets[m].IndexNum = static_cast<unsigned int>(g_indices[m].size());
 			g_subsets[m].VertexNum = static_cast<unsigned int>(g_vertices[m].size());
@@ -475,17 +475,17 @@ namespace myAssimp{
 		}
 
 		// サブセット情報を相対的なものにする	
-		for (int m = 0; m < g_subsets.size(); m++)
+		for (int m = 0; m < g_subsets.size(); ++m)
 		{
 			// 頂点バッファのベースを計算
 			g_subsets[m].VertexBase = 0;
-			for (int i = m - 1; i >= 0; i--) {
+			for (int i = m - 1; i >= 0; --i) {
 				g_subsets[m].VertexBase += g_subsets[i].VertexNum;
 			}
 
 			// インデックスバッファのベースを計算
 			g_subsets[m].IndexBase = 0;
-			for (int i = m - 1; i >= 0; i--) {
+			for (int i = m - 1; i >= 0; --i) {
 				g_subsets[m].IndexBase += g_subsets[i].IndexNum;
 			}
 		}

@@ -176,7 +176,7 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX, int 
 		int dx[] = { -1, 1, 0, 0 };
 		int dz[] = { 0, 0, -1, 1 };
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 4; ++i)
 		{
 			int nextX = currentTile->gridX + dx[i];
 			int nextZ = currentTile->gridZ + dz[i];
@@ -268,7 +268,7 @@ std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int max
 		int dx[] = { -1, 1, 0, 0 };
 		int dz[] = { 0, 0, -1, 1 };
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 4; ++i)
 		{
 			int nx = current->gridX + dx[i];
 			int nz = current->gridZ + dz[i];
@@ -444,8 +444,8 @@ void MapManager::SetupGridDimensions(const std::vector<std::vector<std::string>>
 }
 
 void MapManager::SpawnFloorLayer(GameContext* context) {
-	for (int z = 0; z < m_mapDepth; z++) {
-		for (int x = 0; x < m_mapWidth; x++) {
+	for (int z = 0; z < m_mapDepth; ++z) {
+		for (int x = 0; x < m_mapWidth; ++x) {
 			auto floorObj = std::make_unique<MapObject>(context);
 			floorObj->Init(MapModelType::FLOOR, GetWorldPosition(x, z));
 			if (m_scene) m_scene->AddObject(std::move(floorObj));
@@ -454,9 +454,9 @@ void MapManager::SpawnFloorLayer(GameContext* context) {
 }
 
 void MapManager::SpawnStaticStructures(const std::vector<std::vector<std::string>>& csvData, GameContext* context) {
-	for (int z = 0; z < m_mapDepth; z++) {
+	for (int z = 0; z < m_mapDepth; ++z) {
 		int csvRowIndex = (m_mapDepth - 1) - z; // CSVのZ軸反転
-		for (int x = 0; x < m_mapWidth; x++) {
+		for (int x = 0; x < m_mapWidth; ++x) {
 			if (x >= csvData[csvRowIndex].size()) continue;
 
 			Tile* currentTile = GetTile(x, z);
@@ -524,9 +524,9 @@ void MapManager::SpawnDynamicEntities(const std::vector<std::vector<std::string>
 	// 残像（Ghost）やUIが床に隠れる問題（Z-Fighting/Occlusion）が解決する。
 	std::vector<std::unique_ptr<GameObject>> unitsToSpawn;
 
-	for (int z = 0; z < m_mapDepth; z++) {
+	for (int z = 0; z < m_mapDepth; ++z) {
 		int csvRowIndex = (m_mapDepth - 1) - z;
-		for (int x = 0; x < m_mapWidth; x++) {
+		for (int x = 0; x < m_mapWidth; ++x) {
 			std::string token = csvData[csvRowIndex][x];
 			Vector3 worldPos = GetWorldPosition(x, z);
 

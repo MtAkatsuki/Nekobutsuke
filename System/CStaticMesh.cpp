@@ -34,14 +34,14 @@ void CStaticMesh::Load(std::string filename, std::string texturedirectory)
 			vertex.Diffuse = Color(v.color.r, v.color.g, v.color.b, v.color.a);
 
 			vertex.bonecnt = v.bonecnt;
-			for (int i = 0; i < 4; i++)
+			for (int i = 0; i < 4; ++i)
 			{
 				vertex.BoneIndex[i] = 0;
 				vertex.BoneWeight[i] = 0.0f;
 				vertex.BoneName[i] = "";
 			}
 
-			for (int i = 0; i < v.bonecnt; i++)
+			for (int i = 0; i < v.bonecnt; ++i)
 			{
 				vertex.BoneIndex[i] = v.BoneIndex[i];
 				vertex.BoneWeight[i] = v.BoneWeight[i];

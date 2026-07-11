@@ -69,7 +69,7 @@ void HPBar::Draw(const Vector3& worldPos, int currentHP, int maxHP, int previewD
     float drawY = screenPos.y;
 
     // HPゼロ時は非表示とするため、currentHPの数だけ描画ループ
-    for (int i = 0; i < currentHP; i++) {
+    for (int i = 0; i < currentHP; ++i) {
         float x = startX + (i * (actualFrameWidth + s_hpBarGap));
         Vector3 pos(x, drawY, 0.0f);
 

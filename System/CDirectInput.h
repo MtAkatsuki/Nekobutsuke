@@ -138,7 +138,7 @@ public:
 
 		hr = m_dimouse->GetDeviceState(sizeof(m_MouseState),&m_MouseState);
 		if (SUCCEEDED(hr)){
-			for (int cnt = 0; cnt < 8; cnt++)
+			for (int cnt = 0; cnt < 8; ++cnt)
 			{
 				m_MouseStateTrigger.rgbButtons[cnt] = ((mouseStateOld.rgbButtons[cnt] ^ m_MouseState.rgbButtons[cnt]) & m_MouseState.rgbButtons[cnt]);
 			}

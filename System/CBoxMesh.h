@@ -75,7 +75,7 @@ public:
 		m_vertices[7].Position.y = -(m_lengthy / 2.0f);
 		m_vertices[7].Position.z = (m_lengthz / 2.0f);
 
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < 8; ++i) {
 			// 頂点カラー設定
 			m_vertices[i].Diffuse = m_color;
 
@@ -147,7 +147,7 @@ public:
 		faces[11].idx[2] = 2;
 
 		// インデックス登録
-		for (int i = 0; i < 12; i++) {
+		for (int i = 0; i < 12; ++i) {
 			m_indices.emplace_back(faces[i].idx[0]);
 			m_indices.emplace_back(faces[i].idx[1]);
 			m_indices.emplace_back(faces[i].idx[2]);

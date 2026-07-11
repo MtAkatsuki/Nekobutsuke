@@ -16,7 +16,7 @@ void CStaticMeshRenderer::Init(CStaticMesh& mesh)
 	materials = mesh.GetMaterials();
 
 	// マテリアル数分ループしてマテリアルデータを生成
-	for (int i = 0; i < materials.size(); i++)
+	for (int i = 0; i < materials.size(); ++i)
 	{
 		// マテリアルオブジェクト生成
 		std::unique_ptr<CMaterial> m = std::make_unique<CMaterial>();
@@ -35,7 +35,7 @@ void CStaticMeshRenderer::Draw()
 	BeforeDraw();
 
 	// マテリアル数分ループ 
-	for (int i = 0; i < m_Subsets.size(); i++)
+	for (int i = 0; i < m_Subsets.size(); ++i)
 	{
 		// マテリアルをセット(サブセット情報の中にあるマテリアルインデックを使用する)
 		m_Materiales[m_Subsets[i].MaterialIdx]->SetGPU();

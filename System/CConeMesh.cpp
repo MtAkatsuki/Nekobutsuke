@@ -60,7 +60,7 @@ void CConeMesh::CreateVertex()
 
 	// 底面の円周上の頂点データを作成
 	float azimuth = 0.0f;			// 方位角
-	for (unsigned int i = 0; i <= m_division_x; i++) {
+	for (unsigned int i = 0; i <= m_division_x; ++i) {
 
 		azimuth = (2 * PI * (float)i) / (float)m_division_x;	// 方位角をセット
 
@@ -77,7 +77,7 @@ void CConeMesh::CreateVertex()
 	}
 
 	// 頂点から底面の頂点へのインデックスを追加
-	for (unsigned int i = 0; i < m_division_x; i++) {
+	for (unsigned int i = 0; i < m_division_x; ++i) {
 		m_indices.push_back(0);						// 頂点
 		m_indices.push_back(i + 2);					// 次の底面頂点
 		m_indices.push_back(i + 1);					// 現在の底面頂点
@@ -92,7 +92,7 @@ void CConeMesh::CreateVertex()
 	size_t bottomcenteridx = m_vertices.size() - 1;	// 底面の中心座標のインデックス
 
 	// 底面の三角形をインデックス化
-	for (unsigned int i = 0; i <= m_division_x; i++) {
+	for (unsigned int i = 0; i <= m_division_x; ++i) {
 		m_indices.push_back(static_cast<int>(bottomcenteridx));		// 底面の中心
 		m_indices.push_back(i + 1);					// 次の底面頂点
 		m_indices.push_back(i + 2);					// 現在の底面頂点
@@ -121,7 +121,7 @@ void CConeMesh::CreateVertexTopDown()
 
 	// 底面の円周上の頂点データを作成
 	float azimuth = 0.0f;			// 方位角
-	for (unsigned int i = 0; i <= m_division_x; i++) {
+	for (unsigned int i = 0; i <= m_division_x; ++i) {
 
 		azimuth = (2 * PI * (float)i) / (float)m_division_x;	// 方位角をセット
 
@@ -138,7 +138,7 @@ void CConeMesh::CreateVertexTopDown()
 	}
 
 	// 頂点から各セグメントの底面の頂点へのインデックスを追加
-	for (unsigned int i = 0; i < m_division_x; i++) {
+	for (unsigned int i = 0; i < m_division_x; ++i) {
 		m_indices.push_back(0);						// 頂点
 		m_indices.push_back(i + 2);					// 次の底面頂点
 		m_indices.push_back(i + 1);					// 現在の底面頂点
@@ -153,7 +153,7 @@ void CConeMesh::CreateVertexTopDown()
 	size_t bottomcenteridx = m_vertices.size() - 1;	// 底面の中心座標のインデックス
 
 	// 底面の三角形をインデックス化
-	for (unsigned int i = 0; i <= m_division_x; i++) {
+	for (unsigned int i = 0; i <= m_division_x; ++i) {
 		m_indices.push_back(static_cast<int>(bottomcenteridx));		// 底面の中心
 		m_indices.push_back(i + 1);					// 次の底面頂点
 		m_indices.push_back(i + 2);					// 現在の底面頂点

@@ -46,10 +46,10 @@ void CPlaneMesh::CreateVertex() {
 	// 頂点データクリア
 	m_vertices.clear();
 
-	for (unsigned int y = 0; y <= m_divY; y++) {
+	for (unsigned int y = 0; y <= m_divY; ++y) {
 		VERTEX_3D	vtx{};
 
-		for (unsigned int x = 0; x <= m_divX; x++) {
+		for (unsigned int x = 0; x <= m_divX; ++x) {
 
 			// 頂点座標セット
 			vtx.Position.x = -m_width / 2.0f + x * m_width / m_divX;
@@ -77,10 +77,10 @@ void CPlaneMesh::CreateVertexXZ() {
 	// 頂点データクリア
 	m_vertices.clear();
 
-	for (unsigned int y = 0; y <= m_divY; y++) {
+	for (unsigned int y = 0; y <= m_divY; ++y) {
 		VERTEX_3D	vtx{};
 
-		for (unsigned int x = 0; x <= m_divX; x++) {
+		for (unsigned int x = 0; x <= m_divX; ++x) {
 
 			// 頂点座標セット
 			vtx.Position.x = -m_width / 2.0f + x * m_width / m_divX;
@@ -108,8 +108,8 @@ void CPlaneMesh::CreateIndexCW() {
 	m_indices.clear();
 
 	// インデックス生成
-	for (unsigned int y = 0; y < m_divY; y++) {
-		for (unsigned int x = 0; x < m_divX; x++) {
+	for (unsigned int y = 0; y < m_divY; ++y) {
+		for (unsigned int x = 0; x < m_divX; ++x) {
 			int count = (m_divX + 1) * y + x;		// 左下座標のインデックス
 
 			// 下半分
@@ -147,8 +147,8 @@ void CPlaneMesh::CreateIndexCCW() {
 	m_indices.clear();
 
 	// インデックス生成
-	for (unsigned int y = 0; y < m_divY; y++) {
-		for (unsigned int x = 0; x < m_divX; x++) {
+	for (unsigned int y = 0; y < m_divY; ++y) {
+		for (unsigned int x = 0; x < m_divX; ++x) {
 			int count = (m_divX + 1) * y + x;		// 左下座標のインデックス
 
 			// 下半分

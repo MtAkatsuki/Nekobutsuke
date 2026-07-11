@@ -53,7 +53,7 @@ void TutorialUI::Update(float deltaSeconds) {
 
     case State::FINISHED:
         // 次の画像へ切り替え
-        m_currentIndex++;
+        ++m_currentIndex;
         if (m_currentIndex >= m_images.size()) {
             m_isAllFinished = true; // 全ての画像の再生が終了
         }

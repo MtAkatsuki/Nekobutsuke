@@ -33,7 +33,7 @@ void EnemyManager::Update(uint64_t dt) {
 		while (m_currentActorIndex < m_enemies.size()) {
 			auto* enemy = m_enemies[m_currentActorIndex];
 			if (enemy->GetHP() > 0 && !enemy->IsDeadFlying()) break;
-			m_currentActorIndex++;
+			++m_currentActorIndex;
 		}
 
 		if (m_currentActorIndex >= m_enemies.size()) {
@@ -66,12 +66,12 @@ void EnemyManager::Update(uint64_t dt) {
 
 		//行動後の待ち時間
 		if (m_phaseTimer >= ACT_INTERVAL) {
-			m_currentActorIndex++;
+			++m_currentActorIndex;
 
 			while (m_currentActorIndex < m_enemies.size()) {
 				auto* enemy = m_enemies[m_currentActorIndex];
 				if (enemy->GetHP() > 0 && !enemy->IsDeadFlying()) break;
-				m_currentActorIndex++;
+				++m_currentActorIndex;
 			}
 
 			if (m_currentActorIndex >= m_enemies.size()) {

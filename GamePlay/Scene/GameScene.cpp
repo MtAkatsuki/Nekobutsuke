@@ -585,7 +585,7 @@ void GameScene::TurnChangeCheck()
 
 void GameScene::ProcessEndOfEnemyPhase()
 {
-	m_remainingTurns--;
+	--m_remainingTurns;
 	if (m_remainingTurns < 0) {
 		m_remainingTurns = 0; // 負の値にならないようクランプ（防御的プログラミング）
 	}

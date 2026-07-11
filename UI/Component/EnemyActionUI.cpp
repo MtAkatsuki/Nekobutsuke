@@ -29,7 +29,7 @@ namespace {
 void EnemyActionUI::Init(GameContext* context) {
     m_context = context;
 
-    for (int i = 1; i <= MAX_ORDER_SPRITES; i++) {
+    for (int i = 1; i <= MAX_ORDER_SPRITES; ++i) {
         std::string dirPath = "Assets/texture/ui/ui_num_";
         std::string num = std::to_string(i);
         std::string fullPath = dirPath + num + ".png";

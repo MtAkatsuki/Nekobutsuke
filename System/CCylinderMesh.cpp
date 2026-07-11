@@ -46,7 +46,7 @@ void CCylinderMesh::CreateVertex() {
 	float azimuth = 0.0f;			// 方位角
 
 	// 側面の頂点データ（底面）
-	for (unsigned int i = 0; i <= m_division_x; i++) {
+	for (unsigned int i = 0; i <= m_division_x; ++i) {
 		azimuth = (2 * PI * (float)i) / (float)m_division_x;	// 方位角をセット
 		VERTEX_3D	v{};
 
@@ -62,7 +62,7 @@ void CCylinderMesh::CreateVertex() {
 	}
 
 	// 側面の頂点データ（上面）
-	for (unsigned int i = 0; i <= m_division_x; i++) {
+	for (unsigned int i = 0; i <= m_division_x; ++i) {
 		azimuth = (2 * PI * (float)i) / (float)m_division_x;	// 方位角をセット
 		VERTEX_3D	v{};
 
@@ -77,14 +77,14 @@ void CCylinderMesh::CreateVertex() {
 	}
 
 	// 側面（三角形ストリップ）インデックス（下段）
-	for (unsigned int i = 0; i < m_division_x; i++) {
+	for (unsigned int i = 0; i < m_division_x; ++i) {
 		m_indices.push_back(i);
 		m_indices.push_back(i + m_division_x + 2);
 		m_indices.push_back(i + 1);
 	}
 
 	// 側面（三角形ストリップ）インデックス（上段）
-	for (unsigned int i = 0; i < m_division_x; i++) {
+	for (unsigned int i = 0; i < m_division_x; ++i) {
 		m_indices.push_back(i);
 		m_indices.push_back(i + m_division_x + 1);
 		m_indices.push_back(i + m_division_x + 2);
@@ -103,7 +103,7 @@ void CCylinderMesh::CreateVertex() {
 	unsigned int bottomcenteridx = static_cast<unsigned int>(m_vertices.size() - 1);
 
 	// 底面の三角形インデックス
-	for (unsigned int i = 0; i < m_division_x; i++) {
+	for (unsigned int i = 0; i < m_division_x; ++i) {
 		m_indices.push_back(bottomcenteridx);
 		m_indices.push_back(i);
 		m_indices.push_back(i + 1);
@@ -122,7 +122,7 @@ void CCylinderMesh::CreateVertex() {
 	int topcenteridx = static_cast<int>(m_vertices.size() - 1);
 
 	// 上面の三角形インデックス
-	for (unsigned int i = 0; i < m_division_x; i++) {
+	for (unsigned int i = 0; i < m_division_x; ++i) {
 		m_indices.push_back(topcenteridx);
 		m_indices.push_back(i + m_division_x + 2);
 		m_indices.push_back(i + m_division_x + 1);

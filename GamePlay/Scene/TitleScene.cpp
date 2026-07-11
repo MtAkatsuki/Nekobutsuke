@@ -52,7 +52,7 @@ void TitleScene::Update(uint64_t deltatime) {
     // --- 入力検知 (Any Key) ---
     bool hasAnyKeyPressed = false;
     // 主要なキーコード(1~255)を走査
-    for (int i = 1; i < 256; i++) {
+    for (int i = 1; i < 256; ++i) {
         if (CDirectInput::GetInstance().CheckKeyBufferTrigger(i)) {
             hasAnyKeyPressed = true;
             break;

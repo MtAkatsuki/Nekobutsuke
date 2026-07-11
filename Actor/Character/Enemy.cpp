@@ -389,7 +389,7 @@ void Enemy::UpdateMove(uint64_t delta) {
 	float distanceSq = direction.LengthSquared();
 	if (distanceSq < ARRIVE_EPSILON_SQ) {
 		this->SetPosition(m_targetWorldPos);
-		m_pathIndex++;
+		++m_pathIndex;
 		if (m_pathIndex >= m_currentPath.size()) OnMoveFinished();
 		else m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
 	}

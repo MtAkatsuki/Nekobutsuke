@@ -75,13 +75,13 @@ public:
     // ---------------------------------------------------------
     // 順回転 (Eキー相当)：正面左 -> 正面右 -> 背面右 -> 背面左
     void RotateCameraForward() {
-        m_dirIndexOffset++;
+        ++m_dirIndexOffset;
         UpdateTargetAzimuth();
     }
 
     // 逆回転 (Qキー相当)：正面左 -> 背面左 -> 背面右 -> 正面右
     void RotateCameraReverse() {
-        m_dirIndexOffset--;
+        --m_dirIndexOffset;
         UpdateTargetAzimuth();
     }
 

@@ -33,7 +33,7 @@ void GameOverScene::Update(uint64_t deltatime) {
     }
 
     bool hasAnyKeyPressed = false;
-    for (int i = 1; i < 256; i++) {
+    for (int i = 1; i < 256; ++i) {
         if (CDirectInput::GetInstance().CheckKeyBufferTrigger(i)) {
             hasAnyKeyPressed = true;
             break;

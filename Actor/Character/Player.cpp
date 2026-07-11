@@ -631,7 +631,7 @@ bool Player::UpdatePathMovement(float dt) {
 
 	if (dist <= step) {
 		m_srt.pos = targetPos;
-		m_pathAnimIndex++;// 次のターゲットへ
+		++m_pathAnimIndex;// 次のターゲットへ
 		// すべてのターゲットに到達したかチェック
 		if (m_pathAnimIndex >= m_currentPath.size()) {
 			return true; // 移動完了
@@ -689,7 +689,7 @@ void Player::UpdateCelebration(float dt) {
 
 	// 着地の判定 (sin値が正から負に変わる瞬間を一回のジャンプ完了とみなす)
 	if (previousSin >= 0.0f && currentSin < 0.0f) {
-		m_jumpCount++;
+		++m_jumpCount;
 	}
 
 	if (m_jumpCount >= MAX_JUMP_COUNT) {
