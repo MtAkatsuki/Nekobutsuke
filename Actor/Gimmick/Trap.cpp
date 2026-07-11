@@ -4,6 +4,7 @@
 #include "../Base/Unit.h"
 #include "../../Core/DebugLog.h"
 #include "../../GamePlay/Manager/MapManager.h"
+#include	"../../Core/GameContext.h"
 
 namespace {
     // 演出・バランス用定数
@@ -44,10 +45,16 @@ void Trap::Update(float deltaSeconds) {
     if (t >= 1.0f) {
         t = 1.0f;
         m_isDisappearing = false;
-
-        // 完全に消失させる
         m_srt.scale = Vector3(0, 0, 0);
         m_currentAlpha = 0.0f;
+
+        // 消費済みの罠をタイル参照から切り離して自壊させる
+        // （structure を残すと AI 経路探索が空マスを避け続ける既存不具合も解消）
+        if (m_context && m_context->GetMapManager()) {
+            Tile* tile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+            if (tile && tile->structure == this) tile->structure = nullptr;
+        }
+        Destroy();
     }
     else {
         // 【ロジック責務】：Update内では「数学的な計算」のみを行う

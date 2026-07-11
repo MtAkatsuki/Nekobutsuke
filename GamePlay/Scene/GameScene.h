@@ -99,6 +99,7 @@ private:
 	void UpdateGameObjects(float deltaSeconds);
 	void ProcessAllyTacticalDialogue();
 	void UpdatePostEffectsAndAudio(float deltaSeconds);
+	void RemoveDeadObjects();
 
 	// ---------------------------------------------------------
 	// ターン進行とイベント制御 (Turn Flow & Events)

@@ -102,6 +102,7 @@ void GameScene::Update(float deltaSeconds)
 	float worldScale = m_camera ? m_camera->GetTimeScale() : 1.0f;
 	float worldDelta = deltaSeconds * worldScale;
 	UpdateGameObjects(worldDelta);
+	RemoveDeadObjects();
 	ProcessAllyTacticalDialogue();
 
 	// 5. サブシステムとゲーム進行状態の評価
@@ -136,6 +137,28 @@ void GameScene::Draw(float deltaSeconds) {
 	Renderer::DrawVignette();
 	DrawDamageAndHitEffects();
 	DrawScreenSpaceUI();
+}
+
+void GameScene::RemoveDeadObjects()
+{
+	// 削除前に生ポインタの別名（エイリアス）を無効化する
+	for (const auto& obj : m_gameObjectList) {
+		if (!obj->IsDead()) continue;
+		if (m_context) {
+			if (obj.get() == static_cast<GameObject*>(m_context->GetPlayer())) {
+				m_context->SetPlayer(nullptr);
+				m_player = nullptr;
+			}
+			if (obj.get() == static_cast<GameObject*>(m_context->GetAlly())) {
+				m_context->SetAlly(nullptr);
+				m_ally = nullptr;
+			}
+		}
+	}
+
+	// unique_ptr の破棄により ~Unit が TurnManager の購読を自動解除する
+	std::erase_if(m_gameObjectList,
+		[](const std::unique_ptr<GameObject>& o) { return o->IsDead(); });
 }
 
 // シーン破棄時の安全処理：野ポインタ（Dangling Pointer）によるクラッシュを防止

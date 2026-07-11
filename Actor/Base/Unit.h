@@ -28,7 +28,7 @@ public:
 	explicit Unit(GameContext* context);
 	Unit(const Unit&) = delete;
 	Unit& operator=(const Unit&) = delete;
-	virtual ~Unit() = default;
+	virtual ~Unit();
 
 	// ---------------------------------------------------------
 	// ライフサイクル (Lifecycle)
@@ -164,4 +164,7 @@ protected:
 	Vector3 m_deathSpin = {};
 	bool m_isDeathFlying = false;
 
+
+	// TurnManager への購読ID（デストラクタで自動解除）
+	size_t m_turnObserverId = 0;
 };

@@ -12,12 +12,20 @@ class TurnManager {
 public:
 	// ターン状態の変更通知を受け取るためのコールバック型
 	using TurnCallBack = std::function<void(TurnState)>;
-
+	using ObserverId = size_t;
 	// ---------------------------------------------------------
 	// オブザーバー管理 (Observer Management)
 	// ---------------------------------------------------------
-	void RegisterObserver(TurnCallBack callback) {
-		m_callbacksList.push_back(callback);
+	// 戻り値の ObserverId を保存し、購読者の破棄時に UnregisterObserver で解除する
+	ObserverId RegisterObserver(TurnCallBack callback) {
+		m_callbacksList.push_back({ ++m_nextObserverId, std::move(callback) });
+		return m_nextObserverId;
+	}
+
+	// ※ NotifyObservers の走査中に呼んではならない。
+	//   現状の削除経路は GameScene::RemoveDeadObjects → ~Unit のみで、通知中には走らない。
+	void UnregisterObserver(ObserverId id) {
+		std::erase_if(m_callbacksList, [id](const Entry& e) { return e.id == id; });
 	}
 
 	void ClearObservers() {
@@ -49,9 +57,14 @@ public:
 	}
 
 private:
+	struct Entry {
+		ObserverId id;
+		TurnCallBack callback;
+	};
+
 	void NotifyObservers() {
-		for (const auto& func : m_callbacksList) {
-			func(m_currentState);
+		for (const auto& e : m_callbacksList) {
+			e.callback(m_currentState);
 		}
 	}
 
@@ -59,6 +72,7 @@ private:
 	// メンバー変数 (Member Variables)
 	// =========================================================
 	TurnState m_currentState = TurnState::PlayerPhase;
-	std::vector<TurnCallBack> m_callbacksList;
+	std::vector<Entry> m_callbacksList;
+	ObserverId m_nextObserverId = 0;
 	bool m_isTurnChangeRequested = false;
 };

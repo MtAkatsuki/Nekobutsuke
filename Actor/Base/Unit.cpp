@@ -51,13 +51,21 @@ namespace {
 
 Unit::Unit(GameContext* context) : GameObject(context) {
 	if (m_context && m_context->GetTurnManager()) {
-		m_context->GetTurnManager()->RegisterObserver(
+		m_turnObserverId = m_context->GetTurnManager()->RegisterObserver(
 			[this](TurnState state) { this->OnTurnChanged(state); }
 		);
 	}
 
 	m_hpBar = std::make_unique<HPBar>();
 	m_hpBar->Init(context);
+}
+
+Unit::~Unit() {
+	// this を捕捉したコールバックを破棄前に必ず解除する
+	// （解除しないと次のターン通知で解放済みメモリへアクセスする）
+	if (m_context && m_context->GetTurnManager()) {
+		m_context->GetTurnManager()->UnregisterObserver(m_turnObserverId);
+	}
 }
 
 // ---------------------------------------------------------
