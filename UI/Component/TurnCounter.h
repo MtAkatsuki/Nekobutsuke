@@ -52,10 +52,9 @@ public:
     }
 
     // ... 前面部分保持不变 ...
-    void Update(uint64_t dt) {
+    void Update(float deltaSeconds) {
         if (m_state == AnimState::Hidden || m_state == AnimState::Fixed) return;
 
-        float deltaSeconds = static_cast<float>(dt) / 1000.0f;
         m_animTimer += deltaSeconds;
 
         // 目標の固定座標

@@ -19,11 +19,11 @@ void MapObject::Init(MapModelType type, Vector3 position) {
 	UpdateWorldMatrix();
 }
 
-void MapObject::Update(uint64_t delta) {
+void MapObject::Update(float /*deltaSeconds*/) {
     // ベースクラスのUpdateは空実装（派生クラスで必要に応じて拡張）
 }
 
-void MapObject::OnDraw(uint64_t delta)
+void MapObject::OnDraw(float /*deltaSeconds*/)
 {
 	if (m_renderer != nullptr) {
 		m_renderer->Draw();

@@ -32,11 +32,10 @@ void Trap::Init(MapModelType type, Vector3 position) {
     UpdateWorldMatrix();
 }
 
-void Trap::Update(uint64_t dt) {
+void Trap::Update(float deltaSeconds) {
     // 消失アニメーション中でなければ計算をスキップ
     if (!m_isDisappearing) return;
 
-    float deltaSeconds = static_cast<float>(dt) / 1000.0f;
     m_animTimer += deltaSeconds;
 
     // 進行度の正規化 (0.0 ～ 1.0)
@@ -62,7 +61,7 @@ void Trap::Update(uint64_t dt) {
     UpdateWorldMatrix();
 }
 
-void Trap::OnDraw(uint64_t delta) {
+void Trap::OnDraw(float /*deltaSeconds*/) {
     // 完全に縮小されている（消失済み）場合は描画をスキップし、GPU負荷を軽減する
     if (m_srt.scale.x <= 0.001f || !m_renderer) return;
 

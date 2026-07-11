@@ -16,7 +16,7 @@ public:
     // ライフサイクル (Lifecycle)
     // ---------------------------------------------------------
     void Init(const std::string& texturePath = "Assets/texture/bg_stripe.png");
-    void Update(uint64_t dt);
+    void Update(float deltaSeconds);
 
     // ---------------------------------------------------------
     // レンダリング (Rendering)

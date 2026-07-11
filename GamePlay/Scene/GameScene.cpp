@@ -76,42 +76,41 @@ void GameScene::Init() {
 }
 
 // シーンの更新処理：表示・ロジック・フロー制御の優先度順に実行
-void GameScene::Update(uint64_t deltatime)
+void GameScene::Update(float deltaSeconds)
 {
-	float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
 
 	// 1. システム・表現の最優先更新（ロジック停止中も画面をフリーズさせないため）
 	UpdateCoreTimers(deltaSeconds);
 	UpdateCameraFocus(deltaSeconds);
 
 	// 2. フロー制御インターセプト（チュートリアルや演出中は後続の入力を遮断）
-	if (HandlePreGameBlocking(deltatime, deltaSeconds)) return;
-	UpdateEnvironmentAndDamageUI(deltatime);
-	if (HandleTurnCutinBlocking(deltatime)) return;
+	if (HandlePreGameBlocking(deltaSeconds)) return;
+	UpdateEnvironmentAndDamageUI(deltaSeconds);
+	if (HandleTurnCutinBlocking(deltaSeconds)) return;
 
 	// 3. 演出と入力の更新
-	UpdateTurnIntroSequence(deltatime, deltaSeconds);
+	UpdateTurnIntroSequence(deltaSeconds);
 	HandleCameraRotationInput();
 
 	// ターンUI飛行中などのアニメーション中は、盤面のエンティティ更新を阻止する
 	if (IsTurnCounterAnimating()) return;
 
 	// 4. メインロジック・エンティティ更新
-	if (m_gameUIManager) m_gameUIManager->Update(deltatime);
+	if (m_gameUIManager) m_gameUIManager->Update(deltaSeconds);
 	ProcessEscapeEvent();
 	// 世界だけ slow-mo（相机/UI は等速）：KillSlow 中 worldScale<1
-	float    worldScale = m_camera ? m_camera->GetTimeScale() : 1.0f;
-	uint64_t worldDelta = static_cast<uint64_t>(deltatime * worldScale);
+	float worldScale = m_camera ? m_camera->GetTimeScale() : 1.0f;
+	float worldDelta = deltaSeconds * worldScale;
 	UpdateGameObjects(worldDelta);
 	ProcessAllyTacticalDialogue();
 
 	// 5. サブシステムとゲーム進行状態の評価
-	UpdatePostEffectsAndAudio(deltatime, deltaSeconds);
+	UpdatePostEffectsAndAudio(deltaSeconds);
 	TurnChangeCheck();
 	if (m_resultJudge) m_resultJudge->Update(deltaSeconds);
 }
 // 描画処理：戦術ゲーム特有のレイヤー仕様（Zオーダー）を厳守するパイプライン
-void GameScene::Draw(uint64_t deltatime) {
+void GameScene::Draw(float deltaSeconds) {
 	// 1. 最背面：環境背景の描画
 	DrawBackgroundLayer();
 
@@ -119,19 +118,19 @@ void GameScene::Draw(uint64_t deltatime) {
 	if (m_tileShader != nullptr) m_tileShader->SetGPU();
 
 	// 2. レイヤー1：画面底面（床）の描画
-	DrawFloorLayer(deltatime);
+	DrawFloorLayer(deltaSeconds);
 
 	// 3. レイヤー2：床面 UI レイヤー (Floor Hints)
-	DrawFloorUIHints(deltatime);// 床の上に直接ペイントされるUI。後続のトラップ等に覆い隠されるよう先に描画する
+	DrawFloorUIHints(deltaSeconds);// 床の上に直接ペイントされるUI。後続のトラップ等に覆い隠されるよう先に描画する
 
 	// 4. レイヤー3：床面特殊オブジェクト (Trap) と 実体エンティティ
-	DrawEnvironmentAndEntities(deltatime);	// 床面UIの上にしっかりと乗るように、UIの後に不透明描画を行う
+	DrawEnvironmentAndEntities(deltaSeconds);	// 床面UIの上にしっかりと乗るように、UIの後に不透明描画を行う
 
 	// 5. レイヤー4：空間パーティクルと半透明オブジェクト
-	DrawTransparentWorld(deltatime);
+	DrawTransparentWorld(deltaSeconds);
 
 	// 6. レイヤー5：戦術オーバーレイ（最前面の3D空間UI）
-	DrawTacticalOverlays(deltatime);
+	DrawTacticalOverlays(deltaSeconds);
 
 	// 7. エフェクトと2DスクリーンUI
 	Renderer::DrawVignette();
@@ -390,7 +389,7 @@ void GameScene::UpdateCameraFocus(float deltaSeconds)
 	}
 }
 
-void GameScene::UpdateTurnIntroSequence(uint64_t deltatime, float deltaSeconds) {
+void GameScene::UpdateTurnIntroSequence(float deltaSeconds) {
 	if (m_needsTurnCounterAnim) {
 		if (m_turnCounter) m_turnCounter->StartAnimation();
 		m_needsTurnCounterAnim = false;
@@ -402,7 +401,7 @@ void GameScene::UpdateTurnIntroSequence(uint64_t deltatime, float deltaSeconds) 
 		}
 	}
 
-	if (m_turnCounter) m_turnCounter->Update(deltatime);
+	if (m_turnCounter) m_turnCounter->Update(deltaSeconds);
 	if (m_introDirector) m_introDirector->Update(deltaSeconds, m_isAllyTalked);
 }
 
@@ -412,7 +411,7 @@ void GameScene::UpdateTurnIntroSequence(uint64_t deltatime, float deltaSeconds) 
 // 更新サブルーチン：フロー制御インターセプト (Flow Control)
 
 // ---------------------------------------------------------
-bool GameScene::HandlePreGameBlocking(uint64_t deltatime, float deltaSeconds) {
+bool GameScene::HandlePreGameBlocking(float deltaSeconds) {
 	if (m_isGameStarted) return false;
 
 	m_startDelayTimer += deltaSeconds;
@@ -421,7 +420,7 @@ bool GameScene::HandlePreGameBlocking(uint64_t deltatime, float deltaSeconds) {
 	if (m_startDelayTimer >= START_WAIT_TIME) {
 		if (m_tutorialUI && !m_tutorialUI->IsAllFinished()) {
 			m_tutorialUI->Update(deltaSeconds);
-			if (m_background) m_background->Update(deltatime);
+			if (m_background) m_background->Update(deltaSeconds);
 			return true;
 		}
 
@@ -434,15 +433,15 @@ bool GameScene::HandlePreGameBlocking(uint64_t deltatime, float deltaSeconds) {
 		}
 	}
 
-	if (m_background) m_background->Update(deltatime);
+	if (m_background) m_background->Update(deltaSeconds);
 	return true;
 }
 
-bool GameScene::HandleTurnCutinBlocking(uint64_t deltatime)
+bool GameScene::HandleTurnCutinBlocking(float deltaSeconds)
 {
 	// ターン切り替え時の重要な演出：他の動きをすべて止め、プレイヤーの視線をカットインに集中させる
 	if (m_turnCutin && m_turnCutin->IsAnimating()) {
-		m_turnCutin->Update(deltatime);
+		m_turnCutin->Update(deltaSeconds);
 		return true;
 	}
 	return false;
@@ -461,10 +460,10 @@ bool GameScene::IsTurnCounterAnimating() const
 
 // ---------------------------------------------------------
 
-void GameScene::UpdateEnvironmentAndDamageUI(uint64_t deltatime)
+void GameScene::UpdateEnvironmentAndDamageUI(float deltaSeconds)
 {
-	if (m_background) m_background->Update(deltatime);
-	if (m_damageNumberManager) m_damageNumberManager->Update(deltatime);
+	if (m_background) m_background->Update(deltaSeconds);
+	if (m_damageNumberManager) m_damageNumberManager->Update(deltaSeconds);
 }
 
 void GameScene::HandleCameraRotationInput()
@@ -504,14 +503,14 @@ void GameScene::ProcessEscapeEvent()
 	}
 }
 
-void GameScene::UpdateGameObjects(uint64_t deltatime)
+void GameScene::UpdateGameObjects(float deltaSeconds)
 {
 	for (const auto& obj : m_gameObjectList) {
-		obj->Update(deltatime);
+		obj->Update(deltaSeconds);
 	}
 
 	if (m_context && m_context->GetEnemyManager()) {
-		m_context->GetEnemyManager()->Update(deltatime);
+		m_context->GetEnemyManager()->Update(deltaSeconds);
 	}
 }
 
@@ -535,10 +534,10 @@ void GameScene::ProcessAllyTacticalDialogue()
 	}
 }
 
-void GameScene::UpdatePostEffectsAndAudio(uint64_t deltatime, float deltaSeconds)
+void GameScene::UpdatePostEffectsAndAudio(float deltaSeconds)
 {
 	if (m_context && m_context->GetDialogueUI()) {
-		m_context->GetDialogueUI()->Update(deltatime);
+		m_context->GetDialogueUI()->Update(deltaSeconds);
 	}
 	if (m_context && m_context->GetEffectManager()) {
 		m_context->GetEffectManager()->Update(deltaSeconds);
@@ -637,32 +636,32 @@ void GameScene::DrawBackgroundLayer() {
 	Renderer::SetDepthEnable(true); 
 }
 
-void GameScene::DrawFloorLayer(uint64_t deltatime) {
+void GameScene::DrawFloorLayer(float deltaSeconds) {
 	for (const auto& obj : m_gameObjectList) {
 		MapObject* mapObj = obj->AsMapObject();
 		if (mapObj && mapObj->GetType() == MapModelType::FLOOR) {
-			obj->Draw(deltatime);
+			obj->Draw(deltaSeconds);
 		}
 	}
 }
 
-void GameScene::DrawFloorUIHints(uint64_t deltatime) {
+void GameScene::DrawFloorUIHints(float deltaSeconds) {
 	Renderer::SetBlendState(BS_ALPHABLEND);
 	for (const auto& obj : m_gameObjectList) {
-		obj->DrawFloorUI(deltatime);
+		obj->DrawFloorUI(deltaSeconds);
 	}
 	Renderer::SetBlendState(BS_NONE);
 	if (m_tileShader) m_tileShader->SetGPU(); 
 }
 
-void GameScene::DrawEnvironmentAndEntities(uint64_t deltatime) {
+void GameScene::DrawEnvironmentAndEntities(float deltaSeconds) {
 	// === 1. 床面特殊オブジェクトレイヤー (Trap) ===
 	
 	// 先に描画した床面UI（半透明）の上に確実に乗せるため、ここで描画する
 	for (const auto& obj : m_gameObjectList) {
 		MapObject* mapObj = dynamic_cast<MapObject*>(obj.get());
 		if (mapObj && mapObj->GetType() == MapModelType::TRAP) {
-			obj->Draw(deltatime);
+			obj->Draw(deltaSeconds);
 		}
 	}
 
@@ -672,17 +671,17 @@ void GameScene::DrawEnvironmentAndEntities(uint64_t deltatime) {
 		if (mapObj) {
 			// 床とトラップ以外のマップオブジェクトを描画
 			if (mapObj->GetType() != MapModelType::FLOOR && mapObj->GetType() != MapModelType::TRAP) {
-				obj->Draw(deltatime);
+				obj->Draw(deltaSeconds);
 			}
 		}
 		else {
 			// キャラクター（Player, Enemy, Ally）を描画
-			obj->Draw(deltatime);
+			obj->Draw(deltaSeconds);
 		}
 	}
 }
 
-void GameScene::DrawTransparentWorld(uint64_t deltatime) {
+void GameScene::DrawTransparentWorld(float deltaSeconds) {
 	Renderer::SetBlendState(BS_ALPHABLEND);
 
 	// 物理パーティクル（瓦礫など。深度テストによる遮蔽を有効にする）
@@ -692,7 +691,7 @@ void GameScene::DrawTransparentWorld(uint64_t deltatime) {
 
 	// 半透明エンティティ（残像など）
 	for (const auto& obj : m_gameObjectList) {
-		obj->DrawTransparent(deltatime);
+		obj->DrawTransparent(deltaSeconds);
 	}
 
 	// 仲間の脱出（採掘・フェードアウト）が完了した後のみ、空色のマスを描画
@@ -704,13 +703,13 @@ void GameScene::DrawTransparentWorld(uint64_t deltatime) {
 	Renderer::SetBlendState(BS_NONE);
 }
 
-void GameScene::DrawTacticalOverlays(uint64_t deltatime) {
+void GameScene::DrawTacticalOverlays(float deltaSeconds) {
 	// 戦術オーバーレイ：壁や他のキャラクターに隠れて見えなくなるのを防ぐため、深度計算をスキップする
 	Renderer::SetDepthEnable(false);
 	Renderer::SetBlendState(BS_ALPHABLEND);
 
 	for (const auto& obj : m_gameObjectList) {
-		obj->DrawOverlay(deltatime);   // 浮遊矢印、ヒット警告エフェクトなど
+		obj->DrawOverlay(deltaSeconds);   // 浮遊矢印、ヒット警告エフェクトなど
 	}
 
 	Renderer::SetBlendState(BS_NONE);

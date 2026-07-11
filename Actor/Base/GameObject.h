@@ -25,7 +25,8 @@ public:
 
 	virtual ~GameObject() = default;
 
-	virtual void Update(uint64_t delta) = 0;
+	// deltaSeconds: 前フレームからの経過時間（秒）※プロジェクト全体で秒に統一
+	virtual void Update(float deltaSeconds) = 0;
 	virtual void Dispose() = 0;
 	// MapObject への型問い合わせ（描画ループでの dynamic_cast / RTTI 回避用）
 	virtual MapObject* AsMapObject() { return nullptr; }
@@ -45,27 +46,27 @@ public:
 	}
 
 	// 描画順 3: 床面ヒント UI レイヤー (地面に接地、トラップの下)
-	void DrawFloorUI(uint64_t delta) {
+	void DrawFloorUI(float deltaSeconds) {
 		Renderer::SetWorldMatrix(&m_worldMatrix);
-		OnDrawFloorUI(delta);
+		OnDrawFloorUI(deltaSeconds);
 	}
 
 	// 描画順 5.1: 不透明エンティティレイヤー (キャラクター本体など)
-	void Draw(uint64_t delta) {
+	void Draw(float deltaSeconds) {
 		Renderer::SetWorldMatrix(&m_worldMatrix);
-		OnDraw(delta);
+		OnDraw(deltaSeconds);
 	}
 
 	// 描画順 5.3: 半透明エンティティレイヤー (残像、エフェクトなど)
-	void DrawTransparent(uint64_t delta) {
+	void DrawTransparent(float deltaSeconds) {
 		Renderer::SetWorldMatrix(&m_worldMatrix);
-		OnDrawTransparent(delta);
+		OnDrawTransparent(deltaSeconds);
 	}
 
 	// 描画順 6: 攻撃プレビューヒントレイヤー (最前面3DUI、デプス無視)
-	void DrawOverlay(uint64_t delta) {
+	void DrawOverlay(float deltaSeconds) {
 		Renderer::SetWorldMatrix(&m_worldMatrix);
-		OnDrawOverlay(delta);
+		OnDrawOverlay(deltaSeconds);
 	}
 
 	// ---------------------------------------------------------
@@ -80,10 +81,10 @@ public:
 
 protected:
 	// --- サブクラスで実装する具体的な描画ロジック ---
-	virtual void OnDrawFloorUI(uint64_t delta) {}
-	virtual void OnDraw(uint64_t delta) {}
-	virtual void OnDrawTransparent(uint64_t delta) {}
-	virtual void OnDrawOverlay(uint64_t delta) {}
+	virtual void OnDrawFloorUI(float deltaSeconds) {}
+	virtual void OnDraw(float deltaSeconds) {}
+	virtual void OnDrawTransparent(float deltaSeconds) {}
+	virtual void OnDrawOverlay(float deltaSeconds) {}
 
 	GameContext* m_context;
 	SRT m_srt{};

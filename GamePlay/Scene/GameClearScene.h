@@ -21,12 +21,12 @@ public:
     // ---------------------------------------------------------
     void Init() override;
     void Dispose() override;
-    void Update(uint64_t deltatime) override;
+    void Update(float deltaSeconds) override;
 
     // ---------------------------------------------------------
     // レンダリング (Rendering)
     // ---------------------------------------------------------
-    void Draw(uint64_t deltatime) override;
+    void Draw(float deltaSeconds) override;
 
 private:
     std::unique_ptr<SceneTransition> m_transition;

@@ -41,7 +41,7 @@ public:
 	// ライフサイクル (Lifecycle)
 	// ---------------------------------------------------------
 	void Init(GameContext* context);
-	void Update(uint64_t dt);
+	void Update(float deltaSeconds);
 	void Draw();
 	void Clear();
 

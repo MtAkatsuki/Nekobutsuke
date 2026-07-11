@@ -21,16 +21,16 @@ private:
     };
 
 public:
-    // fadeDurationMs: フェードイン・アウトにかける時間（ミリ秒）
-    // scrollDurationMs: スクロールが停止するまでの減速時間（ミリ秒）
-    explicit BackgroundTransition(float fadeDurationMs, float scrollDurationMs = 500.0f);
+    // fadeDurationSeconds: フェードイン・アウトにかける時間（秒）
+    // scrollDurationSeconds: スクロールが停止するまでの減速時間（秒）
+    explicit BackgroundTransition(float fadeDurationSeconds, float scrollDurationSeconds = 0.5f);
     ~BackgroundTransition() override = default;
 
     // ---------------------------------------------------------
     // ライフサイクル・更新 (Lifecycle & Update)
     // ---------------------------------------------------------
     void Start() override;
-    void Update(uint64_t deltaTime) override;
+    void Update(float deltaSeconds) override;
     void Draw() override;
 
     // ---------------------------------------------------------
@@ -44,9 +44,9 @@ private:
     std::unique_ptr<Background> m_bg;
     Phase m_phase = Phase::Idle;
 
-    // --- アニメーション計算用パラメータ ---
+    // --- アニメーション計算用パラメータ（すべて秒単位） ---
     float m_alpha = 0.0f;
-    float m_fadeDurationMs;
-    float m_scrollDurationMs;
-    float m_elapsedMs = 0.0f; // 精度計算とキャスト省略のためfloatで統一管理
+    float m_fadeDuration;
+    float m_scrollDuration;
+    float m_elapsed = 0.0f;
 };

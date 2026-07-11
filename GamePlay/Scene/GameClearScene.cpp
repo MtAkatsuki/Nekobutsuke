@@ -11,8 +11,8 @@
 namespace {
     // --- 定数定義  ---
     constexpr float INPUT_LOCK_DURATION = 1.0f; // 遷移直後の誤操作防止(1秒)
-    constexpr float FADE_IN_OUT_DURATION = 1000.0f;// フェードイン・アウトの合計時間（ms）
-    constexpr float BACKGROUND_TRANSITION_TIME_MS = 4000.0f;// 背景遷移のスクロール時間（ms）
+    constexpr float FADE_IN_OUT_DURATION_SEC = 1.0f;// フェードイン・アウトの合計時間（秒）
+    constexpr float BACKGROUND_TRANSITION_TIME_SEC = 4.0f;// 背景遷移のスクロール時間（秒）
 }
 
 void GameClearScene::Init() {
@@ -33,8 +33,7 @@ void GameClearScene::Init() {
     }
 }
 
-void GameClearScene::Update(uint64_t deltatime) {
-    float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
+void GameClearScene::Update(float deltaSeconds) {
 
     m_inputDelayTimer += deltaSeconds;
 
@@ -52,7 +51,7 @@ void GameClearScene::Update(uint64_t deltatime) {
     if (hasAnyKeyPressed) {
         SceneManager::GetInstance().SetCurrentScene(
             "TitleScene",
-            std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BACKGROUND_TRANSITION_TIME_MS)
+            std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION_SEC, BACKGROUND_TRANSITION_TIME_SEC)
         );
     }
 }
@@ -60,7 +59,7 @@ void GameClearScene::Update(uint64_t deltatime) {
 void GameClearScene::Dispose() {
 }
 
-void GameClearScene::Draw(uint64_t deltatime) {
+void GameClearScene::Draw(float /*deltaSeconds*/) {
     if (!m_image) {
         DBG_ERROR("[Warning] GameClearScene::draw called but m_image is NULL!");
         return;

@@ -107,8 +107,7 @@ void GameUIManager::Init(GameContext* context) {
     m_cameraRotatePos.y = (float)Application::GetHeight() - (CAM_HINT_TEX_H * m_cameraRotateScale) + CAM_HINT_Y_ADJUST;
 }
 
-void GameUIManager::Update(uint64_t dt) {
-    float deltaSeconds = static_cast<float>(dt) / 1000.0f;
+void GameUIManager::Update(float deltaSeconds) {
 
     // メニュー選択アニメーションの進行
     if (m_animTimer > 0.0f) {

@@ -37,9 +37,8 @@ void Prop::Init(MapModelType type, Vector3 position) {
     UpdateWorldMatrix();
 }
 
-void Prop::Update(uint64_t delta) {
+void Prop::Update(float deltaSeconds) {
     if (!m_context) return;
-    float dt = static_cast<float>(delta) / 1000.0f;
 
     // 遮蔽（オクルージョン）検知：ユニットが家具のすぐ裏に居るか
 
@@ -69,12 +68,12 @@ void Prop::Update(uint64_t delta) {
 
     // 状態に応じた目標アルファの設定と線形補間（Lerp）によるフェード
     m_targetAlpha = isOccluding ? OCCLUDED_ALPHA : NORMAL_ALPHA;
-    m_currentAlpha += (m_targetAlpha - m_currentAlpha) * ALPHA_FADE_SPEED * dt;
+    m_currentAlpha += (m_targetAlpha - m_currentAlpha) * ALPHA_FADE_SPEED * deltaSeconds;
 
     UpdateWorldMatrix();
 }
 
-void Prop::OnDraw(uint64_t delta) {
+void Prop::OnDraw(float /*deltaSeconds*/) {
     if (!m_renderer) return;
 
     DrawPropShadow();

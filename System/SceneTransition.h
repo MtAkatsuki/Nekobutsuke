@@ -21,11 +21,11 @@ public:
 
     /**
      * @brief 遷移演出の更新処理
-     * @param deltaTime 前フレームからの経過時間（マイクロ秒など）
+     * @param deltaSeconds 前フレームからの経過時間（秒）
      *
      * アニメーションや状態の更新に使用する。
      */
-    virtual void Update(uint64_t deltaTime) = 0;
+    virtual void Update(float deltaSeconds) = 0;
 
     /**
      * @brief 遷移演出の描画処理

@@ -66,10 +66,9 @@ Unit::Unit(GameContext* context) : GameObject(context) {
 
 // ---------------------------------------------------------
 
-void Unit::Update(uint64_t delta) {
-	float dt = static_cast<float>(delta) / 1000.0f;
+void Unit::Update(float deltaSeconds) {
 	if (m_hpBar) {
-		m_hpBar->Update(dt);
+		m_hpBar->Update(deltaSeconds);
 	}
 }
 
@@ -228,8 +227,7 @@ void Unit::StartAttackAnimation(const Vector3& targetPos) {
 	SetFacingFromVector(dir);
 }
 
-bool Unit::UpdateAttackAnimation(float dt, std::function<void()> onImpact) {
-	float deltaSeconds = dt / 1000.0f;
+bool Unit::UpdateAttackAnimation(float deltaSeconds, std::function<void()> onImpact) {
 	m_animTimer += deltaSeconds;
 
 	// 設定したインパクト時間に達した場合、ダメージ判定のコールバックを発火させる
@@ -295,8 +293,7 @@ void Unit::StartSlideAnimation(const Vector3& targetPos) {
 	}
 }
 
-bool Unit::UpdateSlideAnimation(uint64_t dt) {
-	float deltaSeconds = dt / 1000.0f;
+bool Unit::UpdateSlideAnimation(float deltaSeconds) {
 	m_slideTimer += deltaSeconds;
 
 	if (m_slideTimer < TIME_SLIDE) {

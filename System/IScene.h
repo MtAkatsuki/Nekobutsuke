@@ -10,8 +10,9 @@ public:
 	IScene() = default;
 	virtual ~IScene() = default;
 	virtual void SetGameContext(GameContext* context) { m_context = context; }
-	virtual void Update(uint64_t delta) = 0;
-	virtual void Draw(uint64_t delta) = 0;
+	// deltaSeconds: 前フレームからの経過時間（秒）
+	virtual void Update(float deltaSeconds) = 0;
+	virtual void Draw(float deltaSeconds) = 0;
 	virtual void Init() = 0;
 	virtual void Dispose() = 0;
 protected:

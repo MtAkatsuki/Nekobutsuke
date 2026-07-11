@@ -16,12 +16,12 @@ public:
     // ---------------------------------------------------------
     static std::unique_ptr<Ally> Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos);
     void Dispose() override {}
-    void Update(uint64_t delta) override;
+    void Update(float deltaSeconds) override;
 
     // ---------------------------------------------------------
     // レンダリング (Rendering)
     // ---------------------------------------------------------
-    void OnDraw(uint64_t delta) override;
+    void OnDraw(float deltaSeconds) override;
 
     // ---------------------------------------------------------
     // フロー制御・イベント (Flow & Events)

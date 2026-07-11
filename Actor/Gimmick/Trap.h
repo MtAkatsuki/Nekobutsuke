@@ -18,12 +18,12 @@ public:
 	// ライフサイクル (Lifecycle)
 	// ---------------------------------------------------------
 	void Init(MapModelType type, Vector3 position) override;
-	void Update(uint64_t delta) override;
+	void Update(float deltaSeconds) override;
 
 	// ---------------------------------------------------------
 	// レンダリング (Rendering)
 	// ---------------------------------------------------------
-	void OnDraw(uint64_t delta) override;
+	void OnDraw(float deltaSeconds) override;
 
 	// ---------------------------------------------------------
 	// イベント・状態 (Events & Status)

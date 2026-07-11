@@ -28,8 +28,8 @@ public:
     static std::unique_ptr<Player> Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos);
 
     void Dispose() override {}
-    virtual void Update(uint64_t delta) override;
-    void OnDraw(uint64_t delta) override;
+    virtual void Update(float deltaSeconds) override;
+    void OnDraw(float deltaSeconds) override;
     ~Player() override;
 
     // ---------------------------------------------------------
@@ -63,9 +63,9 @@ protected:
     virtual void Die();
     virtual void OnTurnChanged(TurnState state) override;
 
-    virtual void OnDrawFloorUI(uint64_t delta) override;
-    virtual void OnDrawTransparent(uint64_t delta) override;
-    virtual void OnDrawOverlay(uint64_t delta) override;
+    virtual void OnDrawFloorUI(float deltaSeconds) override;
+    virtual void OnDrawTransparent(float deltaSeconds) override;
+    virtual void OnDrawOverlay(float deltaSeconds) override;
 
 private:
     void Init();

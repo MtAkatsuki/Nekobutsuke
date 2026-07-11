@@ -97,9 +97,8 @@ void Player::Init() {
 }
 
 
-void Player::Update(uint64_t dt) {
-	Unit::Update(dt);
-	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
+void Player::Update(float deltaSeconds) {
+	Unit::Update(deltaSeconds);
 	if (m_context->GetUIManager()->IsAnimating()) {return;}
 
 	// UIアニメーションが終わり、プレイヤーのUpdateが再開された最初のフレームでメニューを開く
@@ -191,7 +190,7 @@ void Player::Update(uint64_t dt) {
 	}
 
 	case PlayerState::ANIM_ATTACK:
-		if (UpdateAttackAnimation(dt, nullptr)) {
+		if (UpdateAttackAnimation(deltaSeconds, nullptr)) {
 			if (m_isDebugAttack) {
 				m_isDebugAttack = false;
 				if (canControl) SwitchToMenuMain();
@@ -205,7 +204,7 @@ void Player::Update(uint64_t dt) {
 
 	case PlayerState::KNOCKBACK:
 		if (m_slideEndPos.LengthSquared() > 0.001f) {
-			if (UpdateSlideAnimation(dt)) { 
+			if (UpdateSlideAnimation(deltaSeconds)) { 
 				m_slideEndPos = Vector3(0, 0, 0);
 				// 押し出された先のタイルにギミック（罠など）があるかチェック
 				if (m_currentHP > 0) {
@@ -238,7 +237,7 @@ void Player::Update(uint64_t dt) {
 	UpdateWorldMatrix();
 }
 
-void Player::OnDraw(uint64_t dt) {
+void Player::OnDraw(float /*deltaSeconds*/) {
 	if (m_playerShader != nullptr) m_playerShader->SetGPU();
 	DrawModel();
 }
@@ -319,7 +318,7 @@ void Player::OnTurnChanged(TurnState state) {
 	}
 }
 
-void Player::OnDrawFloorUI(uint64_t dt) {
+void Player::OnDrawFloorUI(float /*deltaSeconds*/) {
 	if (m_playerShader != nullptr) m_playerShader->SetGPU();
 
 	if (m_state == PlayerState::MOVE_SELECT) {
@@ -331,7 +330,7 @@ void Player::OnDrawFloorUI(uint64_t dt) {
 	}
 }
 
-void Player::OnDrawTransparent(uint64_t dt) {
+void Player::OnDrawTransparent(float /*deltaSeconds*/) {
 	if (m_state == PlayerState::MOVE_SELECT) {
 		UpdateWorldMatrix(); 
 		m_actionView->DrawGhost(m_renderer, m_srt.scale, m_srt.rot.y,
@@ -339,7 +338,7 @@ void Player::OnDrawTransparent(uint64_t dt) {
 	}
 }
 
-void Player::OnDrawOverlay(uint64_t dt) {
+void Player::OnDrawOverlay(float /*deltaSeconds*/) {
 	if (m_state == PlayerState::ATTACK_DIR_SELECT) {
 		// 攻撃プレビュー（敵のノックバック予測を含む最前面UI）を表示
 		bool isPush = (m_selectedAttackType == AttackType::Push);

@@ -7,8 +7,8 @@ namespace {
     const char* TRANSITION_BG_PATH = "Assets/texture/bg_stripe_blue.png";
 }
 
-BackgroundTransition::BackgroundTransition(float fadeDurationMs, float scrollDurationMs)
-    : m_fadeDurationMs(fadeDurationMs), m_scrollDurationMs(scrollDurationMs) {
+BackgroundTransition::BackgroundTransition(float fadeDurationSeconds, float scrollDurationSeconds)
+    : m_fadeDuration(fadeDurationSeconds), m_scrollDuration(scrollDurationSeconds) {
 }
 
 void BackgroundTransition::Start() {
@@ -16,23 +16,23 @@ void BackgroundTransition::Start() {
     m_bg->Init(TRANSITION_BG_PATH);
 
     m_alpha = 0.0f;
-    m_elapsedMs = 0.0f;
+    m_elapsed = 0.0f;
     m_phase = Phase::FadeInBg;
 }
 
-void BackgroundTransition::Update(uint64_t deltaTime) {
-    if (!m_bg) return; 
+void BackgroundTransition::Update(float deltaSeconds) {
+    if (!m_bg) return;
 
-    m_bg->Update(deltaTime);
+    m_bg->Update(deltaSeconds);
 
-    m_elapsedMs += static_cast<float>(deltaTime);
+    m_elapsed += deltaSeconds;
 
     switch (m_phase) {
     case Phase::FadeInBg: {
-        m_alpha = m_elapsedMs / m_fadeDurationMs;
-        if (m_elapsedMs >= m_fadeDurationMs) {
+        m_alpha = m_elapsed / m_fadeDuration;
+        if (m_elapsed >= m_fadeDuration) {
             m_alpha = 1.0f;
-            m_elapsedMs = 0.0f;
+            m_elapsed = 0.0f;
             m_phase = Phase::Scrolling;
         }
         break;
@@ -42,7 +42,7 @@ void BackgroundTransition::Update(uint64_t deltaTime) {
         m_alpha = 1.0f;
 
         // 進行度 (0.0f ~ 1.0f)
-        float progress = m_elapsedMs / m_scrollDurationMs;
+        float progress = m_elapsed / m_scrollDuration;
 
         // 徐々に減速するイーズアウト（Ease-Out）計算
         float currentSpeed = MAX_SCROLL_SPEED * (1.0f - progress);
@@ -50,7 +50,7 @@ void BackgroundTransition::Update(uint64_t deltaTime) {
         // 速度がマイナスにならないよう安全にクランプ
         m_bg->SetScrollSpeed(std::max(0.0f, currentSpeed));
 
-        if (m_elapsedMs >= m_scrollDurationMs) {
+        if (m_elapsed >= m_scrollDuration) {
             m_bg->SetScrollSpeed(0.0f);
             m_phase = Phase::WaitSwap;
         }
@@ -64,8 +64,8 @@ void BackgroundTransition::Update(uint64_t deltaTime) {
     }
 
     case Phase::FadeOutBg: {
-        m_alpha = 1.0f - (m_elapsedMs / m_fadeDurationMs);
-        if (m_elapsedMs >= m_fadeDurationMs) {
+        m_alpha = 1.0f - (m_elapsed / m_fadeDuration);
+        if (m_elapsed >= m_fadeDuration) {
             m_alpha = 0.0f;
             m_phase = Phase::Idle; // 遷移完了
         }
@@ -81,7 +81,7 @@ void BackgroundTransition::Update(uint64_t deltaTime) {
 void BackgroundTransition::OnSceneSwapped() {
     // SceneManager側で新しいシーンの Init が完了したタイミングで呼ばれる
     m_phase = Phase::FadeOutBg;
-    m_elapsedMs = 0.0f;
+    m_elapsed = 0.0f;
 }
 
 void BackgroundTransition::Draw() {

@@ -17,10 +17,8 @@ void Background::Init(const std::string& texturePath) {
     m_sprite = std::make_unique<CSprite>(BG_SIZE, BG_SIZE, texturePath.c_str());
 }
 
-void Background::Update(uint64_t dt) {
+void Background::Update(float deltaSeconds) {
     if (!m_sprite) return;
-
-    float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 
     // スクロールオフセットの加算とオーバーフロー防御
     m_scrollOffset += m_scrollSpeed * deltaSeconds;

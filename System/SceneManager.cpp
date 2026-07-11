@@ -15,15 +15,13 @@ void SceneManager::Init() {
 	AudioManager::GetInstance().Init();
 }
 
-void SceneManager::Update(uint64_t deltatime) {
-	float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
-
+void SceneManager::Update(float deltaSeconds) {
 	// 常駐システムの更新
 	AudioManager::GetInstance().Update(deltaSeconds);
 
 	// --- トランジション（画面遷移）の進行管理 ---
 	if (m_transition) {
-		m_transition->Update(deltatime);
+		m_transition->Update(deltaSeconds);
 
 		// 画面が完全に暗転（または覆われた）タイミングで実際のシーンを切り替える
 		if (m_transition->canSwap() && !m_hasSwapped) {
@@ -42,15 +40,15 @@ void SceneManager::Update(uint64_t deltatime) {
 	// --- 現在のシーンの更新 ---
 	auto it = m_scenes.find(m_currentSceneName);
 	if (it != m_scenes.end() && it->second) {
-		it->second->Update(deltatime);
+		it->second->Update(deltaSeconds);
 	}
 }
 
-void SceneManager::Draw(uint64_t deltatime) {
+void SceneManager::Draw(float deltaSeconds) {
 	// 現在のシーンを描画
 	auto it = m_scenes.find(m_currentSceneName);
 	if (it != m_scenes.end() && it->second) {
-		it->second->Draw(deltatime);
+		it->second->Draw(deltaSeconds);
 	}
 	// シーンの上にトランジション（暗転用ポリゴンなど）を被せて描画
 	if (m_transition)

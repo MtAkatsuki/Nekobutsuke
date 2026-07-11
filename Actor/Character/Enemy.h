@@ -29,8 +29,8 @@ public:
     static std::unique_ptr<Enemy> Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos);
  
     void Dispose() override {}
-    virtual void Update(uint64_t delta) override;
-    void OnDraw(uint64_t delta) override;
+    virtual void Update(float deltaSeconds) override;
+    void OnDraw(float deltaSeconds) override;
 
     // ---------------------------------------------------------
     // フロー制御 (Flow Control)
@@ -65,8 +65,8 @@ public:
 protected:
     using Unit::Unit;
 
-    virtual void OnDrawOverlay(uint64_t delta) override;
-    virtual void OnDrawFloorUI(uint64_t delta) override;
+    virtual void OnDrawOverlay(float deltaSeconds) override;
+    virtual void OnDrawFloorUI(float deltaSeconds) override;
 
 private:
     void Init();
@@ -78,7 +78,7 @@ private:
     void ExecuteAI();
     void EnemyEndAction();
     void EnemyStartMoveTo(std::vector<Tile*> path);
-    void UpdateMove(uint64_t delta);
+    void UpdateMove(float deltaSeconds);
     void OnMoveFinished();
     void StartCharge(Unit* target);
     void ReleaseChargeAttack();

@@ -19,7 +19,7 @@ public:
     // ライフサイクル (Lifecycle)
     // ---------------------------------------------------------
     void Init(GameContext* context);
-    void Update(uint64_t delta);
+    void Update(float deltaSeconds);
 
     // ---------------------------------------------------------
     // レンダリング (Rendering)

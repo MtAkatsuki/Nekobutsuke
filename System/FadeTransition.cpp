@@ -11,7 +11,7 @@
  * @param nextSceneName 遷移先のシーン名
  */
 void FadeTransition::Start() {
-    m_elapsed = 0;
+    m_elapsed = 0.0f;
     m_alpha = 0.0f;
 
     switch (m_mode) {
@@ -37,17 +37,17 @@ void FadeTransition::Start() {
  * 経過時間に基づいて透明度（m_alpha）を変化させる。
  * フェードアウト終了後はシーンを切り替え、フェードインに移行する。
  *
- * @param deltaTime 前フレームからの経過時間（マイクロ秒）
+ * @param deltaSeconds 前フレームからの経過時間（秒）
  */
-void FadeTransition::Update(uint64_t deltaTime) {
-    m_elapsed += deltaTime;
+void FadeTransition::Update(float deltaSeconds) {
+    m_elapsed += deltaSeconds;
 
     switch (m_phase) {
     case Phase::FadeOut:
-        m_alpha = static_cast<float>(m_elapsed) / m_duration;
+        m_alpha = m_elapsed / m_duration;
         if (m_elapsed >= m_duration) {
             m_alpha = 1.0f;
-            m_elapsed = 0;
+            m_elapsed = 0.0f;
 
             if (m_mode == Mode::FadeOutOnly) {
                 m_phase = Phase::Idle;
@@ -59,7 +59,7 @@ void FadeTransition::Update(uint64_t deltaTime) {
         break;
 
     case Phase::FadeIn:
-        m_alpha = 1.0f - static_cast<float>(m_elapsed) / m_duration;
+        m_alpha = 1.0f - m_elapsed / m_duration;
         if (m_elapsed >= m_duration) {//fade inアニメション終わり
             m_alpha = 0.0f;//最終なalpha値になる
             m_phase = Phase::Idle;
@@ -79,7 +79,7 @@ void FadeTransition::OnSceneSwapped()
     //シーン遷移完了、モード必要となると、FadeIn始まる
     if (m_mode == Mode::FadeInOnly || m_mode == Mode::FadeInOut) {
         m_phase = Phase::FadeIn;
-        m_elapsed = 0;
+        m_elapsed = 0.0f;
     }
     else { 
         m_phase = Phase::Idle; }

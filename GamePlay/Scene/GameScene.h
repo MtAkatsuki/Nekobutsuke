@@ -42,8 +42,8 @@ public:
 	// IScene 継承ライフサイクル (Lifecycle Overrides)
 	// ---------------------------------------------------------
 	void Init() override;
-	void Update(uint64_t deltatime) override;
-	void Draw(uint64_t deltatime) override;
+	void Update(float deltaSeconds) override;
+	void Draw(float deltaSeconds) override;
 	void Dispose() override;
 
 	// ---------------------------------------------------------
@@ -81,24 +81,24 @@ private:
 	// ---------------------------------------------------------
 	void UpdateCoreTimers(float deltaSeconds);
 	void UpdateCameraFocus(float deltaSeconds);
-	void UpdateTurnIntroSequence(uint64_t deltatime, float deltaSeconds);
+	void UpdateTurnIntroSequence(float deltaSeconds);
 
 	// ---------------------------------------------------------
 	// 更新サブルーチン：フロー制御インターセプト (Flow Control Interceptors)
 	// ---------------------------------------------------------
-	bool HandlePreGameBlocking(uint64_t deltatime, float deltaSeconds);
-	bool HandleTurnCutinBlocking(uint64_t deltatime);
+	bool HandlePreGameBlocking(float deltaSeconds);
+	bool HandleTurnCutinBlocking(float deltaSeconds);
 	bool IsTurnCounterAnimating() const;
 
 	// ---------------------------------------------------------
 	// 更新サブルーチン：メインロジック (Main Logic & Entities)
 	// ---------------------------------------------------------
-	void UpdateEnvironmentAndDamageUI(uint64_t deltatime);
+	void UpdateEnvironmentAndDamageUI(float deltaSeconds);
 	void HandleCameraRotationInput();
 	void ProcessEscapeEvent();
-	void UpdateGameObjects(uint64_t deltatime);
+	void UpdateGameObjects(float deltaSeconds);
 	void ProcessAllyTacticalDialogue();
-	void UpdatePostEffectsAndAudio(uint64_t deltatime, float deltaSeconds);
+	void UpdatePostEffectsAndAudio(float deltaSeconds);
 
 	// ---------------------------------------------------------
 	// ターン進行とイベント制御 (Turn Flow & Events)
@@ -111,11 +111,11 @@ private:
 	// レンダリングパイプライン (Rendering Sub-routines)
 	// ---------------------------------------------------------
 	void DrawBackgroundLayer();
-	void DrawFloorLayer(uint64_t deltatime);
-	void DrawFloorUIHints(uint64_t deltatime);
-	void DrawEnvironmentAndEntities(uint64_t deltatime);
-	void DrawTransparentWorld(uint64_t deltatime);
-	void DrawTacticalOverlays(uint64_t deltatime);
+	void DrawFloorLayer(float deltaSeconds);
+	void DrawFloorUIHints(float deltaSeconds);
+	void DrawEnvironmentAndEntities(float deltaSeconds);
+	void DrawTransparentWorld(float deltaSeconds);
+	void DrawTacticalOverlays(float deltaSeconds);
 	void DrawDamageAndHitEffects();
 	void DrawScreenSpaceUI();
 

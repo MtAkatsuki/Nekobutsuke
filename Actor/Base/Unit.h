@@ -33,7 +33,7 @@ public:
 	// ---------------------------------------------------------
 	// ライフサイクル (Lifecycle)
 	// ---------------------------------------------------------
-	virtual void Update(uint64_t delta) override;
+	virtual void Update(float deltaSeconds) override;
 
 	// ---------------------------------------------------------
 	// コアステータス・ゲッター (Core Status)
@@ -81,7 +81,7 @@ public:
 
 	void StartBumpAnimation(const Vector3& targetPos);
 	void StartSlideAnimation(const Vector3& targetPos);
-	bool UpdateSlideAnimation(uint64_t dt);
+	bool UpdateSlideAnimation(float deltaSeconds);
 
 	void UpdateFacingRotation(float dt);
 

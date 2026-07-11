@@ -45,10 +45,9 @@ public:
 		m_state = AnimState::FadeIn;
 	}
 
-	void Update(uint64_t dt) {
+	void Update(float deltaSeconds) {
 		if (m_state == AnimState::Idle) return;
 
-		float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 		m_timer += deltaSeconds;
 
 		// 状态に応じたアニメーション計算

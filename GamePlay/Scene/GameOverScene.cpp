@@ -10,8 +10,8 @@
 namespace {
     // --- 定数定義 ---
     constexpr float INPUT_LOCK_DURATION = 1.0f; // 遷移直後の誤操作防止(1秒)
-    constexpr float FADE_IN_OUT_DURATION = 1000.0f;// フェードイン・アウトの合計時間（ms）
-    constexpr float BACKGROUND_TRANSITION_TIME_MS = 4000.0f;// 背景遷移のスクロール時間（ms）
+    constexpr float FADE_IN_OUT_DURATION_SEC = 1.0f;// フェードイン・アウトの合計時間（秒）
+    constexpr float BACKGROUND_TRANSITION_TIME_SEC = 4.0f;// 背景遷移のスクロール時間（秒）
 }
 
 void GameOverScene::Init() {
@@ -23,8 +23,7 @@ void GameOverScene::Init() {
     AudioManager::GetInstance().PlayBGM("Over", false, 1.0f);
 }
 
-void GameOverScene::Update(uint64_t deltatime) {
-    float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
+void GameOverScene::Update(float deltaSeconds) {
 
     m_inputDelayTimer += deltaSeconds;
 
@@ -43,7 +42,7 @@ void GameOverScene::Update(uint64_t deltatime) {
     if (hasAnyKeyPressed) {
         SceneManager::GetInstance().SetCurrentScene(
             "TitleScene",
-            std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BACKGROUND_TRANSITION_TIME_MS)
+            std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION_SEC, BACKGROUND_TRANSITION_TIME_SEC)
         );
     }
 }
@@ -51,7 +50,7 @@ void GameOverScene::Update(uint64_t deltatime) {
 void GameOverScene::Dispose() {
 }
 
-void GameOverScene::Draw(uint64_t deltatime) {
+void GameOverScene::Draw(float /*deltaSeconds*/) {
     if (!m_image) return;
 
     Renderer::SetUISamplerMode(true);

@@ -57,18 +57,17 @@ void Ally::Init()
 
 }
 
-void Ally::Update(uint64_t deltatime) {
-    Unit::Update(deltatime);
-    float dt = static_cast<float>(deltatime) / 1000.0f;
+void Ally::Update(float deltaSeconds) {
+    Unit::Update(deltaSeconds);
 
     if (m_isDeadFlying) {
-        UpdateDeathFly(dt);
+        UpdateDeathFly(deltaSeconds);
         return;
     }
 
     // 出演出：透明化フェーズ
     if (m_escapeState == EscapeState::Fading && m_escapeAlpha > 0.0f) {
-        m_escapeAlpha -= dt * FADE_OUT_SPEED;
+        m_escapeAlpha -= deltaSeconds * FADE_OUT_SPEED;
         if (m_escapeAlpha <= 0.0f) {
             m_escapeAlpha = 0.0f;
             m_escapeState = EscapeState::Done; // 全に消失
@@ -85,14 +84,14 @@ void Ally::Update(uint64_t deltatime) {
         }
     }
 
-    UpdateFacingRotation(dt);
+    UpdateFacingRotation(deltaSeconds);
     if (m_isTurning) { UpdateWorldMatrix(); return; }
 
 
     // ノックバック中のスライディング更新（優先）
     if (m_isKnockedBack) {
         if (m_slideEndPos.LengthSquared() > 0.001f) {
-            if (UpdateSlideAnimation(deltatime)) {
+            if (UpdateSlideAnimation(deltaSeconds)) {
                 m_isKnockedBack = false;
                 m_slideEndPos = Vector3(0, 0, 0);
 
@@ -113,12 +112,12 @@ void Ally::Update(uint64_t deltatime) {
         return;
     }
 
-    if (m_isDigging) { UpdateDiggingAnimation(dt); }
+    if (m_isDigging) { UpdateDiggingAnimation(deltaSeconds); }
     UpdateWorldMatrix();
 
 }
 
-void Ally::OnDraw(uint64_t deltatime) {
+void Ally::OnDraw(float /*deltaSeconds*/) {
     if (m_escapeAlpha <= 0.0f) return;
 
     if (m_shader) m_shader->SetGPU();

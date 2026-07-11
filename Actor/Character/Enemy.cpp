@@ -76,9 +76,8 @@ void Enemy::Init() {
 }
 
 
-void Enemy::Update(uint64_t dt) {
-	Unit::Update(dt);
-	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
+void Enemy::Update(float deltaSeconds) {
+	Unit::Update(deltaSeconds);
 
 	UpdateFacingRotation(deltaSeconds);
 
@@ -124,7 +123,7 @@ void Enemy::Update(uint64_t dt) {
 
 	switch (m_state) {
 	case EnemyState::MOVING:
-		UpdateMove(dt);
+		UpdateMove(deltaSeconds);
 		break;
 
 	case EnemyState::ATTACKING:
@@ -151,7 +150,7 @@ void Enemy::Update(uint64_t dt) {
 					}
 				}
 				};
-			if (UpdateAttackAnimation(dt, impactCallback)) {
+			if (UpdateAttackAnimation(deltaSeconds, impactCallback)) {
 				//アタックアニメ実行、完了の検査
 				m_state = EnemyState::IDLE;
 				m_isCharging = false;
@@ -162,7 +161,7 @@ void Enemy::Update(uint64_t dt) {
 
 	case EnemyState::KNOCKBACK:
 		if (m_slideEndPos.LengthSquared() > 0.001f) {
-			if (UpdateSlideAnimation(dt)) {
+			if (UpdateSlideAnimation(deltaSeconds)) {
 				m_state = EnemyState::IDLE;
 				m_slideEndPos = Vector3(0, 0, 0);
 				if (m_currentHP <= 0) {
@@ -180,7 +179,7 @@ void Enemy::Update(uint64_t dt) {
 			}
 		}
 		else {
-			if (UpdateAttackAnimation(dt, nullptr)) {
+			if (UpdateAttackAnimation(deltaSeconds, nullptr)) {
 				// 壁に激突した後も生死判定を行い、HPが0なら死亡処理を実行する
 				if (m_currentHP <= 0) Die();
 				else m_state = EnemyState::IDLE;// 生き残っている場合のみIDLEへ
@@ -193,7 +192,7 @@ void Enemy::Update(uint64_t dt) {
 	UpdateWorldMatrix();
 }
 
-void Enemy::OnDraw(uint64_t dt) {
+void Enemy::OnDraw(float /*deltaSeconds*/) {
 
 	if (m_enemyShader != nullptr) m_enemyShader->SetGPU();
 
@@ -381,7 +380,7 @@ void Enemy::EnemyStartMoveTo(std::vector<Tile*> path) {
 	m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
 }
 
-void Enemy::UpdateMove(uint64_t delta) {
+void Enemy::UpdateMove(float deltaSeconds) {
 	Vector3 currentPos = this->GetSRT().pos;
 	Vector3 direction = m_targetWorldPos - currentPos;
 	SetFacingFromVector(direction);
@@ -394,8 +393,7 @@ void Enemy::UpdateMove(uint64_t delta) {
 		else m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
 	}
 	else {
-		float dt = static_cast<float>(delta) / 1000.0f;
-		float moveStep = m_moveSpeed * dt;
+		float moveStep = m_moveSpeed * deltaSeconds;
 		float dist = std::sqrt(distanceSq);
 		if (dist > 0.0001f) {
 			direction = direction * (1.0f / dist);
@@ -504,7 +502,7 @@ void Enemy::DrawUI() {
 	}
 }
 
-void Enemy::OnDrawFloorUI(uint64_t dt) {
+void Enemy::OnDrawFloorUI(float /*deltaSeconds*/) {
 	if (m_currentHP <= 0) return;
 
 	// --- 移動中かつ移動範囲データが存在する場合、薄い緑色で描画 ---
@@ -522,7 +520,7 @@ void Enemy::OnDrawFloorUI(uint64_t dt) {
 	}
 }
 
-void Enemy::OnDrawOverlay(uint64_t dt) {
+void Enemy::OnDrawOverlay(float /*deltaSeconds*/) {
 	if (m_currentHP <= 0) return;
 
 	// 敵の攻撃意図（赤い矢印）を最前面に描画

@@ -19,8 +19,8 @@ public:
 
 private:
     float m_alpha = 0.0f;
-    float m_duration;
-    uint64_t m_elapsed = 0;
+    float m_duration;      // フェード時間（秒）
+    float m_elapsed = 0.0f; // 経過時間（秒）
     Mode m_mode;
 
     /**
@@ -37,11 +37,11 @@ public:
     /**
     * @brief コンストラクタ
      *
-    * @param durationMs フェード時間（ミリ秒）
+    * @param durationSeconds フェード時間（秒）
     * @param mode フェードモード（デフォルトは FadeInOut）
     */
-    explicit FadeTransition(float durationMs, Mode mode = Mode::FadeInOut)
-        : m_duration(durationMs), m_mode(mode) {}
+    explicit FadeTransition(float durationSeconds, Mode mode = Mode::FadeInOut)
+        : m_duration(durationSeconds), m_mode(mode) {}
 
     /**
      * @brief フェード演出の開始処理
@@ -53,9 +53,9 @@ public:
     /**
      * @brief フェード演出の更新処理
     *
-    * @param deltaTime 前フレームからの経過時間（マイクロ秒）
+    * @param deltaSeconds 前フレームからの経過時間（秒）
     */
-    void Update(uint64_t deltaTime) override;
+    void Update(float deltaSeconds) override;
 
     /**
     * @brief 黒フェード矩形の描画処理

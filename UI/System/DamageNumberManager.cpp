@@ -45,8 +45,7 @@ void DamageNumberManager::Init(GameContext* context) {
     }
 }
 
-void DamageNumberManager::Update(uint64_t dt) {
-    float deltaSeconds = static_cast<float>(dt) / 1000.0f;
+void DamageNumberManager::Update(float deltaSeconds) {
     // 寿命が尽きたダメージ表示の削除と上昇更新
     for (auto it = m_activeNumbers.begin(); it != m_activeNumbers.end();) {
         it->timer += deltaSeconds;

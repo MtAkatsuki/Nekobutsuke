@@ -20,8 +20,8 @@ public:
 	// ---------------------------------------------------------
 	void Dispose() override {}
 	virtual void Init(MapModelType type, Vector3 position);
-	virtual void Update(uint64_t delta) override;
-	void OnDraw(uint64_t delta) override;
+	virtual void Update(float deltaSeconds) override;
+	void OnDraw(float deltaSeconds) override;
 
 	// ---------------------------------------------------------
 	// 属性・判定インターフェース (Attributes & Checks)

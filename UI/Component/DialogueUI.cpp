@@ -26,12 +26,11 @@ void DialogueUI::Init(GameContext* context) {
     m_isVisible = false;
 }
 
-void DialogueUI::Update(uint64_t dt) {
+void DialogueUI::Update(float deltaSeconds) {
     if (!m_isVisible) return;
 
     // タイマーが正数の場合のみ時間を減算（負数は無限表示扱い）
     if (m_displayTimer > 0.0f) {
-        float deltaSeconds = static_cast<float>(dt) / 1000.0f;
         m_displayTimer -= deltaSeconds;
 
         if (m_displayTimer <= 0.0f) {

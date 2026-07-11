@@ -7,8 +7,7 @@ namespace {
 	const float ACT_INTERVAL = 0.5f; // 敵の行動と行動の間のインターバル待機時間
 }
 
-void EnemyManager::Update(uint64_t dt) {
-	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
+void EnemyManager::Update(float deltaSeconds) {
 
 	// フェーズの早期終了判定
 	if (m_state != EnemyPhaseState::IDLE && m_state != EnemyPhaseState::ALL_FINISHED)

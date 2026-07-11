@@ -16,7 +16,12 @@ namespace {
 	constexpr uint64_t TARGET_FPS = 60;
 	constexpr uint64_t FIXED_STEP_MS = 16;  // 16ms (約60FPS相当の固定ステップ)
 	constexpr uint64_t DELTA_TIME_MAX_MS = 100; // delta_timeのクランプ上限（スパイク対策）
-	constexpr float    INITIAL_FADE_DURATION = 100.0f;
+	constexpr float    INITIAL_FADE_DURATION_SEC = 0.1f; // 起動時フェードの時間（秒）
+
+	// ミリ秒 → 秒 変換。時間の単位換算はこの境界（Game層）でのみ行い、
+	// 以降のゲーム・シーン・UIレイヤーはすべて float 秒で統一する。
+	constexpr float MS_PER_SECOND = 1000.0f;
+	constexpr float FIXED_STEP_SECONDS = FIXED_STEP_MS / MS_PER_SECOND;
 }
 
 static uint64_t g_accumulator = 0; // 固定ステップ更新用のタイムアキュムレータ
@@ -49,7 +54,7 @@ void GameInit()
 	DBG_TRACE("[Step 5] Setting Current Scene...");
 	
 	SceneManager::GetInstance().SetCurrentScene("TitleScene",
-		std::make_unique<FadeTransition>(INITIAL_FADE_DURATION, FadeTransition::Mode::FadeInOnly));
+		std::make_unique<FadeTransition>(INITIAL_FADE_DURATION_SEC, FadeTransition::Mode::FadeInOnly));
 	DBG_TRACE("[Step 5] OK.");
 }
 
@@ -59,7 +64,7 @@ void GameUpdate(uint64_t deltatime){
 	CDirectInput::GetInstance().GetMouseState();
 
 	// シーンマネージャの更新 (現在は固定ステップで回している)
-	SceneManager::GetInstance().Update(FIXED_STEP_MS);
+	SceneManager::GetInstance().Update(FIXED_STEP_SECONDS);
 
 	g_accumulator -= FIXED_STEP_MS;
 }
@@ -77,7 +82,7 @@ void GameDraw(uint64_t deltatime){
 	// レンダリング前処理
 	Renderer::Begin();
 
-	SceneManager::GetInstance().Draw(deltatime);
+	SceneManager::GetInstance().Draw(static_cast<float>(deltatime) / MS_PER_SECOND);
 	Renderer::ResolveToBackbuffer();
 
 	if (DebugUI::IsVisible()) {

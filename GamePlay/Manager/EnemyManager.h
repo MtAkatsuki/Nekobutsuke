@@ -27,7 +27,7 @@ public:
 	// ライフサイクルと初期化 (Lifecycle & Initialization)
 	// ---------------------------------------------------------
 	void Init(GameContext* context) { m_context = context; }
-	void Update(uint64_t dt);
+	void Update(float deltaSeconds);
 	void ClearAll();
 
 	// ---------------------------------------------------------

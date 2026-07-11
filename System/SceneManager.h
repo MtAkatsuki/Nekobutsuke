@@ -24,8 +24,9 @@ public:
     // ---------------------------------------------------------
     void Init();
     void Dispose();
-    void Update(uint64_t deltatime);
-    void Draw(uint64_t deltatime);
+    // deltaSeconds: 前フレームからの経過時間（秒）
+    void Update(float deltaSeconds);
+    void Draw(float deltaSeconds);
 
     // ---------------------------------------------------------
     // シーン遷移制御 (Flow)
