@@ -66,10 +66,8 @@ void Trap::OnDraw(uint64_t delta) {
     // 完全に縮小されている（消失済み）場合は描画をスキップし、GPU負荷を軽減する
     if (m_srt.scale.x <= 0.001f || !m_renderer) return;
 
-    auto shader = MeshManager::GetShader<CShader>("toonshader");
-    if (shader) {
-        shader->SetGPU();
-    }
+    if (!m_toonShader) m_toonShader = MeshManager::GetShader<CShader>("toonshader");
+    if (m_toonShader) m_toonShader->SetGPU();
 
     Renderer::SetBlendState(BS_ALPHABLEND);
     Renderer::SetDepthEnable(true);

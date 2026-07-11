@@ -359,7 +359,7 @@ void Enemy::ExecuteAI() {
 		path.resize(bestIdx + 1);                         // 「最も近い移動先」まで経路を切り詰める
 		m_currentMovePoints -= (int)path.size();
 
-		EnemyStartMoveTo(path);
+		EnemyStartMoveTo(std::move(path));
 	}
 }
 
@@ -375,7 +375,7 @@ void Enemy::EnemyStartMoveTo(std::vector<Tile*> path) {
 	Tile* oldTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
 	if (oldTile && oldTile->occupant == this) oldTile->occupant = nullptr;
 
-	m_currentPath = path;
+	m_currentPath = std::move(path);
 	m_pathIndex = 0;
 	m_state = EnemyState::MOVING;
 	m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);

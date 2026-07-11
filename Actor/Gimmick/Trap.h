@@ -2,6 +2,8 @@
 
 #include "../Base/MapObject.h"
 
+class CShader;
+
 // =========================================================
 // Trap クラス
 // マップ上の罠ギミック。ユニットが進入(OnEnter)した際にダメージを与え、
@@ -45,4 +47,6 @@ private:
 	bool m_isDisappearing = false; // 消失アニメーション再生中フラグ
 	float m_animTimer = 0.0f;      // アニメーション進行タイマー
 	Vector3 m_initialScale;        // 開始時の基準スケール
+
+	CShader* m_toonShader = nullptr;
 };

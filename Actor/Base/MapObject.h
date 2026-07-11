@@ -36,6 +36,7 @@ public:
 	// ゲッター / セッター (Getters & Setters)
 	// ---------------------------------------------------------
 	MapModelType GetType() const { return m_type; }
+	MapObject* AsMapObject() override { return this; }
 
 	void SetGridPosition(int x, int z) {
 		m_gridX = x;

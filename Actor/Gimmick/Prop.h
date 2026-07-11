@@ -3,6 +3,8 @@
 #include "../Base/MapObject.h"
 #include "../../System/CStaticMesh.h"
 
+class CShader;
+
 // =========================================================
 // Prop クラス
 // 家具や障害物などの環境モデル。
@@ -31,6 +33,11 @@ public:
 private:
 	int m_sizeX = 1; // 占有する幅（X軸）
 	int m_sizeZ = 1; // 占有する奥行き（Z軸）
+
+	// --- 描画リソースキャッシュ（毎フレームの文字列検索を回避） ---
+	CShader* m_toonShader = nullptr;
+	CShader* m_blobShader = nullptr;
+	CStaticMeshRenderer* m_blobMesh = nullptr;
 private:
 	void DrawPropShadow();
 };

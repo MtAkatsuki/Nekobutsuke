@@ -41,20 +41,9 @@ void Prop::Update(uint64_t delta) {
     if (!m_context) return;
     float dt = static_cast<float>(delta) / 1000.0f;
 
-    // 1. 全ユニットの収集：視認性を確保すべき全対象をリストアップ
-    std::vector<Unit*> unitsToCheck;
-    if (m_context->GetPlayer()) unitsToCheck.push_back(m_context->GetPlayer());
-    if (m_context->GetAlly()) unitsToCheck.push_back(m_context->GetAlly());
+    // 遮蔽（オクルージョン）検知：ユニットが家具のすぐ裏に居るか
 
-    if (m_context->GetEnemyManager()) {
-        const auto& enemies = m_context->GetEnemyManager()->GetAllEnemies();
-        for (auto* e : enemies) {
-            if (e && !e->IsDead()) unitsToCheck.push_back(e);
-        }
-    }
-
-    // 2. 遮蔽（オクルージョン）検知ロジック
-    bool isOccluding = false;
+    // コンテナへ収集せず、その場で判定して短絡する（毎フレームのヒープ確保を回避）
     int propMinX = m_gridX;
     int propMaxX = m_gridX + m_sizeX - 1;
     int propMaxZ = m_gridZ + m_sizeZ - 1;
@@ -62,21 +51,23 @@ void Prop::Update(uint64_t delta) {
     // 距離制限：家具の後ろ深く（遠く）にいる場合は、視覚的に問題ないため透明化を解除する
     int occlusionLimitZ = propMaxZ + OCCLUSION_DEPTH;
 
-    for (const auto* unit : unitsToCheck) {
-        if (!unit) continue;
-
+    auto isBehind = [&](const Unit* unit) {
+        if (!unit) return false;
         int unitX = unit->GetUnitGridX();
         int unitZ = unit->GetUnitGridZ();
-
         // 家具の幅(X軸)に収まっており、かつ家具のすぐ裏(Z軸)にいる場合
-        if (unitX >= propMinX && unitX <= propMaxX &&
-            unitZ >= m_gridZ && unitZ <= occlusionLimitZ) {
-            isOccluding = true;
-            break;
+        return unitX >= propMinX && unitX <= propMaxX &&
+            unitZ >= m_gridZ && unitZ <= occlusionLimitZ;
+        };
+
+    bool isOccluding = isBehind(m_context->GetPlayer()) || isBehind(m_context->GetAlly());
+    if (!isOccluding && m_context->GetEnemyManager()) {
+        for (const auto* e : m_context->GetEnemyManager()->GetAllEnemies()) {
+            if (e && !e->IsDead() && isBehind(e)) { isOccluding = true; break; }
         }
     }
 
-    // 3. 状態に応じた目標アルファの設定と線形補間（Lerp）によるフェード
+    // 状態に応じた目標アルファの設定と線形補間（Lerp）によるフェード
     m_targetAlpha = isOccluding ? OCCLUDED_ALPHA : NORMAL_ALPHA;
     m_currentAlpha += (m_targetAlpha - m_currentAlpha) * ALPHA_FADE_SPEED * dt;
 
@@ -88,10 +79,8 @@ void Prop::OnDraw(uint64_t delta) {
 
     DrawPropShadow();
 
-    auto shader = MeshManager::GetShader<CShader>("toonshader");
-    if (shader) {
-        shader->SetGPU();
-    }
+    if (!m_toonShader) m_toonShader = MeshManager::GetShader<CShader>("toonshader");
+    if (m_toonShader) m_toonShader->SetGPU();
 
     // 半透明描画のためのステート設定
     Renderer::SetBlendState(BS_ALPHABLEND);
@@ -110,9 +99,10 @@ void Prop::GetDimensions(MapModelType type, int& outW, int& outD) {
 
 void Prop::DrawPropShadow() {
     if (!Renderer::s_shadowEnabled) return;
-    auto* blob = MeshManager::GetShader<CShader>("blobshader");
-    auto* mesh = MeshManager::GetRenderer<CStaticMeshRenderer>("range_panel_mesh"); // 1x1 plane
-    if (!blob || !mesh) return;
+    if (!m_blobShader) m_blobShader = MeshManager::GetShader<CShader>("blobshader");
+    if (!m_blobMesh)   m_blobMesh = MeshManager::GetRenderer<CStaticMeshRenderer>("range_panel_mesh"); // 1x1 plane
+    if (!m_toonShader) m_toonShader = MeshManager::GetShader<CShader>("toonshader");
+    if (!m_blobShader || !m_blobMesh || !m_toonShader) return;
 
     Vector3 p = m_srt.pos;              // Propのposは占有範囲の中心位置（Init内でoffset加算済み）
     p.y = ZFight::Blob;
@@ -121,11 +111,11 @@ void Prop::DrawPropShadow() {
     Matrix4x4 w = Matrix4x4::CreateScale(gx, 1.0f, gz) * Matrix4x4::CreateTranslation(p);
     Renderer::SetWorldMatrix(&w);
 
-    blob->SetGPU();
+    m_blobShader->SetGPU();
     Renderer::SetBlendState(BS_ALPHABLEND);
     Renderer::DisableCulling(false);   // 片面plane → 両面描画
     Renderer::SetDepthReadOnly();      // キャラクターや他の影とのz-fightingを防止
-    mesh->Draw();
+    m_blobMesh->Draw();
 
     Renderer::SetDepthEnable(true);
     Renderer::DisableCulling(true);

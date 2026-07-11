@@ -5,6 +5,7 @@
 #include "../../System/renderer.h"
 
 class GameContext;
+class MapObject;
 
 // =========================================================
 // GameObject クラス
@@ -26,6 +27,8 @@ public:
 
 	virtual void Update(uint64_t delta) = 0;
 	virtual void Dispose() = 0;
+	// MapObject への型問い合わせ（描画ループでの dynamic_cast / RTTI 回避用）
+	virtual MapObject* AsMapObject() { return nullptr; }
 
 	// ---------------------------------------------------------
 	// レンダリングパイプライン呼び出し口

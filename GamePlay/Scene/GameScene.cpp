@@ -639,7 +639,7 @@ void GameScene::DrawBackgroundLayer() {
 
 void GameScene::DrawFloorLayer(uint64_t deltatime) {
 	for (const auto& obj : m_gameObjectList) {
-		MapObject* mapObj = dynamic_cast<MapObject*>(obj.get());
+		MapObject* mapObj = obj->AsMapObject();
 		if (mapObj && mapObj->GetType() == MapModelType::FLOOR) {
 			obj->Draw(deltatime);
 		}
@@ -734,9 +734,11 @@ void GameScene::DrawScreenSpaceUI() {
 	// --- 1. キャラクター追従UI (低層) ---
 	if (m_player) m_player->DrawUI();
 	if (m_ally && m_ally->GetHP() > 0) m_ally->DrawUI();
-	for (const auto& obj : m_gameObjectList) {
-		Enemy* enemy = dynamic_cast<Enemy*>(obj.get());
-		if (enemy && !enemy->IsDead()) enemy->DrawUI();
+	// EnemyManager が管理する敵リストを直接使用（全リスト走査 + RTTI を回避）
+	if (m_context && m_context->GetEnemyManager()) {
+		for (Enemy* enemy : m_context->GetEnemyManager()->GetAllEnemies()) {
+			if (enemy && !enemy->IsDead()) enemy->DrawUI();
+		}
 	}
 	if (m_dialogueUI) m_dialogueUI->Draw();
 

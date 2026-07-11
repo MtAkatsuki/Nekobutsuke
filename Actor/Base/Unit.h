@@ -15,6 +15,7 @@ class MapManager;
 class TurnManager;
 struct Tile;
 class CStaticMeshRenderer;
+class CShader;
 
 // =========================================================
 // Unit クラス
@@ -115,6 +116,14 @@ protected:
 
 	// --- レンダリング関連 ---
 	CStaticMeshRenderer* m_renderer = nullptr;
+	// --- 描画リソースキャッシュ（毎フレームの文字列検索を回避） ---
+	// シェーダーはシーンInitで登録済み、ユニットはレベルロードで再生成されるため
+	// キャッシュの生存期間はリソースと一致する（初回使用時に取得）
+	CShader* m_toonShader = nullptr;
+	CShader* m_outlineShader = nullptr;
+	CShader* m_blobShader = nullptr;
+	CStaticMeshRenderer* m_blobMesh = nullptr;
+	CStaticMeshRenderer* m_pushArrowMesh = nullptr;
 
 	std::unique_ptr<HPBar> m_hpBar;
 

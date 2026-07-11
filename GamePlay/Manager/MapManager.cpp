@@ -3,10 +3,12 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <unordered_set>
+#include "MapManager.h"
+#include "EnemyManager.h"
 #include "../../Core/DebugLog.h"
 #include "../../Actor/Base/GameObject.h"
 #include "../../GamePlay/Scene/GameScene.h"
-#include "MapManager.h"
 #include "../../Actor/Base/MapObject.h"
 #include "../../System/RandomEngine.h"
 #include "../../System/Utility/WorldToScreen.h"
@@ -15,7 +17,6 @@
 #include "../../Actor/Character/Player.h"
 #include "../../Actor/Character/Enemy.h"
 #include "../../Actor/Character/Ally.h"
-#include "EnemyManager.h"
 #include "../../Core/GameContext.h"
 
 namespace {
@@ -250,9 +251,9 @@ std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int max
 	std::queue<std::pair<Tile*, int>> q;//FIFO
 	q.push({ startTile, 0 });
 
-	//訪問済みタイルを追跡するセット
-	std::vector<Tile*> visited;
-	visited.push_back(startTile);
+	//訪問済みタイルを追跡するセット（unordered_setでO(1)判定）
+	std::unordered_set<Tile*> visited;
+	visited.insert(startTile);
 	reachables.push_back(startTile);//スタートタイルも移動範囲内に含む
 
 	while (!q.empty()) //キューが空になるまでループ
@@ -276,20 +277,11 @@ std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int max
 
 			if (next && IsWalkable(nx, nz))
 			{
-				bool isVisited = false;
-				for (auto* v : visited) //訪問済みタイルの検査
+				// insert の戻り値で「未訪問なら追加」を一度に判定（O(1)）
+				if (visited.insert(next).second)
 				{
-					if (v == next)
-					{
-						isVisited = true;
-						break;
-					}
-				}
-				if (!isVisited)
-				{
-					visited.push_back(next);
 					reachables.push_back(next);
-					q.push({ next,dist + 1 });//ここで次検査する必要なTileをキューに追加(1->4->4*3->...)
+					q.push({ next, dist + 1 });
 				}
 			}
 		}

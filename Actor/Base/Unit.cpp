@@ -361,15 +361,16 @@ void Unit::DrawModel() {
 void Unit::DrawOutline()
 {
 	if (Renderer::GetToonParam().OutlineColor.w <= 0.0001f) return;  // 幅0 = 無効化（不要な1回分のDrawを省略）
-	auto* outline = MeshManager::GetShader<CShader>("outlineshader");
-	if (!outline) return;
+	if (!m_outlineShader) m_outlineShader = MeshManager::GetShader<CShader>("outlineshader");
+	if (!m_toonShader)    m_toonShader = MeshManager::GetShader<CShader>("toonshader");
+	if (!m_outlineShader || !m_toonShader) return;
 
-	outline->SetGPU();          // アウトライン用VS/PSへ切り替え
+	m_outlineShader->SetGPU();          // アウトライン用VS/PSへ切り替え
 	Renderer::SetCullFront();   // 表面をカリングし、裏面シェルのみ描画
 	m_renderer->Draw();         // 同じmeshを外側へ拡張して再描画
 
 	// 復元：トゥーンシェーディング + 通常の裏面カリング
-	MeshManager::GetShader<CShader>("toonshader")->SetGPU();
+	m_toonShader->SetGPU();
 	Renderer::DisableCulling(true);  // true = CULL_BACK
 }
 
@@ -381,21 +382,22 @@ void Unit::DrawBlobShadow() {
 		* Matrix4x4::CreateTranslation(p);
 	Renderer::SetWorldMatrix(&w);
 
-	auto* blob = MeshManager::GetShader<CShader>("blobshader");
-	auto* mesh = MeshManager::GetRenderer<CStaticMeshRenderer>("range_panel_mesh");
-	if (!blob || !mesh) return;
+	if (!m_blobShader) m_blobShader = MeshManager::GetShader<CShader>("blobshader");
+	if (!m_blobMesh)   m_blobMesh = MeshManager::GetRenderer<CStaticMeshRenderer>("range_panel_mesh");
+	if (!m_toonShader) m_toonShader = MeshManager::GetShader<CShader>("toonshader");
+	if (!m_blobShader || !m_blobMesh || !m_toonShader) return;
 
-	blob->SetGPU();
+	m_blobShader->SetGPU();
 	Renderer::SetBlendState(BS_ALPHABLEND);
 	Renderer::DisableCulling(false);
 	Renderer::SetDepthReadOnly();
-	mesh->Draw();
+	m_blobMesh->Draw();
 
 	// 復元：トゥーン + ブレンド無効
 	Renderer::SetDepthEnable(true); 
 	Renderer::DisableCulling(true);
 	Renderer::SetBlendState(BS_NONE);
-	MeshManager::GetShader<CShader>("toonshader")->SetGPU();
+	m_toonShader->SetGPU();
 }
 
 void Unit::DrawUI() {
@@ -410,8 +412,8 @@ void Unit::DrawUI() {
 }
 
 void Unit::DrawPushPreview(Direction pushDir) {
-	auto* pushArrowRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_push_mesh");
-	if (!pushArrowRenderer || !m_context || !m_context->GetMapManager()) return;
+	if (!m_pushArrowMesh) m_pushArrowMesh = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_push_mesh");
+	if (!m_pushArrowMesh || !m_context || !m_context->GetMapManager()) return;
 
 	MapManager* map = m_context->GetMapManager();
 	DirOffset offset = DirOffset::From(pushDir);
@@ -445,12 +447,12 @@ void Unit::DrawPushPreview(Direction pushDir) {
 
 	Renderer::SetWorldMatrix(&world);
 	Renderer::DisableCulling(false);
-	if (auto* mat = pushArrowRenderer->GetMaterial(0)) {
+	if (auto* mat = m_pushArrowMesh->GetMaterial(0)) {
 		MATERIAL old = mat->GetData();
 		MATERIAL temp = old;
 		temp.Diffuse = arrowColor;
 		mat->SetMaterial(temp);
-		pushArrowRenderer->Draw();
+		m_pushArrowMesh->Draw();
 		mat->SetMaterial(old);
 	}
 	Renderer::DisableCulling(true);
