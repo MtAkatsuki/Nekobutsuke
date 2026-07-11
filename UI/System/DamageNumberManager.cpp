@@ -1,4 +1,4 @@
-#include "DamageNumberManager.h"
+ï»¿#include "DamageNumberManager.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../Core/Application.h"
 #include "../../Core/GameContext.h"
@@ -6,29 +6,34 @@
 #include <cmath>
 
 namespace {
-    // --- “®ìE•`‰æ’è” (Magic Numbers) ---
-    constexpr float FLOAT_SPEED = 0.5f;  // ã¸‘¬“x
-    constexpr float CHAR_WIDTH = 14.0f; // 1•¶š‚ ‚½‚è‚Ì•`‰æ•
+    // --- å‹•ä½œãƒ»æç”»å®šæ•° (Magic Numbers) ---
+    constexpr float FLOAT_SPEED = 0.5f;  // ä¸Šæ˜‡é€Ÿåº¦
+    constexpr float CHAR_WIDTH = 14.0f; // 1æ–‡å­—ã‚ãŸã‚Šã®æç”»å¹…
     constexpr float CULLING_MARGIN = 50.0f;
-    constexpr float DOT_PRODUCT_THRESHOLD = 0.2f;  // ƒJƒƒ‰”w–Ê”»’è—p‚Ì“àÏè‡’l
+    constexpr float DOT_PRODUCT_THRESHOLD = 0.2f;  // ã‚«ãƒ¡ãƒ©èƒŒé¢åˆ¤å®šç”¨ã®å†…ç©é–¾å€¤
 
-    // --- ƒAƒjƒ[ƒVƒ‡ƒ“ƒtƒF[ƒY’è” ---
+    // --- ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãƒ•ã‚§ãƒ¼ã‚ºå®šæ•° ---
     constexpr float PHASE1_DURATION = 0.1f;
-    constexpr float PHASE2_DURATION = 0.3f; // (â‘ÎŠÔ‚Å‚Í‚È‚­“’B“_‚Æ‚µ‚Ä‚ÌİŒvˆÛ)
+    constexpr float PHASE2_DURATION = 0.3f; // (çµ¶å¯¾æ™‚é–“ã§ã¯ãªãåˆ°é”ç‚¹ã¨ã—ã¦ã®è¨­è¨ˆç¶­æŒ)
     constexpr float TOTAL_DURATION = 0.5f;
 
     constexpr float MAX_SCALE_UP = 1.5f;
 
-    // --- UVŒvZ—p ---
-    constexpr float UV_CELL_COUNT = 13.0f; // ƒeƒNƒXƒ`ƒƒ“à‚Ì•¶š•ªŠ„”
+    // --- UVè¨ˆç®—ç”¨ ---
+    constexpr int NUM_GLYPHS = 13;         // æ•°å­—ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®æ–‡å­—æ•°ï¼ˆ"0123456789+-."ï¼‰
+    constexpr float UV_CELL_COUNT = static_cast<float>(NUM_GLYPHS); // ãƒ†ã‚¯ã‚¹ãƒãƒ£å†…ã®æ–‡å­—åˆ†å‰²æ•°
+
+    // --- æ•°å­—ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®ãƒ†ã‚¯ã‚¹ãƒãƒ£å®Ÿå¯¸ï¼ˆpxï¼‰ ---
+    constexpr float DIGIT_TEX_W = 16.0f;
+    constexpr float DIGIT_TEX_H = 32.0f;
 }
 
 void DamageNumberManager::Init(GameContext* context) {
     m_context = context;
-    m_sprite = std::make_unique<CSprite>(16, 32, "Assets/texture/suuji16x32_05.png");
+    m_sprite = std::make_unique<CSprite>(DIGIT_TEX_W, DIGIT_TEX_H, "Assets/texture/suuji16x32_05.png");
 
     const char numberChars[] = "0123456789+-.";
-    for (int i = 0; i < 13; ++i) {
+    for (int i = 0; i < NUM_GLYPHS; ++i) {
         float u_start = static_cast<float>(i) / UV_CELL_COUNT;
         float u_end = static_cast<float>(i + 1) / UV_CELL_COUNT;
 
@@ -42,7 +47,7 @@ void DamageNumberManager::Init(GameContext* context) {
 
 void DamageNumberManager::Update(uint64_t dt) {
     float deltaSeconds = static_cast<float>(dt) / 1000.0f;
-    // õ–½‚ªs‚«‚½ƒ_ƒ[ƒW•\¦‚Ìíœ‚Æã¸XV
+    // å¯¿å‘½ãŒå°½ããŸãƒ€ãƒ¡ãƒ¼ã‚¸è¡¨ç¤ºã®å‰Šé™¤ã¨ä¸Šæ˜‡æ›´æ–°
     for (auto it = m_activeNumbers.begin(); it != m_activeNumbers.end();) {
         it->timer += deltaSeconds;
         it->currentOffset.y += FLOAT_SPEED * deltaSeconds;
@@ -66,7 +71,7 @@ void DamageNumberManager::Draw() {
     float screenW = static_cast<float>(Application::GetWidth());
     float screenH = static_cast<float>(Application::GetHeight());
 
-    // ”w–ÊƒJƒŠƒ“ƒO—p‚ÉƒJƒƒ‰‚Ì•ûŒüƒxƒNƒgƒ‹‚ğŒvZ
+    // èƒŒé¢ã‚«ãƒªãƒ³ã‚°ç”¨ã«ã‚«ãƒ¡ãƒ©ã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã‚’è¨ˆç®—
     Vector3 camPos = currentCamera->GetPosition();
     Vector3 camForward = currentCamera->GetLookat() - camPos;
     camForward.Normalize();
@@ -75,21 +80,21 @@ void DamageNumberManager::Draw() {
         float currentScale = 1.0f;
         float currentAlpha = 1.0f;
 
-        // ƒtƒF[ƒY‚ÉŠî‚Ã‚­ Ease ƒAƒjƒ[ƒVƒ‡ƒ“ŒvZ
+        // ãƒ•ã‚§ãƒ¼ã‚ºã«åŸºã¥ã Ease ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³è¨ˆç®—
         if (dmg.timer < dmg.timePhase1) {
-            // Phase 1: Fade In (EaseOut Quad - ¨‚¢‚æ‚­”ò‚Ño‚·)
+            // Phase 1: Fade In (EaseOut Quad - å‹¢ã„ã‚ˆãé£›ã³å‡ºã™)
             float t = dmg.timer / dmg.timePhase1;
             t = 1.0f - std::pow(1.0f - t, 2.0f);
             currentScale = std::lerp(0.0f, MAX_SCALE_UP, t);
             currentAlpha = std::lerp(0.0f, 1.0f, t);
         }
         else if (dmg.timer < dmg.timePhase2) {
-            // Phase 2: Wait (Å‘åƒTƒCƒY‚Åˆê’â~)
+            // Phase 2: Wait (æœ€å¤§ã‚µã‚¤ã‚ºã§ä¸€æ™‚åœæ­¢)
             currentScale = MAX_SCALE_UP;
             currentAlpha = 1.0f;
         }
         else {
-            // Phase 3: Fade Out (EaseIn Quad - ‰Á‘¬‚µ‚È‚ª‚çÁ‚¦‚é)
+            // Phase 3: Fade Out (EaseIn Quad - åŠ é€Ÿã—ãªãŒã‚‰æ¶ˆãˆã‚‹)
             float fadeOutDuration = dmg.totalTime - dmg.timePhase2;
             float t = (dmg.timer - dmg.timePhase2) / fadeOutDuration;
             t = std::pow(t, 2.0f);
@@ -99,20 +104,20 @@ void DamageNumberManager::Draw() {
 
         Vector3 worldPos = dmg.startWorldPos + dmg.currentOffset;
 
-        // ƒJƒƒ‰‚Ì— ‘¤‚É‰ñ‚Á‚½”’l‚ğ•`‰æ‚µ‚È‚¢i“àÏ‚É‚æ‚éŠÈˆÕ”»’èj
+        // ã‚«ãƒ¡ãƒ©ã®è£å´ã«å›ã£ãŸæ•°å€¤ã‚’æç”»ã—ãªã„ï¼ˆå†…ç©ã«ã‚ˆã‚‹ç°¡æ˜“åˆ¤å®šï¼‰
         Vector3 toPoint = worldPos - camPos;
         float dot = camForward.Dot(toPoint);
         if (dot < DOT_PRODUCT_THRESHOLD) continue;
 
         Vector2 screenPos = WorldToScreen(worldPos, view, proj, screenW, screenH);
 
-        // ‰æ–ÊŠOƒJƒŠƒ“ƒO
+        // ç”»é¢å¤–ã‚«ãƒªãƒ³ã‚°
         if (screenPos.x < -CULLING_MARGIN || screenPos.x > screenW + CULLING_MARGIN ||
             screenPos.y < -CULLING_MARGIN || screenPos.y > screenH + CULLING_MARGIN) {
             continue;
         }
 
-        // ƒ}ƒeƒŠƒAƒ‹‚ÌƒAƒ‹ƒtƒ@XV
+        // ãƒãƒ†ãƒªã‚¢ãƒ«ã®ã‚¢ãƒ«ãƒ•ã‚¡æ›´æ–°
         MATERIAL mtrl;
         mtrl.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
         mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, currentAlpha);
@@ -123,14 +128,14 @@ void DamageNumberManager::Draw() {
 
         std::string dmgNumStr = std::to_string(dmg.number);
 
-        // ’†‰›‘µ‚¦‚Ì‚½‚ß‚ÌŒvZ
+        // ä¸­å¤®æƒãˆã®ãŸã‚ã®è¨ˆç®—
         float totalWidth = (dmgNumStr.length() - 1) * CHAR_WIDTH * currentScale;
         float startX = screenPos.x - (totalWidth / 2.0f);
 
         Vector3 position = { startX, screenPos.y, 0.0f };
         Vector3 drawScale = { currentScale, currentScale, 1.0f };
 
-        // 1•¶š‚¸‚ÂUV‚ğØ‚è‘Ö‚¦‚Ä•`‰æ
+        // 1æ–‡å­—ãšã¤UVã‚’åˆ‡ã‚Šæ›¿ãˆã¦æç”»
         for (char c : dmgNumStr) {
             if (m_numberUVs.count(c)) {
                 const UVQuad& uv = m_numberUVs[c];

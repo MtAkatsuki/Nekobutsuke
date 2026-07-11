@@ -22,12 +22,12 @@ public:
     TurnCounter() = default;
 
     void Init() {
-        for (int i = 1; i <= 5; ++i) {
+        for (int i = 1; i <= MAX_TURN_SPRITES; ++i) {
             std::string path = "Assets/texture/ui/turn_" + std::to_string(i) + ".png";
             auto sprite = std::make_unique<CSprite>(NUM_TEX_W, NUM_TEX_H, path.c_str());
             m_numberSprites.push_back(std::move(sprite));
         }
-        m_currentTurn = 5;
+        m_currentTurn = MAX_TURN_SPRITES;
 
         m_escapePromptSprite = std::make_unique<CSprite>(PROMPT_TEX_W, PROMPT_TEX_H, "Assets/texture/ui/escape_prompt.png");
         m_state = AnimState::Hidden;
@@ -59,7 +59,7 @@ public:
         m_animTimer += deltaSeconds;
 
         // 目標の固定座標
-        Vector3 targetPos = (m_currentTurn <= 0) ? Vector3(210.0f, 100.0f, 0.0f) : Vector3(200.0f, 50.0f, 0.0f);
+        Vector3 targetPos = (m_currentTurn <= 0) ? ESCAPE_PROMPT_FIXED_POS : NUMBER_FIXED_POS;
 
         if (m_state == AnimState::CenterPopUp) {
             float t = m_animTimer / TIME_POPUP;
@@ -131,6 +131,11 @@ public:
             m_state == AnimState::MoveToCorner;
     }
 
+public:
+    // 用意されているターン数字テクスチャの枚数（= 表示可能な最大ターン数）
+    // ※ GameScene::INITIAL_TURN_COUNT はこの枚数を超えてはならない
+    static constexpr int MAX_TURN_SPRITES = 5;
+
 private:
     // --- 定数 ---
     static constexpr float NUM_TEX_W = 462.0f;
@@ -142,6 +147,10 @@ private:
     static constexpr float TIME_WAIT = 1.2f;
     static constexpr float TIME_MOVE = 0.5f;
     static constexpr float FINAL_SCALE = 0.8f;
+
+    // 移動アニメーション終着点（画面左上の固定表示位置）
+    static inline const Vector3 ESCAPE_PROMPT_FIXED_POS = Vector3(210.0f, 100.0f, 0.0f);
+    static inline const Vector3 NUMBER_FIXED_POS = Vector3(200.0f, 50.0f, 0.0f);
 
     std::vector<std::unique_ptr<CSprite>> m_numberSprites;
     std::unique_ptr<CSprite> m_escapePromptSprite;

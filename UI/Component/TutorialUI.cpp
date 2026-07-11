@@ -1,17 +1,17 @@
-#include "TutorialUI.h"
+ï»¿#include "TutorialUI.h"
 #include "../../System/CDirectInput.h"
 #include "../../Core/Application.h"
 
 namespace {
-    const float ANIM_SPEED = 5.0f;  // ƒtƒF[ƒhƒCƒ“EƒAƒEƒg‚Ì‘¬“x
+    const float ANIM_SPEED = 5.0f;  // ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ãƒ»ã‚¢ã‚¦ãƒˆã®é€Ÿåº¦
     const float TEX_WIDTH = 1009.0f;
     const float TEX_HEIGHT = 573.0f;
 }
 
 void TutorialUI::Init() {
-    m_images.push_back(std::make_unique<CSprite>(1009, 573, "Assets/texture/ui/tutorial_01.png"));
-    m_images.push_back(std::make_unique<CSprite>(1009, 573, "Assets/texture/ui/tutorial_02.png"));
-    m_images.push_back(std::make_unique<CSprite>(1009, 573, "Assets/texture/ui/tutorial_03.png"));
+    m_images.push_back(std::make_unique<CSprite>(TEX_WIDTH, TEX_HEIGHT, "Assets/texture/ui/tutorial_01.png"));
+    m_images.push_back(std::make_unique<CSprite>(TEX_WIDTH, TEX_HEIGHT, "Assets/texture/ui/tutorial_02.png"));
+    m_images.push_back(std::make_unique<CSprite>(TEX_WIDTH, TEX_HEIGHT, "Assets/texture/ui/tutorial_03.png"));
 
     m_currentIndex = 0;
     m_state = State::APPEARING;
@@ -27,38 +27,38 @@ void TutorialUI::Update(float deltaSeconds) {
 
     switch (m_state) {
     case State::APPEARING:
-        // Šg‘åƒAƒjƒ[ƒVƒ‡ƒ“
+        // æ‹¡å¤§ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³
         m_scale += ANIM_SPEED * deltaSeconds;
         if (m_scale >= 1.0f) {
             m_scale = 1.0f;
-            m_state = State::WAITING; // ƒAƒjƒ[ƒVƒ‡ƒ“I—¹A‘Ò‹@ó‘Ô‚Ö
+            m_state = State::WAITING; // ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³çµ‚äº†ã€å¾…æ©ŸçŠ¶æ…‹ã¸
         }
         break;
 
     case State::WAITING:
-        // EnterƒL[‚Ì“ü—Í‚ğ‘Ò‹@
+        // Enterã‚­ãƒ¼ã®å…¥åŠ›ã‚’å¾…æ©Ÿ
         if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_RETURN)) {
-            m_state = State::DISAPPEARING; // Á¸ƒAƒjƒ[ƒVƒ‡ƒ“‚ğŠJn
+            m_state = State::DISAPPEARING; // æ¶ˆå¤±ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã‚’é–‹å§‹
         }
         break;
 
     case State::DISAPPEARING:
-        // k¬ƒAƒjƒ[ƒVƒ‡ƒ“
+        // ç¸®å°ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³
         m_scale -= ANIM_SPEED * deltaSeconds;
         if (m_scale <= 0.0f) {
             m_scale = 0.0f;
-            m_state = State::FINISHED; // Œ»İ‚Ì‰æ‘œ‚Ì•\¦‚ªI—¹
+            m_state = State::FINISHED; // ç¾åœ¨ã®ç”»åƒã®è¡¨ç¤ºãŒçµ‚äº†
         }
         break;
 
     case State::FINISHED:
-        // Ÿ‚Ì‰æ‘œ‚ÖØ‚è‘Ö‚¦
+        // æ¬¡ã®ç”»åƒã¸åˆ‡ã‚Šæ›¿ãˆ
         m_currentIndex++;
         if (m_currentIndex >= m_images.size()) {
-            m_isAllFinished = true; // ‘S‚Ä‚Ì‰æ‘œ‚ÌÄ¶‚ªI—¹
+            m_isAllFinished = true; // å…¨ã¦ã®ç”»åƒã®å†ç”ŸãŒçµ‚äº†
         }
         else {
-            // Ÿ‚Ì‰æ‘œ‚ğÄ¶‚·‚é€”õ
+            // æ¬¡ã®ç”»åƒã‚’å†ç”Ÿã™ã‚‹æº–å‚™
             m_state = State::APPEARING;
             m_scale = 0.0f;
         }

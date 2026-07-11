@@ -1,4 +1,4 @@
-#include "PlayerActionView.h"
+ï»¿#include "PlayerActionView.h"
 
 #include "../../System/Renderer.h"
 #include "../../System/CStaticMeshRenderer.h"
@@ -11,7 +11,16 @@
 #include "../Base/Unit.h"
 
 namespace {
-    const float GHOST_ALPHA = 0.6f;   // ƒS[ƒXƒgic‘œj‚Ì“§–¾“x
+    const float GHOST_ALPHA = 0.6f;   // ã‚´ãƒ¼ã‚¹ãƒˆï¼ˆæ®‹åƒï¼‰ã®é€æ˜åº¦
+
+    // --- åºŠãƒ’ãƒ³ãƒˆUIã®è¡¨ç¤ºè‰² ---
+    const Color MOVE_RANGE_COLOR = Color(0.0f, 1.0f, 0.0f, 0.4f);     // ç§»å‹•ç¯„å›²ï¼šåŠé€æ˜ã®ç·‘
+    const Color ATTACK_HINT_COLOR = Color(0.9f, 0.0f, 0.0f, 0.2f);    // æ”»æ’ƒå¯èƒ½æ–¹å‘ï¼šè–„ã„èµ¤
+    const Color ATTACK_SELECTED_COLOR = Color(0.9f, 0.0f, 0.0f, 0.8f);// é¸æŠä¸­ã®æ”»æ’ƒæ–¹å‘ï¼šæ¿ƒã„èµ¤
+
+    // --- çµŒè·¯çŸ¢å°ã®è¡¨ç¤ºè‰² ---
+    const Color PATH_NORMAL_COLOR = Color(1.0f, 1.0f, 1.0f, 1.0f);    // ç™½ï¼ˆé€šå¸¸æ™‚ï¼‰
+    const Color PATH_DANGER_COLOR = Color(1.0f, 0.0f, 0.0f, 1.0f);    // èµ¤ï¼ˆç›®çš„åœ°ã«ç½ ãŒã‚ã‚‹æ™‚ï¼‰
 }
 
 void PlayerActionView::Init(GameContext* context) {
@@ -21,7 +30,7 @@ void PlayerActionView::Init(GameContext* context) {
 }
 
 void PlayerActionView::DrawMoveRange(const std::vector<Tile*>& rangeTiles) {
-    m_context->GetMapManager()->DrawColoredTiles(rangeTiles, Color(0, 1, 0, 0.4f));
+    m_context->GetMapManager()->DrawColoredTiles(rangeTiles, MOVE_RANGE_COLOR);
 }
 
 void PlayerActionView::DrawGhost(CStaticMeshRenderer* body, const Vector3& scale, float rotY,
@@ -51,21 +60,19 @@ void PlayerActionView::DrawGhost(CStaticMeshRenderer* body, const Vector3& scale
         mtrl->SetMaterial(m);
     }
 
-    // Player –{‘Ì‚Ìƒ[ƒ‹ƒhs—ñ‚Ö•œŒ³i•`‰æ‘O‚Ìó‘Ô‚É–ß‚·j
+    // Player æœ¬ä½“ã®ãƒ¯ãƒ¼ãƒ«ãƒ‰è¡Œåˆ—ã¸å¾©å…ƒï¼ˆæç”»å‰ã®çŠ¶æ…‹ã«æˆ»ã™ï¼‰
     Matrix4x4 world = restoreWorld;
     Renderer::SetWorldMatrix(&world);
 }
 
 void PlayerActionView::DrawPathLine(const std::vector<Tile*>& path, int startGX, int startGZ) {
-    // ƒXƒ^[ƒg’n“_‚Í•`‰æ‚µ‚È‚¢
+    // ã‚¹ã‚¿ãƒ¼ãƒˆåœ°ç‚¹ã¯æç”»ã—ãªã„
     if (path.empty()) return;
 
-    // –Ú“I’n‚ªŠëŒ¯iã©j‚©‚Ç‚¤‚©‚ğƒ`ƒFƒbƒN
+    // ç›®çš„åœ°ãŒå±é™ºï¼ˆç½ ï¼‰ã‹ã©ã†ã‹ã‚’ãƒã‚§ãƒƒã‚¯
     bool isDanger = (Trap::GetArmedTrap(path.back()) != nullptr);
 
-    Color normalColor(1.0f, 1.0f, 1.0f, 1.0f); // ”’i’Êíj
-    Color dangerColor(1.0f, 0.0f, 0.0f, 1.0f); // ÔiŠëŒ¯j
-    Color targetColor = isDanger ? dangerColor : normalColor;
+    Color targetColor = isDanger ? PATH_DANGER_COLOR : PATH_NORMAL_COLOR;
 
     Tile* startTile = m_context->GetMapManager()->GetTile(startGX, startGZ);
     for (size_t i = 0; i < path.size(); ++i) {
@@ -82,19 +89,19 @@ void PlayerActionView::DrawPathLine(const std::vector<Tile*>& path, int startGX,
         CStaticMeshRenderer* rendererToUse = nullptr;
 
         if (nextTile) {
-            // ’†ŠÔƒ^ƒCƒ‹
+            // ä¸­é–“ã‚¿ã‚¤ãƒ«
             int dxIn = currTile->gridX - prevTile->gridX;
             int dzIn = currTile->gridZ - prevTile->gridZ;
             int dxOut = nextTile->gridX - currTile->gridX;
             int dzOut = nextTile->gridZ - currTile->gridZ;
 
             if (dxIn == dxOut && dzIn == dzOut) {
-                // ’¼üF“ü‚è‚Æo‚ÌŒü‚«‚ªˆê’v
+                // ç›´ç·šï¼šå…¥ã‚Šã¨å‡ºã®å‘ããŒä¸€è‡´
                 rendererToUse = m_pathLineRenderer;
                 rotY = CalculateLineRotation(dxIn, dzIn);
             }
             else {
-                // ŠpF“ü‚è‚Æo‚ÌŒü‚«‚ªˆá‚¤
+                // è§’ï¼šå…¥ã‚Šã¨å‡ºã®å‘ããŒé•ã†
                 rendererToUse = m_pathCornerRenderer;
                 int n1x = prevTile->gridX - currTile->gridX;
                 int n1z = prevTile->gridZ - currTile->gridZ;
@@ -104,7 +111,7 @@ void PlayerActionView::DrawPathLine(const std::vector<Tile*>& path, int startGX,
             }
         }
         else {
-            // ƒS[ƒ‹ƒ^ƒCƒ‹
+            // ã‚´ãƒ¼ãƒ«ã‚¿ã‚¤ãƒ«
             int dx = currTile->gridX - prevTile->gridX;
             int dz = currTile->gridZ - prevTile->gridZ;
 
@@ -134,38 +141,38 @@ void PlayerActionView::DrawPathLine(const std::vector<Tile*>& path, int startGX,
 }
 
 void PlayerActionView::DrawAttackWarningFloor(int gridX, int gridZ, Direction attackDir) {
-    // ‘SUŒ‚‚Å‚«‚é•ûŒü‚Ìƒqƒ“ƒg UI ‚Ì•`‰æ
+    // å…¨æ”»æ’ƒã§ãã‚‹æ–¹å‘ã®ãƒ’ãƒ³ãƒˆ UI ã®æç”»
     std::vector<Tile*> neighbors;
     int dx[] = { 0, 0, -1, 1 };
-    int dz[] = { 1, -1, 0, 0 }; // l‹ß–T
+    int dz[] = { 1, -1, 0, 0 }; // å››è¿‘å‚
     for (int i = 0; i < 4; ++i) {
         Tile* t = m_context->GetMapManager()->GetTile(gridX + dx[i], gridZ + dz[i]);
         if (t) neighbors.push_back(t);
     }
-    m_context->GetMapManager()->DrawColoredTiles(neighbors, Color(0.9f, 0.0f, 0.0f, 0.2f));
-    // Œ»İ‘I‘ğ’†‚Ìƒ^ƒCƒ‹iUŒ‚•ûŒüj‚ğ•`‰æ
+    m_context->GetMapManager()->DrawColoredTiles(neighbors, ATTACK_HINT_COLOR);
+    // ç¾åœ¨é¸æŠä¸­ã®ã‚¿ã‚¤ãƒ«ï¼ˆæ”»æ’ƒæ–¹å‘ï¼‰ã‚’æç”»
     DirOffset offset = DirOffset::From(attackDir);
     Tile* target = m_context->GetMapManager()->GetTile(gridX + offset.x, gridZ + offset.z);
     if (target) {
         std::vector<Tile*> one{ target };
-        m_context->GetMapManager()->DrawColoredTiles(one, Color(0.9f, 0.0f, 0.0f, 0.8f));
+        m_context->GetMapManager()->DrawColoredTiles(one, ATTACK_SELECTED_COLOR);
     }
 }
 
 void PlayerActionView::DrawAttackWarningOverlay(int gridX, int gridZ, Direction attackDir, bool isPush, Unit* self) {
     DirOffset offset = DirOffset::From(attackDir);
     Tile* target = m_context->GetMapManager()->GetTile(gridX + offset.x, gridZ + offset.z);
-    // === ƒmƒbƒNƒoƒbƒN UI ƒvƒŒƒrƒ…[‚ğƒgƒŠƒK[ ===
+    // === ãƒãƒƒã‚¯ãƒãƒƒã‚¯ UI ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’ãƒˆãƒªã‚¬ãƒ¼ ===
     if (target && isPush && target->occupant && target->occupant != self) {
         target->occupant->DrawPushPreview(attackDir);
     }
 }
 
 float PlayerActionView::CalculateLineRotation(int dx, int dz) {
-    if (dx == 1) return 0.0f;           // ‰EiƒfƒtƒHƒ‹ƒgj
-    if (dx == -1) return PI;            // ¶ (180“x)
-    if (dz == 1) return -PI / 2.0f;     // ã (-90“x)
-    if (dz == -1) return PI / 2.0f;     // ‰º (+90“x)
+    if (dx == 1) return 0.0f;           // å³ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆï¼‰
+    if (dx == -1) return PI;            // å·¦ (180åº¦)
+    if (dz == 1) return -PI / 2.0f;     // ä¸Š (-90åº¦)
+    if (dz == -1) return PI / 2.0f;     // ä¸‹ (+90åº¦)
     return 0.0f;
 }
 

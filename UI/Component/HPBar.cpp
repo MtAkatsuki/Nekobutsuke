@@ -1,4 +1,4 @@
-#include "HPBar.h"
+ï»¿#include "HPBar.h"
 #include "../../Core/GameContext.h"
 #include "../../System/Camera.h"
 #include "../../System/Utility/WorldToScreen.h"
@@ -6,12 +6,14 @@
 #include <algorithm> // for max
 
 namespace {
-    // --- ’è”’è‹` (Magic Numbers) ---
-    constexpr float BLINK_INTERVAL_SEC = 0.4f; // “_–ÅüŠúi•bj
-    constexpr float BASE_TEX_WIDTH = 100.0f;
-    constexpr float BASE_TEX_HEIGHT = 84.0f;
-    constexpr float CULLING_MARGIN = 100.0f; // ‰æ–ÊŠOƒJƒŠƒ“ƒO‚Ì—]—Tƒ}[ƒWƒ“
-    constexpr float WORLD_OFFSET_Y = 1.1f;   // ƒ†ƒjƒbƒg‚Ì‘«Œ³‚©‚ç“ªã‚Ö‚ÌƒIƒtƒZƒbƒg
+    // --- å®šæ•°å®šç¾© (Magic Numbers) ---
+    constexpr float BLINK_INTERVAL_SEC = 0.4f; // ç‚¹æ»…å‘¨æœŸï¼ˆç§’ï¼‰
+    constexpr float BASE_TEX_WIDTH = 100.0f;   // æ ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®å®Ÿå¯¸å¹…ï¼ˆpxï¼‰
+    constexpr float BASE_TEX_HEIGHT = 84.0f;   // æ ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®å®Ÿå¯¸é«˜ã•ï¼ˆpxï¼‰
+    constexpr float FULL_TEX_WIDTH = 78.0f;    // ãƒãƒ¼ãƒˆä¸­èº«ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®å®Ÿå¯¸å¹…ï¼ˆpxï¼‰
+    constexpr float FULL_TEX_HEIGHT = 56.0f;   // ãƒãƒ¼ãƒˆä¸­èº«ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®å®Ÿå¯¸é«˜ã•ï¼ˆpxï¼‰
+    constexpr float CULLING_MARGIN = 100.0f; // ç”»é¢å¤–ã‚«ãƒªãƒ³ã‚°ã®ä½™è£•ãƒãƒ¼ã‚¸ãƒ³
+    constexpr float WORLD_OFFSET_Y = 1.1f;   // ãƒ¦ãƒ‹ãƒƒãƒˆã®è¶³å…ƒã‹ã‚‰é ­ä¸Šã¸ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ
 }
 
 float HPBar::s_hpBarOffsetY = 1.0f;
@@ -21,13 +23,13 @@ float HPBar::s_hpBarGap = 1.0f;
 void HPBar::Init(GameContext* context) {
     m_context = context;
 
-    m_frameSprite = std::make_unique<CSprite>(100, 84, "Assets/texture/UI/ui_heart_frame.png");
-    m_fullSprite = std::make_unique<CSprite>(78, 56, "Assets/texture/UI/ui_heart_full.png");
+    m_frameSprite = std::make_unique<CSprite>(BASE_TEX_WIDTH, BASE_TEX_HEIGHT, "Assets/texture/UI/ui_heart_frame.png");
+    m_fullSprite = std::make_unique<CSprite>(FULL_TEX_WIDTH, FULL_TEX_HEIGHT, "Assets/texture/UI/ui_heart_full.png");
 }
 
 void HPBar::Update(float dt) {
     m_blinkTimer += dt;
-    // ƒ_ƒ[ƒWƒvƒŒƒrƒ…[—p‚Ì“_–Åó‘Ô‚ğˆê’èüŠú‚ÅƒgƒOƒ‹
+    // ãƒ€ãƒ¡ãƒ¼ã‚¸ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ç”¨ã®ç‚¹æ»…çŠ¶æ…‹ã‚’ä¸€å®šå‘¨æœŸã§ãƒˆã‚°ãƒ«
     if (m_blinkTimer >= BLINK_INTERVAL_SEC) {
         m_isBlinkOn = !m_isBlinkOn;
         m_blinkTimer = 0.0f;
@@ -40,7 +42,7 @@ void HPBar::Draw(const Vector3& worldPos, int currentHP, int maxHP, int previewD
     Camera* camera = m_context->GetCamera();
     if (!camera) return;
 
-    // À•W•ÏŠ·(3D -> 2D)
+    // åº§æ¨™å¤‰æ›(3D -> 2D)
     Vector3 drawPos = worldPos;
     drawPos.y += WORLD_OFFSET_Y;
 
@@ -48,36 +50,36 @@ void HPBar::Draw(const Vector3& worldPos, int currentHP, int maxHP, int previewD
     float screenH = (float)Application::GetHeight();
     Vector2 screenPos = WorldToScreen(drawPos, camera->GetViewMatrix(), camera->GetProjMatrix(), screenW, screenH);
 
-    // ‰æ–ÊŠOƒJƒŠƒ“ƒO (ƒpƒtƒH[ƒ}ƒ“ƒXÅ“K‰»)
+    // ç”»é¢å¤–ã‚«ãƒªãƒ³ã‚° (ãƒ‘ãƒ•ã‚©ãƒ¼ãƒãƒ³ã‚¹æœ€é©åŒ–)
     if (screenPos.x < -CULLING_MARGIN || screenPos.x > screenW + CULLING_MARGIN ||
         screenPos.y < -CULLING_MARGIN || screenPos.y > screenH + CULLING_MARGIN) {
         return;
     }
 
-    // “®“IƒXƒP[ƒŠƒ“ƒOŒvZ
+    // å‹•çš„ã‚¹ã‚±ãƒ¼ãƒªãƒ³ã‚°è¨ˆç®—
     
-    // ImGui‚Ìİ’è’l(s_hpBarTexSize)‚ğŠî€‚ÉƒAƒXƒyƒNƒg”ä‚ğˆÛ
+    // ImGuiã®è¨­å®šå€¤(s_hpBarTexSize)ã‚’åŸºæº–ã«ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”ã‚’ç¶­æŒ
     float scaleRate = s_hpBarTexSize / BASE_TEX_WIDTH;
     Vector3 scaleVec(scaleRate, scaleRate, 1.0f);
     float actualFrameWidth = BASE_TEX_WIDTH * scaleRate;
 
-    // UI‘S‘Ì‚ğ’†‰›‘µ‚¦‚É‚·‚é‚½‚ß‚ÌŠJnXÀ•W‚ğZo
+    // UIå…¨ä½“ã‚’ä¸­å¤®æƒãˆã«ã™ã‚‹ãŸã‚ã®é–‹å§‹Xåº§æ¨™ã‚’ç®—å‡º
     float totalWidth = (maxHP * actualFrameWidth) + ((maxHP - 1) * s_hpBarGap);
     float startX = screenPos.x - (totalWidth / 2.0f) + (actualFrameWidth / 2.0f);
     float drawY = screenPos.y;
 
-    // HPƒ[ƒ‚Í”ñ•\¦‚Æ‚·‚é‚½‚ßAcurrentHP‚Ì”‚¾‚¯•`‰æƒ‹[ƒv
+    // HPã‚¼ãƒ­æ™‚ã¯éè¡¨ç¤ºã¨ã™ã‚‹ãŸã‚ã€currentHPã®æ•°ã ã‘æç”»ãƒ«ãƒ¼ãƒ—
     for (int i = 0; i < currentHP; i++) {
         float x = startX + (i * (actualFrameWidth + s_hpBarGap));
         Vector3 pos(x, drawY, 0.0f);
 
-        // 1. í‚É’ê˜g‚ğ•`‰æ
+        // 1. å¸¸ã«åº•æ ã‚’æç”»
         m_frameSprite->Draw(scaleVec, Vector3(0, 0, 0), pos);
 
-        // 2. ƒ_ƒ[ƒWƒvƒŒƒrƒ…[”ÍˆÍ“à‚©”»’èi‰E‘¤‚©‚çŒ¸‚é‘z’èj
+        // 2. ãƒ€ãƒ¡ãƒ¼ã‚¸ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ç¯„å›²å†…ã‹åˆ¤å®šï¼ˆå³å´ã‹ã‚‰æ¸›ã‚‹æƒ³å®šï¼‰
         bool isPreviewingTarget = (i >= currentHP - previewDamage);
 
-        // ƒvƒŒƒrƒ…[‘ÎÛŠOA‚Ü‚½‚Í“_–Å‚Ìu“_“”vƒ^ƒCƒ~ƒ“ƒO‚Å‚ ‚ê‚Î’†g‚ğ•`‰æ
+        // ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼å¯¾è±¡å¤–ã€ã¾ãŸã¯ç‚¹æ»…ã®ã€Œç‚¹ç¯ã€ã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§ã‚ã‚Œã°ä¸­èº«ã‚’æç”»
         if (!isPreviewingTarget || m_isBlinkOn) {
             m_fullSprite->Draw(scaleVec, Vector3(0, 0, 0), pos);
         }

@@ -1,4 +1,4 @@
-#include "Ally.h"
+﻿#include "Ally.h"
 #include "../../Core/GameContext.h"
 #include "../../GamePlay/Manager/MapManager.h"
 #include "../../System/Meshmanager.h"
@@ -17,6 +17,14 @@ namespace {
     const float DIG_SPEED = 15.0f;         // 採掘アニメーションの速度
     const float DIG_HIT_ANGLE = 0.4f;      // 採掘エフェクトを発生させる閾値角度（ラジアン）
     const float FADE_OUT_SPEED = 1.0f;     // 脱出時のフェードアウト速度
+    const float MODEL_SCALE = 0.8f;        // 味方モデルの表示スケール
+
+    // 採掘演出の詳細パラメータ
+    const float DIG_SWING_AMPLITUDE = 0.5f;    // ツルハシ振りの最大角度（ラジアン）
+    const float DIG_SETTLE_TOLERANCE = 0.1f;   // 採掘終了とみなす静止角度の許容範囲
+    const float DIG_SE_VOLUME = 2.6f;          // 採掘SEの音量
+    const float RUBBLE_OFFSET_X = 0.5f;        // 瓦礫エフェクトの足元オフセット
+    const int RUBBLE_SPAWN_COUNT = 3;          // 一振りで発生させる瓦礫の数
 }
 
 //Spawnファクトリー
@@ -43,7 +51,7 @@ void Ally::Init()
     m_team = Team::Ally;
     m_maxMovePoints = 0;// 味方は自立移動しない
     m_currentMovePoints = m_maxMovePoints;
-    m_srt.scale = Vector3(0.8f, 0.8f, 0.8f);
+    m_srt.scale = Vector3(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
     SetFacing(Direction::South);
     UpdateWorldMatrix();
 
@@ -212,16 +220,16 @@ void Ally::UpdateDiggingAnimation(float dt) {
     m_digTimer += dt;
 
     // 正弦波によるツルハシの振り下ろしシミュレーション
-    float angle = sinf(m_digTimer * DIG_SPEED) * 0.5f;
+    float angle = sinf(m_digTimer * DIG_SPEED) * DIG_SWING_AMPLITUDE;
     m_srt.rot.z = angle;
 
     // 振り下ろした瞬間のインパクト判定
     if (angle > DIG_HIT_ANGLE && !m_hasTriggeredEffect) {
-        AudioManager::GetInstance().PlaySE("DigSE", 2.6f);
+        AudioManager::GetInstance().PlaySE("DigSE", DIG_SE_VOLUME);
         if (m_context->GetEffectManager()) {
             Vector3 footPos = m_srt.pos;
-            footPos.x -= 0.5f;
-            m_context->GetEffectManager()->SpawnRubble(footPos, 3);
+            footPos.x -= RUBBLE_OFFSET_X;
+            m_context->GetEffectManager()->SpawnRubble(footPos, RUBBLE_SPAWN_COUNT);
         }
         m_hasTriggeredEffect = true;
         m_digCount++;
@@ -233,7 +241,7 @@ void Ally::UpdateDiggingAnimation(float dt) {
     }
 
     // 終了判定
-    if (m_digCount >= MAX_DIG_COUNT && angle < 0.1f && angle > -0.1f) {
+    if (m_digCount >= MAX_DIG_COUNT && angle < DIG_SETTLE_TOLERANCE && angle > -DIG_SETTLE_TOLERANCE) {
         m_isDigging = false;
         m_srt.rot.z = 0.0f;
         // ---脱出モードでの採掘完了後、フェードアウト状態へ遷移 ---

@@ -1,4 +1,4 @@
-#include "EffectManager.h"
+ï»¿#include "EffectManager.h"
 #include "../../Core/GameContext.h"
 #include "../../System/Camera.h"
 #include "../../System/Utility/WorldToScreen.h"
@@ -6,28 +6,49 @@
 #include "../../System/RandomEngine.h"
 
 namespace {
-    // --- ƒp[ƒeƒBƒNƒ‹E•¨—ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“—p‚Ì’²®ƒpƒ‰ƒ[ƒ^ ---
-    const float GRAVITY = 1200.0f;              // Š¢âI‚Ì—‰º‘¬“xid—Í‰Á‘¬“xj
-    const float RUBBLE_MIN_VEL_X = -150.0f;     // ‰¡•ûŒü‚ÌŠgU‘¬“xiÅ¬j
-    const float RUBBLE_MAX_VEL_X = 150.0f;      // ‰¡•ûŒü‚ÌŠgU‘¬“xiÅ‘åj
-    const float RUBBLE_MIN_VEL_Y = -400.0f;     // ã•ûŒü‚Ö‚Ì’µ‚Ë•Ô‚è‘¬“xiÅ¬j
-    const float RUBBLE_MAX_VEL_Y = -200.0f;     // ã•ûŒü‚Ö‚Ì’µ‚Ë•Ô‚è‘¬“xiÅ‘åj
+    // --- ãƒ‘ãƒ¼ãƒ†ã‚£ã‚¯ãƒ«ãƒ»ç‰©ç†ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ç”¨ã®èª¿æ•´ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ ---
+    const float GRAVITY = 1200.0f;              // ç“¦ç¤«ã®è½ä¸‹é€Ÿåº¦ï¼ˆé‡åŠ›åŠ é€Ÿåº¦ï¼‰
+    const float RUBBLE_MIN_VEL_X = -150.0f;     // æ¨ªæ–¹å‘ã®æ‹¡æ•£é€Ÿåº¦ï¼ˆæœ€å°ï¼‰
+    const float RUBBLE_MAX_VEL_X = 150.0f;      // æ¨ªæ–¹å‘ã®æ‹¡æ•£é€Ÿåº¦ï¼ˆæœ€å¤§ï¼‰
+    const float RUBBLE_MIN_VEL_Y = -400.0f;     // ä¸Šæ–¹å‘ã¸ã®è·³ã­è¿”ã‚Šé€Ÿåº¦ï¼ˆæœ€å°ï¼‰
+    const float RUBBLE_MAX_VEL_Y = -200.0f;     // ä¸Šæ–¹å‘ã¸ã®è·³ã­è¿”ã‚Šé€Ÿåº¦ï¼ˆæœ€å¤§ï¼‰
 
-    const float HIT_EFFECT_DURATION = 0.25f;    // ƒqƒbƒgƒGƒtƒFƒNƒg‚ÌÄ¶ŠÔ
-    const float HIT_EFFECT_INITIAL_SCALE = 0.5f;// ƒqƒbƒgƒGƒtƒFƒNƒg‚Ì‰ŠúƒXƒP[ƒ‹
-    const int   HIT_EFFECT_TEXTURE_INDEX = 4;   // ƒqƒbƒgƒGƒtƒFƒNƒg‚Æ‚µ‚Ä“o˜^‚³‚ê‚½ƒeƒNƒXƒ`ƒƒ‚ÌƒCƒ“ƒfƒbƒNƒX
+    const float HIT_EFFECT_DURATION = 0.25f;    // ãƒ’ãƒƒãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®å†ç”Ÿæ™‚é–“
+    const float HIT_EFFECT_INITIAL_SCALE = 0.5f;// ãƒ’ãƒƒãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®åˆæœŸã‚¹ã‚±ãƒ¼ãƒ«
+    const int   HIT_EFFECT_TEXTURE_INDEX = 4;   // ãƒ’ãƒƒãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆã¨ã—ã¦ç™»éŒ²ã•ã‚ŒãŸãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+    const int   RUBBLE_TEXTURE_COUNT = 4;       // ç“¦ç¤«ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ç¨®é¡æ•°ï¼ˆã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ 0ã€œ3ï¼‰
+
+    // --- ç“¦ç¤«ãƒ‘ãƒ¼ãƒ†ã‚£ã‚¯ãƒ«ã®ç”Ÿæˆãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ ---
+    const float RUBBLE_LIFETIME = 1.0f;         // ç“¦ç¤«ã®å¯¿å‘½ï¼ˆç§’ï¼‰
+    const float RUBBLE_MIN_SCALE = 0.5f;        // ç“¦ç¤«ã®ãƒ©ãƒ³ãƒ€ãƒ ã‚¹ã‚±ãƒ¼ãƒ«ä¸‹é™
+    const float RUBBLE_MAX_SCALE = 1.2f;        // ç“¦ç¤«ã®ãƒ©ãƒ³ãƒ€ãƒ ã‚¹ã‚±ãƒ¼ãƒ«ä¸Šé™
+    const float RUBBLE_SPIN_FACTOR = 0.05f;     // æ¨ªé€Ÿåº¦ã‹ã‚‰è‡ªè»¢é€Ÿåº¦ã¸ã®å¤‰æ›ä¿‚æ•°
+
+    // --- ç”»é¢å¤–ã‚«ãƒªãƒ³ã‚°ã®ä½™ç™½ï¼ˆpxï¼‰ ---
+    const float RUBBLE_CULL_MARGIN = 50.0f;
+    const float HIT_CULL_MARGIN = 100.0f;
+
+    // --- è¡çªãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼è¡¨ç¤º ---
+    const Color HIT_PREVIEW_COLOR = Color(1.0f, 1.0f, 0.0f, 0.7f); // åŠé€æ˜ã®é»„è‰²ï¼ˆè­¦å‘Šï¼‰
+    const float HIT_PREVIEW_SCALE = 0.7f;
 }
 
 void EffectManager::Init(GameContext* context) {
     m_context = context;
 
-    m_textures.push_back(std::make_unique<CSprite>(50, 46, "Assets/texture/effect/rubble_01.png"));
-    m_textures.push_back(std::make_unique<CSprite>(48, 46, "Assets/texture/effect/rubble_02.png"));
-    m_textures.push_back(std::make_unique<CSprite>(51, 41, "Assets/texture/effect/rubble_03.png"));
-    m_textures.push_back(std::make_unique<CSprite>(42, 50, "Assets/texture/effect/rubble_04.png"));
-
-    //  ƒqƒbƒgƒGƒtƒFƒNƒg‰æ‘œ‚Ì“Ç‚İ‚İ (Index = 4)
-    m_textures.push_back(std::make_unique<CSprite>(120, 120, "Assets/texture/effect/hit_effect.png"));
+    // ãƒ†ã‚¯ã‚¹ãƒãƒ£å®šç¾©ãƒ†ãƒ¼ãƒ–ãƒ«ï¼ˆå¹…ãƒ»é«˜ã•ã¯ãƒ†ã‚¯ã‚¹ãƒãƒ£å®Ÿå¯¸pxï¼‰
+    // â€» ä¸¦ã³é †ã¯ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã«å¯¾å¿œï¼š0ã€œ3 = ç“¦ç¤«ã€4 = ãƒ’ãƒƒãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆï¼ˆHIT_EFFECT_TEXTURE_INDEXï¼‰
+    struct TexDef { float w, h; const char* path; };
+    const TexDef texDefs[] = {
+        { 50.0f,  46.0f, "Assets/texture/effect/rubble_01.png" },
+        { 48.0f,  46.0f, "Assets/texture/effect/rubble_02.png" },
+        { 51.0f,  41.0f, "Assets/texture/effect/rubble_03.png" },
+        { 42.0f,  50.0f, "Assets/texture/effect/rubble_04.png" },
+        { 120.0f, 120.0f, "Assets/texture/effect/hit_effect.png" },
+    };
+    for (const auto& t : texDefs) {
+        m_textures.push_back(std::make_unique<CSprite>(t.w, t.h, t.path));
+    }
 }
 
 void EffectManager::Update(float dt) {
@@ -40,33 +61,33 @@ void EffectManager::Update(float dt) {
             continue;
         }
 
-        // ƒp[ƒeƒBƒNƒ‹ƒ^ƒCƒv•Ê‚ÌXVƒƒWƒbƒN
+        // ãƒ‘ãƒ¼ãƒ†ã‚£ã‚¯ãƒ«ã‚¿ã‚¤ãƒ—åˆ¥ã®æ›´æ–°ãƒ­ã‚¸ãƒƒã‚¯
         if (p.type == ParticleType::RUBBLE) {
-            // y•¨—‰‰ZƒŒƒCƒ„[zFŠ¢âIE”j•Ğ‚È‚Ç‚Ì—‰º‰^“®
+            // ã€ç‰©ç†æ¼”ç®—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã€‘ï¼šç“¦ç¤«ãƒ»ç ´ç‰‡ãªã©ã®è½ä¸‹é‹å‹•
             p.velocity.y += GRAVITY * dt;
             p.pos.x += p.velocity.x * dt;
             p.pos.y += p.velocity.y * dt;
             p.rotation += p.rotSpeed * dt;
         }
         else if (p.type == ParticleType::HIT_EFFECT) {
-            // yƒAƒjƒ[ƒVƒ‡ƒ“ƒŒƒCƒ„[zFƒqƒbƒg‚ÌƒXƒP[ƒ‹‹ÈüiƒC[ƒWƒ“ƒOj
+            // ã€ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãƒ¬ã‚¤ãƒ¤ãƒ¼ã€‘ï¼šãƒ’ãƒƒãƒˆæ™‚ã®ã‚¹ã‚±ãƒ¼ãƒ«æ›²ç·šï¼ˆã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼‰
             float progress = 1.0f - (p.lifeTime / p.maxLifeTime); // 0.0 -> 1.0
 
-            // ƒVƒ“ƒvƒ‹‚ÈƒoƒEƒ“ƒX‹ÈüF1.5”{‚Ü‚Å‘f‘‚­Šg‘å‚µA‚»‚ÌŒã­‚µ–ß‚é
+            // ã‚·ãƒ³ãƒ—ãƒ«ãªãƒã‚¦ãƒ³ã‚¹æ›²ç·šï¼š1.5å€ã¾ã§ç´ æ—©ãæ‹¡å¤§ã—ã€ãã®å¾Œå°‘ã—æˆ»ã‚‹
             if (progress < 0.3f) {
-                // ‘O”¼30%‚ÌŠÔF0.5 -> 1.5
+                // å‰åŠ30%ã®æ™‚é–“ï¼š0.5 -> 1.5
                 float t = progress / 0.3f;
                 p.scale = 0.5f + t * 1.0f;
             }
             else {
-                // Œã”¼70%‚ÌŠÔF1.5 -> 1.0 (‚Ü‚½‚Í‚»‚êˆÈ‰º)
+                // å¾ŒåŠ70%ã®æ™‚é–“ï¼š1.5 -> 1.0 (ã¾ãŸã¯ãã‚Œä»¥ä¸‹)
                 float t = (progress - 0.3f) / 0.7f;
                 p.scale = 1.5f - t * 0.5f;
             }
         }
     }
 
-    // õ–½‚ğŒ}‚¦‚½ƒp[ƒeƒBƒNƒ‹‚Ìƒƒ‚ƒŠ‰ğ•ú (remove_if ƒCƒfƒBƒIƒ€)
+    // å¯¿å‘½ã‚’è¿ãˆãŸãƒ‘ãƒ¼ãƒ†ã‚£ã‚¯ãƒ«ã®ãƒ¡ãƒ¢ãƒªè§£æ”¾ (remove_if ã‚¤ãƒ‡ã‚£ã‚ªãƒ )
     m_particles.erase(std::remove_if(m_particles.begin(), m_particles.end(),
         [](const EffectParticle& p) { return !p.active; }), m_particles.end());
 }
@@ -78,15 +99,16 @@ void EffectManager::Clear() {
 void EffectManager::SpawnRubble(const Vector3& worldPos, int count) {
     if (!m_context || !m_context->GetCamera()) return;
 
-    // 1. 3D‚Ì‘«Œ³À•W‚ğƒXƒNƒŠ[ƒ“À•W‚É•ÏŠ·
+    // 1. 3Dã®è¶³å…ƒåº§æ¨™ã‚’ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ã«å¤‰æ›
     float sw = (float)Application::GetWidth();
     float sh = (float)Application::GetHeight();
     Vector2 screenPos = WorldToScreen(worldPos, m_context->GetCamera()->GetViewMatrix(), m_context->GetCamera()->GetProjMatrix(), sw, sh);
 
-    // ‰æ–ÊŠOƒJƒŠƒ“ƒO (‹«ŠEƒ`ƒFƒbƒN)
-    if (screenPos.x < -50 || screenPos.x > sw + 50 || screenPos.y < -50 || screenPos.y > sh + 50) return;
+    // ç”»é¢å¤–ã‚«ãƒªãƒ³ã‚° (å¢ƒç•Œãƒã‚§ãƒƒã‚¯)
+    if (screenPos.x < -RUBBLE_CULL_MARGIN || screenPos.x > sw + RUBBLE_CULL_MARGIN ||
+        screenPos.y < -RUBBLE_CULL_MARGIN || screenPos.y > sh + RUBBLE_CULL_MARGIN) return;
 
-    // 2. ƒp[ƒeƒBƒNƒ‹‚Ì¶¬
+    // 2. ãƒ‘ãƒ¼ãƒ†ã‚£ã‚¯ãƒ«ã®ç”Ÿæˆ
     auto& rng = RandomEngine::tls();
 
     for (int i = 0; i < count; ++i) {
@@ -98,11 +120,11 @@ void EffectManager::SpawnRubble(const Vector3& worldPos, int count) {
             static_cast<float>(rng.uniformReal(RUBBLE_MIN_VEL_X, RUBBLE_MAX_VEL_X)),
             static_cast<float>(rng.uniformReal(RUBBLE_MIN_VEL_Y, RUBBLE_MAX_VEL_Y)));
         p.rotation = 0.0f;
-        p.rotSpeed = static_cast<float>(rng.uniformReal(RUBBLE_MIN_VEL_X, RUBBLE_MAX_VEL_X)) * 0.05f; // ƒ‰ƒ“ƒ_ƒ€‚È©“]‘¬“x
-        p.scale = static_cast<float>(rng.uniformReal(0.5, 1.2));
-        p.lifeTime = 1.0f;
-        p.maxLifeTime = 1.0f;
-        p.textureIndex = rng.uniformInt(0, 3);
+        p.rotSpeed = static_cast<float>(rng.uniformReal(RUBBLE_MIN_VEL_X, RUBBLE_MAX_VEL_X)) * RUBBLE_SPIN_FACTOR; // ãƒ©ãƒ³ãƒ€ãƒ ãªè‡ªè»¢é€Ÿåº¦
+        p.scale = static_cast<float>(rng.uniformReal(RUBBLE_MIN_SCALE, RUBBLE_MAX_SCALE));
+        p.lifeTime = RUBBLE_LIFETIME;
+        p.maxLifeTime = RUBBLE_LIFETIME;
+        p.textureIndex = rng.uniformInt(0, RUBBLE_TEXTURE_COUNT - 1);
 
         m_particles.push_back(p);
     }
@@ -111,25 +133,26 @@ void EffectManager::SpawnRubble(const Vector3& worldPos, int count) {
 void EffectManager::SpawnHitEffect(const Vector3& worldPos) {
     if (!m_context || !m_context->GetCamera()) return;
 
-    // À•W•ÏŠ·iƒ[ƒ‹ƒhÀ•W‚©‚çƒXƒNƒŠ[ƒ“À•W‚Öj
+    // åº§æ¨™å¤‰æ›ï¼ˆãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã‹ã‚‰ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ã¸ï¼‰
     float sw = (float)Application::GetWidth();
     float sh = (float)Application::GetHeight();
     Vector2 screenPos = WorldToScreen(worldPos, m_context->GetCamera()->GetViewMatrix(), m_context->GetCamera()->GetProjMatrix(), sw, sh);
 
-    // ‰æ–ÊŠOƒJƒŠƒ“ƒOi‰æ–Ê‚©‚ç‘å‚«‚­ŠO‚ê‚Ä‚¢‚éê‡‚Í¶¬‚µ‚È‚¢j
-    if (screenPos.x < -100 || screenPos.x > sw + 100 || screenPos.y < -100 || screenPos.y > sh + 100) return;
+    // ç”»é¢å¤–ã‚«ãƒªãƒ³ã‚°ï¼ˆç”»é¢ã‹ã‚‰å¤§ããå¤–ã‚Œã¦ã„ã‚‹å ´åˆã¯ç”Ÿæˆã—ãªã„ï¼‰
+    if (screenPos.x < -HIT_CULL_MARGIN || screenPos.x > sw + HIT_CULL_MARGIN ||
+        screenPos.y < -HIT_CULL_MARGIN || screenPos.y > sh + HIT_CULL_MARGIN) return;
 
     EffectParticle p;
     p.active = true;
-    p.type = ParticleType::HIT_EFFECT; // ƒqƒbƒgƒGƒtƒFƒNƒg‚Æ‚µ‚Äİ’è
+    p.type = ParticleType::HIT_EFFECT; // ãƒ’ãƒƒãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆã¨ã—ã¦è¨­å®š
     p.pos = screenPos;
-    p.velocity = Vector2(0, 0); // ˆÚ“®‚È‚µ
-    p.rotation = static_cast<float>(RandomEngine::tls().uniformInt(0, 359)) * 3.14159f / 180.0f;// ƒ‰ƒ“ƒ_ƒ€‚È‰ŠúŠp“x
+    p.velocity = Vector2(0, 0); // ç§»å‹•ãªã—
+    p.rotation = static_cast<float>(RandomEngine::tls().uniformInt(0, 359)) * PI / 180.0f;// ãƒ©ãƒ³ãƒ€ãƒ ãªåˆæœŸè§’åº¦
     p.rotSpeed = 0.0f;
-    p.scale = 0.5f; // ‰ŠúƒTƒCƒY
-    p.maxLifeTime = 0.25f; // ‘±ŠÔ‚Í’Z‚ß‚Éİ’è
+    p.scale = HIT_EFFECT_INITIAL_SCALE;
+    p.maxLifeTime = HIT_EFFECT_DURATION;
     p.lifeTime = p.maxLifeTime;
-    p.textureIndex = 4; // hit_effect.png ‚ÌƒCƒ“ƒfƒbƒNƒX‚ğw’è
+    p.textureIndex = HIT_EFFECT_TEXTURE_INDEX; // hit_effect.png ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’æŒ‡å®š
 
     m_particles.push_back(p);
 }
@@ -171,24 +194,24 @@ void EffectManager::DrawStaticHitPreview(const Vector3& worldPos) {
     float sw = (float)Application::GetWidth();
     float sh = (float)Application::GetHeight();
 
-    // ƒXƒNƒŠ[ƒ“À•W‚É•ÏŠ·
+    // ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ã«å¤‰æ›
     Vector2 screenPos = WorldToScreen(worldPos, cam->GetViewMatrix(), cam->GetProjMatrix(), sw, sh);
 
-    // ‰æ–ÊŠO‚ÌƒJƒŠƒ“ƒOi•`‰æœŠOjˆ—
-    if (screenPos.x < -100 || screenPos.x > sw + 100 || screenPos.y < -100 || screenPos.y > sh + 100) return;
+    // ç”»é¢å¤–ã®ã‚«ãƒªãƒ³ã‚°ï¼ˆæç”»é™¤å¤–ï¼‰å‡¦ç†
+    if (screenPos.x < -HIT_CULL_MARGIN || screenPos.x > sw + HIT_CULL_MARGIN ||
+        screenPos.y < -HIT_CULL_MARGIN || screenPos.y > sh + HIT_CULL_MARGIN) return;
 
-    // ƒqƒbƒgƒGƒtƒFƒNƒg—pƒeƒNƒXƒ`ƒƒ‚ªƒ[ƒhÏ‚İ‚©Šm”Fihit_effect.png ‚ÍƒCƒ“ƒfƒbƒNƒX 4j
-    if (m_textures.size() > 4 && m_textures[4]) {
+    // ãƒ’ãƒƒãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆç”¨ãƒ†ã‚¯ã‚¹ãƒãƒ£ãŒãƒ­ãƒ¼ãƒ‰æ¸ˆã¿ã‹ç¢ºèª
+    if (m_textures.size() > HIT_EFFECT_TEXTURE_INDEX && m_textures[HIT_EFFECT_TEXTURE_INDEX]) {
 
         MATERIAL mtrl;
-        // ”¼“§–¾‚Ì‰©F‚Éİ’è‚µAŒx‚Æ‚µ‚Ä‚ÌÕ“Ë‚ğƒVƒ~ƒ…ƒŒ[ƒg
-        mtrl.Diffuse = Color(1.0f, 1.0f, 0.0f, 0.7f);
+        // åŠé€æ˜ã®é»„è‰²ã«è¨­å®šã—ã€è­¦å‘Šã¨ã—ã¦ã®è¡çªã‚’ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ãƒˆ
+        mtrl.Diffuse = HIT_PREVIEW_COLOR;
         mtrl.TextureEnable = true;
-        m_textures[4]->ModifyMtrl(mtrl);
+        m_textures[HIT_EFFECT_TEXTURE_INDEX]->ModifyMtrl(mtrl);
 
-        // Ã“I•`‰æAƒXƒP[ƒ‹‚Í 0.7 ‚Éİ’è
-        m_textures[4]->Draw(
-            Vector3(0.7f, 0.7f, 1.0f),
+        m_textures[HIT_EFFECT_TEXTURE_INDEX]->Draw(
+            Vector3(HIT_PREVIEW_SCALE, HIT_PREVIEW_SCALE, 1.0f),
             Vector3(0, 0, 0),
             Vector3(screenPos.x, screenPos.y, 0)
         );

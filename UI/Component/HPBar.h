@@ -1,39 +1,39 @@
-#pragma once
+ï»¿#pragma once
 #include "../../System/CSprite.h"
 #include <memory>
 
 class GameContext;
 
 // =========================================================
-// HPBar ƒNƒ‰ƒX
-// ƒLƒƒƒ‰ƒNƒ^[‚Ì“ªã‚É•\¦‚³‚ê‚éHPƒo[UIB
-// ƒ_ƒ[ƒWƒvƒŒƒrƒ…[‚Ì“_–ÅƒAƒjƒ[ƒVƒ‡ƒ“§Œä‚ğŠÜ‚ŞB
+// HPBar ã‚¯ãƒ©ã‚¹
+// ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ã®é ­ä¸Šã«è¡¨ç¤ºã•ã‚Œã‚‹HPãƒãƒ¼UIã€‚
+// ãƒ€ãƒ¡ãƒ¼ã‚¸ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼æ™‚ã®ç‚¹æ»…ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³åˆ¶å¾¡ã‚’å«ã‚€ã€‚
 // =========================================================
 class HPBar {
 public:
     enum class BarType {
-        Green, // ƒvƒŒƒCƒ„[—p
-        Red    // ƒGƒlƒ~[—p
+        Green, // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ç”¨
+        Red    // ã‚¨ãƒãƒŸãƒ¼ç”¨
     };
 
     HPBar() = default;
     ~HPBar() = default;
 
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
     // ---------------------------------------------------------
     void Init(GameContext* context);
     void Update(float dt);
 
     // ---------------------------------------------------------
-    // ƒŒƒ“ƒ_ƒŠƒ“ƒO (Rendering)
+    // ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚° (Rendering)
     // ---------------------------------------------------------
-    // previewDamage: ƒ_ƒ[ƒW‚ÌƒvƒŒƒrƒ…[—Êi‰E‚©‚ç¶‚Ö“_–Å‚³‚¹‚éƒ_ƒ[ƒW—\’è•ªj
+    // previewDamage: ãƒ€ãƒ¡ãƒ¼ã‚¸ã®ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼é‡ï¼ˆå³ã‹ã‚‰å·¦ã¸ç‚¹æ»…ã•ã›ã‚‹ãƒ€ãƒ¡ãƒ¼ã‚¸äºˆå®šåˆ†ï¼‰
     void Draw(const Vector3& worldPos, int currentHP, int maxHP, int previewDamage = 0);
 
 public:
-    // --- ImGui ’²®—pƒpƒ‰ƒ[ƒ^ ---
-    // ŠO•”iƒGƒfƒBƒ^“™j‚©‚ç“®“I‚É’²®‚Å‚«‚é‚æ‚¤publicÃ“I•Ï”‚Æ‚µ‚ÄŒöŠJ
+    // --- ImGui èª¿æ•´ç”¨ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ ---
+    // å¤–éƒ¨ï¼ˆã‚¨ãƒ‡ã‚£ã‚¿ç­‰ï¼‰ã‹ã‚‰å‹•çš„ã«èª¿æ•´ã§ãã‚‹ã‚ˆã†publicé™çš„å¤‰æ•°ã¨ã—ã¦å…¬é–‹
     static float s_hpBarOffsetY;
     static float s_hpBarTexSize;
     static float s_hpBarGap;
@@ -41,11 +41,11 @@ public:
 private:
     GameContext* m_context = nullptr;
 
-    // --- UI ƒAƒZƒbƒg ---
-    std::unique_ptr<CSprite> m_frameSprite; // ’ê˜gi‹ó‚Ìƒn[ƒgj
-    std::unique_ptr<CSprite> m_fullSprite;  // Ô‚¢ƒn[ƒgi’†gj
+    // --- UI ã‚¢ã‚»ãƒƒãƒˆ ---
+    std::unique_ptr<CSprite> m_frameSprite; // åº•æ ï¼ˆç©ºã®ãƒãƒ¼ãƒˆï¼‰
+    std::unique_ptr<CSprite> m_fullSprite;  // èµ¤ã„ãƒãƒ¼ãƒˆï¼ˆä¸­èº«ï¼‰
 
-    // --- ƒAƒjƒ[ƒVƒ‡ƒ“§Œä ---
+    // --- ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³åˆ¶å¾¡ ---
     float m_blinkTimer = 0.0f;
-    bool  m_isBlinkOn = true; // “_–Å‚Ì•\¦ON/OFFó‘Ô
+    bool  m_isBlinkOn = true; // ç‚¹æ»…æ™‚ã®è¡¨ç¤ºON/OFFçŠ¶æ…‹
 };

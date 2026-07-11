@@ -1,18 +1,18 @@
-#pragma once
+ï»¿#pragma once
 #include "../../System/CSprite.h"
 #include <memory>
 
 class GameContext;
 
-// --- ƒ_ƒCƒAƒƒO‚Ìí—Ş ---
+// --- ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã®ç¨®é¡ ---
 enum class DialogueType {
-    Help,   // •‚¯‚ğ‹‚ß‚éi’Êí‚ÌƒtƒF[ƒYj
-    Escape  // ’Eo‚Ìw¦iƒ^[ƒ“Ø‚êE’EoŠJnj
+    Help,   // åŠ©ã‘ã‚’æ±‚ã‚ã‚‹ï¼ˆé€šå¸¸ã®ãƒ•ã‚§ãƒ¼ã‚ºï¼‰
+    Escape  // è„±å‡ºã®æŒ‡ç¤ºï¼ˆã‚¿ãƒ¼ãƒ³åˆ‡ã‚Œãƒ»è„±å‡ºé–‹å§‹æ™‚ï¼‰
 };
 
 // =========================================================
-// DialogueUI ƒNƒ‰ƒX
-// ƒ†ƒjƒbƒg‚Ì“ªã‚Éˆê“I‚É•\¦‚³‚ê‚é‚«o‚µUI‚ğŠÇ—B
+// DialogueUI ã‚¯ãƒ©ã‚¹
+// ãƒ¦ãƒ‹ãƒƒãƒˆã®é ­ä¸Šã«ä¸€æ™‚çš„ã«è¡¨ç¤ºã•ã‚Œã‚‹å¹ãå‡ºã—UIã‚’ç®¡ç†ã€‚
 // =========================================================
 class DialogueUI {
 public:
@@ -20,20 +20,20 @@ public:
     ~DialogueUI() = default;
 
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
     // ---------------------------------------------------------
     void Init(GameContext* context);
     void Update(uint64_t delta);
 
     // ---------------------------------------------------------
-    // ƒŒƒ“ƒ_ƒŠƒ“ƒO (Rendering)
+    // ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚° (Rendering)
     // ---------------------------------------------------------
     void Draw();
 
     // ---------------------------------------------------------
-    // ƒtƒ[§Œä (Flow)
+    // ãƒ•ãƒ­ãƒ¼åˆ¶å¾¡ (Flow)
     // ---------------------------------------------------------
-    // duration: •\¦ŠÔi•‰”‚Ìê‡‚Í–³ŒÀ•\¦j
+    // duration: è¡¨ç¤ºæ™‚é–“ï¼ˆè² æ•°ã®å ´åˆã¯ç„¡é™è¡¨ç¤ºï¼‰
     void ShowDialogue(const Vector3& targetWorldPos, DialogueType type, float duration = 3.0f);
     void HideDialogue();
 
@@ -42,13 +42,13 @@ public:
 private:
     GameContext* m_context = nullptr;
 
-    // --- UI ƒAƒZƒbƒg ---
+    // --- UI ã‚¢ã‚»ãƒƒãƒˆ ---
     std::unique_ptr<CSprite> m_dialogueHelpSprite;
     std::unique_ptr<CSprite> m_dialogueEscapeSprite;
     CSprite* m_currentSprite = nullptr;
 
-    // --- ó‘ÔŠÇ— ---
+    // --- çŠ¶æ…‹ç®¡ç† ---
     bool m_isVisible = false;
     float m_displayTimer = 0.0f;
-    Vector3 m_targetPos{ 0.0f, 0.0f, 0.0f }; // ’Ç]‘ÎÛ‚Ìƒx[ƒXƒ[ƒ‹ƒhÀ•W
+    Vector3 m_targetPos{ 0.0f, 0.0f, 0.0f }; // è¿½å¾“å¯¾è±¡ã®ãƒ™ãƒ¼ã‚¹ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™
 };

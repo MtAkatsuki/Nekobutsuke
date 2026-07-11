@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 #include "../../System/CSprite.h"
 #include <vector>
 #include <memory>
 
 // =========================================================
-// TutorialUI �N���X
-// �Q�[���J�n�O�Ƀ`���[�g���A���摜�����Ԃɕ\������
+// TutorialUI クラス
+// ゲーム開始前にチュートリアル画像を順番に表示する
 // =========================================================
 class TutorialUI {
 public:
@@ -20,10 +20,10 @@ public:
 
 private:
     enum class State {
-        APPEARING,    // �g�債�ďo��
-        WAITING,      // ���͑҂�
-        DISAPPEARING, // �k�����ď���
-        FINISHED      // ���݂̉摜�I��
+        APPEARING,    // 拡大して出現
+        WAITING,      // 入力待ち
+        DISAPPEARING, // 縮小して消失
+        FINISHED      // 現在の画像終了
     };
 
     std::vector<std::unique_ptr<CSprite>> m_images;

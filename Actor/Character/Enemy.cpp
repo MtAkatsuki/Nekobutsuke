@@ -1,4 +1,4 @@
-#include "Enemy.h"    
+ï»¿#include "Enemy.h"    
 #include "../../System/meshmanager.h"
 #include "../../System/ZFightTunables.h"
 #include "../../System/RandomEngine.h"
@@ -12,16 +12,32 @@
 
 
 namespace {
-	// ‰‰oEƒoƒ‰ƒ“ƒX—p’è”
+	// æ¼”å‡ºãƒ»ãƒãƒ©ãƒ³ã‚¹ç”¨å®šæ•°
 	const int INITIAL_HP = 5;
 	const int INITIAL_MOVE_POINTS = 4;
 	const float MOVE_SPEED = 5.0f;
-	const float CHARGE_SHAKE_AMP = 0.01f;      // ’~—Í‚Ìk‚¦•
-	const float ATTACK_DELAY = 0.1f;           // UŒ‚ŠJn‘O‚ÌƒfƒBƒŒƒC
-	const int ATTACK_RANGE = 1;				   // UŒ‚”ÍˆÍiƒOƒŠƒbƒh’PˆÊj
+	const float CHARGE_SHAKE_AMP = 0.01f;      // è“„åŠ›æ™‚ã®éœ‡ãˆå¹…
+	const float ATTACK_DELAY = 0.1f;           // æ”»æ’ƒé–‹å§‹å‰ã®ãƒ‡ã‚£ãƒ¬ã‚¤
+	const int ATTACK_RANGE = 1;				   // æ”»æ’ƒç¯„å›²ï¼ˆã‚°ãƒªãƒƒãƒ‰å˜ä½ï¼‰
+	const float MODEL_SCALE = 0.8f;            // æ•µãƒ¢ãƒ‡ãƒ«ã®è¡¨ç¤ºã‚¹ã‚±ãƒ¼ãƒ«
+
+	const int DIST_UNREACHABLE = 999;          // ã‚¿ãƒ¼ã‚²ãƒƒãƒˆä¸åœ¨æ™‚ã®è·é›¢åˆæœŸå€¤ï¼ˆååˆ†å¤§ããªå€¤ï¼‰
+	const float ARRIVE_EPSILON_SQ = 0.01f;     // ã‚¿ã‚¤ãƒ«åˆ°ç€åˆ¤å®šã®è·é›¢äºŒä¹—ã—ãã„å€¤
+	const float AXIS_BIAS_THRESHOLD = 0.1f;    // æ–¹å‘åˆ¤å®šã§X/Zè»¸ã‚’åŒºåˆ¥ã™ã‚‹æœ€å°å·®åˆ†
+
+	// æ”»æ’ƒæ„å›³çŸ¢å°ï¼ˆã‚ªãƒ¼ãƒãƒ¼ãƒ¬ã‚¤ï¼‰ã®è¡¨ç¤ºãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	const float ATTACK_ARROW_POS_RATIO = 0.35f;                       // è‡ªåˆ†â†’å¯¾è±¡é–“ã®çŸ¢å°é…ç½®æ¯”ç‡
+	const float ATTACK_ARROW_SCALE = 0.6f;                            // çŸ¢å°ã®è¡¨ç¤ºã‚¹ã‚±ãƒ¼ãƒ«
+	const Color ATTACK_ARROW_COLOR = Color(1.0f, 0.08f, 0.57f, 0.7f); // èµ¤ãƒ”ãƒ³ã‚¯è‰²ã§å±é™ºã‚’é€šçŸ¥
+
+	const float MISS_NUM_Y_OFFSET = 1.0f;      // ç©ºæŒ¯ã‚Šï¼ˆmissï¼‰æ•°å­—ã®è¡¨ç¤ºé«˜ã•
+
+	// --- åºŠãƒ’ãƒ³ãƒˆUIã®è¡¨ç¤ºè‰² ---
+	const Color MOVE_RANGE_COLOR = Color(0.0f, 1.0f, 0.0f, 0.2f);   // ç§»å‹•ç¯„å›²ï¼šè–„ã„ç·‘
+	const Color DANGER_TILE_COLOR = Color(0.9f, 0.0f, 0.0f, 0.5f);  // ãƒ­ãƒƒã‚¯ã‚ªãƒ³ä¸­ã®ã‚¿ã‚¤ãƒ«ï¼šåŠé€æ˜ã®èµ¤
 }
 
-//Spawnƒtƒ@ƒNƒgƒŠ[
+//Spawnãƒ•ã‚¡ã‚¯ãƒˆãƒªãƒ¼
 std::unique_ptr<Enemy> Enemy::Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos) {
 	auto e = std::unique_ptr<Enemy>(new Enemy(ctx));
 	e->Init();
@@ -39,7 +55,7 @@ void Enemy::Init() {
 	m_actionUI = std::make_unique<EnemyActionUI>();
 	m_actionUI->Init(m_context);
 
-	m_srt.scale = Vector3(0.8f, 0.8f, 0.8f);
+	m_srt.scale = Vector3(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
 	m_srt.rot = Vector3(0, 0, 0);
 	m_targetWorldPos = m_srt.pos;
 	m_moveSpeed = MOVE_SPEED;
@@ -67,12 +83,12 @@ void Enemy::Update(uint64_t dt) {
 	UpdateFacingRotation(deltaSeconds);
 
 	if (m_pendingCharge && !m_isTurning) {
-		// ’~—Íi“Ëi€”õj‚ª•Û—¯‚³‚ê‚Ä‚¨‚èA‚©‚Â”½“]ƒAƒjƒ[ƒVƒ‡ƒ“‚ªŠ®—¹ifalsej‚µ‚½ê‡
+		// è“„åŠ›ï¼ˆçªé€²æº–å‚™ï¼‰ãŒä¿ç•™ã•ã‚Œã¦ãŠã‚Šã€ã‹ã¤åè»¢ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãŒå®Œäº†ï¼ˆfalseï¼‰ã—ãŸå ´åˆ
 		m_pendingCharge = false;
 		m_isCharging = true;
 	}
 
-	// ’~—Íiƒ`ƒƒ[ƒWj’†‚Ìk‚¦ƒIƒtƒZƒbƒg‚ğŒvZ
+	// è“„åŠ›ï¼ˆãƒãƒ£ãƒ¼ã‚¸ï¼‰ä¸­ã®éœ‡ãˆã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’è¨ˆç®—
 	if (m_isCharging) {
 		auto& rng = RandomEngine::tls();
 		m_shakeOffset = Vector3(
@@ -83,11 +99,11 @@ void Enemy::Update(uint64_t dt) {
 		m_shakeOffset = Vector3(0, 0, 0);
 	}
 
-	//€–S”òãÄ’†‚ÌXVˆ—
+	//æ­»äº¡é£›ç¿”ä¸­ã®æ›´æ–°å‡¦ç†
 	if (m_state == EnemyState::DEAD_FLYING)
 	{
 		DeathFlyingUpdate(deltaSeconds);
-		return; // ‚±‚êˆÈ~‚ÌAI‚âˆÚ“®ˆ—‚Í‚³‚¹‚È‚¢
+		return; // ã“ã‚Œä»¥é™ã®AIã‚„ç§»å‹•å‡¦ç†ã¯ã•ã›ãªã„
 	}
 
 	if (m_isMyTurn && m_state == EnemyState::IDLE) {
@@ -97,7 +113,7 @@ void Enemy::Update(uint64_t dt) {
 
 	if (m_actionUI) m_actionUI->Update(deltaSeconds);
 
-	// “G‚Ìƒ_ƒ[ƒW—\‘ª‚ğŒvZ‚µAƒ^[ƒQƒbƒg‚Ìƒ†ƒjƒbƒg‚Öİ’è
+	// æ•µã®ãƒ€ãƒ¡ãƒ¼ã‚¸äºˆæ¸¬ã‚’è¨ˆç®—ã—ã€ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã®ãƒ¦ãƒ‹ãƒƒãƒˆã¸è¨­å®š
 	if (m_isCharging && !m_isDead && m_state != EnemyState::DEAD_FLYING) {
 		Tile* lockedTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
 		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
@@ -114,29 +130,29 @@ void Enemy::Update(uint64_t dt) {
 	case EnemyState::ATTACKING:
 
 		m_attackTimer += deltaSeconds;
-		if (m_attackTimer > 0.1f) {
+		if (m_attackTimer > ATTACK_DELAY) {
 			auto impactCallback = [this]() {
 				Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
 				if (targetTile != nullptr && targetTile->occupant != nullptr && targetTile->occupant != this) {
-					// ˆÚ“®Œã‚ÉQÆ‚ª¸‚í‚ê‚È‚¢‚æ‚¤A–‘O‚É‘ÎÛƒIƒuƒWƒFƒNƒg‚Ìƒ|ƒCƒ“ƒ^[‚ğ•Û‘¶
+					// ç§»å‹•å¾Œã«å‚ç…§ãŒå¤±ã‚ã‚Œãªã„ã‚ˆã†ã€äº‹å‰ã«å¯¾è±¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ãƒã‚¤ãƒ³ã‚¿ãƒ¼ã‚’ä¿å­˜
 					Unit* victim = targetTile->occupant;
 
-					// 1. æ‚É‰Ÿ‚µo‚µiƒmƒbƒNƒoƒbƒNj‚Ì•¨—Œø‰Ê‚ğ”­¶‚³‚¹‚é
+					// 1. å…ˆã«æŠ¼ã—å‡ºã—ï¼ˆãƒãƒƒã‚¯ãƒãƒƒã‚¯ï¼‰ã®ç‰©ç†åŠ¹æœã‚’ç™ºç”Ÿã•ã›ã‚‹
 					victim->OnPushed(this->m_facing,this);
 
-					// 2. ‚»‚ÌŒãAƒ_ƒ[ƒWˆ—‚ğÀsim_enemyDamage ‚ğÀÛ‚Ìƒ_ƒ[ƒW•Ï”‚â”’l‚É’u‚«Š·‚¦j
+					// 2. ãã®å¾Œã€ãƒ€ãƒ¡ãƒ¼ã‚¸å‡¦ç†ã‚’å®Ÿè¡Œï¼ˆm_enemyDamage ã‚’å®Ÿéš›ã®ãƒ€ãƒ¡ãƒ¼ã‚¸å¤‰æ•°ã‚„æ•°å€¤ã«ç½®ãæ›ãˆï¼‰
 					victim->TakeDamage(m_enemyDamage, this);
 				}
 				else {//miss
 					if (m_context->GetDamageManager()) {
 						Vector3 missPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-						missPos.y += 1.0f;
+						missPos.y += MISS_NUM_Y_OFFSET;
 						m_context->GetDamageManager()->SpawnDamage(missPos, 0);
 					}
 				}
 				};
 			if (UpdateAttackAnimation(dt, impactCallback)) {
-				//ƒAƒ^ƒbƒNƒAƒjƒÀsAŠ®—¹‚ÌŒŸ¸
+				//ã‚¢ã‚¿ãƒƒã‚¯ã‚¢ãƒ‹ãƒ¡å®Ÿè¡Œã€å®Œäº†ã®æ¤œæŸ»
 				m_state = EnemyState::IDLE;
 				m_isCharging = false;
 				EnemyEndAction();
@@ -150,12 +166,12 @@ void Enemy::Update(uint64_t dt) {
 				m_state = EnemyState::IDLE;
 				m_slideEndPos = Vector3(0, 0, 0);
 				if (m_currentHP <= 0) {
-					// €–S‚µ‚Ä‚«”ò‚Ô‰‰o‚ÖˆÚsBã©‚ÌƒgƒŠƒK[ƒƒWƒbƒN‚ÍŠ®‘S‚ÉƒXƒLƒbƒvI
+					// æ­»äº¡ã—ã¦å¹ãé£›ã¶æ¼”å‡ºã¸ç§»è¡Œã€‚ç½ ã®ãƒˆãƒªã‚¬ãƒ¼ãƒ­ã‚¸ãƒƒã‚¯ã¯å®Œå…¨ã«ã‚¹ã‚­ãƒƒãƒ—ï¼
 					Die();
 				}
 				else {
 					m_state = EnemyState::IDLE;
-					// ¶‘¶‚µ‚Ä‚¢‚éê‡‚Ì‚İAƒ^ƒCƒ‹‚ÌƒCƒxƒ“ƒgiã©‚È‚Çj‚ğ”­¶‚³‚¹‚é
+					// ç”Ÿå­˜ã—ã¦ã„ã‚‹å ´åˆã®ã¿ã€ã‚¿ã‚¤ãƒ«ã®ã‚¤ãƒ™ãƒ³ãƒˆï¼ˆç½ ãªã©ï¼‰ã‚’ç™ºç”Ÿã•ã›ã‚‹
 					Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
 					if (currentTile && currentTile->structure) {
 						currentTile->structure->OnEnter(this);
@@ -165,9 +181,9 @@ void Enemy::Update(uint64_t dt) {
 		}
 		else {
 			if (UpdateAttackAnimation(dt, nullptr)) {
-				// •Ç‚ÉŒƒ“Ë‚µ‚½Œã‚à¶€”»’è‚ğs‚¢AHP‚ª0‚È‚ç€–Sˆ—‚ğÀs‚·‚é
+				// å£ã«æ¿€çªã—ãŸå¾Œã‚‚ç”Ÿæ­»åˆ¤å®šã‚’è¡Œã„ã€HPãŒ0ãªã‚‰æ­»äº¡å‡¦ç†ã‚’å®Ÿè¡Œã™ã‚‹
 				if (m_currentHP <= 0) Die();
-				else m_state = EnemyState::IDLE;// ¶‚«c‚Á‚Ä‚¢‚éê‡‚Ì‚İIDLE‚Ö
+				else m_state = EnemyState::IDLE;// ç”Ÿãæ®‹ã£ã¦ã„ã‚‹å ´åˆã®ã¿IDLEã¸
 			}
 		}
 		break;
@@ -181,11 +197,11 @@ void Enemy::OnDraw(uint64_t dt) {
 
 	if (m_EnemyShader != nullptr) m_EnemyShader->SetGPU();
 
-	// ’~—Í’†‚Ìk‚¦‚Í `m_srt.pos` ‚ğ’¼Ú‰˜õ‚¹‚¸A•`‰æ—p‚Ìˆê“I‚È Matrix ‚Åˆ—‚·‚é
+	// è“„åŠ›ä¸­ã®éœ‡ãˆã¯ `m_srt.pos` ã‚’ç›´æ¥æ±šæŸ“ã›ãšã€æç”»ç”¨ã®ä¸€æ™‚çš„ãª Matrix ã§å‡¦ç†ã™ã‚‹
 	if (m_isCharging) {
 		Matrix4x4 shakeWorld = Matrix4x4::CreateScale(m_srt.scale)
 			* Matrix4x4::CreateRotationY(m_srt.rot.y)
-			* Matrix4x4::CreateTranslation(m_srt.pos + m_shakeOffset); // ƒIƒtƒZƒbƒg‚ğ‰ÁZ
+			* Matrix4x4::CreateTranslation(m_srt.pos + m_shakeOffset); // ã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’åŠ ç®—
 		Renderer::SetWorldMatrix(&shakeWorld);
 		if (m_Renderer) m_Renderer->Draw();
 	}
@@ -202,28 +218,28 @@ void Enemy::SetInitialFacingToPlayer() {
 		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(target->GetUnitGridX(), target->GetUnitGridZ());
 
-		// ƒxƒNƒgƒ‹F©•ª -> ƒ^[ƒQƒbƒg (targetPos - myPos = ‘Oi•ûŒü)
+		// ãƒ™ã‚¯ãƒˆãƒ«ï¼šè‡ªåˆ† -> ã‚¿ãƒ¼ã‚²ãƒƒãƒˆ (targetPos - myPos = å‰é€²æ–¹å‘)
 		Vector3 diff = targetPos - myPos;
 
 		Direction finalDir = Direction::South;
 
-		// --- yd—vz…•½•ûŒü—Dæ (Horizontal Bias) ‚Ì”»’è ---
-		// ’ÊíAÎ‚ßi—áF-2, -3j‚Ìê‡‚Í”’l‚Ì‘å‚«‚¢ South ‚ª”»’è‚³‚ê‚é‚ªA
-		// ‹Šo“I‚É‚ÍƒvƒŒƒCƒ„[‚ğ‘¤–Ê“I‚É‘¨‚¦‚½•û‚ª©‘R‚È‚½‚ßAX²‚Éd‚İ‚ğ‚½‚¹‚éB
-		if (std::abs(diff.x) > 0.1f)
+		// --- ã€é‡è¦ã€‘æ°´å¹³æ–¹å‘å„ªå…ˆ (Horizontal Bias) ã®åˆ¤å®š ---
+		// é€šå¸¸ã€æ–œã‚ï¼ˆä¾‹ï¼š-2, -3ï¼‰ã®å ´åˆã¯æ•°å€¤ã®å¤§ãã„ South ãŒåˆ¤å®šã•ã‚Œã‚‹ãŒã€
+		// è¦–è¦šçš„ã«ã¯ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚’å´é¢çš„ã«æ‰ãˆãŸæ–¹ãŒè‡ªç„¶ãªãŸã‚ã€Xè»¸ã«é‡ã¿ã‚’æŒãŸã›ã‚‹ã€‚
+		if (std::abs(diff.x) > AXIS_BIAS_THRESHOLD)
 		{
-			// “ŒE¼‚ğ—Dæ”»’è
+			// æ±ãƒ»è¥¿ã‚’å„ªå…ˆåˆ¤å®š
 			finalDir = (diff.x > 0) ? Direction::East : Direction::West;
 		}
 		else
 		{
-			// Šp“x‚ª‚’¼‚É‹ß‚¢ê‡‚Ì‚İA–kE“ì‚Æ”»’è
+			// è§’åº¦ãŒå‚ç›´ã«è¿‘ã„å ´åˆã®ã¿ã€åŒ—ãƒ»å—ã¨åˆ¤å®š
 			finalDir = (diff.z > 0) ? Direction::North : Direction::South;
 		}
 
-		// 3. Œü‚«‚Ì“K—p (ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌƒgƒŠƒK[)
-		// finalDir ‚ª West ‚È‚çuSouth -> Westv‚Ì”½“]ƒAƒjƒ[ƒVƒ‡ƒ“‚ªŠJn‚³‚ê‚é
-		// finalDir ‚ª South ‚Ìê‡‚ÍÃ~‚ğˆÛ‚·‚éid—l’Ê‚èj
+		// 3. å‘ãã®é©ç”¨ (ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®ãƒˆãƒªã‚¬ãƒ¼)
+		// finalDir ãŒ West ãªã‚‰ã€ŒSouth -> Westã€ã®åè»¢ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãŒé–‹å§‹ã•ã‚Œã‚‹
+		// finalDir ãŒ South ã®å ´åˆã¯é™æ­¢ã‚’ç¶­æŒã™ã‚‹ï¼ˆä»•æ§˜é€šã‚Šï¼‰
 		SetFacing(finalDir);
 
 		m_srt.rot.y = m_targetRot.y;
@@ -259,10 +275,10 @@ void Enemy::OnPushed(Direction pushDir, Unit* attacker) {
 
 	Unit::OnPushed(pushDir);
 
-	// ÀÛ‚ÉˆÊ’u‚ª•Ï‰»‚µ‚½i•Ç‚ÉÕ“Ë‚µ‚È‚©‚Á‚½jê‡‚Ì‚İAƒƒbƒNƒIƒ“À•W‚ğƒXƒ‰ƒCƒh‚³‚¹‚é
+	// å®Ÿéš›ã«ä½ç½®ãŒå¤‰åŒ–ã—ãŸï¼ˆå£ã«è¡çªã—ãªã‹ã£ãŸï¼‰å ´åˆã®ã¿ã€ãƒ­ãƒƒã‚¯ã‚ªãƒ³åº§æ¨™ã‚’ã‚¹ãƒ©ã‚¤ãƒ‰ã•ã›ã‚‹
 	if (m_gridX != oldX || m_gridZ != oldZ) {
 		if (m_isCharging) {
-			// ˆÚ“®—ÊiVˆÊ’u - ‹ŒˆÊ’uj‚ğŒ»İ‚ÌƒƒbƒNƒIƒ“À•W‚É‰ÁZ
+			// ç§»å‹•é‡ï¼ˆæ–°ä½ç½® - æ—§ä½ç½®ï¼‰ã‚’ç¾åœ¨ã®ãƒ­ãƒƒã‚¯ã‚ªãƒ³åº§æ¨™ã«åŠ ç®—
 			m_lockedGridX += (m_gridX - oldX);
 			m_lockedGridZ += (m_gridZ - oldZ);
 		}
@@ -275,11 +291,11 @@ void Enemy::TakeDamage(int damage, Unit* attacker) {
 
 	if (m_currentHP <= 0 && m_state != EnemyState::DEAD_FLYING)
 	{
-		// Œ»İƒmƒbƒNƒoƒbƒN’†iKNOCKBACKj‚Å‚ ‚ê‚ÎA€–S‰‰o‚ğ’x‰„‚³‚¹‚é
+		// ç¾åœ¨ãƒãƒƒã‚¯ãƒãƒƒã‚¯ä¸­ï¼ˆKNOCKBACKï¼‰ã§ã‚ã‚Œã°ã€æ­»äº¡æ¼”å‡ºã‚’é…å»¶ã•ã›ã‚‹
 		if (m_state == EnemyState::KNOCKBACK) {
 			return;
 		}
-		// ‚»‚êˆÈŠO‚Ìê‡‚ÍA‘¦À‚É€–Sˆ—‚ğÀs
+		// ãã‚Œä»¥å¤–ã®å ´åˆã¯ã€å³åº§ã«æ­»äº¡å‡¦ç†ã‚’å®Ÿè¡Œ
 		Die();
 	}
 }
@@ -288,18 +304,18 @@ void Enemy::ExecuteAI() {
 	Player* player = m_context->GetPlayer();
 	Ally* ally = m_context->GetAlly();
 
-	//ƒ^[ƒQƒbƒgŒˆ’è(ˆê”Ô‹ß‚¢ƒ†ƒjƒbƒg)
+	//ã‚¿ãƒ¼ã‚²ãƒƒãƒˆæ±ºå®š(ä¸€ç•ªè¿‘ã„ãƒ¦ãƒ‹ãƒƒãƒˆ)
 	Unit* target = nullptr;
-	int distToPlayer = 999;
-	int distToAlly = 999;
+	int distToPlayer = DIST_UNREACHABLE;
+	int distToAlly = DIST_UNREACHABLE;
 
-	//ƒvƒŒƒCƒ„[‚Ì‹——£ŒvZ
+	//ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®è·é›¢è¨ˆç®—
 	if (player && player->GetHP() > 0) {
 		distToPlayer = m_context->GetMapManager()->CalculateDistance(
 			this->m_gridX, this->m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
 	}
 
-	//–¡•û‚Ì‹——£ŒvZ
+	//å‘³æ–¹ã®è·é›¢è¨ˆç®—
 	if (ally && ally->GetHP() > 0) {
 		distToAlly = m_context->GetMapManager()->CalculateDistance(
 			this->m_gridX, this->m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
@@ -309,12 +325,12 @@ void Enemy::ExecuteAI() {
 	else target = player;
 
 	if (!target) {
-		EndTurn();//ƒ^[ƒQƒbƒg‚ª‚¢‚È‚¢ê‡Aƒ^[ƒ“I—¹
+		EndTurn();//ã‚¿ãƒ¼ã‚²ãƒƒãƒˆãŒã„ãªã„å ´åˆã€ã‚¿ãƒ¼ãƒ³çµ‚äº†
 		return;
 	}
 
 	int dist = m_context->GetMapManager()->CalculateDistance(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ());
-	//UŒ‚”ÍˆÍ‚Ìİ’è
+	//æ”»æ’ƒç¯„å›²ã®è¨­å®š
 
 
 	if (dist <= ATTACK_RANGE) {
@@ -324,23 +340,23 @@ void Enemy::ExecuteAI() {
 		MapManager* map = m_context->GetMapManager();
 		int tx = target->GetUnitGridX(), tz = target->GetUnitGridZ();
 
-		// target‚ğgoal‚Æ‚µ‚Äˆµ‚¤FFindPaths‚Ítarget—×Úƒ}ƒX‚Å’â~‚·‚éiˆÓ}‚µ‚½d—lj
+		// targetã‚’goalã¨ã—ã¦æ‰±ã†ï¼šFindPathsã¯targetéš£æ¥ãƒã‚¹ã§åœæ­¢ã™ã‚‹ï¼ˆæ„å›³ã—ãŸä»•æ§˜ï¼‰
 		auto path = map->FindPaths(m_gridX, m_gridZ, tx, tz, false);
-		if (path.empty()) { EnemyEndAction(); return; }   // “’B•s‰ÂFs“®I—¹Ac—¯path‚ğQÆ‚µ‚ÄonMoveFinished‚ğŒÄ‚Î‚È‚¢
+		if (path.empty()) { EnemyEndAction(); return; }   // åˆ°é”ä¸å¯ï¼šè¡Œå‹•çµ‚äº†ã€æ®‹ç•™pathã‚’å‚ç…§ã—ã¦onMoveFinishedã‚’å‘¼ã°ãªã„
 
-		// us“®—Í‚Ì”ÍˆÍ“àv‚ÅA–Ú•W‚ÉÅ‚à‹ß‚Ã‚¯‚éˆÚ“®æ‚ğ‘I‘ğ
+		// ã€Œè¡Œå‹•åŠ›ã®ç¯„å›²å†…ã€ã§ã€ç›®æ¨™ã«æœ€ã‚‚è¿‘ã¥ã‘ã‚‹ç§»å‹•å…ˆã‚’é¸æŠ
 		int limit = std::min((int)path.size(), m_currentMovePoints);
 		int bestIdx = -1;
-		int bestD = map->CalculateDistance(m_gridX, m_gridZ, tx, tz); // ‰ŠúˆÊ’u‚Ì‹——£‚ğŠî€‚É‚·‚é
+		int bestD = map->CalculateDistance(m_gridX, m_gridZ, tx, tz); // åˆæœŸä½ç½®ã®è·é›¢ã‚’åŸºæº–ã«ã™ã‚‹
 
 		for (int i = 0; i < limit; ++i) {
 			int d = map->CalculateDistance(path[i]->gridX, path[i]->gridZ, tx, tz);
-			if (d < bestD) { bestD = d; bestIdx = i; }    // ‚æ‚è‹ß‚Ã‚­’n“_‚Ì‚İÌ—p
+			if (d < bestD) { bestD = d; bestIdx = i; }    // ã‚ˆã‚Šè¿‘ã¥ãåœ°ç‚¹ã®ã¿æ¡ç”¨
 		}
 
-		if (bestIdx < 0) { EnemyEndAction(); return; }    // ”ÍˆÍ“à‚É‹ß‚Ã‚¯‚é’n“_‚È‚µFˆÚ“®‚µ‚È‚¢ic—¯path‚ğQÆ‚µ‚È‚¢j
+		if (bestIdx < 0) { EnemyEndAction(); return; }    // ç¯„å›²å†…ã«è¿‘ã¥ã‘ã‚‹åœ°ç‚¹ãªã—ï¼šç§»å‹•ã—ãªã„ï¼ˆæ®‹ç•™pathã‚’å‚ç…§ã—ãªã„ï¼‰
 
-		path.resize(bestIdx + 1);                         // uÅ‚à‹ß‚¢ˆÚ“®æv‚Ü‚ÅŒo˜H‚ğØ‚è‹l‚ß‚é
+		path.resize(bestIdx + 1);                         // ã€Œæœ€ã‚‚è¿‘ã„ç§»å‹•å…ˆã€ã¾ã§çµŒè·¯ã‚’åˆ‡ã‚Šè©°ã‚ã‚‹
 		m_currentMovePoints -= (int)path.size();
 
 		EnemyStartMoveTo(path);
@@ -371,7 +387,7 @@ void Enemy::updateMove(uint64_t delta) {
 	SetFacingFromVector(direction);
 
 	float distanceSq = direction.LengthSquared();
-	if (distanceSq < 0.01f) {
+	if (distanceSq < ARRIVE_EPSILON_SQ) {
 		this->setPosition(m_targetWorldPos);
 		m_pathIndex++;
 		if (m_pathIndex >= m_currentPath.size()) onMoveFinished();
@@ -400,24 +416,24 @@ void Enemy::onMoveFinished() {
 		this->m_gridZ = endTile->gridZ;
 		if (endTile) {
 			endTile->occupant = this;
-			//ã©‚Ìƒ`ƒFƒbƒN
+			//ç½ ã®ãƒã‚§ãƒƒã‚¯
 			if (endTile->structure) endTile->structure->OnEnter(this);
 		}
 	}
-	//ƒvƒŒ[ƒ„[‚Æ–¡•û‚Ì‹——£‚ğÄŒvZAUŒ‚”ÍˆÍ“à‚©‚Ç‚¤‚©
+	//ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ã¨å‘³æ–¹ã®è·é›¢ã‚’å†è¨ˆç®—ã€æ”»æ’ƒç¯„å›²å†…ã‹ã©ã†ã‹
 	Player* player = m_context->GetPlayer();
 	Ally* ally = m_context->GetAlly();
 	Unit* targetInRange = nullptr;
 
-	// ƒ`ƒFƒbƒN Player‚Í”ÍˆÍ“à‚©
+	// ãƒã‚§ãƒƒã‚¯ Playerã¯ç¯„å›²å†…ã‹
 	if (player && player->GetHP() > 0) {
 		int d = m_context->GetMapManager()->CalculateDistance(m_gridX, m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
-		if (d <= 1) targetInRange = player;
+		if (d <= ATTACK_RANGE) targetInRange = player;
 	}
-	// ƒ`ƒFƒbƒN Ally ‚Í”ÍˆÍ“à‚©(—Dæ‚ÅAllyƒƒbƒN)
+	// ãƒã‚§ãƒƒã‚¯ Ally ã¯ç¯„å›²å†…ã‹(å„ªå…ˆã§Allyãƒ­ãƒƒã‚¯)
 	if (ally && ally->GetHP() > 0) {
 		int d = m_context->GetMapManager()->CalculateDistance(m_gridX, m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
-		if (d <= 1) targetInRange = ally;
+		if (d <= ATTACK_RANGE) targetInRange = ally;
 	}
 
 	if (targetInRange) {
@@ -431,21 +447,21 @@ void Enemy::StartCharge(Unit* target) {
 	if (target) {
 		m_lockedGridX = target->GetUnitGridX();
 		m_lockedGridZ = target->GetUnitGridZ();
-		// ‘O‚Ì’iŠK‚Åc‚Á‚Ä‚¢‚½”½“]iƒtƒŠƒbƒvjó‘Ô‚ğ‹­§“I‚É’†’f‚µASetFacing ‚ªŠmÀ‚É“K—p‚³‚ê‚é‚æ‚¤‚É‚·‚é
+		// å‰ã®æ®µéšã§æ®‹ã£ã¦ã„ãŸåè»¢ï¼ˆãƒ•ãƒªãƒƒãƒ—ï¼‰çŠ¶æ…‹ã‚’å¼·åˆ¶çš„ã«ä¸­æ–­ã—ã€SetFacing ãŒç¢ºå®Ÿã«é©ç”¨ã•ã‚Œã‚‹ã‚ˆã†ã«ã™ã‚‹
 		m_isTurning = false;
-		//Œü‚«‚ÌÄİ’è
+		//å‘ãã®å†è¨­å®š
 		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
 		SetFacingFromVector(targetPos - myPos);
 	}
 
 	if (m_isTurning) {
-		// ”½“]ƒAƒjƒ[ƒVƒ‡ƒ“’†‚Ìê‡‚ÍA“Ëi‘O‚Ìuk‚¦‰‰ov‚ğ•Û—¯‚É‚·‚é
+		// åè»¢ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ä¸­ã®å ´åˆã¯ã€çªé€²å‰ã®ã€Œéœ‡ãˆæ¼”å‡ºã€ã‚’ä¿ç•™ã«ã™ã‚‹
 		m_pendingCharge = true;
 		m_isCharging = false;
 	}
 	else {
-		// Šù‚É‘ÎÛ‚Ì•ûŒü‚ğŒü‚¢‚Ä‚¢‚éi”½“]•s—v‚Èjê‡‚ÍA‘¦À‚Ék‚¦‰‰o‚ğŠJn
+		// æ—¢ã«å¯¾è±¡ã®æ–¹å‘ã‚’å‘ã„ã¦ã„ã‚‹ï¼ˆåè»¢ä¸è¦ãªï¼‰å ´åˆã¯ã€å³åº§ã«éœ‡ãˆæ¼”å‡ºã‚’é–‹å§‹
 		m_pendingCharge = false;
 		m_isCharging = true;
 	}
@@ -455,7 +471,7 @@ void Enemy::StartCharge(Unit* target) {
 
 void Enemy::Die() {
 	m_state = EnemyState::DEAD_FLYING;
-	// €–S‚É’~—Íiƒ`ƒƒ[ƒWjó‘Ô‚ğ‹­§ƒNƒŠƒA‚µAŒxUI‚Ìc‘¶‚ğ–h~‚·‚é
+	// æ­»äº¡æ™‚ã«è“„åŠ›ï¼ˆãƒãƒ£ãƒ¼ã‚¸ï¼‰çŠ¶æ…‹ã‚’å¼·åˆ¶ã‚¯ãƒªã‚¢ã—ã€è­¦å‘ŠUIã®æ®‹å­˜ã‚’é˜²æ­¢ã™ã‚‹
 	m_isCharging = false;
 	m_pendingCharge = false;
 
@@ -491,17 +507,17 @@ void Enemy::DrawUI() {
 void Enemy::OnDrawFloorUI(uint64_t dt) {
 	if (m_currentHP <= 0) return;
 
-	// --- ˆÚ“®’†‚©‚ÂˆÚ“®”ÍˆÍƒf[ƒ^‚ª‘¶İ‚·‚éê‡A”–‚¢—ÎF‚Å•`‰æ ---
+	// --- ç§»å‹•ä¸­ã‹ã¤ç§»å‹•ç¯„å›²ãƒ‡ãƒ¼ã‚¿ãŒå­˜åœ¨ã™ã‚‹å ´åˆã€è–„ã„ç·‘è‰²ã§æç”» ---
 	if (m_state == EnemyState::MOVING && m_context && m_context->GetMapManager() && !m_moveRangeTiles.empty()) {
-		m_context->GetMapManager()->DrawColoredTiles(m_moveRangeTiles, Color(0.0f, 1.0f, 0.0f, 0.2f));
+		m_context->GetMapManager()->DrawColoredTiles(m_moveRangeTiles, MOVE_RANGE_COLOR);
 	}
 
-	// “G‚ªƒ`ƒƒ[ƒW’†‚Ìê‡Aƒ^[ƒQƒbƒg‚Æ‚È‚é°‚ğÔ‚­ƒnƒCƒ‰ƒCƒg‚·‚é
+	// æ•µãŒãƒãƒ£ãƒ¼ã‚¸ä¸­ã®å ´åˆã€ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã¨ãªã‚‹åºŠã‚’èµ¤ããƒã‚¤ãƒ©ã‚¤ãƒˆã™ã‚‹
 	if (m_isCharging && m_context && m_context->GetMapManager()) {
 		Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
 		if (targetTile) {
 			std::vector<Tile*> dangerTiles = { targetTile };
-			m_context->GetMapManager()->DrawColoredTiles(dangerTiles, Color(0.9f, 0.0f, 0.0f, 0.5f));
+			m_context->GetMapManager()->DrawColoredTiles(dangerTiles, DANGER_TILE_COLOR);
 		}
 	}
 }
@@ -509,23 +525,23 @@ void Enemy::OnDrawFloorUI(uint64_t dt) {
 void Enemy::OnDrawOverlay(uint64_t dt) {
 	if (m_currentHP <= 0) return;
 
-	// “G‚ÌUŒ‚ˆÓ}iÔ‚¢–îˆój‚ğÅ‘O–Ê‚É•`‰æ
+	// æ•µã®æ”»æ’ƒæ„å›³ï¼ˆèµ¤ã„çŸ¢å°ï¼‰ã‚’æœ€å‰é¢ã«æç”»
 	if (m_isCharging && m_attackArrowRenderer && m_context && m_context->GetMapManager()) {
 		if (m_EnemyShader) m_EnemyShader->SetGPU();
 
 		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-		Vector3 arrowPos = myPos + (targetPos - myPos) * 0.35f;
-		arrowPos.y += ZFight::EnemyArrow; // OverlayƒŒƒCƒ„[“à‚Å‚Ì•‚‚©‚¹‹ï‡‚ğ’²®
+		Vector3 arrowPos = myPos + (targetPos - myPos) * ATTACK_ARROW_POS_RATIO;
+		arrowPos.y += ZFight::EnemyArrow; // Overlayãƒ¬ã‚¤ãƒ¤ãƒ¼å†…ã§ã®æµ®ã‹ã›å…·åˆã‚’èª¿æ•´
 
 		Vector3 diff = targetPos - myPos;
 		float rotY = 0.0f;
-		if (diff.x > 0.1f)      rotY = 0.0f;
-		else if (diff.x < -0.1f) rotY = PI;
-		else if (diff.z > 0.1f)  rotY = -PI / 2.0f;
-		else if (diff.z < -0.1f) rotY = PI / 2.0f;
+		if (diff.x > AXIS_BIAS_THRESHOLD)       rotY = 0.0f;
+		else if (diff.x < -AXIS_BIAS_THRESHOLD) rotY = PI;
+		else if (diff.z > AXIS_BIAS_THRESHOLD)  rotY = -PI / 2.0f;
+		else if (diff.z < -AXIS_BIAS_THRESHOLD) rotY = PI / 2.0f;
 
-		Matrix4x4 world = Matrix4x4::CreateScale(Vector3(0.6f, 0.6f, 0.6f))
+		Matrix4x4 world = Matrix4x4::CreateScale(Vector3(ATTACK_ARROW_SCALE, ATTACK_ARROW_SCALE, ATTACK_ARROW_SCALE))
 			* Matrix4x4::CreateRotationY(rotY)
 			* Matrix4x4::CreateTranslation(arrowPos);
 
@@ -533,15 +549,15 @@ void Enemy::OnDrawOverlay(uint64_t dt) {
 		if (auto* mat = m_attackArrowRenderer->GetMaterial(0)) {
 			MATERIAL old = mat->GetData();
 			MATERIAL temp = old;
-			temp.Diffuse = Color(1.0f, 0.08f, 0.57f, 0.7f); // ÔF”¼“§–¾‚ÅŠëŒ¯‚ğ’Ê’m
+			temp.Diffuse = ATTACK_ARROW_COLOR;
 			mat->SetMaterial(temp);
 			m_attackArrowRenderer->Draw();
 			mat->SetMaterial(old);
 		}
 
-		// ƒ^[ƒQƒbƒg‚Ìƒ^ƒCƒ‹‚É’N‚©‚ª‘¶İ‚µA‚©‚Â‚»‚ê‚ª©•ª©g‚Å‚È‚¢ê‡A
+		// ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã®ã‚¿ã‚¤ãƒ«ã«èª°ã‹ãŒå­˜åœ¨ã—ã€ã‹ã¤ãã‚ŒãŒè‡ªåˆ†è‡ªèº«ã§ãªã„å ´åˆã€
 		
-		// ‚»‚Ìƒ†ƒjƒbƒg‚ª‚Ç‚±‚Ö‰Ÿ‚µo‚³‚ê‚é‚©‚ÌƒvƒŒƒrƒ…[‚ğŒp‘±“I‚É•\¦‚·‚é
+		// ãã®ãƒ¦ãƒ‹ãƒƒãƒˆãŒã©ã“ã¸æŠ¼ã—å‡ºã•ã‚Œã‚‹ã‹ã®ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ã‚’ç¶™ç¶šçš„ã«è¡¨ç¤ºã™ã‚‹
 		Tile* lockedTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
 		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
 			lockedTile->occupant->DrawPushPreview(m_facing);

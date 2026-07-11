@@ -1,4 +1,4 @@
-#include "../../Core/main.h"
+ï»¿#include "../../Core/main.h"
 #include "TitleScene.h"
 #include "../../System/CDirectInput.h"
 #include "../../System/scenemanager.h"
@@ -8,44 +8,50 @@
 #include <cmath>
 
 namespace {
-    // --- ‰‰oE’è”’è‹` ---
-	constexpr float FADE_IN_OUT_DURATION = 1000.0f;// ƒtƒF[ƒhƒCƒ“EƒAƒEƒg‚Ì‡ŒvŠÔimsj
-	constexpr float BackgroundTransitionTime = 1000.0f;// ”wŒi‘JˆÚ‚ÌƒXƒNƒ[ƒ‹ŠÔimsj
+    // --- æ¼”å‡ºãƒ»å®šæ•°å®šç¾© ---
+	constexpr float FADE_IN_OUT_DURATION = 1000.0f;// ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ãƒ»ã‚¢ã‚¦ãƒˆã®åˆè¨ˆæ™‚é–“ï¼ˆmsï¼‰
+	constexpr float BackgroundTransitionTime = 1000.0f;// èƒŒæ™¯é·ç§»ã®ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«æ™‚é–“ï¼ˆmsï¼‰
     constexpr float BLINK_SPEED       = 1.0f;
-    constexpr float BLINK_MIN_ALPHA   = 0.3f; // Š®‘S‚ÉÁ‚¦‚È‚¢‚½‚ß‚Ì‰ºŒÀ’l
-    constexpr float BLINK_RANGE       = 0.7f; // •Ï“®• (0.3 + 0.7 = 1.0)
+    constexpr float BLINK_MIN_ALPHA   = 0.3f; // å®Œå…¨ã«æ¶ˆãˆãªã„ãŸã‚ã®ä¸‹é™å€¤
+    constexpr float BLINK_RANGE       = 0.7f; // å¤‰å‹•å¹… (0.3 + 0.7 = 1.0)
     
-    constexpr float HINT_POS_Y_RATIO  = 0.8f; // ‰æ–Ê‰º•”‚Ö‚Ì”z’u”ä—¦
+    constexpr float HINT_POS_Y_RATIO  = 0.8f; // ç”»é¢ä¸‹éƒ¨ã¸ã®é…ç½®æ¯”ç‡
+
+    constexpr float BGM_FADE_TIME = 1.0f;     // ã‚¿ã‚¤ãƒˆãƒ«BGMã®ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³æ™‚é–“ï¼ˆç§’ï¼‰
+
+    // ãƒ’ãƒ³ãƒˆã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®ãƒ†ã‚¯ã‚¹ãƒãƒ£å®Ÿå¯¸ï¼ˆpxï¼‰
+    constexpr float HINT_TEX_W = 677.0f;
+    constexpr float HINT_TEX_H = 369.0f;
 }
 
 void TitleScene::Init() {
-    // nullptr ‚Ìê‡‚Ì‚İ¶¬iˆÀ‘S‚ÈƒŠƒ\[ƒX‰Šú‰»j
+    // nullptr ã®å ´åˆã®ã¿ç”Ÿæˆï¼ˆå®‰å…¨ãªãƒªã‚½ãƒ¼ã‚¹åˆæœŸåŒ–ï¼‰
     if (!m_image) {
         m_image = std::make_unique<CSprite>(SCREEN_WIDTH, SCREEN_HEIGHT, "Assets/texture/title.png");
     }
     if (!m_hintSprite) {
-        m_hintSprite = std::make_unique<CSprite>(677.0f, 369.0f, "Assets/texture/ui/ui_press_enter.png");
+        m_hintSprite = std::make_unique<CSprite>(HINT_TEX_W, HINT_TEX_H, "Assets/texture/ui/ui_press_enter.png");
     }
 
     m_blinkTimer = 0.0f;
     m_currentHintAlpha = 1.0f;
 
-    // ƒ^ƒCƒgƒ‹BGM‚ÌÄ¶ (ƒ‹[ƒv‚ ‚èA1•bƒtƒF[ƒhƒCƒ“)
-    AudioManager::GetInstance().PlayBGM("Title", true, 1.0f);
+    // ã‚¿ã‚¤ãƒˆãƒ«BGMã®å†ç”Ÿ (ãƒ«ãƒ¼ãƒ—ã‚ã‚Šã€ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³)
+    AudioManager::GetInstance().PlayBGM("Title", true, BGM_FADE_TIME);
 }
 
 void TitleScene::update(uint64_t deltatime) {
     float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
 
-    // --- ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌXV ---
+    // --- ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®æ›´æ–° ---
     m_blinkTimer += deltaSeconds;
-    // ƒTƒCƒ“”g‚É‚æ‚éŒÄ‹zi–¾–ÅjƒGƒtƒFƒNƒg‚ÌŒvZ
+    // ã‚µã‚¤ãƒ³æ³¢ã«ã‚ˆã‚‹å‘¼å¸ï¼ˆæ˜æ»…ï¼‰ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®è¨ˆç®—
     float sinValue = std::abs(std::sin(m_blinkTimer * BLINK_SPEED));
     m_currentHintAlpha = BLINK_MIN_ALPHA + (BLINK_RANGE * sinValue);
 
-    // --- “ü—ÍŒŸ’m (Any Key) ---
+    // --- å…¥åŠ›æ¤œçŸ¥ (Any Key) ---
     bool hasAnyKeyPressed = false;
-    // å—v‚ÈƒL[ƒR[ƒh(1~255)‚ğ‘–¸
+    // ä¸»è¦ãªã‚­ãƒ¼ã‚³ãƒ¼ãƒ‰(1~255)ã‚’èµ°æŸ»
     for (int i = 1; i < 256; i++) {
         if (CDirectInput::GetInstance().CheckKeyBufferTrigger(i)) {
             hasAnyKeyPressed = true;
@@ -70,24 +76,24 @@ void TitleScene::draw(uint64_t deltatime) {
 
     Renderer::SetUISamplerMode(true);
 
-    // ”wŒiƒƒS•`‰æ
+    // èƒŒæ™¯ãƒ­ã‚´æç”»
     m_image->Draw(
         Vector3(1.0f, 1.0f, 1.0f),
         Vector3(0.0f, 0.0f, 0.0f),
         Vector3(SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f, 0.0f)
     );
 
-    // ƒqƒ“ƒg(Press Any Key)•`‰æ
+    // ãƒ’ãƒ³ãƒˆ(Press Any Key)æç”»
     if (m_hintSprite) {
         MATERIAL mtrl;
-        mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, m_currentHintAlpha); // Update‚ÅŒvZÏ‚İ‚Ì’l‚ğ“K—p
+        mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, m_currentHintAlpha); // Updateã§è¨ˆç®—æ¸ˆã¿ã®å€¤ã‚’é©ç”¨
         mtrl.TextureEnable = TRUE;
         m_hintSprite->ModifyMtrl(mtrl);
 
         float posX = SCREEN_WIDTH / 2.0f;
         float posY = SCREEN_HEIGHT * HINT_POS_Y_RATIO;
 
-        // UI—pƒuƒŒƒ“ƒhƒXƒe[ƒg“K—p
+        // UIç”¨ãƒ–ãƒ¬ãƒ³ãƒ‰ã‚¹ãƒ†ãƒ¼ãƒˆé©ç”¨
         Renderer::SetBlendState(BS_ALPHABLEND);
         Renderer::SetDepthEnable(false);
 

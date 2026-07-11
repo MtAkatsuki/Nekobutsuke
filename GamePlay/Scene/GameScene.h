@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <memory>
 #include "../../System/IScene.h"
@@ -23,23 +23,23 @@ class IntroDirector;
 class GameResultJudge;
 
 // =========================================================
-// GameScene ƒNƒ‰ƒX
-// ípƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“‚ÌƒƒCƒ“ƒ‹[ƒv‚Æó‘ÔŠÇ—‚ğ’S‚¤ƒV[ƒ“
+// GameScene ã‚¯ãƒ©ã‚¹
+// æˆ¦è¡“ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã®ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—ã¨çŠ¶æ…‹ç®¡ç†ã‚’æ‹…ã†ã‚·ãƒ¼ãƒ³
 // =========================================================
 class GameScene : public IScene {
 public:
 
 	virtual ~GameScene();
-	friend class GameSceneDebugUI;   // ƒfƒoƒbƒO UI ‚É“à•”ó‘Ô(’²Q‘ÎÛ)‚Ö‚Ì’¼ÚƒAƒNƒZƒX‚ğ‹–‰Â
+	friend class GameSceneDebugUI;   // ãƒ‡ãƒãƒƒã‚° UI ã«å†…éƒ¨çŠ¶æ…‹(èª¿å‚å¯¾è±¡)ã¸ã®ç›´æ¥ã‚¢ã‚¯ã‚»ã‚¹ã‚’è¨±å¯
 
-	// ƒRƒs[ƒRƒ“ƒXƒgƒ‰ƒNƒ^E‘ã“ü‰‰Zq‚Ì–³Œø‰»iˆÀ‘SİŒvj
+	// ã‚³ãƒ”ãƒ¼ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ãƒ»ä»£å…¥æ¼”ç®—å­ã®ç„¡åŠ¹åŒ–ï¼ˆå®‰å…¨è¨­è¨ˆï¼‰
 	GameScene(const GameScene&) = delete;
 	GameScene& operator=(const GameScene&) = delete;
 
 	explicit GameScene();
 
 	// ---------------------------------------------------------
-	// IScene Œp³ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle Overrides)
+	// IScene ç¶™æ‰¿ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle Overrides)
 	// ---------------------------------------------------------
 	void Init() override;
 	void update(uint64_t deltatime) override;
@@ -47,7 +47,7 @@ public:
 	void dispose() override;
 
 	// ---------------------------------------------------------
-	// ŠO•”ƒCƒ“ƒ^[ƒtƒF[ƒXE‰Šúİ’è (Public Interfaces)
+	// å¤–éƒ¨ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹ãƒ»åˆæœŸè¨­å®š (Public Interfaces)
 	// ---------------------------------------------------------
 	void SetGameContext(GameContext* context) override;
 
@@ -55,14 +55,17 @@ public:
 		m_GameObjectList.push_back(std::move(obj));
 	}
 
+	// åˆæœŸã‚¿ãƒ¼ãƒ³æ•°ï¼ˆè„±å‡ºã‚¤ãƒ™ãƒ³ãƒˆã¾ã§ã®ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³é–‹å§‹å€¤ï¼‰
+	static constexpr int INITIAL_TURN_COUNT = 5;
+
 private:
 	// =========================================================
-	// “à•”ƒƒWƒbƒN•ªŠ„ƒTƒuŠÖ”ŒQ (Cataloging)
-	// “Ç‚İè‚ªXV‡˜‚ÆˆÓ}‚ğ˜ëáÕ‚Å‚«‚é‚æ‚¤‚É–ğŠ„‚²‚Æ‚É•ªŠ„
+	// å†…éƒ¨ãƒ­ã‚¸ãƒƒã‚¯åˆ†å‰²ã‚µãƒ–é–¢æ•°ç¾¤ (Cataloging)
+	// èª­ã¿æ‰‹ãŒæ›´æ–°é †åºã¨æ„å›³ã‚’ä¿¯ç°ã§ãã‚‹ã‚ˆã†ã«å½¹å‰²ã”ã¨ã«åˆ†å‰²
 	// =========================================================
 
 	// ---------------------------------------------------------
-	// ‰Šú‰»ƒTƒuƒ‹[ƒ`ƒ“ (Init Sub-routines)
+	// åˆæœŸåŒ–ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ (Init Sub-routines)
 	// ---------------------------------------------------------
 	void ResetManagers();
 	void InitializeCamera();
@@ -74,21 +77,21 @@ private:
 	void InitializeDebugFeatures();
 
 	// ---------------------------------------------------------
-	// XVƒTƒuƒ‹[ƒ`ƒ“FƒVƒXƒeƒ€E•\Œ» (System & Presentation)
+	// æ›´æ–°ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ï¼šã‚·ã‚¹ãƒ†ãƒ ãƒ»è¡¨ç¾ (System & Presentation)
 	// ---------------------------------------------------------
 	void UpdateCoreTimers(float deltaSeconds);
 	void UpdateCameraFocus(float deltaSeconds);
 	void UpdateTurnIntroSequence(uint64_t deltatime, float deltaSeconds);
 
 	// ---------------------------------------------------------
-	// XVƒTƒuƒ‹[ƒ`ƒ“Fƒtƒ[§ŒäƒCƒ“ƒ^[ƒZƒvƒg (Flow Control Interceptors)
+	// æ›´æ–°ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ï¼šãƒ•ãƒ­ãƒ¼åˆ¶å¾¡ã‚¤ãƒ³ã‚¿ãƒ¼ã‚»ãƒ—ãƒˆ (Flow Control Interceptors)
 	// ---------------------------------------------------------
 	bool HandlePreGameBlocking(uint64_t deltatime, float deltaSeconds);
 	bool HandleTurnCutinBlocking(uint64_t deltatime);
 	bool IsTurnCounterAnimating() const;
 
 	// ---------------------------------------------------------
-	// XVƒTƒuƒ‹[ƒ`ƒ“FƒƒCƒ“ƒƒWƒbƒN (Main Logic & Entities)
+	// æ›´æ–°ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ï¼šãƒ¡ã‚¤ãƒ³ãƒ­ã‚¸ãƒƒã‚¯ (Main Logic & Entities)
 	// ---------------------------------------------------------
 	void UpdateEnvironmentAndDamageUI(uint64_t deltatime);
 	void HandleCameraRotationInput();
@@ -98,14 +101,14 @@ private:
 	void UpdatePostEffectsAndAudio(uint64_t deltatime, float deltaSeconds);
 
 	// ---------------------------------------------------------
-	// ƒ^[ƒ“is‚ÆƒCƒxƒ“ƒg§Œä (Turn Flow & Events)
+	// ã‚¿ãƒ¼ãƒ³é€²è¡Œã¨ã‚¤ãƒ™ãƒ³ãƒˆåˆ¶å¾¡ (Turn Flow & Events)
 	// ---------------------------------------------------------
 	void TurnChangeCheck();
 	void ProcessEndOfEnemyPhase();
 	void CheckAndTriggerEscapeEvent();
 
 	// ---------------------------------------------------------
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒpƒCƒvƒ‰ƒCƒ“ (Rendering Sub-routines)
+	// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³ (Rendering Sub-routines)
 	// ---------------------------------------------------------
 	void DrawBackgroundLayer();
 	void DrawFloorLayer(uint64_t deltatime);
@@ -122,10 +125,10 @@ private:
 	void DrawWinText();
 
 	// =========================================================
-	// ƒƒ“ƒo[•Ï” (Member Variables)
+	// ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•° (Member Variables)
 	// =========================================================
 
-	// --- ƒRƒAƒVƒXƒeƒ€‚Æƒ}ƒl[ƒWƒƒ[ ---
+	// --- ã‚³ã‚¢ã‚·ã‚¹ãƒ†ãƒ ã¨ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼ ---
 	GameContext* m_context = nullptr;
 	Camera* m_camera = nullptr;
 	MapManager* m_MapManager = nullptr;
@@ -133,13 +136,13 @@ private:
 	DamageNumberManager* m_damageNumberManager = nullptr;
 	CShader* m_tileShader = nullptr;
 
-	// --- ƒQ[ƒ€ƒGƒ“ƒeƒBƒeƒB ---
+	// --- ã‚²ãƒ¼ãƒ ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ ---
 	std::vector<std::unique_ptr<GameObject>> m_GameObjectList;
 	Player* m_player = nullptr;
 	Ally* m_ally = nullptr;
 	std::unique_ptr<Background> m_background;
 
-	// --- UIƒRƒ“ƒ|[ƒlƒ“ƒg ---
+	// --- UIã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ ---
 	DialogueUI* m_dialogueUI = nullptr;
 	std::unique_ptr<TurnCutin> m_turnCutin;
 	std::unique_ptr<TurnCounter> m_turnCounter;
@@ -151,24 +154,24 @@ private:
 	std::unique_ptr<IntroDirector> m_introDirector;
 	bool m_showActionUI = true;
 
-	// --- ƒQ[ƒ€isó‘Ôƒtƒ‰ƒO ---
+	// --- ã‚²ãƒ¼ãƒ é€²è¡ŒçŠ¶æ…‹ãƒ•ãƒ©ã‚° ---
 	bool m_isGameStarted = false;
 	bool m_isEscapeActive = false;
 	bool m_isAllyTalked = false;
 
-	// --- ƒpƒ‰ƒ[ƒ^Eƒ^ƒCƒ}[ ---
-	int m_remainingTurns = 5;
+	// --- ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ»ã‚¿ã‚¤ãƒãƒ¼ ---
+	int m_remainingTurns = INITIAL_TURN_COUNT;
 	int m_escapeGridX = -1;
 	int m_escapeGridZ = -1;
 
 	float m_uiAnimTimer = 0.0f;
 	float m_startDelayTimer = 0.0f;
 
-	// --- ‰‰oEƒfƒoƒbƒO§Œä ---
+	// --- æ¼”å‡ºãƒ»ãƒ‡ãƒãƒƒã‚°åˆ¶å¾¡ ---
 	bool m_needsTurnCounterAnim = false;
 	bool m_shouldShowDebugEscape = false;
 
-	// --- ’è”ƒpƒ‰ƒ[ƒ^ ---
+	// --- å®šæ•°ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ ---
 	const float START_WAIT_TIME = 1.0f;
 };
 

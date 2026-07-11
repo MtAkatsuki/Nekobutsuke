@@ -1,4 +1,4 @@
-#include "GameUIManager.h"
+ï»¿#include "GameUIManager.h"
 #include "../../Core/GameContext.h"
 #include "../../Actor/Character/Player.h"
 #include "../../System/Camera.h"
@@ -7,21 +7,51 @@
 #include <cmath>
 
 namespace {
-    // --- ƒƒjƒ…[İ’è ---
-    const float MENU_START_X = 140.0f;
-    const float MENU_START_Y = 150.0f;
-    const float MENU_SPACING_Y = 60.0f;
+    // --- ãƒ¡ãƒ‹ãƒ¥ãƒ¼è¨­å®š ---
+    const float MENU_OFFSET_X = 140.0f;      // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼é ­ä¸ŠåŸºæº–ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼å·¦ã‚ªãƒ•ã‚»ãƒƒãƒˆ
+    const float MENU_OFFSET_Y = 60.0f;       // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼é ­ä¸ŠåŸºæº–ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ä¸Šã‚ªãƒ•ã‚»ãƒƒãƒˆ
+    const float MENU_ITEM_SPACING_Y = 45.0f; // ãƒ¡ãƒ‹ãƒ¥ãƒ¼é …ç›®é–“ã®ç¸¦é–“éš”
     const float MENU_ANIM_DURATION = 0.2f;
+    const float MENU_SELECT_POP_SCALE = 0.5f;   // é¸æŠã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®æ‹¡å¤§é‡ï¼ˆsinã‚«ãƒ¼ãƒ–æŒ¯å¹…ï¼‰
+    const float MENU_ANCHOR_Y_OFFSET = 0.1f;    // ãƒ¡ãƒ‹ãƒ¥ãƒ¼åŸºæº–ç‚¹ã®ãƒ¯ãƒ¼ãƒ«ãƒ‰Yè£œæ­£
 
-    // --- ƒKƒCƒhUIƒAƒjƒ[ƒVƒ‡ƒ“İ’è ---
-    const float GUIDE_SHAKE_SPEED = 20.0f;   // –îˆó‚ª—h‚ê‚é‘¬“x
-    const float GUIDE_SHAKE_AMP = 5.0f;      // –îˆó‚ª—h‚ê‚éU•(ƒsƒNƒZƒ‹)
+    // --- ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼é ­ä¸ŠçŸ¢å° ---
+    const float ACTIVE_ARROW_Y_OFFSET = 1.5f;   // çŸ¢å°ã®ãƒ¯ãƒ¼ãƒ«ãƒ‰ç©ºé–“ã§ã®é ­ä¸Šé«˜ã•
+    const float ARROW_HOVER_SPEED = 3.0f;       // çŸ¢å°ã®ä¸Šä¸‹ãƒ›ãƒãƒ¼é€Ÿåº¦
+    const float ARROW_HOVER_AMP = 10.0f;        // çŸ¢å°ã®ä¸Šä¸‹ãƒ›ãƒãƒ¼æŒ¯å¹…ï¼ˆpxï¼‰
 
-    const float GUIDE_TIME_POP_IN = 0.2f;    // oŒ»‚É‚©‚©‚éŠÔ
-    const float GUIDE_TIME_FADE_START = 0.8f;// Á–Å‚ğŠJn‚·‚é‚Ü‚Å‚ÌŠÔ
-    const float GUIDE_TIME_END = 1.0f;       // Š®‘S‚ÉÁ–Å‚·‚éŠÔ
+    // --- ç”»é¢å¤–ã‚«ãƒªãƒ³ã‚° ---
+    const float SCREEN_CULL_MARGIN = 50.0f;     // ã“ã®ä½™ç™½ã‚’è¶…ãˆã¦ç”»é¢å¤–ãªã‚‰æç”»ã—ãªã„
 
-    // ‰E‰ºUI‚Ì”z’uƒIƒtƒZƒbƒg
+    // --- UIã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®ãƒ†ã‚¯ã‚¹ãƒãƒ£å®Ÿå¯¸ï¼ˆpxï¼‰ ---
+    const float MENU_TEX_W = 168.0f;
+    const float MENU_TEX_H = 42.0f;
+    const float ESC_HINT_TEX_W = 197.0f;
+    const float ESC_HINT_TEX_H = 43.5f;
+    const float ENTER_HINT_TEX_W = 197.0f;
+    const float ENTER_HINT_TEX_H = 42.5f;
+    const float GUIDE_ARROW_TEX_W = 87.5f;
+    const float GUIDE_ARROW_TEX_H = 59.0f;
+    const float ACTIVE_ARROW_TEX_W = 53.0f;
+    const float ACTIVE_ARROW_TEX_H = 66.0f;
+
+    // --- ã‚«ãƒ¡ãƒ©å›è»¢ãƒ’ãƒ³ãƒˆUI ---
+    const float CAM_HINT_SCALE = 0.5f;          // è¡¨ç¤ºã‚¹ã‚±ãƒ¼ãƒ«
+    const float CAM_HINT_POS_X = 87.0f;         // ç”»é¢å·¦ä¸‹ã®é…ç½®X
+    const float CAM_HINT_TEX_W = 306.0f;        // ãƒ†ã‚¯ã‚¹ãƒãƒ£å®Ÿå¯¸å¹…ï¼ˆpxï¼‰
+    const float CAM_HINT_TEX_H = 270.0f;        // ãƒ†ã‚¯ã‚¹ãƒãƒ£å®Ÿå¯¸é«˜ã•ï¼ˆpxï¼‰
+    const float CAM_HINT_Y_ADJUST = 50.0f;      // é…ç½®Yã®å¾®èª¿æ•´ï¼ˆä¸‹æ–¹å‘ã¸ãšã‚‰ã™é‡ï¼‰
+
+    // --- ã‚¬ã‚¤ãƒ‰UIã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³è¨­å®š ---
+    const float GUIDE_SHAKE_SPEED = 20.0f;   // çŸ¢å°ãŒæºã‚Œã‚‹é€Ÿåº¦
+    const float GUIDE_SHAKE_AMP = 5.0f;      // çŸ¢å°ãŒæºã‚Œã‚‹æŒ¯å¹…(ãƒ”ã‚¯ã‚»ãƒ«)
+
+    const float GUIDE_TARGET_Y_OFFSET = 0.5f;// ã‚¬ã‚¤ãƒ‰çŸ¢å°ã®åŸºæº–ç‚¹ã‚’é ­ä¸Šã¸æŒã¡ä¸Šã’ã‚‹é‡
+    const float GUIDE_TIME_POP_IN = 0.2f;    // å‡ºç¾ã«ã‹ã‹ã‚‹æ™‚é–“
+    const float GUIDE_TIME_FADE_START = 0.8f;// æ¶ˆæ»…ã‚’é–‹å§‹ã™ã‚‹ã¾ã§ã®æ™‚é–“
+    const float GUIDE_TIME_END = 1.0f;       // å®Œå…¨ã«æ¶ˆæ»…ã™ã‚‹æ™‚é–“
+
+    // å³ä¸‹UIã®é…ç½®ã‚ªãƒ•ã‚»ãƒƒãƒˆ
     const float ESC_UI_OFFSET_X = -148.0f;
     const float ESC_UI_OFFSET_Y = -52.0f;
     const float ENTER_UI_OFFSET_X = -148.0f;
@@ -31,15 +61,15 @@ namespace {
 void GameUIManager::Init(GameContext* context) {
     m_context = context;
 
-    // 1. ƒƒCƒ“ƒƒjƒ…[‚Ìƒ[ƒh
-    LoadSprite(m_mainMenuOptions, "Assets/texture/ui/ui_text_move.png", 168, 42);
-    LoadSprite(m_mainMenuOptions, "Assets/texture/ui/ui_text_attack.png", 168, 42);
-    LoadSprite(m_mainMenuOptions, "Assets/texture/ui/ui_text_end.png", 168, 42);
+    // 1. ãƒ¡ã‚¤ãƒ³ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã®ãƒ­ãƒ¼ãƒ‰
+    LoadSprite(m_mainMenuOptions, "Assets/texture/ui/ui_text_move.png", MENU_TEX_W, MENU_TEX_H);
+    LoadSprite(m_mainMenuOptions, "Assets/texture/ui/ui_text_attack.png", MENU_TEX_W, MENU_TEX_H);
+    LoadSprite(m_mainMenuOptions, "Assets/texture/ui/ui_text_end.png", MENU_TEX_W, MENU_TEX_H);
 
-    m_escHintSprite = std::make_unique<CSprite>(197, 43.5, "Assets/texture/ui/ui_text_cancel.png");
-    m_enterHintSprite = std::make_unique<CSprite>(197, 42.5, "Assets/texture/ui/ui_text_enter.png");
+    m_escHintSprite = std::make_unique<CSprite>(ESC_HINT_TEX_W, ESC_HINT_TEX_H, "Assets/texture/ui/ui_text_cancel.png");
+    m_enterHintSprite = std::make_unique<CSprite>(ENTER_HINT_TEX_W, ENTER_HINT_TEX_H, "Assets/texture/ui/ui_text_enter.png");
 
-    // 2. WASD –îˆó‚Ìƒ[ƒh
+    // 2. WASD çŸ¢å°ã®ãƒ­ãƒ¼ãƒ‰
     std::string arrowFiles[4] = {
         "Assets/texture/ui/ui_arrow_w.png",
         "Assets/texture/ui/ui_arrow_s.png",
@@ -48,39 +78,39 @@ void GameUIManager::Init(GameContext* context) {
     };
 
     m_arrows.clear();
-    float offsetDist = 90.0f; // Œµ–§‚ÈƒIƒŠƒWƒiƒ‹ƒpƒ‰ƒ[ƒ^
+    float offsetDist = 90.0f; // å³å¯†ãªã‚ªãƒªã‚¸ãƒŠãƒ«ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
 
     for (int i = 0; i < 4; ++i) {
         TutorialArrow arrow;
-        arrow.sprite = std::make_unique<CSprite>(87.5f, 59.0f, arrowFiles[i]); // ƒIƒŠƒWƒiƒ‹ƒTƒCƒY
+        arrow.sprite = std::make_unique<CSprite>(GUIDE_ARROW_TEX_W, GUIDE_ARROW_TEX_H, arrowFiles[i]); // ã‚ªãƒªã‚¸ãƒŠãƒ«ã‚µã‚¤ã‚º
         arrow.currentShake = Vector3(0, 0, 0);
 
-        // ƒIƒŠƒWƒiƒ‹‚ÌƒIƒtƒZƒbƒgİ’è
-        if (i == 0)      arrow.baseOffset = Vector3(0, -offsetDist, 0); // W (ã)
-        else if (i == 1) arrow.baseOffset = Vector3(0, offsetDist, 0);  // S (‰º)
-        else if (i == 2) arrow.baseOffset = Vector3(-offsetDist, 0, 0); // A (¶)
-        else if (i == 3) arrow.baseOffset = Vector3(offsetDist, 0, 0);  // D (‰E)
+        // ã‚ªãƒªã‚¸ãƒŠãƒ«ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆè¨­å®š
+        if (i == 0)      arrow.baseOffset = Vector3(0, -offsetDist, 0); // W (ä¸Š)
+        else if (i == 1) arrow.baseOffset = Vector3(0, offsetDist, 0);  // S (ä¸‹)
+        else if (i == 2) arrow.baseOffset = Vector3(-offsetDist, 0, 0); // A (å·¦)
+        else if (i == 3) arrow.baseOffset = Vector3(offsetDist, 0, 0);  // D (å³)
 
         m_arrows.push_back(std::move(arrow));
     }
 
     m_isGuideActive = false;
 
-    // 3. ƒvƒŒƒCƒ„[“ªã‚Ìw¦–îˆó‚ğ•œŒ³
-    m_pActiveArrow = std::make_unique<CSprite>(53, 66, "Assets/texture/ui/ui_arrow_down.png");
+    // 3. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼é ­ä¸Šã®æŒ‡ç¤ºçŸ¢å°ã‚’å¾©å…ƒ
+    m_pActiveArrow = std::make_unique<CSprite>(ACTIVE_ARROW_TEX_W, ACTIVE_ARROW_TEX_H, "Assets/texture/ui/ui_arrow_down.png");
 
-    // 4. ƒJƒƒ‰‰ñ“]UI‚ğƒ[ƒh‚µA‰ŠúˆÊ’u‚ğİ’è
-    m_cameraRotateScale = 0.5f;
-    m_cameraRotateHint = std::make_unique<CSprite>(306, 270, "Assets/texture/ui/ui_text_camera_rotate.png");
+    // 4. ã‚«ãƒ¡ãƒ©å›è»¢UIã‚’ãƒ­ãƒ¼ãƒ‰ã—ã€åˆæœŸä½ç½®ã‚’è¨­å®š
+    m_cameraRotateScale = CAM_HINT_SCALE;
+    m_cameraRotateHint = std::make_unique<CSprite>(CAM_HINT_TEX_W, CAM_HINT_TEX_H, "Assets/texture/ui/ui_text_camera_rotate.png");
 
-    m_cameraRotatePos.x = 87.0f;
-    m_cameraRotatePos.y = (float)Application::GetHeight() - (270.0f * m_cameraRotateScale) + 50.0f;
+    m_cameraRotatePos.x = CAM_HINT_POS_X;
+    m_cameraRotatePos.y = (float)Application::GetHeight() - (CAM_HINT_TEX_H * m_cameraRotateScale) + CAM_HINT_Y_ADJUST;
 }
 
 void GameUIManager::Update(uint64_t dt) {
     float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 
-    // ƒƒjƒ…[‘I‘ğƒAƒjƒ[ƒVƒ‡ƒ“‚Ìis
+    // ãƒ¡ãƒ‹ãƒ¥ãƒ¼é¸æŠã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®é€²è¡Œ
     if (m_animTimer > 0.0f) {
         m_animTimer -= deltaSeconds;
         if (m_animTimer <= 0.0f) m_animTimer = 0.0f;
@@ -88,7 +118,7 @@ void GameUIManager::Update(uint64_t dt) {
         for (int i = 0; i < m_mainMenuOptions.size(); ++i) {
             if (i == m_selectedIndex) {
                 float t = 1.0f - (m_animTimer / MENU_ANIM_DURATION);
-                float scale = 1.0f + std::sinf(t * 3.14159f) * 0.5f; // ƒ|ƒbƒvƒAƒbƒv–¬“®Œø‰Ê
+                float scale = 1.0f + std::sinf(t * PI) * MENU_SELECT_POP_SCALE; // ãƒãƒƒãƒ—ã‚¢ãƒƒãƒ—è„ˆå‹•åŠ¹æœ
                 m_mainMenuOptions[i].currentScale = Vector3(scale, scale, 1.0f);
                 m_mainMenuOptions[i].isVisible = true;
             }
@@ -100,10 +130,10 @@ void GameUIManager::Update(uint64_t dt) {
 
     UpdateGuideUI(deltaSeconds);
 
-    // ƒvƒŒƒCƒ„[“ªã‚Ì–îˆó—p’PU“®
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼é ­ä¸Šã®çŸ¢å°ç”¨å˜æŒ¯å‹•
     if (m_context && m_context->GetTurnManager() && m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase) {
         m_arrowTimer += deltaSeconds;
-        m_arrowHoverY = std::sinf(m_arrowTimer * 3.0f) * 10.0f;
+        m_arrowHoverY = std::sinf(m_arrowTimer * ARROW_HOVER_SPEED) * ARROW_HOVER_AMP;
     }
 }
 
@@ -117,15 +147,15 @@ void GameUIManager::Draw() {
         float screenW = (float)Application::GetWidth();
         float screenH = (float)Application::GetHeight();
 
-        // 1. ƒvƒŒƒCƒ„[“ªã‚Ì–îˆó•`‰æ
+        // 1. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼é ­ä¸Šã®çŸ¢å°æç”»
         if (m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase) {
             Vector3 arrowWorldPos = player->getSRT().pos;
-            arrowWorldPos.y += 1.5f;
+            arrowWorldPos.y += ACTIVE_ARROW_Y_OFFSET;
 
             Vector2 arrowScreenPos = WorldToScreen(arrowWorldPos, camera->GetViewMatrix(), camera->GetProjMatrix(), screenW, screenH);
 
-            if (arrowScreenPos.x > -50 && arrowScreenPos.x < screenW + 50 &&
-                arrowScreenPos.y > -50 && arrowScreenPos.y < screenH + 50) {
+            if (arrowScreenPos.x > -SCREEN_CULL_MARGIN && arrowScreenPos.x < screenW + SCREEN_CULL_MARGIN &&
+                arrowScreenPos.y > -SCREEN_CULL_MARGIN && arrowScreenPos.y < screenH + SCREEN_CULL_MARGIN) {
 
                 Vector3 arrowPos(std::round(arrowScreenPos.x), std::round(arrowScreenPos.y + m_arrowHoverY), 0);
                 if (m_pActiveArrow) {
@@ -134,15 +164,16 @@ void GameUIManager::Draw() {
             }
         }
 
-        // 2. ƒƒjƒ…[UI•`‰æ
+        // 2. ãƒ¡ãƒ‹ãƒ¥ãƒ¼UIæç”»
         if (m_currentMenu == MenuType::Main) {
             Vector3 headPos = player->getSRT().pos;
-            headPos.y += 0.1f;
+            headPos.y += MENU_ANCHOR_Y_OFFSET;
             Vector2 screenPos = WorldToScreen(headPos, camera->GetViewMatrix(), camera->GetProjMatrix(), screenW, screenH);
 
-            if (!(screenPos.x < -50 || screenPos.x > screenW + 50 || screenPos.y < -50 || screenPos.y > screenH + 50)) {
-                float startX = screenPos.x - 140.0f;
-                float startY = screenPos.y - 60.0f;
+            if (!(screenPos.x < -SCREEN_CULL_MARGIN || screenPos.x > screenW + SCREEN_CULL_MARGIN ||
+                  screenPos.y < -SCREEN_CULL_MARGIN || screenPos.y > screenH + SCREEN_CULL_MARGIN)) {
+                float startX = screenPos.x - MENU_OFFSET_X;
+                float startY = screenPos.y - MENU_OFFSET_Y;
                 DrawMenuGroup(m_mainMenuOptions, startX, startY);
             }
         }
@@ -172,7 +203,7 @@ void GameUIManager::OpenMainMenu() {
     for (int i = 0; i < m_mainMenuOptions.size(); ++i) {
         m_mainMenuOptions[i].currentScale = Vector3(1.0f, 1.0f, 1.0f);
         m_mainMenuOptions[i].targetScale = Vector3(1.0f, 1.0f, 1.0f);
-		// ƒfƒtƒHƒ‹ƒg‚Å‚ÍuˆÚ“®v‚ÆuUŒ‚v‚ğ—LŒøAuI—¹v‚Í”ñ•\¦
+		// ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§ã¯ã€Œç§»å‹•ã€ã¨ã€Œæ”»æ’ƒã€ã‚’æœ‰åŠ¹ã€ã€Œçµ‚äº†ã€ã¯éè¡¨ç¤º
         if (i == 2) {
             m_mainMenuOptions[i].isVisible = true;
         }
@@ -222,11 +253,11 @@ void GameUIManager::DrawMenuGroup(std::vector<MenuOption>& list, float startX, f
     float offsetY = 0.0f;
     for (auto& opt : list) {
         if (!opt.isVisible) continue;
-		// Šeƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“‚Ì•`‰æˆÊ’u‚ğŒvZ
+		// å„ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã®æç”»ä½ç½®ã‚’è¨ˆç®—
         Vector3 pos(startX, startY + offsetY, 0.0f);
         opt.menuSprite->Draw(opt.currentScale, Vector3(0, 0, 0), pos);
 
-		offsetY += 45.0f; //ƒƒjƒ…[ƒIƒvƒVƒ‡ƒ“ŠÔ‚Ì‚’¼ƒIƒtƒZƒbƒg
+		offsetY += MENU_ITEM_SPACING_Y; //ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚ªãƒ—ã‚·ãƒ§ãƒ³é–“ã®å‚ç›´ã‚ªãƒ•ã‚»ãƒƒãƒˆ
     }
 }
 
@@ -235,13 +266,13 @@ void GameUIManager::UpdateGuideUI(float deltaSeconds) {
 
     m_guideTimer += deltaSeconds;
 
-    // ©“®ƒtƒF[ƒhƒAƒEƒgŠÔ‚ğ’´‚¦‚½‚ç”ñ•\¦‚É‚·‚é
+    // è‡ªå‹•ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆæ™‚é–“ã‚’è¶…ãˆãŸã‚‰éè¡¨ç¤ºã«ã™ã‚‹
     if (m_guideTimer > GUIDE_TIME_END) {
         m_isGuideActive = false;
         return;
     }
 
-    // Še–îˆó‚ÌƒVƒFƒCƒNi—h‚êjˆÊ’u‚ğŒvZ‚·‚é
+    // å„çŸ¢å°ã®ã‚·ã‚§ã‚¤ã‚¯ï¼ˆæºã‚Œï¼‰ä½ç½®ã‚’è¨ˆç®—ã™ã‚‹
     for (auto& arrow : m_arrows) {
         arrow.shakeTimer += deltaSeconds;
         float offsetVal = std::sinf(arrow.shakeTimer * GUIDE_SHAKE_SPEED) * GUIDE_SHAKE_AMP;
@@ -263,15 +294,15 @@ void GameUIManager::DrawGuideUI() {
 
     Vector2 screenPos = WorldToScreen(m_guideTargetPos, cam->GetViewMatrix(), cam->GetProjMatrix(), sw, sh);
 
-    // Œo‰ßŠÔ‚ÉŠî‚Ã‚­ƒAƒ‹ƒtƒ@(“§–¾“x)‚ÆƒXƒP[ƒ‹‚ÌŒvZ
+    // çµŒéæ™‚é–“ã«åŸºã¥ãã‚¢ãƒ«ãƒ•ã‚¡(é€æ˜åº¦)ã¨ã‚¹ã‚±ãƒ¼ãƒ«ã®è¨ˆç®—
     float scale = 1.0f;
     if (m_guideTimer < GUIDE_TIME_POP_IN) {
-        // ’e‚Ş‚æ‚¤‚Èƒ|ƒbƒvƒCƒ“iOvershootjƒC[ƒWƒ“ƒO
+        // å¼¾ã‚€ã‚ˆã†ãªãƒãƒƒãƒ—ã‚¤ãƒ³ï¼ˆOvershootï¼‰ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°
         scale = m_guideTimer / GUIDE_TIME_POP_IN;
         scale = 1.0f + 2.0f * std::pow(scale - 1.0f, 3.0f) + std::pow(scale - 1.0f, 2.0f);
     }
     else if (m_guideTimer > GUIDE_TIME_FADE_START) {
-        // ƒtƒF[ƒhƒAƒEƒg
+        // ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆ
         float elapsed = m_guideTimer - GUIDE_TIME_FADE_START;
         float duration = GUIDE_TIME_END - GUIDE_TIME_FADE_START;
         float t = elapsed / duration;
@@ -284,7 +315,7 @@ void GameUIManager::DrawGuideUI() {
 
     if (m_showArrows) {
         Vector3 targetPos = m_guideTargetPos;
-        targetPos.y += 0.5f;
+        targetPos.y += GUIDE_TARGET_Y_OFFSET;
 
         Vector2 screenPos = WorldToScreen(targetPos, cam->GetViewMatrix(), cam->GetProjMatrix(), sw, sh);
 

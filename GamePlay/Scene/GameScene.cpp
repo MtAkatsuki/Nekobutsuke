@@ -1,4 +1,4 @@
-#include "GameScene.h"
+ï»¿#include "GameScene.h"
 #include "GameSceneDebugUI.h"
 #include "IntroDirector.h"
 #include "GameResultJudge.h"
@@ -23,14 +23,29 @@
 #include "../../UI/System/DamageNumberManager.h"
 #include "../../UI/Component/DialogueUI.h"
 #include <stdio.h> // for sprintf_s
+#include <cfloat>  // for FLT_MAX
 
 
 
 namespace {
-	// ‰‰o—p’è”
-	const int INITIAL_TURN_COUNT = 5;                  // ‰Šúƒ^[ƒ“”i’EoƒCƒxƒ“ƒg‚Ü‚Å‚ÌƒJƒEƒ“ƒgƒ_ƒEƒ“ŠJn’lj
-	const float ESCAPE_MARKER_BASE_Y = 1.5f;           // ’EoƒAƒCƒRƒ“‚ÌY²ƒx[ƒXÀ•W
+	// æ¼”å‡ºç”¨å®šæ•°ï¼ˆINITIAL_TURN_COUNT ã¯ GameScene.h ã®ã‚¯ãƒ©ã‚¹å®šæ•°ã¸ç§»å‹•ï¼‰
+	const float ESCAPE_MARKER_BASE_Y = 1.5f;           // è„±å‡ºã‚¢ã‚¤ã‚³ãƒ³ã®Yè»¸ãƒ™ãƒ¼ã‚¹åº§æ¨™
+	const float ESCAPE_MARKER_FLOAT_SPEED = 3.0f;      // è„±å‡ºã‚¢ã‚¤ã‚³ãƒ³ã®æµ®éŠã‚¹ãƒ”ãƒ¼ãƒ‰ï¼ˆå€¤ãŒå¤§ãã„ã»ã©é€Ÿãä¸Šä¸‹ã™ã‚‹ï¼‰
+	const float ESCAPE_MARKER_FLOAT_AMPLITUDE = 0.15f; // è„±å‡ºã‚¢ã‚¤ã‚³ãƒ³ã®æµ®éŠæŒ¯å¹…ï¼ˆå€¤ãŒå¤§ãã„ã»ã©ä¸Šä¸‹ã®ç¯„å›²ãŒåºƒãŒã‚‹ï¼‰
+	const float ESCAPE_CUBE_Y_OFFSET = 1.05f;          // è„±å‡ºãƒã‚¹ã‚­ãƒ¥ãƒ¼ãƒ–ã®åºŠã‹ã‚‰ã®æµ®ã‹ã›é‡
+	const Color ESCAPE_CUBE_COLOR = Color(135.0f / 255.0f, 206.0f / 255.0f, 250.0f / 255.0f, 0.6f); // ç©ºè‰²ãƒ»åŠé€æ˜
+	const float WIN_TEXT_Y_OFFSET = 1.7f;              // WINè¡¨ç¤ºã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼é ­ä¸Šã‚ªãƒ•ã‚»ãƒƒãƒˆ
+	const float BGM_FADE_TIME = 2.0f;                  // ã‚²ãƒ¼ãƒ BGMã®ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³æ™‚é–“ï¼ˆç§’ï¼‰
+
+	// ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®ãƒ†ã‚¯ã‚¹ãƒãƒ£å®Ÿå¯¸ï¼ˆpxï¼‰
+	const float ESCAPE_MARKER_TEX_SIZE = 128.0f;
+	const float WIN_TEXT_TEX_W = 308.0f;
+	const float WIN_TEXT_TEX_H = 205.0f;
 }
+
+// ã‚¿ãƒ¼ãƒ³ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼ã®æ•°å­—ãƒ†ã‚¯ã‚¹ãƒãƒ£æšæ•°ã‚’è¶…ãˆã‚‹åˆæœŸã‚¿ãƒ¼ãƒ³æ•°ã¯è¡¨ç¤ºã§ããªã„
+static_assert(GameScene::INITIAL_TURN_COUNT <= TurnCounter::MAX_TURN_SPRITES,
+	"INITIAL_TURN_COUNT exceeds available turn number sprites");
 
 GameScene::GameScene()
 {
@@ -39,92 +54,92 @@ GameScene::GameScene()
 GameScene::~GameScene() = default;
 // ---------------------------------------------------------
 
-// IScene Œp³ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle Overrides)
+// IScene ç¶™æ‰¿ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle Overrides)
 
 // ---------------------------------------------------
 
-// ƒV[ƒ“‚Ì‰Šú‰»Fˆ—‚Ì‘S‘Ìƒtƒ[‚ğu–ÚŸ‰»v‚µ‚Ä‰Â“Ç«‚ğ‚‚ß‚é
+// ã‚·ãƒ¼ãƒ³ã®åˆæœŸåŒ–ï¼šå‡¦ç†ã®å…¨ä½“ãƒ•ãƒ­ãƒ¼ã‚’ã€Œç›®æ¬¡åŒ–ã€ã—ã¦å¯èª­æ€§ã‚’é«˜ã‚ã‚‹
 void GameScene::Init() {
 	DBG_ERROR("=== GameScene::Init Start ===");
 
-	ResetManagers();            // 1. c—¯ƒf[ƒ^‚ÌƒNƒŠ[ƒ“ƒAƒbƒvi‘O‰ñ‚Ìƒ]ƒ“ƒrƒR[ƒ‹ƒoƒbƒN‘Îôj
-	InitializeCamera();         // 2. ƒJƒƒ‰‚Ì‰Šú‰»‚ÆƒtƒH[ƒJƒXİ’è
-	LoadGameResources();        // 3. ƒOƒ‰ƒtƒBƒbƒNƒŠƒ\[ƒXEBGM‚Ì€”õ
-	InitializeMap();            // 4. ƒXƒe[ƒW\’z‚ÆƒJƒƒ‰‹«ŠE‚Ì©“®ŒvZ
-	SetupGameEntities();        // 5. ƒƒWƒbƒNƒGƒ“ƒeƒBƒeƒBiƒvƒŒƒCƒ„[E“G“™j‚ÌƒoƒCƒ“ƒh
-	SetupUserInterface();       // 6. UI‚Æƒ^[ƒ“isƒCƒxƒ“ƒg‚ÌƒoƒCƒ“ƒh
-	InitializeDebugFeatures();  // 7. ŠJ”­Eƒ`ƒ…[ƒjƒ“ƒO—pƒc[ƒ‹‚Ìƒ}ƒEƒ“ƒg
+	ResetManagers();            // 1. æ®‹ç•™ãƒ‡ãƒ¼ã‚¿ã®ã‚¯ãƒªãƒ¼ãƒ³ã‚¢ãƒƒãƒ—ï¼ˆå‰å›ã®ã‚¾ãƒ³ãƒ“ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯å¯¾ç­–ï¼‰
+	InitializeCamera();         // 2. ã‚«ãƒ¡ãƒ©ã®åˆæœŸåŒ–ã¨ãƒ•ã‚©ãƒ¼ã‚«ã‚¹è¨­å®š
+	LoadGameResources();        // 3. ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯ãƒªã‚½ãƒ¼ã‚¹ãƒ»BGMã®æº–å‚™
+	InitializeMap();            // 4. ã‚¹ãƒ†ãƒ¼ã‚¸æ§‹ç¯‰ã¨ã‚«ãƒ¡ãƒ©å¢ƒç•Œã®è‡ªå‹•è¨ˆç®—
+	SetupGameEntities();        // 5. ãƒ­ã‚¸ãƒƒã‚¯ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãƒ»æ•µç­‰ï¼‰ã®ãƒã‚¤ãƒ³ãƒ‰
+	SetupUserInterface();       // 6. UIã¨ã‚¿ãƒ¼ãƒ³é€²è¡Œã‚¤ãƒ™ãƒ³ãƒˆã®ãƒã‚¤ãƒ³ãƒ‰
+	InitializeDebugFeatures();  // 7. é–‹ç™ºãƒ»ãƒãƒ¥ãƒ¼ãƒ‹ãƒ³ã‚°ç”¨ãƒ„ãƒ¼ãƒ«ã®ãƒã‚¦ãƒ³ãƒˆ
 
 	m_isGameStarted = false;
 	m_startDelayTimer = 0.0f;
-	m_resultJudge = std::make_unique<GameResultJudge>(m_context);  // Ÿ”s”»’èi–ˆ‰ñ¶¬‚Åó‘Ô‚ğ‘SƒŠƒZƒbƒgj
+	m_resultJudge = std::make_unique<GameResultJudge>(m_context);  // å‹æ•—åˆ¤å®šï¼ˆæ¯å›ç”Ÿæˆã§çŠ¶æ…‹ã‚’å…¨ãƒªã‚»ãƒƒãƒˆï¼‰
 }
 
-// ƒV[ƒ“‚ÌXVˆ—F•\¦EƒƒWƒbƒNEƒtƒ[§Œä‚Ì—Dæ“x‡‚ÉÀs
+// ã‚·ãƒ¼ãƒ³ã®æ›´æ–°å‡¦ç†ï¼šè¡¨ç¤ºãƒ»ãƒ­ã‚¸ãƒƒã‚¯ãƒ»ãƒ•ãƒ­ãƒ¼åˆ¶å¾¡ã®å„ªå…ˆåº¦é †ã«å®Ÿè¡Œ
 void GameScene::update(uint64_t deltatime)
 {
 	float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
 
-	// 1. ƒVƒXƒeƒ€E•\Œ»‚ÌÅ—DæXViƒƒWƒbƒN’â~’†‚à‰æ–Ê‚ğƒtƒŠ[ƒY‚³‚¹‚È‚¢‚½‚ßj
+	// 1. ã‚·ã‚¹ãƒ†ãƒ ãƒ»è¡¨ç¾ã®æœ€å„ªå…ˆæ›´æ–°ï¼ˆãƒ­ã‚¸ãƒƒã‚¯åœæ­¢ä¸­ã‚‚ç”»é¢ã‚’ãƒ•ãƒªãƒ¼ã‚ºã•ã›ãªã„ãŸã‚ï¼‰
 	UpdateCoreTimers(deltaSeconds);
 	UpdateCameraFocus(deltaSeconds);
 
-	// 2. ƒtƒ[§ŒäƒCƒ“ƒ^[ƒZƒvƒgiƒ`ƒ…[ƒgƒŠƒAƒ‹‚â‰‰o’†‚ÍŒã‘±‚Ì“ü—Í‚ğÕ’fj
+	// 2. ãƒ•ãƒ­ãƒ¼åˆ¶å¾¡ã‚¤ãƒ³ã‚¿ãƒ¼ã‚»ãƒ—ãƒˆï¼ˆãƒãƒ¥ãƒ¼ãƒˆãƒªã‚¢ãƒ«ã‚„æ¼”å‡ºä¸­ã¯å¾Œç¶šã®å…¥åŠ›ã‚’é®æ–­ï¼‰
 	if (HandlePreGameBlocking(deltatime, deltaSeconds)) return;
 	UpdateEnvironmentAndDamageUI(deltatime);
 	if (HandleTurnCutinBlocking(deltatime)) return;
 
-	// 3. ‰‰o‚Æ“ü—Í‚ÌXV
+	// 3. æ¼”å‡ºã¨å…¥åŠ›ã®æ›´æ–°
 	UpdateTurnIntroSequence(deltatime, deltaSeconds);
 	HandleCameraRotationInput();
 
-	// ƒ^[ƒ“UI”òs’†‚È‚Ç‚ÌƒAƒjƒ[ƒVƒ‡ƒ“’†‚ÍA”Õ–Ê‚ÌƒGƒ“ƒeƒBƒeƒBXV‚ğ‘j~‚·‚é
+	// ã‚¿ãƒ¼ãƒ³UIé£›è¡Œä¸­ãªã©ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ä¸­ã¯ã€ç›¤é¢ã®ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£æ›´æ–°ã‚’é˜»æ­¢ã™ã‚‹
 	if (IsTurnCounterAnimating()) return;
 
-	// 4. ƒƒCƒ“ƒƒWƒbƒNEƒGƒ“ƒeƒBƒeƒBXV
+	// 4. ãƒ¡ã‚¤ãƒ³ãƒ­ã‚¸ãƒƒã‚¯ãƒ»ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£æ›´æ–°
 	if (m_gameUIManager) m_gameUIManager->Update(deltatime);
 	ProcessEscapeEvent();
-	// ¢ŠE‚¾‚¯ slow-moi‘ŠŠ÷/UI ‚Í“™‘¬jFKillSlow ’† worldScale<1
+	// ä¸–ç•Œã ã‘ slow-moï¼ˆç›¸æœº/UI ã¯ç­‰é€Ÿï¼‰ï¼šKillSlow ä¸­ worldScale<1
 	float    worldScale = m_camera ? m_camera->GetTimeScale() : 1.0f;
 	uint64_t worldDelta = static_cast<uint64_t>(deltatime * worldScale);
 	UpdateGameObjects(worldDelta);
 	ProcessAllyTacticalDialogue();
 
-	// 5. ƒTƒuƒVƒXƒeƒ€‚ÆƒQ[ƒ€isó‘Ô‚Ì•]‰¿
+	// 5. ã‚µãƒ–ã‚·ã‚¹ãƒ†ãƒ ã¨ã‚²ãƒ¼ãƒ é€²è¡ŒçŠ¶æ…‹ã®è©•ä¾¡
 	UpdatePostEffectsAndAudio(deltatime, deltaSeconds);
 	TurnChangeCheck();
 	if (m_resultJudge) m_resultJudge->Update(deltaSeconds);
 }
-// •`‰æˆ—FípƒQ[ƒ€“Á—L‚ÌƒŒƒCƒ„[d—liZƒI[ƒ_[j‚ğŒµç‚·‚éƒpƒCƒvƒ‰ƒCƒ“
+// æç”»å‡¦ç†ï¼šæˆ¦è¡“ã‚²ãƒ¼ãƒ ç‰¹æœ‰ã®ãƒ¬ã‚¤ãƒ¤ãƒ¼ä»•æ§˜ï¼ˆZã‚ªãƒ¼ãƒ€ãƒ¼ï¼‰ã‚’å³å®ˆã™ã‚‹ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³
 void GameScene::draw(uint64_t deltatime) {
-	// 1. Å”w–ÊFŠÂ‹«”wŒi‚Ì•`‰æ
+	// 1. æœ€èƒŒé¢ï¼šç’°å¢ƒèƒŒæ™¯ã®æç”»
 	DrawBackgroundLayer();
 
 	if (m_camera) m_camera->Draw();
 	if (m_tileShader != nullptr) m_tileShader->SetGPU();
 
-	// 2. ƒŒƒCƒ„[1F‰æ–Ê’ê–Êi°j‚Ì•`‰æ
+	// 2. ãƒ¬ã‚¤ãƒ¤ãƒ¼1ï¼šç”»é¢åº•é¢ï¼ˆåºŠï¼‰ã®æç”»
 	DrawFloorLayer(deltatime);
 
-	// 3. ƒŒƒCƒ„[2F°–Ê UI ƒŒƒCƒ„[ (Floor Hints)
-	DrawFloorUIHints(deltatime);// °‚Ìã‚É’¼ÚƒyƒCƒ“ƒg‚³‚ê‚éUIBŒã‘±‚Ìƒgƒ‰ƒbƒv“™‚É•¢‚¢‰B‚³‚ê‚é‚æ‚¤æ‚É•`‰æ‚·‚é
+	// 3. ãƒ¬ã‚¤ãƒ¤ãƒ¼2ï¼šåºŠé¢ UI ãƒ¬ã‚¤ãƒ¤ãƒ¼ (Floor Hints)
+	DrawFloorUIHints(deltatime);// åºŠã®ä¸Šã«ç›´æ¥ãƒšã‚¤ãƒ³ãƒˆã•ã‚Œã‚‹UIã€‚å¾Œç¶šã®ãƒˆãƒ©ãƒƒãƒ—ç­‰ã«è¦†ã„éš ã•ã‚Œã‚‹ã‚ˆã†å…ˆã«æç”»ã™ã‚‹
 
-	// 4. ƒŒƒCƒ„[3F°–Ê“ÁêƒIƒuƒWƒFƒNƒg (Trap) ‚Æ À‘ÌƒGƒ“ƒeƒBƒeƒB
-	DrawEnvironmentAndEntities(deltatime);	// °–ÊUI‚Ìã‚É‚µ‚Á‚©‚è‚Ææ‚é‚æ‚¤‚ÉAUI‚ÌŒã‚É•s“§–¾•`‰æ‚ğs‚¤
+	// 4. ãƒ¬ã‚¤ãƒ¤ãƒ¼3ï¼šåºŠé¢ç‰¹æ®Šã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ (Trap) ã¨ å®Ÿä½“ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£
+	DrawEnvironmentAndEntities(deltatime);	// åºŠé¢UIã®ä¸Šã«ã—ã£ã‹ã‚Šã¨ä¹—ã‚‹ã‚ˆã†ã«ã€UIã®å¾Œã«ä¸é€æ˜æç”»ã‚’è¡Œã†
 
-	// 5. ƒŒƒCƒ„[4F‹óŠÔƒp[ƒeƒBƒNƒ‹‚Æ”¼“§–¾ƒIƒuƒWƒFƒNƒg
+	// 5. ãƒ¬ã‚¤ãƒ¤ãƒ¼4ï¼šç©ºé–“ãƒ‘ãƒ¼ãƒ†ã‚£ã‚¯ãƒ«ã¨åŠé€æ˜ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
 	DrawTransparentWorld(deltatime);
 
-	// 6. ƒŒƒCƒ„[5FípƒI[ƒo[ƒŒƒCiÅ‘O–Ê‚Ì3D‹óŠÔUIj
+	// 6. ãƒ¬ã‚¤ãƒ¤ãƒ¼5ï¼šæˆ¦è¡“ã‚ªãƒ¼ãƒãƒ¼ãƒ¬ã‚¤ï¼ˆæœ€å‰é¢ã®3Dç©ºé–“UIï¼‰
 	DrawTacticalOverlays(deltatime);
 
-	// 7. ƒGƒtƒFƒNƒg‚Æ2DƒXƒNƒŠ[ƒ“UI
+	// 7. ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã¨2Dã‚¹ã‚¯ãƒªãƒ¼ãƒ³UI
 	Renderer::DrawVignette();
 	DrawDamageAndHitEffects();
 	DrawScreenSpaceUI();
 }
 
-// ƒV[ƒ“”jŠü‚ÌˆÀ‘Sˆ—F–ìƒ|ƒCƒ“ƒ^iDangling Pointerj‚É‚æ‚éƒNƒ‰ƒbƒVƒ…‚ğ–h~
+// ã‚·ãƒ¼ãƒ³ç ´æ£„æ™‚ã®å®‰å…¨å‡¦ç†ï¼šé‡ãƒã‚¤ãƒ³ã‚¿ï¼ˆDangling Pointerï¼‰ã«ã‚ˆã‚‹ã‚¯ãƒ©ãƒƒã‚·ãƒ¥ã‚’é˜²æ­¢
 void GameScene::dispose()
 {
 	if (m_context && m_damageNumberManager) {
@@ -140,14 +155,14 @@ void GameScene::dispose()
 		m_context->GetUIManager()->Clear();
 	}
 
-	//è—LÒiƒ†ƒjƒbƒgQÆj‚ğƒNƒŠƒA‚·‚é
+	//å æœ‰è€…ï¼ˆãƒ¦ãƒ‹ãƒƒãƒˆå‚ç…§ï¼‰ã‚’ã‚¯ãƒªã‚¢ã™ã‚‹
 	if (m_MapManager) {
 		m_MapManager->ClearOccupants();
 		m_MapManager->SetScene(nullptr);
 	}
 
 
-	// ƒV[ƒ“‘JˆÚ‚ÌuŠÔ‚ÉUI‚ªGetPlayer()‚ğŒÄ‚Ño‚µA•s³ƒAƒNƒZƒX‚·‚é‚Ì‚ğÕ’f
+	// ã‚·ãƒ¼ãƒ³é·ç§»ã®ç¬é–“ã«UIãŒGetPlayer()ã‚’å‘¼ã³å‡ºã—ã€ä¸æ­£ã‚¢ã‚¯ã‚»ã‚¹ã™ã‚‹ã®ã‚’é®æ–­
 	if (m_context) {
 		m_context->SetPlayer(nullptr);
 		m_context->SetAlly(nullptr);
@@ -163,7 +178,7 @@ void GameScene::dispose()
 
 // ---------------------------------------------------------
 
-// ŠO•”ƒCƒ“ƒ^[ƒtƒF[ƒXE‰Šúİ’è (Public Interfaces)
+// å¤–éƒ¨ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹ãƒ»åˆæœŸè¨­å®š (Public Interfaces)
 
 // ---------------------------------------------------------
 void GameScene::SetGameContext(GameContext* context) {
@@ -176,12 +191,12 @@ void GameScene::SetGameContext(GameContext* context) {
 
 // ---------------------------------------------------------
  
-// ‰Šú‰»ƒTƒuƒ‹[ƒ`ƒ“ (Init Sub-routines)
+// åˆæœŸåŒ–ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ (Init Sub-routines)
 
 // ---------------------------------------------------------
 
 void GameScene::ResetManagers() {
-	// “ñd‚ÌˆÀ‘SôF‘OƒQ[ƒ€‚Ìc—¯ƒR[ƒ‹ƒoƒbƒN‚âƒGƒtƒFƒNƒg‚ğ‹­§Á‹‚µA•s‹ï‡‚ğ–h~
+	// äºŒé‡ã®å®‰å…¨ç­–ï¼šå‰ã‚²ãƒ¼ãƒ ã®æ®‹ç•™ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ã‚„ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã‚’å¼·åˆ¶æ¶ˆå»ã—ã€ä¸å…·åˆã‚’é˜²æ­¢
 	if (m_context) {
 		if (m_context->GetTurnManager()) {
 			DBG_ERROR("   [Init] Clearing Turn Observers...");
@@ -203,11 +218,11 @@ void GameScene::InitializeCamera() {
 	m_camera->ForceSetPolar(Camera::TUTORIAL_RADIUS, Camera::BASE_AZIMUTH, Camera::BASE_ELEVATION);
 	m_camera->ChangeState(CameraState::BaseView);
 	m_camera->ResetCameraDirection();
-	m_camera->Update(1.0f); // ‰ŠúView/Projs—ñ‚ğ³Šm‚ÉZo‚·‚é‚½‚ßˆê“x‹­§XV
+	m_camera->Update(1.0f); // åˆæœŸView/Projè¡Œåˆ—ã‚’æ­£ç¢ºã«ç®—å‡ºã™ã‚‹ãŸã‚ä¸€åº¦å¼·åˆ¶æ›´æ–°
 }
 
 void GameScene::LoadGameResources() {
-	AudioManager::GetInstance().PlayBGM("Game", true, 2.0f);
+	AudioManager::GetInstance().PlayBGM("Game", true, BGM_FADE_TIME);
 	resourceLoader();
 	m_tileShader = MeshManager::getShader<CShader>("toonshader");
 	if (m_tileShader == nullptr) {
@@ -216,7 +231,7 @@ void GameScene::LoadGameResources() {
 }
 
 void GameScene::resourceLoader() {
-	// 1. ƒVƒF[ƒ_[i–¼‘OEVSEPS ‚Ìƒe[ƒuƒ‹‹ì“®j
+	// 1. ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ï¼ˆåå‰ãƒ»VSãƒ»PS ã®ãƒ†ãƒ¼ãƒ–ãƒ«é§†å‹•ï¼‰
 	struct ShaderDef { const char* name; const char* vs; const char* ps; };
 	const ShaderDef shaderDefs[] = {
 		{"toonshader",    "shader/ToonVS.hlsl",    "shader/ToonPS.hlsl"},
@@ -229,20 +244,20 @@ void GameScene::resourceLoader() {
 		MeshManager::RegisterShader<CShader>(s.name, std::move(shader));
 	}
 
-	// 2. –³‰ÁHƒ‚ƒfƒ‹‚ÌˆêŠ‡“o˜^i’Ç‰Á‚Í•\‚É1s‘«‚·‚¾‚¯j
+	// 2. ç„¡åŠ å·¥ãƒ¢ãƒ‡ãƒ«ã®ä¸€æ‹¬ç™»éŒ²ï¼ˆè¿½åŠ ã¯è¡¨ã«1è¡Œè¶³ã™ã ã‘ï¼‰
 	struct ModelDef { const char* name; const char* path; const char* texDir; };
 	const ModelDef models[] = {
-		// --- ƒ}ƒbƒvE’nŒ` ---
+		// --- ãƒãƒƒãƒ—ãƒ»åœ°å½¢ ---
 		{"floor_mesh",          "Assets/model/backgroud/floorFull.obj",     "Assets/model/backgroud/"},
 		{"wall_mesh",           "Assets/model/obj/1x1x1_wall.obj",          "Assets/model/obj/"},
-		// --- ƒMƒ~ƒbƒNEƒvƒƒbƒv ---
+		// --- ã‚®ãƒŸãƒƒã‚¯ãƒ»ãƒ—ãƒ­ãƒƒãƒ— ---
 		{"trap_mesh",           "Assets/model/obj/trap.obj",                "Assets/model/obj/"},
 		{"prop_plane_mesh",     "Assets/model/obj/prop_plane.obj",          "Assets/model/obj/"},
 		{"sofa_yoko_mesh",      "Assets/model/obj/loungeSofa.obj",          "Assets/model/obj/"},
 		{"cattower_mesh",       "Assets/model/obj/coatRackStanding.obj",    "Assets/model/obj/"},
 		{"bookshelf_mesh",      "Assets/model/obj/bookcaseClosedDoors.obj", "Assets/model/obj/"},
 		{"table_mesh",          "Assets/model/obj/tableCloth.obj",          "Assets/model/obj/"},
-		// --- –îˆóƒiƒrƒQ[ƒVƒ‡ƒ“ ---
+		// --- çŸ¢å°ãƒŠãƒ“ã‚²ãƒ¼ã‚·ãƒ§ãƒ³ ---
 		{"arrow_straight_mesh", "Assets/model/obj/arrow_straight.obj",      "Assets/model/obj/"},
 		{"arrow_corner_mesh",   "Assets/model/obj/arrow_corner.obj",        "Assets/model/obj/"},
 		{"arrow_attack_mesh",   "Assets/model/obj/arrow_attack.obj",        "Assets/model/obj/"},
@@ -252,8 +267,8 @@ void GameScene::resourceLoader() {
 		ModelRegistry::RegisterModel(m.name, m.path, m.texDir);
 	}
 
-	// 3. ƒ}ƒeƒŠƒAƒ‹’²®‚ª—v‚é—áŠOƒ‚ƒfƒ‹i·•ª‚ğƒR[ƒ‹ƒoƒbƒN‚Å’“üj
-	// ”’FEƒeƒNƒXƒ`ƒƒ–³Œøi’¸“_ƒJƒ‰[/’PF‚Åƒ^ƒCƒ‹õ‚ß‚·‚éípUI—pj
+	// 3. ãƒãƒ†ãƒªã‚¢ãƒ«èª¿æ•´ãŒè¦ã‚‹ä¾‹å¤–ãƒ¢ãƒ‡ãƒ«ï¼ˆå·®åˆ†ã‚’ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ã§æ³¨å…¥ï¼‰
+	// ç™½è‰²ãƒ»ãƒ†ã‚¯ã‚¹ãƒãƒ£ç„¡åŠ¹ï¼ˆé ‚ç‚¹ã‚«ãƒ©ãƒ¼/å˜è‰²ã§ã‚¿ã‚¤ãƒ«æŸ“ã‚ã™ã‚‹æˆ¦è¡“UIç”¨ï¼‰
 	auto whiteNoTex = [](CStaticMeshRenderer& r) {
 		if (auto* mat = r.GetMaterial(0)) {
 			MATERIAL m = mat->GetData();
@@ -265,20 +280,20 @@ void GameScene::resourceLoader() {
 	ModelRegistry::RegisterModel("trap_plane_mesh", "Assets/model/obj/trap_plane.obj", "Assets/model/obj/", whiteNoTex);
 	ModelRegistry::RegisterModel("range_panel_mesh", "Assets/model/obj/range_panel.obj", "Assets/model/obj/", whiteNoTex);
 
-	// ’Eoƒ}ƒXF‹óFE”¼“§–¾
+	// è„±å‡ºãƒã‚¹ï¼šç©ºè‰²ãƒ»åŠé€æ˜
 	ModelRegistry::RegisterModel("escape_cube_mesh", "Assets/model/obj/floor_1x1x1.obj", "Assets/model/obj/",
 		[](CStaticMeshRenderer& r) {
 			if (auto* mat = r.GetMaterial(0)) {
 				MATERIAL m = mat->GetData();
-				m.Diffuse = Color(135.0f / 255.0f, 206.0f / 255.0f, 250.0f / 255.0f, 0.6f);
+				m.Diffuse = ESCAPE_CUBE_COLOR;
 				m.TextureEnable = FALSE;
 				mat->SetMaterial(m);
 			}
 		});
 
-	// 4. 2DƒXƒvƒ‰ƒCƒgEUI‰æ‘œ
-	m_escapeMarkerSprite = std::make_unique<CSprite>(128, 128, "Assets/texture/ui/escape_marker.png");
-	m_winTextSprite = std::make_unique<CSprite>(308, 205, "Assets/texture/ui/win_text.png");
+	// 4. 2Dã‚¹ãƒ—ãƒ©ã‚¤ãƒˆãƒ»UIç”»åƒ
+	m_escapeMarkerSprite = std::make_unique<CSprite>(ESCAPE_MARKER_TEX_SIZE, ESCAPE_MARKER_TEX_SIZE, "Assets/texture/ui/escape_marker.png");
+	m_winTextSprite = std::make_unique<CSprite>(WIN_TEXT_TEX_W, WIN_TEXT_TEX_H, "Assets/texture/ui/win_text.png");
 }
 
 void GameScene::InitializeMap() {
@@ -287,7 +302,7 @@ void GameScene::InitializeMap() {
 	DBG_ERROR("   [GameScene] MapManager OK.");
 	m_MapManager->LoadLevel("Assets/level/level_01.csv", m_context);
 
-	// ƒ}ƒbƒvƒTƒCƒY‚ÉŠî‚Ã‚«AƒJƒƒ‰‚Ì•\¦•ö‚ê‚ğ–h‚®‹«ŠE”ÍˆÍ‚ğ©“®ŒvZ
+	// ãƒãƒƒãƒ—ã‚µã‚¤ã‚ºã«åŸºã¥ãã€ã‚«ãƒ¡ãƒ©ã®è¡¨ç¤ºå´©ã‚Œã‚’é˜²ãå¢ƒç•Œç¯„å›²ã‚’è‡ªå‹•è¨ˆç®—
 	RecalculateCameraBounds();
 	DBG_ERROR("   [GameScene] Camera Bounds Auto-Calculated.");
 	m_background = std::make_unique<Background>();
@@ -305,7 +320,7 @@ void GameScene::SetupUserInterface() {
 	m_turnCutin = std::make_unique<TurnCutin>();
 	m_turnCutin->Init();
 
-	// ƒ^[ƒ“is‚ÆƒJƒƒ‰‰‰o‚ÌƒfƒJƒbƒvƒŠƒ“ƒOi•ª—£İŒvj
+	// ã‚¿ãƒ¼ãƒ³é€²è¡Œã¨ã‚«ãƒ¡ãƒ©æ¼”å‡ºã®ãƒ‡ã‚«ãƒƒãƒ—ãƒªãƒ³ã‚°ï¼ˆåˆ†é›¢è¨­è¨ˆï¼‰
 	m_context->GetTurnManager()->RegisterObserver([this](TurnState state) {
 		if (state == TurnState::PlayerPhase) {
 			if (m_turnCounter) m_turnCounter->Hide();
@@ -314,10 +329,10 @@ void GameScene::SetupUserInterface() {
 			m_needsTurnCounterAnim = true;
 
 			if (m_player) {
-				// ƒtƒF[ƒY‚É‰‚¶‚½ƒvƒŒƒCƒ„[—U“±F
-				// ‡@ ’EoƒtƒF[ƒY’†‚Í–Ú“I’n‚Å‚ ‚é–¡•û‚ğ’‹
-				// ‡A ƒQ[ƒ€ŠJn’¼Œãi‘æ1ƒ^[ƒ“j‚Íç‚é‚×‚«‘ÎÛi–¡•ûj‚ğ’‹‚µAƒvƒŒƒCƒ„[‚É–Ú•W‚ğ”F¯‚³‚¹‚é
-				// ‡B ‚»‚êˆÈŠO‚Ì’Êíƒ^[ƒ“‚Í‘€ì‘ÎÛ‚Å‚ ‚éƒvƒŒƒCƒ„[©g‚ğ’‹
+				// ãƒ•ã‚§ãƒ¼ã‚ºã«å¿œã˜ãŸãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼èª˜å°ï¼š
+				// â‘  è„±å‡ºãƒ•ã‚§ãƒ¼ã‚ºä¸­ã¯ç›®çš„åœ°ã§ã‚ã‚‹å‘³æ–¹ã‚’æ³¨è¦–
+				// â‘¡ ã‚²ãƒ¼ãƒ é–‹å§‹ç›´å¾Œï¼ˆç¬¬1ã‚¿ãƒ¼ãƒ³ï¼‰ã¯å®ˆã‚‹ã¹ãå¯¾è±¡ï¼ˆå‘³æ–¹ï¼‰ã‚’æ³¨è¦–ã—ã€ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã«ç›®æ¨™ã‚’èªè­˜ã•ã›ã‚‹
+				// â‘¢ ãã‚Œä»¥å¤–ã®é€šå¸¸ã‚¿ãƒ¼ãƒ³ã¯æ“ä½œå¯¾è±¡ã§ã‚ã‚‹ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼è‡ªèº«ã‚’æ³¨è¦–
 				if (m_isEscapeActive && m_ally && !m_ally->IsEscapeDone()) {
 					m_camera->ChangeState(CameraState::TargetFocus, m_ally->getSRT().pos);
 				}
@@ -329,7 +344,7 @@ void GameScene::SetupUserInterface() {
 		else if (state == TurnState::EnemyPhase) {
 			m_turnCutin->PlayCutinAnimation("Enemy Phase");
 			m_context->GetEnemyManager()->StartEnemyPhase();
-			// “Gƒ^[ƒ“’†‚Í‘S‘Ìó‹µ‚ğ”cˆ¬‚³‚¹‚é‚½‚ß˜ëáÕ‹“_‚Ö–ß‚·
+			// æ•µã‚¿ãƒ¼ãƒ³ä¸­ã¯å…¨ä½“çŠ¶æ³ã‚’æŠŠæ¡ã•ã›ã‚‹ãŸã‚ä¿¯ç°è¦–ç‚¹ã¸æˆ»ã™
 			m_camera->ChangeState(CameraState::BaseView);
 		}
 		});
@@ -342,7 +357,7 @@ void GameScene::SetupUserInterface() {
 	m_dialogueUI = m_context->GetDialogueUI();
 	m_damageNumberManager = m_context->GetDamageManager();
 	m_gameUIManager = m_context->GetUIManager();
-	// “±“ü‰‰o‚ÌisŠÇ—iTurnCounter¶¬Œã‚É‰Šú‰»j
+	// å°å…¥æ¼”å‡ºã®é€²è¡Œç®¡ç†ï¼ˆTurnCounterç”Ÿæˆå¾Œã«åˆæœŸåŒ–ï¼‰
 	m_introDirector = std::make_unique<IntroDirector>(m_context, m_turnCounter.get());
 }
 
@@ -356,7 +371,7 @@ void GameScene::InitializeDebugFeatures() {
 
 // ---------------------------------------------------------
 
-// XVƒTƒuƒ‹[ƒ`ƒ“FƒVƒXƒeƒ€E•\Œ» (System & Presentation)
+// æ›´æ–°ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ï¼šã‚·ã‚¹ãƒ†ãƒ ãƒ»è¡¨ç¾ (System & Presentation)
 
 // ---------------------------------------------------------
 
@@ -367,9 +382,9 @@ void GameScene::UpdateCoreTimers(float deltaSeconds)
 
 void GameScene::UpdateCameraFocus(float deltaSeconds)
 {
-	// UIƒJƒbƒgƒCƒ““™‚É‚æ‚Á‚ÄŒã‘±‚ÌXV‚ªƒuƒƒbƒN‚³‚ê‚½ê‡‚Å‚àA
+	// UIã‚«ãƒƒãƒˆã‚¤ãƒ³ç­‰ã«ã‚ˆã£ã¦å¾Œç¶šã®æ›´æ–°ãŒãƒ–ãƒ­ãƒƒã‚¯ã•ã‚ŒãŸå ´åˆã§ã‚‚ã€
 	
-	// ‰æ–Ê‚ªÃ~‚µ‚ÄƒtƒŠ[ƒY‚µ‚½‚æ‚¤‚ÈˆóÛ‚ğ—^‚¦‚È‚¢‚æ‚¤AƒJƒƒ‰ˆÚ“®‚Ì‚İÅ—Dæ‚ÅŒp‘±‚³‚¹‚é
+	// ç”»é¢ãŒé™æ­¢ã—ã¦ãƒ•ãƒªãƒ¼ã‚ºã—ãŸã‚ˆã†ãªå°è±¡ã‚’ä¸ãˆãªã„ã‚ˆã†ã€ã‚«ãƒ¡ãƒ©ç§»å‹•ã®ã¿æœ€å„ªå…ˆã§ç¶™ç¶šã•ã›ã‚‹
 	if (m_camera) {
 		m_camera->Update(deltaSeconds);
 	}
@@ -380,7 +395,7 @@ void GameScene::UpdateTurnIntroSequence(uint64_t deltatime, float deltaSeconds) 
 		if (m_turnCounter) m_turnCounter->StartAnimation();
 		m_needsTurnCounterAnim = false;
 
-		// ŠJ–‹‚Ì‰‰o§ŒäF‘æ1ƒ^[ƒ“ŠJnAí‹Ç‘S‘Ì‚ğŒ©‚¹‚éƒJƒƒ‰‰‰o‚ğ‘}“ü
+		// é–‹å¹•ã®æ¼”å‡ºåˆ¶å¾¡ï¼šç¬¬1ã‚¿ãƒ¼ãƒ³é–‹å§‹æ™‚ã€æˆ¦å±€å…¨ä½“ã‚’è¦‹ã›ã‚‹ã‚«ãƒ¡ãƒ©æ¼”å‡ºã‚’æŒ¿å…¥
 		
 		if (m_remainingTurns == INITIAL_TURN_COUNT && m_introDirector && m_introDirector->IsIdle()) {
 			m_introDirector->Start();
@@ -394,7 +409,7 @@ void GameScene::UpdateTurnIntroSequence(uint64_t deltatime, float deltaSeconds) 
 
 // ---------------------------------------------------------
  
-// XVƒTƒuƒ‹[ƒ`ƒ“Fƒtƒ[§ŒäƒCƒ“ƒ^[ƒZƒvƒg (Flow Control)
+// æ›´æ–°ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ï¼šãƒ•ãƒ­ãƒ¼åˆ¶å¾¡ã‚¤ãƒ³ã‚¿ãƒ¼ã‚»ãƒ—ãƒˆ (Flow Control)
 
 // ---------------------------------------------------------
 bool GameScene::HandlePreGameBlocking(uint64_t deltatime, float deltaSeconds) {
@@ -402,7 +417,7 @@ bool GameScene::HandlePreGameBlocking(uint64_t deltatime, float deltaSeconds) {
 
 	m_startDelayTimer += deltaSeconds;
 
-	// ‰æ–Ê‘JˆÚ’¼Œã‚Ìˆá˜aŠ´‚ğ–h‚®‚½‚ßAˆê’èŠÔ‘Ò‹@‚µ‚Ä‚©‚çis‚ğŠJn
+	// ç”»é¢é·ç§»ç›´å¾Œã®é•å’Œæ„Ÿã‚’é˜²ããŸã‚ã€ä¸€å®šæ™‚é–“å¾…æ©Ÿã—ã¦ã‹ã‚‰é€²è¡Œã‚’é–‹å§‹
 	if (m_startDelayTimer >= START_WAIT_TIME) {
 		if (m_tutorialUI && !m_tutorialUI->IsAllFinished()) {
 			m_tutorialUI->Update(deltaSeconds);
@@ -425,7 +440,7 @@ bool GameScene::HandlePreGameBlocking(uint64_t deltatime, float deltaSeconds) {
 
 bool GameScene::HandleTurnCutinBlocking(uint64_t deltatime)
 {
-	// ƒ^[ƒ“Ø‚è‘Ö‚¦‚Ìd—v‚È‰‰oF‘¼‚Ì“®‚«‚ğ‚·‚×‚Ä~‚ßAƒvƒŒƒCƒ„[‚Ì‹ü‚ğƒJƒbƒgƒCƒ“‚ÉW’†‚³‚¹‚é
+	// ã‚¿ãƒ¼ãƒ³åˆ‡ã‚Šæ›¿ãˆæ™‚ã®é‡è¦ãªæ¼”å‡ºï¼šä»–ã®å‹•ãã‚’ã™ã¹ã¦æ­¢ã‚ã€ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®è¦–ç·šã‚’ã‚«ãƒƒãƒˆã‚¤ãƒ³ã«é›†ä¸­ã•ã›ã‚‹
 	if (m_turnCutin && m_turnCutin->IsAnimating()) {
 		m_turnCutin->Update(deltatime);
 		return true;
@@ -435,14 +450,14 @@ bool GameScene::HandleTurnCutinBlocking(uint64_t deltatime)
 
 bool GameScene::IsTurnCounterAnimating() const
 {
-	// ƒ^[ƒ“ƒJƒEƒ“ƒ^[”òs‰‰o’†F‹Šo“I‚Èî•ñ‰ß‘½‚ğ–h‚®‚½‚ßA”Õ–Ê‚ÌXV‚ğˆê’â~
+	// ã‚¿ãƒ¼ãƒ³ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼é£›è¡Œæ¼”å‡ºä¸­ï¼šè¦–è¦šçš„ãªæƒ…å ±éå¤šã‚’é˜²ããŸã‚ã€ç›¤é¢ã®æ›´æ–°ã‚’ä¸€æ™‚åœæ­¢
 	return (m_turnCounter && m_turnCounter->IsAnimating());
 }
 
 
 // ---------------------------------------------------------
  
-// XVƒTƒuƒ‹[ƒ`ƒ“FƒƒCƒ“ƒƒWƒbƒN (Main Logic & Entities)
+// æ›´æ–°ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ï¼šãƒ¡ã‚¤ãƒ³ãƒ­ã‚¸ãƒƒã‚¯ (Main Logic & Entities)
 
 // ---------------------------------------------------------
 
@@ -454,7 +469,7 @@ void GameScene::UpdateEnvironmentAndDamageUI(uint64_t deltatime)
 
 void GameScene::HandleCameraRotationInput()
 {
-	// ƒŠƒUƒ‹ƒg‰‰o’†‚âƒV[ƒ“‘JˆÚ’†‚ÍAƒJƒƒ‰‚Ì•s©‘R‚È‰ñ“]‚ğ–h‚®‚½‚ß“ü—Í‚ğ–³‹‚·‚é
+	// ãƒªã‚¶ãƒ«ãƒˆæ¼”å‡ºä¸­ã‚„ã‚·ãƒ¼ãƒ³é·ç§»ä¸­ã¯ã€ã‚«ãƒ¡ãƒ©ã®ä¸è‡ªç„¶ãªå›è»¢ã‚’é˜²ããŸã‚å…¥åŠ›ã‚’ç„¡è¦–ã™ã‚‹
 	bool canRotate = (m_isGameStarted && m_resultJudge &&
 		!m_resultJudge->IsGameOverProcessing() && !m_resultJudge->IsSceneChanging());
 
@@ -480,7 +495,7 @@ void GameScene::ProcessEscapeEvent()
 		m_player->GetUnitGridX() == m_escapeGridX &&
 		m_player->GetUnitGridZ() == m_escapeGridZ) {
 
-		// ’Eo¬Œ÷‚Ì‹­’²FƒJƒƒ‰‚ğ‹­§“I‚ÉƒvƒŒƒCƒ„[‚ÖƒY[ƒ€ƒCƒ“‚³‚¹’B¬Š´‚ğ‚‚ß‚é
+		// è„±å‡ºæˆåŠŸã®å¼·èª¿ï¼šã‚«ãƒ¡ãƒ©ã‚’å¼·åˆ¶çš„ã«ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¸ã‚ºãƒ¼ãƒ ã‚¤ãƒ³ã•ã›é”æˆæ„Ÿã‚’é«˜ã‚ã‚‹
 		if (m_camera) {
 			m_camera->ChangeState(CameraState::TargetFocus, m_player->getSRT().pos);
 		}
@@ -507,7 +522,7 @@ void GameScene::ProcessAllyTacticalDialogue()
 	if (m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase) {
 		if (m_turnCutin && !m_turnCutin->IsAnimating()) {
 			if (!m_isAllyTalked) {
-				// íp‚Ì—U“±FƒvƒŒƒCƒ„[ƒ^[ƒ“‚ÌŠJnA¶‘¶‚µ‚Ä‚¢‚é–¡•û‚©‚çs“®‚Ìƒqƒ“ƒg‚ğ’ñ¦
+				// æˆ¦è¡“ã®èª˜å°ï¼šãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¿ãƒ¼ãƒ³ã®é–‹å§‹æ™‚ã€ç”Ÿå­˜ã—ã¦ã„ã‚‹å‘³æ–¹ã‹ã‚‰è¡Œå‹•ã®ãƒ’ãƒ³ãƒˆã‚’æç¤º
 				if (m_ally && m_ally->GetHP() > 0) {
 					Vector3 allyPos = m_ally->getSRT().pos;
 					if (m_dialogueUI) {
@@ -533,37 +548,37 @@ void GameScene::UpdatePostEffectsAndAudio(uint64_t deltatime, float deltaSeconds
 
 // ---------------------------------------------------------
  
-// ƒ^[ƒ“is‚ÆƒCƒxƒ“ƒg§Œä (Turn Flow & Events)
+// ã‚¿ãƒ¼ãƒ³é€²è¡Œã¨ã‚¤ãƒ™ãƒ³ãƒˆåˆ¶å¾¡ (Turn Flow & Events)
  
 // ---------------------------------------------------------
 void GameScene::TurnChangeCheck()
 {
 	TurnManager* tm = m_context->GetTurnManager();
 	EnemyManager* em = m_context->GetEnemyManager();
-	// ƒQ[ƒ€ƒI[ƒo[Šm’èŒã‚Íƒ^[ƒ“‚ği‚ß‚È‚¢iØ‘Ö‚É Player/Enemy Phase ‰‰o‚ªŒëÄ¶‚³‚ê‚é‚Ì‚ğ–h‚®j
+	// ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼ç¢ºå®šå¾Œã¯ã‚¿ãƒ¼ãƒ³ã‚’é€²ã‚ãªã„ï¼ˆåˆ‡æ›¿æ™‚ã« Player/Enemy Phase æ¼”å‡ºãŒèª¤å†ç”Ÿã•ã‚Œã‚‹ã®ã‚’é˜²ãï¼‰
 	if (m_resultJudge && (m_resultJudge->IsGameOverProcessing() || m_resultJudge->IsGameOverCondition())) return;
 
-	// 1. ƒ^[ƒ“Œğ‘ã‚Ì•K—v‚ª‚È‚¢A‚Ü‚½‚Í“G‚ª‘S–Å‚µ‚Ä‚¢‚éê‡‚Íˆ—‚µ‚È‚¢
+	// 1. ã‚¿ãƒ¼ãƒ³äº¤ä»£ã®å¿…è¦ãŒãªã„ã€ã¾ãŸã¯æ•µãŒå…¨æ»…ã—ã¦ã„ã‚‹å ´åˆã¯å‡¦ç†ã—ãªã„
 	if (!tm->IsTurnChangeRequested() || em->AreAllEnemiesDead()) {
 		return;
 	}
 
-	// 2. ƒtƒB[ƒ‹ƒhã‚ÌƒuƒƒbƒN”»’èi“G‚Ì€–SEs“®ƒAƒjƒ[ƒVƒ‡ƒ“’†‚©j
+	// 2. ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ä¸Šã®ãƒ–ãƒ­ãƒƒã‚¯åˆ¤å®šï¼ˆæ•µã®æ­»äº¡ãƒ»è¡Œå‹•ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ä¸­ã‹ï¼‰
 	if (em->IsAnyEnemyDying() || em->IsAnyEnemyAnimating()|| (m_camera && m_camera->IsCinematic())){
-		return; // ƒAƒjƒ[ƒVƒ‡ƒ“I—¹‚Ü‚Åƒ^[ƒ“Œğ‘ã‚ğ‘Ò‹@
+		return; // ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³çµ‚äº†ã¾ã§ã‚¿ãƒ¼ãƒ³äº¤ä»£ã‚’å¾…æ©Ÿ
 	}
 
-	// 3. ó‘Ô‘JˆÚiState Transitionj‚ÌÀs
+	// 3. çŠ¶æ…‹é·ç§»ï¼ˆState Transitionï¼‰ã®å®Ÿè¡Œ
 	TurnState current = tm->GetTurnState();
 
 	if (current == TurnState::PlayerPhase) {
 		tm->SetState(TurnState::EnemyPhase);
 	}
 	else if (current == TurnState::EnemyPhase) {
-		// “Gƒ^[ƒ“I—¹‚ÌŠeíƒQ[ƒ€“àƒCƒxƒ“ƒgi’Eo”»’è‚È‚Çj‚ğˆ—
+		// æ•µã‚¿ãƒ¼ãƒ³çµ‚äº†æ™‚ã®å„ç¨®ã‚²ãƒ¼ãƒ å†…ã‚¤ãƒ™ãƒ³ãƒˆï¼ˆè„±å‡ºåˆ¤å®šãªã©ï¼‰ã‚’å‡¦ç†
 		ProcessEndOfEnemyPhase();
 
-		// ƒvƒŒƒCƒ„[‚Ìƒ^[ƒ“‚ÖˆÚs
+		// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ã‚¿ãƒ¼ãƒ³ã¸ç§»è¡Œ
 		tm->SetState(TurnState::PlayerPhase);
 	}
 }
@@ -572,23 +587,23 @@ void GameScene::ProcessEndOfEnemyPhase()
 {
 	m_remainingTurns--;
 	if (m_remainingTurns < 0) {
-		m_remainingTurns = 0; // •‰‚Ì’l‚É‚È‚ç‚È‚¢‚æ‚¤ƒNƒ‰ƒ“ƒvi–hŒä“IƒvƒƒOƒ‰ƒ~ƒ“ƒOj
+		m_remainingTurns = 0; // è² ã®å€¤ã«ãªã‚‰ãªã„ã‚ˆã†ã‚¯ãƒ©ãƒ³ãƒ—ï¼ˆé˜²å¾¡çš„ãƒ—ãƒ­ã‚°ãƒ©ãƒŸãƒ³ã‚°ï¼‰
 	}
 
-	// UI‚ÌXV
+	// UIã®æ›´æ–°
 	if (m_turnCounter) m_turnCounter->SetTurn(m_remainingTurns);
 
-	// --- ƒ^[ƒ“‚Ìis‚É”º‚¤“ÁêƒCƒxƒ“ƒg‚Ì•]‰¿ ---
+	// --- ã‚¿ãƒ¼ãƒ³ã®é€²è¡Œã«ä¼´ã†ç‰¹æ®Šã‚¤ãƒ™ãƒ³ãƒˆã®è©•ä¾¡ ---
 	CheckAndTriggerEscapeEvent();
 
-	// –¡•û‚ª’EoŒãA–¡•û‚Ì‰ï˜bƒtƒ‰ƒO‚ğƒŠƒZƒbƒg
+	// å‘³æ–¹ãŒè„±å‡ºå¾Œã€å‘³æ–¹ã®ä¼šè©±ãƒ•ãƒ©ã‚°ã‚’ãƒªã‚»ãƒƒãƒˆ
 	m_isAllyTalked = false;
 
 }
 
 void GameScene::CheckAndTriggerEscapeEvent()
 {
-	// ‹K’èƒ^[ƒ“i0j‚É“’B‚µA‚©‚Â‚Ü‚¾’EoƒtƒF[ƒY‚ª‹N“®‚µ‚Ä‚¢‚È‚¢ê‡‚Ì‚İÀs
+	// è¦å®šã‚¿ãƒ¼ãƒ³ï¼ˆ0ï¼‰ã«åˆ°é”ã—ã€ã‹ã¤ã¾ã è„±å‡ºãƒ•ã‚§ãƒ¼ã‚ºãŒèµ·å‹•ã—ã¦ã„ãªã„å ´åˆã®ã¿å®Ÿè¡Œ
 	if (m_remainingTurns <= 0 && !m_isEscapeActive) {
 
 		m_isEscapeActive = true;
@@ -611,12 +626,12 @@ void GameScene::CheckAndTriggerEscapeEvent()
 
 // ---------------------------------------------------------
  
-// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒpƒCƒvƒ‰ƒCƒ“ (Rendering Sub-routines)
+// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³ (Rendering Sub-routines)
  
 // ---------------------------------------------------------
 
 void GameScene::DrawBackgroundLayer() {
-	// ”wŒi‚Íí‚ÉÅ‚à‰“‚­‚É‘¶İ‚·‚é‚½‚ßA[“xƒeƒXƒg‚ğ–³Œø‚É‚µ‚Ä‰æ–Ê‘S‘Ì‚ğ“h‚è‚Â‚Ô‚·
+	// èƒŒæ™¯ã¯å¸¸ã«æœ€ã‚‚é ãã«å­˜åœ¨ã™ã‚‹ãŸã‚ã€æ·±åº¦ãƒ†ã‚¹ãƒˆã‚’ç„¡åŠ¹ã«ã—ã¦ç”»é¢å…¨ä½“ã‚’å¡—ã‚Šã¤ã¶ã™
 	Renderer::SetDepthEnable(false);
 	if (m_background) m_background->Draw();
 	Renderer::SetDepthEnable(true); 
@@ -641,9 +656,9 @@ void GameScene::DrawFloorUIHints(uint64_t deltatime) {
 }
 
 void GameScene::DrawEnvironmentAndEntities(uint64_t deltatime) {
-	// === 1. °–Ê“ÁêƒIƒuƒWƒFƒNƒgƒŒƒCƒ„[ (Trap) ===
+	// === 1. åºŠé¢ç‰¹æ®Šã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãƒ¬ã‚¤ãƒ¤ãƒ¼ (Trap) ===
 	
-	// æ‚É•`‰æ‚µ‚½°–ÊUIi”¼“§–¾j‚Ìã‚ÉŠmÀ‚Éæ‚¹‚é‚½‚ßA‚±‚±‚Å•`‰æ‚·‚é
+	// å…ˆã«æç”»ã—ãŸåºŠé¢UIï¼ˆåŠé€æ˜ï¼‰ã®ä¸Šã«ç¢ºå®Ÿã«ä¹—ã›ã‚‹ãŸã‚ã€ã“ã“ã§æç”»ã™ã‚‹
 	for (const auto& obj : m_GameObjectList) {
 		MapObject* mapObj = dynamic_cast<MapObject*>(obj.get());
 		if (mapObj && mapObj->GetType() == MapModelType::TRAP) {
@@ -651,17 +666,17 @@ void GameScene::DrawEnvironmentAndEntities(uint64_t deltatime) {
 		}
 	}
 
-	// === 2. À‘ÌƒGƒ“ƒeƒBƒeƒBƒŒƒCƒ„[ (Props, Walls, Characters) ===
+	// === 2. å®Ÿä½“ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ãƒ¬ã‚¤ãƒ¤ãƒ¼ (Props, Walls, Characters) ===
 	for (const auto& obj : m_GameObjectList) {
 		MapObject* mapObj = dynamic_cast<MapObject*>(obj.get());
 		if (mapObj) {
-			// °‚Æƒgƒ‰ƒbƒvˆÈŠO‚Ìƒ}ƒbƒvƒIƒuƒWƒFƒNƒg‚ğ•`‰æ
+			// åºŠã¨ãƒˆãƒ©ãƒƒãƒ—ä»¥å¤–ã®ãƒãƒƒãƒ—ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æç”»
 			if (mapObj->GetType() != MapModelType::FLOOR && mapObj->GetType() != MapModelType::TRAP) {
 				obj->Draw(deltatime);
 			}
 		}
 		else {
-			// ƒLƒƒƒ‰ƒNƒ^[iPlayer, Enemy, Allyj‚ğ•`‰æ
+			// ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ï¼ˆPlayer, Enemy, Allyï¼‰ã‚’æç”»
 			obj->Draw(deltatime);
 		}
 	}
@@ -670,17 +685,17 @@ void GameScene::DrawEnvironmentAndEntities(uint64_t deltatime) {
 void GameScene::DrawTransparentWorld(uint64_t deltatime) {
 	Renderer::SetBlendState(BS_ALPHABLEND);
 
-	// •¨—ƒp[ƒeƒBƒNƒ‹iŠ¢âI‚È‚ÇB[“xƒeƒXƒg‚É‚æ‚éÕ•Á‚ğ—LŒø‚É‚·‚éj
+	// ç‰©ç†ãƒ‘ãƒ¼ãƒ†ã‚£ã‚¯ãƒ«ï¼ˆç“¦ç¤«ãªã©ã€‚æ·±åº¦ãƒ†ã‚¹ãƒˆã«ã‚ˆã‚‹é®è”½ã‚’æœ‰åŠ¹ã«ã™ã‚‹ï¼‰
 	if (m_context && m_context->GetEffectManager()) {
 		m_context->GetEffectManager()->DrawRubble();
 	}
 
-	// ”¼“§–¾ƒGƒ“ƒeƒBƒeƒBic‘œ‚È‚Çj
+	// åŠé€æ˜ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ï¼ˆæ®‹åƒãªã©ï¼‰
 	for (const auto& obj : m_GameObjectList) {
 		obj->DrawTransparent(deltatime);
 	}
 
-	// ’‡ŠÔ‚Ì’EoiÌŒ@EƒtƒF[ƒhƒAƒEƒgj‚ªŠ®—¹‚µ‚½Œã‚Ì‚İA‹óF‚Ìƒ}ƒX‚ğ•`‰æ
+	// ä»²é–“ã®è„±å‡ºï¼ˆæ¡æ˜ãƒ»ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆï¼‰ãŒå®Œäº†ã—ãŸå¾Œã®ã¿ã€ç©ºè‰²ã®ãƒã‚¹ã‚’æç”»
 	bool shouldDrawEscape = (m_isEscapeActive && m_ally && m_ally->IsEscapeDone()) || m_shouldShowDebugEscape; 
 	if (shouldDrawEscape) {
 		DrawEscapeCube();
@@ -690,12 +705,12 @@ void GameScene::DrawTransparentWorld(uint64_t deltatime) {
 }
 
 void GameScene::DrawTacticalOverlays(uint64_t deltatime) {
-	// ípƒI[ƒo[ƒŒƒCF•Ç‚â‘¼‚ÌƒLƒƒƒ‰ƒNƒ^[‚É‰B‚ê‚ÄŒ©‚¦‚È‚­‚È‚é‚Ì‚ğ–h‚®‚½‚ßA[“xŒvZ‚ğƒXƒLƒbƒv‚·‚é
+	// æˆ¦è¡“ã‚ªãƒ¼ãƒãƒ¼ãƒ¬ã‚¤ï¼šå£ã‚„ä»–ã®ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ã«éš ã‚Œã¦è¦‹ãˆãªããªã‚‹ã®ã‚’é˜²ããŸã‚ã€æ·±åº¦è¨ˆç®—ã‚’ã‚¹ã‚­ãƒƒãƒ—ã™ã‚‹
 	Renderer::SetDepthEnable(false);
 	Renderer::SetBlendState(BS_ALPHABLEND);
 
 	for (const auto& obj : m_GameObjectList) {
-		obj->DrawOverlay(deltatime);   // •‚—V–îˆóAƒqƒbƒgŒxƒGƒtƒFƒNƒg‚È‚Ç
+		obj->DrawOverlay(deltatime);   // æµ®éŠçŸ¢å°ã€ãƒ’ãƒƒãƒˆè­¦å‘Šã‚¨ãƒ•ã‚§ã‚¯ãƒˆãªã©
 	}
 
 	Renderer::SetBlendState(BS_NONE);
@@ -704,7 +719,7 @@ void GameScene::DrawTacticalOverlays(uint64_t deltatime) {
 
 void GameScene::DrawDamageAndHitEffects() {
 	if (m_context && m_context->GetEffectManager()) {
-		m_context->GetEffectManager()->DrawHitEffects(); // UŒ‚ƒGƒtƒFƒNƒgiƒXƒp[ƒN‚È‚Çj
+		m_context->GetEffectManager()->DrawHitEffects(); // æ”»æ’ƒã‚¨ãƒ•ã‚§ã‚¯ãƒˆï¼ˆã‚¹ãƒ‘ãƒ¼ã‚¯ãªã©ï¼‰
 	}
 	if (m_damageNumberManager) {
 		m_damageNumberManager->Draw();
@@ -712,11 +727,11 @@ void GameScene::DrawDamageAndHitEffects() {
 }
 
 void GameScene::DrawScreenSpaceUI() {
-	// UI•`‰æƒ‚[ƒhŠJnF[“xƒeƒXƒg‚ğŠ®‘S‚ÉƒIƒt‚É‚µAUIê—p‚ÌƒTƒ“ƒvƒ‰[‚ğ“K—p
+	// UIæç”»ãƒ¢ãƒ¼ãƒ‰é–‹å§‹ï¼šæ·±åº¦ãƒ†ã‚¹ãƒˆã‚’å®Œå…¨ã«ã‚ªãƒ•ã«ã—ã€UIå°‚ç”¨ã®ã‚µãƒ³ãƒ—ãƒ©ãƒ¼ã‚’é©ç”¨
 	Renderer::SetUISamplerMode(true);
 	Renderer::SetDepthEnable(false);
 
-	// --- 1. ƒLƒƒƒ‰ƒNƒ^[’Ç]UI (’á‘w) ---
+	// --- 1. ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼è¿½å¾“UI (ä½å±¤) ---
 	if (m_player) m_player->DrawUI();
 	if (m_ally && m_ally->GetHP() > 0) m_ally->DrawUI();
 	for (const auto& obj : m_GameObjectList) {
@@ -725,7 +740,7 @@ void GameScene::DrawScreenSpaceUI() {
 	}
 	if (m_dialogueUI) m_dialogueUI->Draw();
 
-	// --- 2. “Á’èó‹µ‰º‚Ìƒ|ƒbƒvƒAƒbƒv ---
+	// --- 2. ç‰¹å®šçŠ¶æ³ä¸‹ã®ãƒãƒƒãƒ—ã‚¢ãƒƒãƒ— ---
 	bool shouldDrawEscape = (m_isEscapeActive && m_ally && m_ally->IsEscapeDone()) || m_shouldShowDebugEscape;
 	if (shouldDrawEscape && m_player && m_player->GetState() != PlayerState::ANIM_CELEBRATE) {
 		DrawEscapeMarker();
@@ -734,15 +749,15 @@ void GameScene::DrawScreenSpaceUI() {
 		DrawWinText();
 	}
 
-	// --- 3. ‰æ–ÊŒÅ’è‚ÌƒVƒXƒeƒ€UI (‚‘w) ---
+	// --- 3. ç”»é¢å›ºå®šã®ã‚·ã‚¹ãƒ†ãƒ UI (é«˜å±¤) ---
 	if (m_gameUIManager && m_showActionUI) m_gameUIManager->Draw();
 	if (m_turnCounter) m_turnCounter->Draw();
 	if (m_tutorialUI && !m_isGameStarted) m_tutorialUI->Draw();
 
-	// --- 4. Å‘O–Ê (ƒJƒbƒgƒCƒ“‰‰o) ---
+	// --- 4. æœ€å‰é¢ (ã‚«ãƒƒãƒˆã‚¤ãƒ³æ¼”å‡º) ---
 	if (m_turnCutin) m_turnCutin->Draw();
 
-	// UI•`‰æƒ‚[ƒhI—¹FƒfƒtƒHƒ‹ƒg‚Ì3D•`‰æó‘Ô‚ÖˆÀ‘S‚É•œ‹A
+	// UIæç”»ãƒ¢ãƒ¼ãƒ‰çµ‚äº†ï¼šãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®3Dæç”»çŠ¶æ…‹ã¸å®‰å…¨ã«å¾©å¸°
 	Renderer::SetDepthEnable(true);
 	Renderer::SetUISamplerMode(false);
 }
@@ -753,8 +768,8 @@ void GameScene::RecalculateCameraBounds()
 
 	const auto& allTiles = m_MapManager->GetAllTiles();
 	if (!allTiles.empty()) {
-		float minX = 99999.0f, maxX = -99999.0f;
-		float minZ = 99999.0f, maxZ = -99999.0f;
+		float minX = FLT_MAX, maxX = -FLT_MAX;
+		float minZ = FLT_MAX, maxZ = -FLT_MAX;
 
 		for (const auto& tile : allTiles) {
 			Vector3 pos = m_MapManager->GetWorldPosition(tile);
@@ -777,7 +792,7 @@ void GameScene::DrawEscapeCube() {
 	CStaticMeshRenderer* escapeCube = MeshManager::getRenderer<CStaticMeshRenderer>("escape_cube_mesh");
 	if (escapeCube) {
 		Vector3 pos = m_context->GetMapManager()->GetWorldPosition(m_escapeGridX, m_escapeGridZ);
-		pos.y += 1.05f;
+		pos.y += ESCAPE_CUBE_Y_OFFSET;
 		Matrix4x4 world = Matrix4x4::CreateTranslation(pos);
 		Renderer::SetWorldMatrix(&world);
 		escapeCube->Draw();
@@ -788,10 +803,8 @@ void GameScene::DrawEscapeMarker() {
 	if (!m_escapeMarkerSprite) return;
 	Vector3 worldPos = m_context->GetMapManager()->GetWorldPosition(m_escapeGridX, m_escapeGridZ);
 
-	// === ³Œ·”g‚ğ—˜—p‚µ‚Äã‰º‚Ì•‚—VŠ´‚ğŒvZ ===
-	float floatSpeed = 3.0f;       // •‚—VƒXƒs[ƒhi’l‚ª‘å‚«‚¢‚Ù‚Ç‘¬‚­ã‰º‚·‚éj
-	float floatAmplitude = 0.15f;  // •‚—V‚ÌU•i’l‚ª‘å‚«‚¢‚Ù‚Çã‰º‚Ì”ÍˆÍ‚ªL‚ª‚éj
-	float bobbingOffset = sinf(m_uiAnimTimer * floatSpeed) * floatAmplitude;
+	// === æ­£å¼¦æ³¢ã‚’åˆ©ç”¨ã—ã¦ä¸Šä¸‹ã®æµ®éŠæ„Ÿã‚’è¨ˆç®— ===
+	float bobbingOffset = sinf(m_uiAnimTimer * ESCAPE_MARKER_FLOAT_SPEED) * ESCAPE_MARKER_FLOAT_AMPLITUDE;
 
 	worldPos.y += (ESCAPE_MARKER_BASE_Y + bobbingOffset);
 
@@ -799,20 +812,20 @@ void GameScene::DrawEscapeMarker() {
 	Matrix4x4 proj = m_camera->GetProjMatrix();
 	Vector2 screenPos = WorldToScreen(worldPos, view, proj, Application::GetWidth(), Application::GetHeight());
 
-	// 1. ƒ}ƒeƒŠƒAƒ‹İ’è
+	// 1. ãƒãƒ†ãƒªã‚¢ãƒ«è¨­å®š
 	MATERIAL mtrl;
 	mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
 	mtrl.TextureEnable = TRUE;
 	m_escapeMarkerSprite->ModifyMtrl(mtrl);
 
-	// 2. ƒŒƒ“ƒ_ƒŠƒ“ƒOƒXƒe[ƒg
+	// 2. ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã‚¹ãƒ†ãƒ¼ãƒˆ
 	Renderer::SetDepthEnable(false);
 	Renderer::SetBlendState(BS_ALPHABLEND);
 
-	// 3. •`‰æ
+	// 3. æç”»
 	m_escapeMarkerSprite->Draw(Vector3(1, 1, 1), Vector3(0, 0, 0), Vector3(screenPos.x, screenPos.y, 0));
 
-	// 4. ƒXƒe[ƒg‚Ì•œŒ³
+	// 4. ã‚¹ãƒ†ãƒ¼ãƒˆã®å¾©å…ƒ
 	Renderer::SetBlendState(BS_NONE);
 	Renderer::SetDepthEnable(true);
 }
@@ -823,28 +836,27 @@ void GameScene::DrawWinText() {
 	int pX = m_player->GetUnitGridX();
 	int pZ = m_player->GetUnitGridZ();
 	Vector3 basePos = m_context->GetMapManager()->GetWorldPosition(pX, pZ);
-	basePos.x += 0.0f;
-	basePos.y += 1.7f;
+	basePos.y += WIN_TEXT_Y_OFFSET;
 
 	Matrix4x4 view = m_camera->GetViewMatrix();
 	Matrix4x4 proj = m_camera->GetProjMatrix();
 	Vector2 screenPos = WorldToScreen(basePos, view, proj, Application::GetWidth(), Application::GetHeight());
 
-	// 1. ƒ}ƒeƒŠƒAƒ‹İ’èFƒeƒNƒXƒ`ƒƒ‚ğ—LŒø‰»
+	// 1. ãƒãƒ†ãƒªã‚¢ãƒ«è¨­å®šï¼šãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æœ‰åŠ¹åŒ–
 	MATERIAL mtrl;
 	mtrl.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
 	mtrl.TextureEnable = TRUE;
 	m_winTextSprite->ModifyMtrl(mtrl);
 
-	// 2. ƒŒƒ“ƒ_ƒŠƒ“ƒOƒXƒe[ƒgF[“xƒeƒXƒg‚ğ–³Œø‰»iuWINv‚ğÅ‘O–Ê‚ÉjAƒAƒ‹ƒtƒ@ƒuƒŒƒ“ƒh‚ğ—LŒø‰»
+	// 2. ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã‚¹ãƒ†ãƒ¼ãƒˆï¼šæ·±åº¦ãƒ†ã‚¹ãƒˆã‚’ç„¡åŠ¹åŒ–ï¼ˆã€ŒWINã€ã‚’æœ€å‰é¢ã«ï¼‰ã€ã‚¢ãƒ«ãƒ•ã‚¡ãƒ–ãƒ¬ãƒ³ãƒ‰ã‚’æœ‰åŠ¹åŒ–
 	Renderer::SetUISamplerMode(true);
 	Renderer::SetDepthEnable(false);
 	Renderer::SetBlendState(BS_ALPHABLEND);
 
-	// 3. •`‰æiuWINv‰æ‘œ‚ğƒXƒNƒŠ[ƒ“‚Ì’†S•t‹ß‚ÉƒIƒtƒZƒbƒg‚µ‚Ä•\¦j
+	// 3. æç”»ï¼ˆã€ŒWINã€ç”»åƒã‚’ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ã®ä¸­å¿ƒä»˜è¿‘ã«ã‚ªãƒ•ã‚»ãƒƒãƒˆã—ã¦è¡¨ç¤ºï¼‰
 	m_winTextSprite->Draw(Vector3(1, 1, 1), Vector3(0, 0, 0), Vector3(screenPos.x, screenPos.y, 0));
 
-	// 4. ƒXƒe[ƒg‚Ì•œŒ³
+	// 4. ã‚¹ãƒ†ãƒ¼ãƒˆã®å¾©å…ƒ
 	Renderer::SetBlendState(BS_NONE);
 	Renderer::SetDepthEnable(true);
 	Renderer::SetUISamplerMode(false);

@@ -1,4 +1,4 @@
-#include "EnemyActionUI.h"
+ï»¿#include "EnemyActionUI.h"
 #include "../../Core/GameContext.h"
 #include "../../System/Camera.h"
 #include "../../System/Utility/WorldToScreen.h"
@@ -7,29 +7,33 @@
 #include "../../System/commontypes.h" //for pi
 
 namespace {
-    // --- ƒAƒjƒ[ƒVƒ‡ƒ“’è” ---
+    // --- ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å®šæ•° ---
     constexpr float ENTRANCE_DURATION = 0.5f;
     constexpr float SHAKE_DURATION = 0.5f;
     constexpr float SHAKE_INTERVAL = 10.0f;
 
-    constexpr float ENTRANCE_BOUNCE_INTENSITY = 0.4f; // “oê‚ÌÅ‘åŠg‘å—¦‚Ì‰ÁZ•ª
-    constexpr float SHAKE_ANGLE_RAD = 0.3f; // —h‚ê‚ÌÅ‘åŠp“xi–ñ17“xj
-    constexpr float SHAKE_SPEED_MULTIPLIER = 6.0f; // —h‚ê‚Ì‘¬“xi‰•œ‰ñ”‚É‰e‹¿j
+    constexpr float ENTRANCE_BOUNCE_INTENSITY = 0.4f; // ç™»å ´æ™‚ã®æœ€å¤§æ‹¡å¤§ç‡ã®åŠ ç®—åˆ†
+    constexpr float SHAKE_ANGLE_RAD = 0.3f; // æºã‚Œã®æœ€å¤§è§’åº¦ï¼ˆç´„17åº¦ï¼‰
+    constexpr float SHAKE_SPEED_MULTIPLIER = 6.0f; // æºã‚Œã®é€Ÿåº¦ï¼ˆå¾€å¾©å›æ•°ã«å½±éŸ¿ï¼‰
 
-    // --- ”z’u’è” ---
-    constexpr float WORLD_OFFSET_Y = 1.4f; // HPƒo[‚Ì­‚µã‚É”z’u
+    // --- é…ç½®å®šæ•° ---
+    constexpr float WORLD_OFFSET_Y = 1.4f; // HPãƒãƒ¼ã®å°‘ã—ä¸Šã«é…ç½®
     constexpr float WORLD_OFFSET_X = 0.1f;
     constexpr float CULLING_MARGIN = 50.0f;
+
+    // --- è¡Œå‹•é †åºã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ ---
+    constexpr int MAX_ORDER_SPRITES = 9;   // ç”¨æ„ã•ã‚Œã¦ã„ã‚‹ç•ªå·ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®æšæ•°ï¼ˆui_num_1ã€œ9ï¼‰
+    constexpr float NUM_TEX_SIZE = 48.0f;  // ç•ªå·ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®å®Ÿå¯¸ï¼ˆpxã€æ­£æ–¹å½¢ï¼‰
 }
 
 void EnemyActionUI::Init(GameContext* context) {
     m_context = context;
 
-    for (int i = 1; i < 10; i++) {
+    for (int i = 1; i <= MAX_ORDER_SPRITES; i++) {
         std::string dirPath = "Assets/texture/ui/ui_num_";
         std::string num = std::to_string(i);
         std::string fullPath = dirPath + num + ".png";
-        m_numSprites.push_back(std::make_unique<CSprite>(48, 48, fullPath));
+        m_numSprites.push_back(std::make_unique<CSprite>(NUM_TEX_SIZE, NUM_TEX_SIZE, fullPath));
     }
 
     m_state = AnimState::Entrance;
@@ -42,19 +46,19 @@ void EnemyActionUI::Update(float dt) {
 
     switch (m_state) {
     case AnimState::Entrance:
-        // “oêƒAƒjƒ[ƒVƒ‡ƒ“F0 -> 1.2 -> 1.0 (ƒoƒEƒ“ƒXŒø‰Ê)
+        // ç™»å ´ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ï¼š0 -> 1.2 -> 1.0 (ãƒã‚¦ãƒ³ã‚¹åŠ¹æœ)
         if (m_animTimer < ENTRANCE_DURATION) {
             float t = m_animTimer / ENTRANCE_DURATION;
-            // ŠÈˆÕ“I‚È BackOut •âŠÔ: ˆê’U‘å‚«‚­•\¦‚µ‚Ä‚©‚ç 1.0 ‚É–ß‚é‹Èü
+            // ç°¡æ˜“çš„ãª BackOut è£œé–“: ä¸€æ—¦å¤§ããè¡¨ç¤ºã—ã¦ã‹ã‚‰ 1.0 ã«æˆ»ã‚‹æ›²ç·š
             float s = sinf(t * PI);
-            m_currentScale = t + (s * ENTRANCE_BOUNCE_INTENSITY);// 0 -> –ñ1.4 -> 1.0
+            m_currentScale = t + (s * ENTRANCE_BOUNCE_INTENSITY);// 0 -> ç´„1.4 -> 1.0
             m_currentRotationZ = 0.0f;
         }
         else {
             m_currentScale = 1.0f;
             m_state = AnimState::Idle;
             m_animTimer = 0.0f;
-            m_intervalTimer = 0.0f; // üŠúƒ^ƒCƒ}[‚ğƒŠƒZƒbƒg
+            m_intervalTimer = 0.0f; // å‘¨æœŸã‚¿ã‚¤ãƒãƒ¼ã‚’ãƒªã‚»ãƒƒãƒˆ
         }
         break;
 
@@ -62,7 +66,7 @@ void EnemyActionUI::Update(float dt) {
         m_currentScale = 1.0f;
         m_currentRotationZ = 0.0f;
 
-        // üŠúÀs—pƒ^ƒCƒ}[‚Ì—İÏ
+        // å‘¨æœŸå®Ÿè¡Œç”¨ã‚¿ã‚¤ãƒãƒ¼ã®ç´¯ç©
         m_intervalTimer += dt;
         if (m_intervalTimer >= SHAKE_INTERVAL) {
             m_state = AnimState::Shake;
@@ -72,10 +76,10 @@ void EnemyActionUI::Update(float dt) {
         break;
 
     case AnimState::Shake:
-        // —h‚êƒAƒjƒ[ƒVƒ‡ƒ“F¶‰E‚ÉƒVƒFƒCƒN
+        // æºã‚Œã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ï¼šå·¦å³ã«ã‚·ã‚§ã‚¤ã‚¯
         if (m_animTimer < SHAKE_DURATION) {
             float t = m_animTimer / SHAKE_DURATION;
-            // ³Œ·”giSine wavej‚É‚æ‚é—h‚êF¶‰E‚É3‰ñ‰•œ
+            // æ­£å¼¦æ³¢ï¼ˆSine waveï¼‰ã«ã‚ˆã‚‹æºã‚Œï¼šå·¦å³ã«3å›å¾€å¾©
             float angle = sinf(t * PI * SHAKE_SPEED_MULTIPLIER) * SHAKE_ANGLE_RAD;
             m_currentRotationZ = angle;
             m_currentScale = 1.0f;
@@ -108,11 +112,11 @@ void EnemyActionUI::Draw(const Vector3& worldPos, int order) {
         return;
     }
 
-    // ‘Î‰‚·‚éSprite‚ğæ“¾iorder‚Í1‚©‚çn‚Ü‚é‚½‚ßAƒCƒ“ƒfƒbƒNƒX—p‚É -1 ‚·‚éj
+    // å¯¾å¿œã™ã‚‹Spriteã‚’å–å¾—ï¼ˆorderã¯1ã‹ã‚‰å§‹ã¾ã‚‹ãŸã‚ã€ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ç”¨ã« -1 ã™ã‚‹ï¼‰
     int spriteIndex = order - 1;
     if (!m_numSprites[spriteIndex]) return;
 
-    // Z²‚Ì‚İ‚ğ‰ñ“]‚³‚¹‚Ä•½–Êã‚Å‚Ì—h‚ê‚ğ•\Œ»
+    // Zè»¸ã®ã¿ã‚’å›è»¢ã•ã›ã¦å¹³é¢ä¸Šã§ã®æºã‚Œã‚’è¡¨ç¾
     Vector3 scaleVec(m_currentScale, m_currentScale, 1.0f);
     Vector3 rotVec(0.0f, 0.0f, m_currentRotationZ);
     Vector3 drawPos(screenPos.x, screenPos.y, 0.0f);

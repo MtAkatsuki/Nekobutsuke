@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <vector>
 #include <memory>
@@ -7,37 +7,37 @@
 class GameContext;
 
 // =========================================================
-// �p�[�e�B�N���̎��
-// �����V�~�����[�V�����𔺂����̂ƁA�����ȃA�j���[�V��������ʂ���
+// パーティクルの種類
+// 物理シミュレーションを伴うものと、純粋なアニメーションを区別する
 // =========================================================
 enum class ParticleType {
-    RUBBLE,     // ���I�E�j�Ёi�d�͂̉e�����󂯁A��������`���ė����E�o�E���h����j
-    HIT_EFFECT  // �q�b�g�G�t�F�N�g�i�w����W�ɗ��܂�A�X�P�[���݂̂��A�j���[�V��������j
+    RUBBLE,     // 瓦礫・破片（重力の影響を受け、放物線を描いて落下・バウンドする）
+    HIT_EFFECT  // ヒットエフェクト（指定座標に留まり、スケールのみがアニメーションする）
 };
 
 // =========================================================
-// �ėp�G�t�F�N�g�p�[�e�B�N���\����
+// 汎用エフェクトパーティクル構造体
 // =========================================================
 struct EffectParticle {
     bool active = false;
     ParticleType type = ParticleType::RUBBLE;
 
-    Vector2 pos;               // �X�N���[�����W�n�̈ʒu
-    Vector2 velocity;          // �ړ����x (px/sec)
+    Vector2 pos;               // スクリーン座標系の位置
+    Vector2 velocity;          // 移動速度 (px/sec)
 
-    float rotation = 0.0f;     // ���݂̉�]�p�x (���W�A��)
-    float rotSpeed = 0.0f;     // ��]���x
-    float scale = 1.0f;        // �`��X�P�[��
+    float rotation = 0.0f;     // 現在の回転角度 (ラジアン)
+    float rotSpeed = 0.0f;     // 回転速度
+    float scale = 1.0f;        // 描画スケール
 
-    float lifeTime = 0.0f;     // �c����� (�b)
-    float maxLifeTime = 1.0f;  // �����ݒ�����i�C�[�W���O�v�Z�̕���Ƃ��Ďg�p�j
+    float lifeTime = 0.0f;     // 残り寿命 (秒)
+    float maxLifeTime = 1.0f;  // 初期設定寿命（イージング計算の分母として使用）
 
-    int textureIndex = 0;      // �`��Ɏg�p����e�N�X�`���̔z��C���f�b�N�X
+    int textureIndex = 0;      // 描画に使用するテクスチャの配列インデックス
 };
 
 // =========================================================
-// EffectManager �N���X
-// 2D�X�N���[�����W�n�ł̃p�[�e�B�N���G�t�F�N�g�̐����E�X�V�E�`����ꊇ�Ǘ�����
+// EffectManager クラス
+// 2Dスクリーン座標系でのパーティクルエフェクトの生成・更新・描画を一括管理する
 // =========================================================
 class EffectManager {
 public:
@@ -45,44 +45,44 @@ public:
     ~EffectManager() = default;
 
     // ---------------------------------------------------------
-    // ���C�t�T�C�N���ƍX�V (Lifecycle & Update)
+    // ライフサイクルと更新 (Lifecycle & Update)
     // ---------------------------------------------------------
     void Init(GameContext* context);
     void Update(float dt);
-    void Clear(); // �V�[���J�ڎ��⃊�Z�b�g���ɑS�p�[�e�B�N�������S�ɔj��
+    void Clear(); // シーン遷移時やリセット時に全パーティクルを安全に破棄
 
     // ---------------------------------------------------------
-    // �G�t�F�N�g���� (Spawning Interfaces)
+    // エフェクト生成 (Spawning Interfaces)
     // ---------------------------------------------------------
-    // ���������������I�p�[�e�B�N���𕡐���������i�ǏՓ˂�̌@���Ȃǁj
+    // 物理挙動を持つ瓦礫パーティクルを複数生成する（壁衝突や採掘時など）
     void SpawnRubble(const Vector3& worldPos, int count = 3);
 
-    // �Ō��̏u�Ԃ������q�b�g�G�t�F�N�g�𐶐�����i�U���������j
+    // 打撃の瞬間を示すヒットエフェクトを生成する（攻撃命中時）
     void SpawnHitEffect(const Vector3& worldPos);
 
     // ---------------------------------------------------------
-    // �����_�����O�p�C�v���C�� (Rendering Sub-routines)
-    // GameScene��Z�I�[�_�[�����ɏ]���ČʂɌĂяo�����`��֐��Q
+    // レンダリングパイプライン (Rendering Sub-routines)
+    // GameSceneのZオーダー順序に従って個別に呼び出される描画関数群
     // ---------------------------------------------------------
-    // �`�揇: 5.2 �������G���e�B�e�B���C���[�i�L�����N�^�[��ǂ̊Ԃɕ`��j
+    // 描画順: 5.2 半透明エンティティレイヤー（キャラクターや壁の間に描画）
     void DrawRubble();
 
-    // �`�揇: 7 �őO��UI�E�G�t�F�N�g���C���[�iUI�Ȃǂ̍őO�ʂɏd�Ȃ�悤�ɕ`��j
+    // 描画順: 7 最前面UI・エフェクトレイヤー（UIなどの最前面に重なるように描画）
     void DrawHitEffects();
 
-    // �U���v���r���[�\�����A��Q���ƂȂ�}�X�ɐÓI�Ȍx���G�t�F�N�g��`�悷��
+    // 攻撃プレビュー表示時、障害物となるマスに静的な警告エフェクトを描画する
     void DrawStaticHitPreview(const Vector3& worldPos);
 
 private:
     // =========================================================
-    // �����o�[�ϐ� (Member Variables)
+    // メンバー変数 (Member Variables)
     // =========================================================
     GameContext* m_context = nullptr;
 
-    // �v�����[�h���ꂽ�G�t�F�N�g�p�e�N�X�`���i�X�v���C�g�j�Q
+    // プリロードされたエフェクト用テクスチャ（スプライト）群
     std::vector<std::unique_ptr<CSprite>> m_textures;
 
-    // �p�[�e�B�N���̃I�u�W�F�N�g�v�[���i���s���̓��I�ȃ������m�ۂ�}���邽�߂̃R���e�i�j
+    // パーティクルのオブジェクトプール（実行時の動的なメモリ確保を抑えるためのコンテナ）
     std::vector<EffectParticle> m_particles;
 
 };

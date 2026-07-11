@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "../../System/CSprite.h"
 #include <vector>
 #include <memory>
@@ -6,42 +6,42 @@
 class GameContext;
 
 // =========================================================
-// EnemyActionUI ƒNƒ‰ƒX
-// “G‚Ì“ªã‚É•\¦‚³‚ê‚és“®‡i1, 2, 3...j‚ÌUIB
-// “oê‚ÌƒoƒEƒ“ƒX‚â‘Ò‹@‚ÌüŠú“I‚ÈƒVƒFƒCƒNƒAƒjƒ[ƒVƒ‡ƒ“‚ğŠÇ—B
+// EnemyActionUI ã‚¯ãƒ©ã‚¹
+// æ•µã®é ­ä¸Šã«è¡¨ç¤ºã•ã‚Œã‚‹è¡Œå‹•é †ï¼ˆ1, 2, 3...ï¼‰ã®UIã€‚
+// ç™»å ´æ™‚ã®ãƒã‚¦ãƒ³ã‚¹ã‚„å¾…æ©Ÿæ™‚ã®å‘¨æœŸçš„ãªã‚·ã‚§ã‚¤ã‚¯ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã‚’ç®¡ç†ã€‚
 // =========================================================
 class EnemyActionUI {
 public:
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
     // ---------------------------------------------------------
     void Init(GameContext* context);
     void Update(float dt);
 
     // ---------------------------------------------------------
-    // ƒŒƒ“ƒ_ƒŠƒ“ƒO (Rendering)
+    // ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚° (Rendering)
     // ---------------------------------------------------------
-    // order: s“®‡ (1‚©‚çŠJn)
+    // order: è¡Œå‹•é † (1ã‹ã‚‰é–‹å§‹)
     void Draw(const Vector3& worldPos, int order);
 
 private:
     GameContext* m_context = nullptr;
     std::vector<std::unique_ptr<CSprite>> m_numSprites;
 
-    // --- ƒAƒjƒ[ƒVƒ‡ƒ“ó‘Ô‹@ ---
+    // --- ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³çŠ¶æ…‹æ©Ÿ ---
     enum class AnimState {
-        Entrance,   // “oêiŠg‘å‚µ‚È‚ª‚çoŒ»j
-        Idle,       // ‘Ò‹@
-        Shake       // üŠú“I‚È—h‚êiƒAƒeƒ“ƒVƒ‡ƒ“—U“±j
+        Entrance,   // ç™»å ´ï¼ˆæ‹¡å¤§ã—ãªãŒã‚‰å‡ºç¾ï¼‰
+        Idle,       // å¾…æ©Ÿ
+        Shake       // å‘¨æœŸçš„ãªæºã‚Œï¼ˆã‚¢ãƒ†ãƒ³ã‚·ãƒ§ãƒ³èª˜å°ï¼‰
     };
 
     AnimState m_state = AnimState::Entrance;
 
-    // ƒAƒjƒ[ƒVƒ‡ƒ“is—pƒ^ƒCƒ}[
+    // ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³é€²è¡Œç”¨ã‚¿ã‚¤ãƒãƒ¼
     float m_animTimer = 0.0f;
     float m_intervalTimer = 0.0f;
 
-    // •`‰æ—p‚Ìƒgƒ‰ƒ“ƒXƒtƒH[ƒ€ƒLƒƒƒbƒVƒ…iUpdate‚ÅŒvZ‚µADraw‚Å“K—pj
+    // æç”»ç”¨ã®ãƒˆãƒ©ãƒ³ã‚¹ãƒ•ã‚©ãƒ¼ãƒ ã‚­ãƒ£ãƒƒã‚·ãƒ¥ï¼ˆUpdateã§è¨ˆç®—ã—ã€Drawã§é©ç”¨ï¼‰
     float m_currentScale = 1.0f;
     float m_currentRotationZ = 0.0f;
 };

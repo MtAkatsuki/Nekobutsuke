@@ -1,21 +1,27 @@
-#include "DialogueUI.h"
+ï»¿#include "DialogueUI.h"
 #include "../../Core/GameContext.h"
 #include "../../System/Camera.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../Core/Application.h"
 
 namespace {
-    // --- ’è”’è‹` ---
-    constexpr float WORLD_OFFSET_Y = 1.5f; // “ªã‚É•\¦‚·‚é‚½‚ß‚ÌY²ƒIƒtƒZƒbƒg
+    // --- å®šæ•°å®šç¾© ---
+    constexpr float WORLD_OFFSET_Y = 1.5f; // é ­ä¸Šã«è¡¨ç¤ºã™ã‚‹ãŸã‚ã®Yè»¸ã‚ªãƒ•ã‚»ãƒƒãƒˆ
     constexpr float CULLING_MARGIN = 50.0f;
-    constexpr float DEFAULT_TINT = 0.8f; // ƒXƒvƒ‰ƒCƒg‚Ì•W€æZƒJƒ‰[
+    constexpr float DEFAULT_TINT = 0.8f; // ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®æ¨™æº–ä¹—ç®—ã‚«ãƒ©ãƒ¼
+
+    // --- å¹ãå‡ºã—ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®ãƒ†ã‚¯ã‚¹ãƒãƒ£å®Ÿå¯¸ï¼ˆpxï¼‰ ---
+    constexpr float HELP_TEX_W = 370.0f;
+    constexpr float HELP_TEX_H = 112.0f;
+    constexpr float ESCAPE_TEX_W = 517.0f;
+    constexpr float ESCAPE_TEX_H = 156.0f;
 }
 
 void DialogueUI::Init(GameContext* context) {
     m_context = context;
 
-    m_dialogueHelpSprite = std::make_unique<CSprite>(370, 112, "Assets/texture/ui/ui_dialogue_help.png");
-    m_dialogueEscapeSprite = std::make_unique<CSprite>(517, 156, "Assets/texture/ui/ui_dialogue_escape.png");
+    m_dialogueHelpSprite = std::make_unique<CSprite>(HELP_TEX_W, HELP_TEX_H, "Assets/texture/ui/ui_dialogue_help.png");
+    m_dialogueEscapeSprite = std::make_unique<CSprite>(ESCAPE_TEX_W, ESCAPE_TEX_H, "Assets/texture/ui/ui_dialogue_escape.png");
 
     m_isVisible = false;
 }
@@ -23,7 +29,7 @@ void DialogueUI::Init(GameContext* context) {
 void DialogueUI::Update(uint64_t dt) {
     if (!m_isVisible) return;
 
-    // ƒ^ƒCƒ}[‚ª³”‚Ìê‡‚Ì‚İŠÔ‚ğŒ¸Zi•‰”‚Í–³ŒÀ•\¦ˆµ‚¢j
+    // ã‚¿ã‚¤ãƒãƒ¼ãŒæ­£æ•°ã®å ´åˆã®ã¿æ™‚é–“ã‚’æ¸›ç®—ï¼ˆè² æ•°ã¯ç„¡é™è¡¨ç¤ºæ‰±ã„ï¼‰
     if (m_displayTimer > 0.0f) {
         float deltaSeconds = static_cast<float>(dt) / 1000.0f;
         m_displayTimer -= deltaSeconds;
@@ -50,7 +56,7 @@ void DialogueUI::Draw() {
         return;
     }
 
-    // “§‰ß•”•ª‚ğ³‚µ‚­•`Ê‚·‚é‚½‚ßAZƒoƒbƒtƒ@‚ğ–³Œø‰»‚µƒAƒ‹ƒtƒ@ƒuƒŒƒ“ƒh‚ğ—LŒø‰»
+    // é€ééƒ¨åˆ†ã‚’æ­£ã—ãæå†™ã™ã‚‹ãŸã‚ã€Zãƒãƒƒãƒ•ã‚¡ã‚’ç„¡åŠ¹åŒ–ã—ã‚¢ãƒ«ãƒ•ã‚¡ãƒ–ãƒ¬ãƒ³ãƒ‰ã‚’æœ‰åŠ¹åŒ–
     Renderer::SetDepthEnable(false);
     Renderer::SetBlendState(BS_ALPHABLEND);
 
@@ -64,7 +70,7 @@ void DialogueUI::Draw() {
 void DialogueUI::ShowDialogue(const Vector3& targetWorldPos, DialogueType type, float duration)
 {
     m_targetPos = targetWorldPos;
-    m_targetPos.y += 1.5f; // “ª‚Ìã‚É•\¦
+    m_targetPos.y += WORLD_OFFSET_Y; // é ­ã®ä¸Šã«è¡¨ç¤º
 
     if (type == DialogueType::Escape) {
         m_currentSprite = m_dialogueEscapeSprite.get();

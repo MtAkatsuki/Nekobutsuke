@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <vector>
 #include "../../System/CommonTypes.h"   // Vector3 / Matrix4x4 / Color
@@ -13,28 +13,28 @@ class PlayerActionView {
 public:
     void Init(GameContext* context);
 
-    // ˆÚ“®‰Â”\ƒ}ƒX‚Ì•\¦i—Îj
+    // ç§»å‹•å¯èƒ½ãƒã‚¹ã®è¡¨ç¤ºï¼ˆç·‘ï¼‰
     void DrawMoveRange(const std::vector<Tile*>& rangeTiles);
 
-    // ˆÚ“®Œo˜H‚Ì–îˆói’¼üE‹È‚ª‚èjBŠJnƒ}ƒX‚Í•`‰æ‚¹‚¸AI“_‚ªã©‚È‚çÔ‚ÅŒx•\¦
+    // ç§»å‹•çµŒè·¯ã®çŸ¢å°ï¼ˆç›´ç·šãƒ»æ›²ãŒã‚Šï¼‰ã€‚é–‹å§‹ãƒã‚¹ã¯æç”»ã›ãšã€çµ‚ç‚¹ãŒç½ ãªã‚‰èµ¤ã§è­¦å‘Šè¡¨ç¤º
     void DrawPathLine(const std::vector<Tile*>& path, int startGX, int startGZ);
 
-    // o”­’n“_‚É”¼“§–¾‚ÌƒS[ƒXƒg‚ğ•`‰æB
-    // body ‚Í Player –{‘Ì‚ÌRendererArestoreWorld ‚Í•`‰æŒã‚É•œŒ³‚·‚éƒ[ƒ‹ƒhs—ñ
+    // å‡ºç™ºåœ°ç‚¹ã«åŠé€æ˜ã®ã‚´ãƒ¼ã‚¹ãƒˆã‚’æç”»ã€‚
+    // body ã¯ Player æœ¬ä½“ã®Rendererã€restoreWorld ã¯æç”»å¾Œã«å¾©å…ƒã™ã‚‹ãƒ¯ãƒ¼ãƒ«ãƒ‰è¡Œåˆ—
     void DrawGhost(CStaticMeshRenderer* body, const Vector3& scale, float rotY,
         int startGX, int startGZ, const Matrix4x4& restoreWorld);
 
-    // UŒ‚•ûŒü‘I‘ğ‚Ì°Œx•\¦il‹ß–T{‘I‘ğƒ}ƒXj
+    // æ”»æ’ƒæ–¹å‘é¸æŠæ™‚ã®åºŠè­¦å‘Šè¡¨ç¤ºï¼ˆå››è¿‘å‚ï¼‹é¸æŠãƒã‚¹ï¼‰
     void DrawAttackWarningFloor(int gridX, int gridZ, Direction attackDir);
 
-    // UŒ‚‘ÎÛ‚ÌƒmƒbƒNƒoƒbƒNƒvƒŒƒrƒ…[iÅ‘O–Ê•\¦j
+    // æ”»æ’ƒå¯¾è±¡ã®ãƒãƒƒã‚¯ãƒãƒƒã‚¯ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ï¼ˆæœ€å‰é¢è¡¨ç¤ºï¼‰
     void DrawAttackWarningOverlay(int gridX, int gridZ, Direction attackDir, bool isPush, Unit* self);
 
 private:
     float CalculateLineRotation(int dx, int dz);
     float CalculateCornerRotation(int dx1, int dz1, int dx2, int dz2);
 
-    GameContext* m_context = nullptr;   // ”ñŠ—Liƒ}ƒbƒvÀ•W•ÏŠ·‚Ég—pj
+    GameContext* m_context = nullptr;   // éæ‰€æœ‰ï¼ˆãƒãƒƒãƒ—åº§æ¨™å¤‰æ›ã«ä½¿ç”¨ï¼‰
     CStaticMeshRenderer* m_pathLineRenderer = nullptr;
     CStaticMeshRenderer* m_pathCornerRenderer = nullptr;
 };

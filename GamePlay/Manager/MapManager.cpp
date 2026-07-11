@@ -1,4 +1,4 @@
-#include <memory>
+ï»¿#include <memory>
 #include <queue>
 #include <algorithm>
 #include <fstream>
@@ -19,52 +19,59 @@
 #include "../../Core/GameContext.h"
 
 namespace {
-	// ‹Šo“IƒIƒtƒZƒbƒgiZƒtƒ@ƒCƒeƒBƒ“ƒO–h~Eƒp[ƒXƒyƒNƒeƒBƒu’²®—pj
+	// è¦–è¦šçš„ã‚ªãƒ•ã‚»ãƒƒãƒˆï¼ˆZãƒ•ã‚¡ã‚¤ãƒ†ã‚£ãƒ³ã‚°é˜²æ­¢ãƒ»ãƒ‘ãƒ¼ã‚¹ãƒšã‚¯ãƒ†ã‚£ãƒ–èª¿æ•´ç”¨ï¼‰
 	const float VISUAL_Z_OFFSET = -0.3f;
+
+	// ãƒãƒƒãƒ—æ§‹æˆã®æ—¢å®šå€¤ï¼ˆLoadLevel ãŒ CSV ã‹ã‚‰ä¸Šæ›¸ãã™ã‚‹ã¾ã§ã®åˆæœŸå€¤ï¼‰
+	const int DEFAULT_MAP_WIDTH = 12;
+	const int DEFAULT_MAP_DEPTH = 9;
+	const float TILE_SIZE = 1.0f;          // 1ã‚¿ã‚¤ãƒ«ã®ãƒ¯ãƒ¼ãƒ«ãƒ‰ç©ºé–“ã‚µã‚¤ã‚º
+
+	const float RANGE_TILE_SCALE = 0.9f;   // ç¯„å›²è¡¨ç¤ºãƒ‘ãƒãƒ«ã®ç¸®å°ç‡ï¼ˆå¢ƒç•Œã‚’è¦‹ã‚„ã™ãã™ã‚‹ï¼‰
 }
 
 void MapManager::Init(GameContext* context) {
-	m_mapWidth = 12;
-	m_mapDepth = 9;
-	m_tileSize = 1.0f;
+	m_mapWidth = DEFAULT_MAP_WIDTH;
+	m_mapDepth = DEFAULT_MAP_DEPTH;
+	m_tileSize = TILE_SIZE;
 	m_tileOffsets.x = 0.5f * -(float(GetMapWidth()) * m_tileSize);
 	m_tileOffsets.y = 0.0f;
 	m_tileOffsets.z = 0.5f * -(float(GetMapDepth()) * m_tileSize);
 
-	// ƒOƒŠƒbƒh‰Šú‰»
+	// ã‚°ãƒªãƒƒãƒ‰åˆæœŸåŒ–
 	m_grid.clear();
-	m_grid.resize(m_mapWidth * m_mapDepth);//ˆê‹C‚Éƒƒ‚ƒŠ[‚ğŠm•Û
+	m_grid.resize(m_mapWidth * m_mapDepth);//ä¸€æ°—ã«ãƒ¡ãƒ¢ãƒªãƒ¼ã‚’ç¢ºä¿
 
 
 	m_tileRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("floor_mesh");
 	m_rangeRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("range_panel_mesh");
 }
 
-//Tile‘ÎÛì‚ç‚È‚¢Aƒƒ‚ƒŠ[‚ÉŒø—¦‚ª‚¢‚¢
+//Tileå¯¾è±¡ä½œã‚‰ãªã„ã€ãƒ¡ãƒ¢ãƒªãƒ¼ã«åŠ¹ç‡ãŒã„ã„
 Vector3 MapManager::GetWorldPosition(int gridX, int gridZ) const
 {
-	//¶‰º‚ÌÀ•W‚ğŒvZ
+	//å·¦ä¸‹ã®åº§æ¨™ã‚’è¨ˆç®—
 	float worldX = (float)gridX * m_tileSize;
 	float worldY = 0;
 	float worldZ = (float)gridZ * m_tileSize;
 
-	//ƒ^ƒCƒ‹‚Ì’†S‚É’²®
+	//ã‚¿ã‚¤ãƒ«ã®ä¸­å¿ƒã«èª¿æ•´
 	worldX = m_tileOffsets.x + worldX + (m_tileSize / 2.0f);
 	worldZ = m_tileOffsets.z + worldZ + (m_tileSize / 2.0f);
 
-	// Z²‚Ì•‰‚Ì•ûŒüiƒJƒƒ‰•ûŒüj‚ÖƒIƒtƒZƒbƒg‚³‚¹A•¨‘Ì‚ğƒ}ƒX‚Ìè‘O‘¤‚ÉŠñ‚¹‚é
+	// Zè»¸ã®è² ã®æ–¹å‘ï¼ˆã‚«ãƒ¡ãƒ©æ–¹å‘ï¼‰ã¸ã‚ªãƒ•ã‚»ãƒƒãƒˆã•ã›ã€ç‰©ä½“ã‚’ãƒã‚¹ã®æ‰‹å‰å´ã«å¯„ã›ã‚‹
 	worldZ += VISUAL_Z_OFFSET;
 
 	return Vector3(worldX, worldY, worldZ);
 }
 
-//’¼ÚTile‚ğ“n‚·•û–@A‚à‚Á‚Æ•ª‚©‚è‚â‚·‚¢ƒTƒ|[ƒgŠÖ”
+//ç›´æ¥Tileã‚’æ¸¡ã™æ–¹æ³•ã€ã‚‚ã£ã¨åˆ†ã‹ã‚Šã‚„ã™ã„ã‚µãƒãƒ¼ãƒˆé–¢æ•°
 Vector3 MapManager::GetWorldPosition(const Tile& tile) const
 {
 	return GetWorldPosition(tile.gridX, tile.gridZ);
 }
 
-//Tile‚Ì‹L†‚ğæ“¾‚·‚é
+//Tileã®è¨˜å·ã‚’å–å¾—ã™ã‚‹
 const Tile* MapManager::GetTile(int gridX, int gridZ)const
 {
 	if (gridX < 0 || gridX >= m_mapWidth || gridZ < 0 || gridZ >= m_mapDepth) {
@@ -87,30 +94,30 @@ Tile* MapManager::GetTile(int gridX, int gridZ)
 
 }
 
-// draw‚Ì‚½‚ßA‚·‚×‚Ä‚Ìƒ^ƒCƒ‹‚ğæ“¾
+// drawã®ãŸã‚ã€ã™ã¹ã¦ã®ã‚¿ã‚¤ãƒ«ã‚’å–å¾—
 const std::vector<Tile>& MapManager::GetAllTiles()const
 {
 	return m_grid;
 }
 
-//’Ê‰ß‚Å‚«‚é‚©‚ÌŒŸ¸
+//é€šéã§ãã‚‹ã‹ã®æ¤œæŸ»
 bool MapManager::IsWalkable(int gridX, int gridZ) const
 {
 	const Tile* targetTile = GetTile(gridX, gridZ);
 
-	if (targetTile == nullptr) { return false; }//ƒ}ƒbƒv‚Ì‹«ŠEŠO
-	//Unit‚Ìè—LŒŸ¸
+	if (targetTile == nullptr) { return false; }//ãƒãƒƒãƒ—ã®å¢ƒç•Œå¤–
+	//Unitã®å æœ‰æ¤œæŸ»
 	if (targetTile->occupant != nullptr) {
 		return false;
 	}
 
-	//  Ã“IƒIƒuƒWƒFƒNƒgiáŠQ•¨E\‘¢•¨j‚Ìƒ`ƒFƒbƒN
-	// ƒ^[ƒQƒbƒg‚Æ‚È‚éƒ^ƒCƒ‹‚É•Ç‚âƒIƒuƒWƒFƒNƒg‚ª‘¶İ‚·‚é‚©‚ğŠm”F
+	//  é™çš„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆï¼ˆéšœå®³ç‰©ãƒ»æ§‹é€ ç‰©ï¼‰ã®ãƒã‚§ãƒƒã‚¯
+	// ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã¨ãªã‚‹ã‚¿ã‚¤ãƒ«ã«å£ã‚„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãŒå­˜åœ¨ã™ã‚‹ã‹ã‚’ç¢ºèª
 	if (targetTile->structure != nullptr) {
 
-		// ƒIƒuƒWƒFƒNƒg‚Ì’Ês‰Â”\ƒtƒ‰ƒOiIsWalkablej‚ğŠm”F
+		// ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®é€šè¡Œå¯èƒ½ãƒ•ãƒ©ã‚°ï¼ˆIsWalkableï¼‰ã‚’ç¢ºèª
 		if (!targetTile->structure->IsWalkable()) {
-			// •Ç‚È‚Ç‚Ì’Ês•s‰Â”\‚È\‘¢•¨‚ª‚ ‚éê‡AˆÚ“®•s‰Âifalsej‚ğ•Ô‚·
+			// å£ãªã©ã®é€šè¡Œä¸å¯èƒ½ãªæ§‹é€ ç‰©ãŒã‚ã‚‹å ´åˆã€ç§»å‹•ä¸å¯ï¼ˆfalseï¼‰ã‚’è¿”ã™
 			return false;
 		}
 	}
@@ -119,53 +126,53 @@ bool MapManager::IsWalkable(int gridX, int gridZ) const
 
 std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX, int goalZ, bool ignoreTraps)
 {
-	//‹«ŠE‚ÆƒXƒ^ƒbƒgƒ|ƒCƒ“ƒg‚ÌŒŸ¸
+	//å¢ƒç•Œã¨ã‚¹ã‚¿ãƒƒãƒˆãƒã‚¤ãƒ³ãƒˆã®æ¤œæŸ»
 	Tile* startTile = GetTile(startX, startZ);
 	Tile* goalTile = GetTile(goalX, goalZ);
 
-	if (!startTile || !goalTile) { return {}; }//–³Œø‚ÈƒXƒ^[ƒg‚Ü‚½‚ÍƒS[ƒ‹,GetTile‚ªnullptr‚ğ•Ô‚·
-	if (startTile == goalTile) { return {}; }//ƒXƒ^[ƒg‚ÆƒS[ƒ‹‚ª“¯‚¶AˆÚ“®‚µ‚È‚¢
+	if (!startTile || !goalTile) { return {}; }//ç„¡åŠ¹ãªã‚¹ã‚¿ãƒ¼ãƒˆã¾ãŸã¯ã‚´ãƒ¼ãƒ«,GetTileãŒnullptrã‚’è¿”ã™
+	if (startTile == goalTile) { return {}; }//ã‚¹ã‚¿ãƒ¼ãƒˆã¨ã‚´ãƒ¼ãƒ«ãŒåŒã˜ã€ç§»å‹•ã—ãªã„
 
-	//•—Dæ’Tõ‚Æ‚«‚ÌTile‚ğ•Û‘¶‚·‚éƒLƒ…[
+	//å¹…å„ªå…ˆæ¢ç´¢ã¨ãã®Tileã‚’ä¿å­˜ã™ã‚‹ã‚­ãƒ¥ãƒ¼
 	std::queue<Tile*> frontier;
-	//ƒXƒ^ƒbƒgƒ|ƒCƒ“ƒg‚ğƒLƒ…[‚É’Ç‰Á(forzŠÂÅ‰‚Ì–Ú•W)
+	//ã‚¹ã‚¿ãƒƒãƒˆãƒã‚¤ãƒ³ãƒˆã‚’ã‚­ãƒ¥ãƒ¼ã«è¿½åŠ (forå¾ªç’°æœ€åˆã®ç›®æ¨™)
 	frontier.push(startTile);
 
-	//Tile ‚ğ’ÇÕ‚·‚éƒ}ƒbƒv,key=currentTile,value=‘O‚ÌTile
+	//Tile ã‚’è¿½è·¡ã™ã‚‹ãƒãƒƒãƒ—,key=currentTile,value=å‰ã®Tile
 	std::unordered_map<Tile*, Tile*> cameFrom;
-	cameFrom[startTile] = nullptr; //ƒXƒ^ƒbƒgƒ|ƒCƒ“ƒg‚Ì‘O‚ÌTile‚Í‚È‚µ
+	cameFrom[startTile] = nullptr; //ã‚¹ã‚¿ãƒƒãƒˆãƒã‚¤ãƒ³ãƒˆã®å‰ã®Tileã¯ãªã—
 
-	//s‚«~‚Ü‚è‚Ì‚Æ‚«ˆê”Ô‹ß‚¢Tile‚ğˆÚ“®
-	//’Tõ’†‚ÅŒ©‚Â‚©‚Á‚½ƒS[ƒ‹‚Éˆê”Ô‹ß‚¢Tile‚ğ•Û‘¶
+	//è¡Œãæ­¢ã¾ã‚Šã®ã¨ãä¸€ç•ªè¿‘ã„Tileã‚’ç§»å‹•
+	//æ¢ç´¢ä¸­ã§è¦‹ã¤ã‹ã£ãŸã‚´ãƒ¼ãƒ«ã«ä¸€ç•ªè¿‘ã„Tileã‚’ä¿å­˜
 	Tile* bestTile = startTile;
 	int minDistance = CalculateDistance(startX, startZ, goalX, goalZ);
 
 	bool foundPath = false;
 
-	//BFS’Tõƒ‹[ƒv
+	//BFSæ¢ç´¢ãƒ«ãƒ¼ãƒ—
 	while (!frontier.empty())
 	{
-		Tile* currentTile = frontier.front();//ƒLƒ…[‚Ìæ“ª‚ğæ“¾
-		frontier.pop();//ƒLƒ…[‚Ìæ“ª‚ğíœ(’Tõ‚µ‚½Tile‚ğíœ)
+		Tile* currentTile = frontier.front();//ã‚­ãƒ¥ãƒ¼ã®å…ˆé ­ã‚’å–å¾—
+		frontier.pop();//ã‚­ãƒ¥ãƒ¼ã®å…ˆé ­ã‚’å‰Šé™¤(æ¢ç´¢ã—ãŸTileã‚’å‰Šé™¤)
 
-		//current‚©‚çgoal‚Ü‚Å‚Ì‹——£‚ğŒvZ
+		//currentã‹ã‚‰goalã¾ã§ã®è·é›¢ã‚’è¨ˆç®—
 		int currentDistance = CalculateDistance(currentTile->gridX, currentTile->gridZ, goalX, goalZ);
 
-		//‚à‚µcurrentTile‚Í‘O‚ÌbestTile‚æ‚è‹ß‚¢‚È‚çAbestTile‚ğXV
+		//ã‚‚ã—currentTileã¯å‰ã®bestTileã‚ˆã‚Šè¿‘ã„ãªã‚‰ã€bestTileã‚’æ›´æ–°
 		if (currentDistance < minDistance)
 		{
-			minDistance = currentDistance;//ˆê”Ô‹ß‚¢‹——£‚ğ¡‚Ì‹——£‚ÉXVAŸ‚Í‚Ü‚½V‚µ‚¢‚ÌcurrentDistance‚ğ”äŠr
-			bestTile = currentTile;//bestTile‚ğ¡“’B‚µ‚½currentTile‚ÉXV
+			minDistance = currentDistance;//ä¸€ç•ªè¿‘ã„è·é›¢ã‚’ä»Šã®è·é›¢ã«æ›´æ–°ã€æ¬¡ã¯ã¾ãŸæ–°ã—ã„ã®currentDistanceã‚’æ¯”è¼ƒ
+			bestTile = currentTile;//bestTileã‚’ä»Šåˆ°é”ã—ãŸcurrentTileã«æ›´æ–°
 		}
-		//ƒS[ƒ‹‚É“’B‚µ‚½‚ç’TõI—¹
+		//ã‚´ãƒ¼ãƒ«ã«åˆ°é”ã—ãŸã‚‰æ¢ç´¢çµ‚äº†
 		if (currentTile == goalTile)
 		{
 			foundPath = true;
-			bestTile = currentTile;//bestTile‚ğƒS[ƒ‹‚Éİ’è(ÅŒã‚ÉŒ©‚Â‚©‚Á‚½Tile)
+			bestTile = currentTile;//bestTileã‚’ã‚´ãƒ¼ãƒ«ã«è¨­å®š(æœ€å¾Œã«è¦‹ã¤ã‹ã£ãŸTile)
 			break;
 		}
 
-		//—×Ú‚·‚éƒ^ƒCƒ‹‚ğ’²¸(ã‰º¶‰E)
+		//éš£æ¥ã™ã‚‹ã‚¿ã‚¤ãƒ«ã‚’èª¿æŸ»(ä¸Šä¸‹å·¦å³)
 		int dx[] = { -1, 1, 0, 0 };
 		int dz[] = { 0, 0, -1, 1 };
 
@@ -174,88 +181,88 @@ std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX, int 
 			int nextX = currentTile->gridX + dx[i];
 			int nextZ = currentTile->gridZ + dz[i];
 			Tile* nextTile = GetTile(nextX, nextZ);
-			//GetTile‚ªnullptr‚ğ•Ô‚·‚©A’Ê‰ß‚Å‚«‚È‚¢TileA‚·‚Å‚É’²¸‚µ‚½Tile‚ÍƒXƒLƒbƒv(came_from.count == 0)
+			//GetTileãŒnullptrã‚’è¿”ã™ã‹ã€é€šéã§ããªã„Tileã€ã™ã§ã«èª¿æŸ»ã—ãŸTileã¯ã‚¹ã‚­ãƒƒãƒ—(came_from.count == 0)
 			if (nextTile && cameFrom.find(nextTile) == cameFrom.end())
 			{
-				//’nŒ`ŒŸ¸
+				//åœ°å½¢æ¤œæŸ»
 				bool isWalkable = IsWalkable(nextX, nextZ);
-				if (!isWalkable) { continue; }//’Ê‰ß‚Å‚«‚È‚¢‚È‚çƒXƒLƒbƒv
+				if (!isWalkable) { continue; }//é€šéã§ããªã„ãªã‚‰ã‚¹ã‚­ãƒƒãƒ—
 
-				// AIê—pƒƒWƒbƒN‚ğƒpƒ‰ƒ[ƒ^‚Å§Œä
-				// ignoreTraps ‚ª falseiAI‚Ìê‡jFTRAPiƒgƒ‰ƒbƒvj‚ği“ü•s‰Âi’Ês‹Ö~j‚Æ‚µ‚Äˆµ‚¤
-				// ignoreTraps ‚ª trueiƒvƒŒƒCƒ„[‚Ìê‡jFƒgƒ‰ƒbƒv‚ğ–³‹‚µ‚Ä’Ês‰Â”\‚Æ‚·‚é
+				// AIå°‚ç”¨ãƒ­ã‚¸ãƒƒã‚¯ã‚’ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã§åˆ¶å¾¡
+				// ignoreTraps ãŒ falseï¼ˆAIã®å ´åˆï¼‰ï¼šTRAPï¼ˆãƒˆãƒ©ãƒƒãƒ—ï¼‰ã‚’é€²å…¥ä¸å¯ï¼ˆé€šè¡Œç¦æ­¢ï¼‰ã¨ã—ã¦æ‰±ã†
+				// ignoreTraps ãŒ trueï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®å ´åˆï¼‰ï¼šãƒˆãƒ©ãƒƒãƒ—ã‚’ç„¡è¦–ã—ã¦é€šè¡Œå¯èƒ½ã¨ã™ã‚‹
 				if (!ignoreTraps) {
 					if (nextTile->structure && nextTile->structure->GetType() == MapModelType::TRAP) {
-						// ƒgƒ‰ƒbƒv‚ª‚ ‚éƒ^ƒCƒ‹‚ÍƒXƒLƒbƒviŒo˜HŒó•â‚©‚çœŠOj
+						// ãƒˆãƒ©ãƒƒãƒ—ãŒã‚ã‚‹ã‚¿ã‚¤ãƒ«ã¯ã‚¹ã‚­ãƒƒãƒ—ï¼ˆçµŒè·¯å€™è£œã‹ã‚‰é™¤å¤–ï¼‰
 						continue;
 					}
 				}
 
 
-				//UnitŒŸ¸
+				//Unitæ¤œæŸ»
 				if (nextTile->occupant != nullptr)
 				{
-					//“ÁêƒP[ƒX:ƒS[ƒ‹Tile‚Í’Ê‰ß‚Å‚«‚È‚­‚Ä‚à’Ç‰ÁAŒã‚ÅƒS[ƒ‹‚Ì—×ÚTile‚ğæ“¾‚·‚é‚½‚ß‚É
+					//ç‰¹æ®Šã‚±ãƒ¼ã‚¹:ã‚´ãƒ¼ãƒ«Tileã¯é€šéã§ããªãã¦ã‚‚è¿½åŠ ã€å¾Œã§ã‚´ãƒ¼ãƒ«ã®éš£æ¥Tileã‚’å–å¾—ã™ã‚‹ãŸã‚ã«
 					if (nextTile != goalTile) { continue; }
 				}
-				frontier.push(nextTile);//ƒS[ƒ‹‚Å‚àƒLƒ…[‚É’Ç‰Á
-				cameFrom[nextTile] = currentTile;//‘O‚ÌTile‚ğ‹L˜^
+				frontier.push(nextTile);//ã‚´ãƒ¼ãƒ«ã§ã‚‚ã‚­ãƒ¥ãƒ¼ã«è¿½åŠ 
+				cameFrom[nextTile] = currentTile;//å‰ã®Tileã‚’è¨˜éŒ²
 			}
 		}
 	}
 
-	//foundPath‚ªfalse‚Ìê‡A‚à‚µ‚­‚ÍfoundPath‚ªtrue‚Ìê‡A‚Ç‚Á‚¿‚àbestTile(‚·‚È‚í‚¿æ“¾‚Å‚«‚éˆê”ÔƒS[ƒ‹‚É‹ß‚¢Tile)‚©‚çƒpƒX‚ğÄ\’z
-	//‚à‚µfoundPath‚ªtrue‚Ìê‡AbestTile‚ÍgoalTile‚É‚È‚é
-	//‚à‚µfoundPath‚ªfalse‚Ìê‡AbestTile‚ÍƒXƒ^ƒbƒgƒ|ƒCƒ“ƒg‚Éˆê”Ô‹ß‚¢Tile‚É‚È‚é
+	//foundPathãŒfalseã®å ´åˆã€ã‚‚ã—ãã¯foundPathãŒtrueã®å ´åˆã€ã©ã£ã¡ã‚‚bestTile(ã™ãªã‚ã¡å–å¾—ã§ãã‚‹ä¸€ç•ªã‚´ãƒ¼ãƒ«ã«è¿‘ã„Tile)ã‹ã‚‰ãƒ‘ã‚¹ã‚’å†æ§‹ç¯‰
+	//ã‚‚ã—foundPathãŒtrueã®å ´åˆã€bestTileã¯goalTileã«ãªã‚‹
+	//ã‚‚ã—foundPathãŒfalseã®å ´åˆã€bestTileã¯ã‚¹ã‚¿ãƒƒãƒˆãƒã‚¤ãƒ³ãƒˆã«ä¸€ç•ªè¿‘ã„Tileã«ãªã‚‹
 	std::vector<Tile*> path;
 	Tile* currentTile = bestTile;
 
-	//Às‚Å‚«‚éƒS[ƒ‹‚ª‚ ‚éAcameFrom‚É•Û‘¶‚³‚ê‚½Tile‚ğpath‚É’Ç‰Á
+	//å®Ÿè¡Œã§ãã‚‹ã‚´ãƒ¼ãƒ«ãŒã‚ã‚‹æ™‚ã€cameFromã«ä¿å­˜ã•ã‚ŒãŸTileã‚’pathã«è¿½åŠ 
 	while (currentTile != startTile)
 	{
-		path.push_back(currentTile);//unordered_map‚Í‡”Ô‚ª‚È‚¢‚Ì‚ÅAvector‚É“ü‚ê‚ÄŒã‚Åreverse‚·‚é
-		currentTile = cameFrom[currentTile];//Œ³‚ÌcurrentTile‚ğpath‚É“ü‚ê‚½ŒãA‘O‚ÌTile‚ÉXVAƒ‹[ƒv‚ÅŒJ‚è•Ô‚µ
+		path.push_back(currentTile);//unordered_mapã¯é †ç•ªãŒãªã„ã®ã§ã€vectorã«å…¥ã‚Œã¦å¾Œã§reverseã™ã‚‹
+		currentTile = cameFrom[currentTile];//å…ƒã®currentTileã‚’pathã«å…¥ã‚ŒãŸå¾Œã€å‰ã®Tileã«æ›´æ–°ã€ãƒ«ãƒ¼ãƒ—ã§ç¹°ã‚Šè¿”ã—
 	}
 
-	std::reverse(path.begin(), path.end());//path‚ğ‹t‡‚É‚·‚éAƒXƒ^ƒbƒgƒ|ƒCƒ“ƒg‚©‚çƒS[ƒ‹‚Ü‚Å‚Ì‡”Ô‚É
+	std::reverse(path.begin(), path.end());//pathã‚’é€†é †ã«ã™ã‚‹ã€ã‚¹ã‚¿ãƒƒãƒˆãƒã‚¤ãƒ³ãƒˆã‹ã‚‰ã‚´ãƒ¼ãƒ«ã¾ã§ã®é †ç•ªã«
 
-	//ÅŒã‚ÍƒS[ƒ‹Tile‚Ì—×ÚTile‚ğæ“¾‚·‚é‚½‚ß‚ÉAƒS[ƒ‹Tile‚ğpath‚©‚çíœ
+	//æœ€å¾Œã¯ã‚´ãƒ¼ãƒ«Tileã®éš£æ¥Tileã‚’å–å¾—ã™ã‚‹ãŸã‚ã«ã€ã‚´ãƒ¼ãƒ«Tileã‚’pathã‹ã‚‰å‰Šé™¤
 	if (foundPath && !path.empty())
 	{
 		if (path.back() == goalTile)
 		{
-			path.pop_back();//ƒS[ƒ‹Tile‚ğpath‚©‚çíœAˆÚ“®æ‚Æ‚µ‚ÄŠÜ‚ß‚È‚¢
+			path.pop_back();//ã‚´ãƒ¼ãƒ«Tileã‚’pathã‹ã‚‰å‰Šé™¤ã€ç§»å‹•å…ˆã¨ã—ã¦å«ã‚ãªã„
 		}
 	}
 
 	return path;
 }
 
-//ˆÚ“®”ÍˆÍ‚Ìƒ^ƒCƒ‹‚ğæ“¾(BFS)-ƒXƒ^[ƒg“_‚Ìˆø”‚ğ“n‚·
+//ç§»å‹•ç¯„å›²ã®ã‚¿ã‚¤ãƒ«ã‚’å–å¾—(BFS)-ã‚¹ã‚¿ãƒ¼ãƒˆç‚¹ã®å¼•æ•°ã‚’æ¸¡ã™
 std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int maxSteps)
 {
 	std::vector<Tile*> reachables;
 	Tile* startTile = GetTile(startX, startZ);
 	if (!startTile) return reachables;
 
-	//ƒf[ƒ^\‘¢‰Šú‰»‚¨‚æ‚ÑƒXƒ^[ƒgƒ^ƒCƒ‹‚Ì’Ç‰Á
-	//BFS—p‚ÌƒLƒ…[:<Tile*,int>ƒyƒAAint‚ÍƒXƒ^[ƒg‚©‚ç‚ÌƒXƒeƒbƒv”
+	//ãƒ‡ãƒ¼ã‚¿æ§‹é€ åˆæœŸåŒ–ãŠã‚ˆã³ã‚¹ã‚¿ãƒ¼ãƒˆã‚¿ã‚¤ãƒ«ã®è¿½åŠ 
+	//BFSç”¨ã®ã‚­ãƒ¥ãƒ¼:<Tile*,int>ãƒšã‚¢ã€intã¯ã‚¹ã‚¿ãƒ¼ãƒˆã‹ã‚‰ã®ã‚¹ãƒ†ãƒƒãƒ—æ•°
 	std::queue<std::pair<Tile*, int>> q;//FIFO
 	q.push({ startTile, 0 });
 
-	//–K–âÏ‚İƒ^ƒCƒ‹‚ğ’ÇÕ‚·‚éƒZƒbƒg
+	//è¨ªå•æ¸ˆã¿ã‚¿ã‚¤ãƒ«ã‚’è¿½è·¡ã™ã‚‹ã‚»ãƒƒãƒˆ
 	std::vector<Tile*> visited;
 	visited.push_back(startTile);
-	reachables.push_back(startTile);//ƒXƒ^[ƒgƒ^ƒCƒ‹‚àˆÚ“®”ÍˆÍ“à‚ÉŠÜ‚Ş
+	reachables.push_back(startTile);//ã‚¹ã‚¿ãƒ¼ãƒˆã‚¿ã‚¤ãƒ«ã‚‚ç§»å‹•ç¯„å›²å†…ã«å«ã‚€
 
-	while (!q.empty()) //ƒLƒ…[‚ª‹ó‚É‚È‚é‚Ü‚Åƒ‹[ƒv
+	while (!q.empty()) //ã‚­ãƒ¥ãƒ¼ãŒç©ºã«ãªã‚‹ã¾ã§ãƒ«ãƒ¼ãƒ—
 	{
-		auto [current, dist] = q.front();//ƒLƒ…[‚Ìæ“ª‚ğæ“¾,current=Tile*,dist=int
-		q.pop();//ƒLƒ…[‚Ìæ“ª‚ğíœ
+		auto [current, dist] = q.front();//ã‚­ãƒ¥ãƒ¼ã®å…ˆé ­ã‚’å–å¾—,current=Tile*,dist=int
+		q.pop();//ã‚­ãƒ¥ãƒ¼ã®å…ˆé ­ã‚’å‰Šé™¤
 
-		//Å‘åƒXƒeƒbƒv”‚É’B‚µ‚½‚çƒXƒLƒbƒvAˆÈ~‚Ì—×Úƒ^ƒCƒ‹‚Í’Ç‰Á‚µ‚È‚¢
-		// (Tile©g‚Í‚·‚Å‚É‘O‰ñ‚Ìƒ‹[ƒv‚Å’Ç‰Á‚³‚ê‚½)
-		//Ÿ‚Ìq.front()Às‚·‚é
+		//æœ€å¤§ã‚¹ãƒ†ãƒƒãƒ—æ•°ã«é”ã—ãŸã‚‰ã‚¹ã‚­ãƒƒãƒ—ã€ä»¥é™ã®éš£æ¥ã‚¿ã‚¤ãƒ«ã¯è¿½åŠ ã—ãªã„
+		// (Tileè‡ªèº«ã¯ã™ã§ã«å‰å›ã®ãƒ«ãƒ¼ãƒ—ã§è¿½åŠ ã•ã‚ŒãŸ)
+		//æ¬¡ã®q.front()å®Ÿè¡Œã™ã‚‹
 		if (dist >= maxSteps) continue;
 
 		int dx[] = { -1, 1, 0, 0 };
@@ -270,7 +277,7 @@ std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int max
 			if (next && IsWalkable(nx, nz))
 			{
 				bool isVisited = false;
-				for (auto* v : visited) //–K–âÏ‚İƒ^ƒCƒ‹‚ÌŒŸ¸
+				for (auto* v : visited) //è¨ªå•æ¸ˆã¿ã‚¿ã‚¤ãƒ«ã®æ¤œæŸ»
 				{
 					if (v == next)
 					{
@@ -282,7 +289,7 @@ std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int max
 				{
 					visited.push_back(next);
 					reachables.push_back(next);
-					q.push({ next,dist + 1 });//‚±‚±‚ÅŸŒŸ¸‚·‚é•K—v‚ÈTile‚ğƒLƒ…[‚É’Ç‰Á(1->4->4*3->...)
+					q.push({ next,dist + 1 });//ã“ã“ã§æ¬¡æ¤œæŸ»ã™ã‚‹å¿…è¦ãªTileã‚’ã‚­ãƒ¥ãƒ¼ã«è¿½åŠ (1->4->4*3->...)
 				}
 			}
 		}
@@ -290,117 +297,117 @@ std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int max
 	return reachables;
 }
 
-//ˆÚ“®”ÍˆÍ‚Ìƒ^ƒCƒ‹‚ğF•t‚«‚Å•`‰æ
+//ç§»å‹•ç¯„å›²ã®ã‚¿ã‚¤ãƒ«ã‚’è‰²ä»˜ãã§æç”»
 void MapManager::DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX::SimpleMath::Color& color)
 {
 	if (tiles.empty() || !m_rangeRenderer) { return; }
-	//ƒ}ƒeƒŠƒAƒ‹æ“¾
+	//ãƒãƒ†ãƒªã‚¢ãƒ«å–å¾—
 	CMaterial* mtrl = m_rangeRenderer->GetMaterial(0);
 	if (!mtrl) { return; }
-	//Œ³‚Ìƒ}ƒeƒŠƒAƒ‹ƒf[ƒ^‚ğ•Û‘¶
+	//å…ƒã®ãƒãƒ†ãƒªã‚¢ãƒ«ãƒ‡ãƒ¼ã‚¿ã‚’ä¿å­˜
 	MATERIAL original = mtrl->GetData();
 
-	//ƒF”¼“§–¾‚Ìƒ}ƒeƒŠƒAƒ‹‚ğì¬
+	//ç´”è‰²åŠé€æ˜ã®ãƒãƒ†ãƒªã‚¢ãƒ«ã‚’ä½œæˆ
 	MATERIAL temp = original;
 	temp.Diffuse = color;
-	temp.Ambient = color;//ŠÂ‹«ƒ‰ƒCƒg‚Í“¯‚¶F‚ÉA–¾‚é‚³‚ÌŠm•Û
-	temp.TextureEnable = FALSE;//ƒeƒNƒXƒ`ƒƒ–³Œø‰»AF‚¾‚¯‚Å•`‰æ
+	temp.Ambient = color;//ç’°å¢ƒãƒ©ã‚¤ãƒˆã¯åŒã˜è‰²ã«ã€æ˜ã‚‹ã•ã®ç¢ºä¿
+	temp.TextureEnable = FALSE;//ãƒ†ã‚¯ã‚¹ãƒãƒ£ç„¡åŠ¹åŒ–ã€è‰²ã ã‘ã§æç”»
 	mtrl->SetMaterial(temp);
 
-	//Šeƒ^ƒCƒ‹‚ğ•`‰æ
+	//å„ã‚¿ã‚¤ãƒ«ã‚’æç”»
 	for (Tile* t : tiles)
 	{
 		Vector3 pos = GetWorldPosition(t->gridX, t->gridZ);
-		pos.y += ZFight::RangePanel; //­‚µ•‚‚©‚¹‚Ä•`‰æ
+		pos.y += ZFight::RangePanel; //å°‘ã—æµ®ã‹ã›ã¦æç”»
 
-		//Œ©‚â‚·‚¢‚½‚ß‚É­‚µ¬‚³‚­‚·‚é
-		Matrix4x4 world = Matrix4x4::CreateScale(0.9f) * Matrix4x4::CreateTranslation(pos);
+		//è¦‹ã‚„ã™ã„ãŸã‚ã«å°‘ã—å°ã•ãã™ã‚‹
+		Matrix4x4 world = Matrix4x4::CreateScale(RANGE_TILE_SCALE) * Matrix4x4::CreateTranslation(pos);
 		Renderer::SetWorldMatrix(&world);
 		m_rangeRenderer->Draw();
 	}
 
-	//Œ³‚Ìƒ}ƒeƒŠƒAƒ‹‚É–ß‚·
+	//å…ƒã®ãƒãƒ†ãƒªã‚¢ãƒ«ã«æˆ»ã™
 	mtrl->SetMaterial(original);
 }
 
 void MapManager::ClearOccupants()
 {
-	// ‘SƒOƒŠƒbƒh‚ğ‘–¸‚µAè—LÒiƒ†ƒjƒbƒgQÆj‚ğƒNƒŠƒA‚·‚éB
+	// å…¨ã‚°ãƒªãƒƒãƒ‰ã‚’èµ°æŸ»ã—ã€å æœ‰è€…ï¼ˆãƒ¦ãƒ‹ãƒƒãƒˆå‚ç…§ï¼‰ã‚’ã‚¯ãƒªã‚¢ã™ã‚‹ã€‚
 	for (auto& tile : m_grid) {
 		tile.occupant = nullptr;
 	}
 }
 
-// CSVƒf[ƒ^‚Ìƒp[ƒXˆ—
+// CSVãƒ‡ãƒ¼ã‚¿ã®ãƒ‘ãƒ¼ã‚¹å‡¦ç†
 std::vector<std::vector<std::string>> MapManager::ParseCSV(const std::string& filePath) {
-	// ‰ğÍŒã‚Ìƒf[ƒ^‚ğŠi”[‚·‚é2ŸŒ³ƒxƒNƒgƒ‹
+	// è§£æå¾Œã®ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹2æ¬¡å…ƒãƒ™ã‚¯ãƒˆãƒ«
 	std::vector<std::vector<std::string>> grid;
 
-	// ƒtƒ@ƒCƒ‹ƒXƒgƒŠ[ƒ€‚ğŠJ‚­
+	// ãƒ•ã‚¡ã‚¤ãƒ«ã‚¹ãƒˆãƒªãƒ¼ãƒ ã‚’é–‹ã
 	std::ifstream file(filePath);
 
-	// ƒtƒ@ƒCƒ‹‚ÌƒI[ƒvƒ“‚É¸”s‚µ‚½ê‡‚ÌƒGƒ‰[ˆ—
+	// ãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚ªãƒ¼ãƒ—ãƒ³ã«å¤±æ•—ã—ãŸå ´åˆã®ã‚¨ãƒ©ãƒ¼å‡¦ç†
 	if (!file.is_open()) {
 		DBG_ERROR("[Error] Failed to open CSV: ");
 		return grid;
 	}
 
 	std::string line;
-	// ƒtƒ@ƒCƒ‹‚ÌI’[‚É’B‚·‚é‚Ü‚ÅA1s‚¸‚Â“Ç‚İ‚İ‚ğŒJ‚è•Ô‚·
-	// (file ‚©‚ç 1sæ‚èo‚µA•Ï” line ‚ÉŠi”[‚·‚é)
+	// ãƒ•ã‚¡ã‚¤ãƒ«ã®çµ‚ç«¯ã«é”ã™ã‚‹ã¾ã§ã€1è¡Œãšã¤èª­ã¿è¾¼ã¿ã‚’ç¹°ã‚Šè¿”ã™
+	// (file ã‹ã‚‰ 1è¡Œå–ã‚Šå‡ºã—ã€å¤‰æ•° line ã«æ ¼ç´ã™ã‚‹)
 	while (std::getline(file, line)) {
 
-		// Œ»İˆ—‚µ‚Ä‚¢‚és‚ÌƒZƒ‹ƒf[ƒ^‚ğŠi”[‚·‚é‚½‚ß‚ÌAˆê“I‚È”z—ñi1ŸŒ³ƒxƒNƒgƒ‹j
+		// ç¾åœ¨å‡¦ç†ã—ã¦ã„ã‚‹è¡Œã®ã‚»ãƒ«ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹ãŸã‚ã®ã€ä¸€æ™‚çš„ãªé…åˆ—ï¼ˆ1æ¬¡å…ƒãƒ™ã‚¯ãƒˆãƒ«ï¼‰
 		std::vector<std::string> row;
 
-		// “Ç‚İ‚ñ‚¾ 1s‚Ì•¶š—ñ(line)‚ğAƒXƒgƒŠ[ƒ€‚Æ‚µ‚Äˆµ‚¤‚½‚ß‚Ì•ÏŠ·
-		// ‚±‚ê‚É‚æ‚èA•¶š—ñ‚ğƒtƒ@ƒCƒ‹‚Æ“¯‚¶‚æ‚¤‚Éu—¬‚µ‚İv‚âu‹æØ‚è“Ç‚İv‚ª‚Å‚«‚é‚æ‚¤‚É‚È‚é
+		// èª­ã¿è¾¼ã‚“ã  1è¡Œã®æ–‡å­—åˆ—(line)ã‚’ã€ã‚¹ãƒˆãƒªãƒ¼ãƒ ã¨ã—ã¦æ‰±ã†ãŸã‚ã®å¤‰æ›
+		// ã“ã‚Œã«ã‚ˆã‚Šã€æ–‡å­—åˆ—ã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã¨åŒã˜ã‚ˆã†ã«ã€Œæµã—è¾¼ã¿ã€ã‚„ã€ŒåŒºåˆ‡ã‚Šèª­ã¿ã€ãŒã§ãã‚‹ã‚ˆã†ã«ãªã‚‹
 		std::stringstream ss(line);
 
-		// •ªŠ„‚³‚ê‚½ŒÂX‚ÌƒZƒ‹iƒJƒ“ƒ}ŠÔ‚Ìƒf[ƒ^j‚ğˆê“I‚É•Û‚·‚é•Ï”
+		// åˆ†å‰²ã•ã‚ŒãŸå€‹ã€…ã®ã‚»ãƒ«ï¼ˆã‚«ãƒ³ãƒé–“ã®ãƒ‡ãƒ¼ã‚¿ï¼‰ã‚’ä¸€æ™‚çš„ã«ä¿æŒã™ã‚‹å¤‰æ•°
 		std::string cell;
 
-		// ƒJƒ“ƒ}i,j‚ğ‹æØ‚è•¶š‚Æ‚µ‚ÄŠeƒZƒ‹‚ğ’Šo
+		// ã‚«ãƒ³ãƒï¼ˆ,ï¼‰ã‚’åŒºåˆ‡ã‚Šæ–‡å­—ã¨ã—ã¦å„ã‚»ãƒ«ã‚’æŠ½å‡º
 		while (std::getline(ss, cell, ',')) {
-			// --- ƒZƒ‹“à‚Ì•s—v‚È‹ó”’•¶šiƒXƒy[ƒXAƒ^ƒuA‰üs“™j‚ğœ‹iƒgƒŠƒ~ƒ“ƒOj ---
+			// --- ã‚»ãƒ«å†…ã®ä¸è¦ãªç©ºç™½æ–‡å­—ï¼ˆã‚¹ãƒšãƒ¼ã‚¹ã€ã‚¿ãƒ–ã€æ”¹è¡Œç­‰ï¼‰ã‚’é™¤å»ï¼ˆãƒˆãƒªãƒŸãƒ³ã‚°ï¼‰ ---
 
-			// æ“ª‚Ì‹ó”’‚ğíœ
-			// (ƒXƒy[ƒX ' ', ƒ^ƒu '\t', ‰ñÔ '\r', ‰üs '\n' ˆÈŠO‚Ì•¶š‚ğ’T‚·)
+			// å…ˆé ­ã®ç©ºç™½ã‚’å‰Šé™¤
+			// (ã‚¹ãƒšãƒ¼ã‚¹ ' ', ã‚¿ãƒ– '\t', å›è»Š '\r', æ”¹è¡Œ '\n' ä»¥å¤–ã®æ–‡å­—ã‚’æ¢ã™)
 			cell.erase(0, cell.find_first_not_of(" \t\r\n"));
-			// ––”ö‚Ì‹ó”’‚ğíœ
+			// æœ«å°¾ã®ç©ºç™½ã‚’å‰Šé™¤
 			cell.erase(cell.find_last_not_of(" \t\r\n") + 1);
 
-			// ƒNƒŠ[ƒjƒ“ƒOÏ‚İ‚Ìƒf[ƒ^‚ğŒ»İ‚Ìs‚É’Ç‰Á
+			// ã‚¯ãƒªãƒ¼ãƒ‹ãƒ³ã‚°æ¸ˆã¿ã®ãƒ‡ãƒ¼ã‚¿ã‚’ç¾åœ¨ã®è¡Œã«è¿½åŠ 
 			row.push_back(cell);
 		}
-		// Š®¬‚µ‚½s‚ğƒOƒŠƒbƒhƒf[ƒ^‚É’Ç‰Á
+		// å®Œæˆã—ãŸè¡Œã‚’ã‚°ãƒªãƒƒãƒ‰ãƒ‡ãƒ¼ã‚¿ã«è¿½åŠ 
 		grid.push_back(row);
 	}
 
-	// ‰ğÍŒ‹‰Ê‚ğ•Ô‚·
+	// è§£æçµæœã‚’è¿”ã™
 	return grid;
 }
 
 // ---------------------------------------------------------
 
-// ƒŒƒxƒ‹ƒ[ƒhEƒpƒCƒvƒ‰ƒCƒ“ (Level Loading Pipeline)
+// ãƒ¬ãƒ™ãƒ«ãƒ­ãƒ¼ãƒ‰ãƒ»ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³ (Level Loading Pipeline)
 
 // ---------------------------------------------------------
 
 void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 	std::cout << "[MapManager] Loading Level: " << csvPath << std::endl;
 
-	// 1. ŒÃ‚¢ƒf[ƒ^‚Ì”jŠü
+	// 1. å¤ã„ãƒ‡ãƒ¼ã‚¿ã®ç ´æ£„
 	ClearCurrentLevel();
 
-	// 2. CSVƒf[ƒ^‚Ì‰ğÍ
+	// 2. CSVãƒ‡ãƒ¼ã‚¿ã®è§£æ
 	auto csvData = ParseCSV(csvPath);
 	if (csvData.empty()) return;
 
-	// 3. ƒOƒŠƒbƒh¡–@‚ÌŠm—§‚Æ‰Šú‰»
+	// 3. ã‚°ãƒªãƒƒãƒ‰å¯¸æ³•ã®ç¢ºç«‹ã¨åˆæœŸåŒ–
 	SetupGridDimensions(csvData);
 
-	// 4. ƒ}ƒbƒvƒŒƒCƒ„[‚Ì¶¬iZƒI[ƒ_[‚Ì‰œ‚©‚çè‘O‚Öj
+	// 4. ãƒãƒƒãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ç”Ÿæˆï¼ˆZã‚ªãƒ¼ãƒ€ãƒ¼ã®å¥¥ã‹ã‚‰æ‰‹å‰ã¸ï¼‰
 	SpawnFloorLayer(context);
 	SpawnStaticStructures(csvData, context);
 	SpawnDynamicEntities(csvData, context);
@@ -414,12 +421,12 @@ void MapManager::ClearCurrentLevel() {
 }
 
 void MapManager::SetupGridDimensions(const std::vector<std::vector<std::string>>& csvData) {
-	// csvData ‚Ì—v‘f”iŠO‘¤‚Ì vectorj‚Íus”v‚Å‚ ‚èAƒ}ƒbƒv‚Ìu‰œs‚«iZ²jv‚É‘Î‰‚·‚é
+	// csvData ã®è¦ç´ æ•°ï¼ˆå¤–å´ã® vectorï¼‰ã¯ã€Œè¡Œæ•°ã€ã§ã‚ã‚Šã€ãƒãƒƒãƒ—ã®ã€Œå¥¥è¡Œãï¼ˆZè»¸ï¼‰ã€ã«å¯¾å¿œã™ã‚‹
 	m_mapDepth = static_cast<int>(csvData.size());
-	// csvData[0]iÅ‰‚Ìsj‚Ì—v‘f”‚Íu—ñ”v‚Å‚ ‚èAƒ}ƒbƒv‚Ìu•iX²jv‚É‘Î‰‚·‚é
+	// csvData[0]ï¼ˆæœ€åˆã®è¡Œï¼‰ã®è¦ç´ æ•°ã¯ã€Œåˆ—æ•°ã€ã§ã‚ã‚Šã€ãƒãƒƒãƒ—ã®ã€Œå¹…ï¼ˆXè»¸ï¼‰ã€ã«å¯¾å¿œã™ã‚‹
 	m_mapWidth = static_cast<int>(csvData[0].size());
 
-	m_tileSize = 1.0f;
+	m_tileSize = TILE_SIZE;
 	m_tileOffsets.x = 0.5f * -(static_cast<float>(m_mapWidth) * m_tileSize);
 	m_tileOffsets.y = 0.0f;
 	m_tileOffsets.z = 0.5f * -(static_cast<float>(m_mapDepth) * m_tileSize);
@@ -448,14 +455,14 @@ void MapManager::SpawnFloorLayer(GameContext* context) {
 
 void MapManager::SpawnStaticStructures(const std::vector<std::vector<std::string>>& csvData, GameContext* context) {
 	for (int z = 0; z < m_mapDepth; z++) {
-		int csvRowIndex = (m_mapDepth - 1) - z; // CSV‚ÌZ²”½“]
+		int csvRowIndex = (m_mapDepth - 1) - z; // CSVã®Zè»¸åè»¢
 		for (int x = 0; x < m_mapWidth; x++) {
 			if (x >= csvData[csvRowIndex].size()) continue;
 
 			Tile* currentTile = GetTile(x, z);
 			Vector3 worldPos = GetWorldPosition(x, z);
 
-			// d•¡¶¬‚Ì–h~i‘åŒ^ƒIƒuƒWƒFƒNƒg‚Ìˆê•”‚Æ‚µ‚ÄŠù‚Éˆ—‚³‚ê‚Ä‚¢‚éê‡j
+			// é‡è¤‡ç”Ÿæˆã®é˜²æ­¢ï¼ˆå¤§å‹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ä¸€éƒ¨ã¨ã—ã¦æ—¢ã«å‡¦ç†ã•ã‚Œã¦ã„ã‚‹å ´åˆï¼‰
 			if (currentTile->structure != nullptr) continue;
 
 			std::string token = csvData[csvRowIndex][x];
@@ -495,7 +502,7 @@ void MapManager::SpawnStaticStructures(const std::vector<std::vector<std::string
 				newObj->SetGridPosition(x, z);
 
 				MapObject* rawPtr = newObj.get();
-				// è—Lƒ^ƒCƒ‹‚Ì“o˜^
+				// å æœ‰ã‚¿ã‚¤ãƒ«ã®ç™»éŒ²
 				for (int i = 0; i < sizeX; ++i) {
 					for (int j = 0; j < sizeZ; ++j) {
 						Tile* t = GetTile(x + i, z + j);
@@ -510,11 +517,11 @@ void MapManager::SpawnStaticStructures(const std::vector<std::vector<std::string
 }
 
 void MapManager::SpawnDynamicEntities(const std::vector<std::vector<std::string>>& csvData, GameContext* context) {
-	// ƒ†ƒjƒbƒgiPlayer, Enemy, Allyj‚ÍA°iMapObjectj‚ª‘S‚Ä’Ç‰Á‚³‚ê‚½uŒãv‚ÉScene‚É’Ç‰Á‚·‚éB
+	// ãƒ¦ãƒ‹ãƒƒãƒˆï¼ˆPlayer, Enemy, Allyï¼‰ã¯ã€åºŠï¼ˆMapObjectï¼‰ãŒå…¨ã¦è¿½åŠ ã•ã‚ŒãŸã€Œå¾Œã€ã«Sceneã«è¿½åŠ ã™ã‚‹ã€‚
 	 
-	// ‚±‚ê‚É‚æ‚èAGameScene‚Ì•`‰æƒ‹[ƒv‚Åu° -> ƒ†ƒjƒbƒgv‚Ì‡‚É‚È‚èA
+	// ã“ã‚Œã«ã‚ˆã‚Šã€GameSceneã®æç”»ãƒ«ãƒ¼ãƒ—ã§ã€ŒåºŠ -> ãƒ¦ãƒ‹ãƒƒãƒˆã€ã®é †ã«ãªã‚Šã€
 	
-	// c‘œiGhostj‚âUI‚ª°‚É‰B‚ê‚é–â‘èiZ-Fighting/Occlusionj‚ª‰ğŒˆ‚·‚éB
+	// æ®‹åƒï¼ˆGhostï¼‰ã‚„UIãŒåºŠã«éš ã‚Œã‚‹å•é¡Œï¼ˆZ-Fighting/Occlusionï¼‰ãŒè§£æ±ºã™ã‚‹ã€‚
 	std::vector<std::unique_ptr<GameObject>> unitsToSpawn;
 
 	for (int z = 0; z < m_mapDepth; z++) {

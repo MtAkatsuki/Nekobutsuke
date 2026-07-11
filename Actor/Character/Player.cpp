@@ -1,4 +1,4 @@
-#include	"Player.h"	
+ï»¿#include	"Player.h"	
 #include    "PlayerActionView.h"
 #include    "../../System/CDirectInput.h"
 #include	"../../System/meshmanager.h"
@@ -17,21 +17,26 @@
 #include	<cmath>
 
 namespace {
-	// ƒoƒ‰ƒ“ƒXE‰‰o—p‚Ì’è”
+	// ãƒãƒ©ãƒ³ã‚¹ãƒ»æ¼”å‡ºç”¨ã®å®šæ•°
 	const int INITIAL_HP = 4;
 	const int INITIAL_MOVE_POINTS = 4;
-	const float MOVE_SPEED = 10.0f;        // ƒ^ƒCƒ‹ŠÔˆÚ“®‘¬“x
-	const int ATTACK_RANGE = 1;            // UŒ‚‹——£
+	const float MOVE_SPEED = 10.0f;        // ã‚¿ã‚¤ãƒ«é–“ç§»å‹•é€Ÿåº¦
+	const int ATTACK_RANGE = 1;            // æ”»æ’ƒè·é›¢
 
-	// •`‰æŠÖ˜A‚Ì’è”
-	const float UI_INPUT_COOLDOWN = 0.15f; // WASD‚Ì˜A‘±“ü—Í–h~ŠÔ
+	// æç”»é–¢é€£ã®å®šæ•°
+	const float UI_INPUT_COOLDOWN = 0.15f; // WASDã®é€£ç¶šå…¥åŠ›é˜²æ­¢æ™‚é–“
+	const float MODEL_SCALE = 0.8f;        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãƒ¢ãƒ‡ãƒ«ã®è¡¨ç¤ºã‚¹ã‚±ãƒ¼ãƒ«
 
-	// ƒWƒƒƒ“ƒvij‰êjƒAƒjƒ[ƒVƒ‡ƒ“
+	// ã‚¸ãƒ£ãƒ³ãƒ—ï¼ˆç¥è³€ï¼‰ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³
 	const float JUMP_SPEED = 15.0f;
 	const float JUMP_HEIGHT = 0.5f;
 	const int MAX_JUMP_COUNT = 6;
 
-	// WASD / –îˆóƒL[‚Ì•ûŒü“ü—Í‚ğ“Ç‚ŞiƒXƒNƒŠ[ƒ“‹óŠÔAã=+ZjB“ü—Í‚È‚µ‚Í {0,0}
+	// æ”»æ’ƒæ–¹å‘é¸æŠæ™‚ã®ã‚«ãƒ¡ãƒ©æ³¨è¦–ã‚ªãƒ•ã‚»ãƒƒãƒˆï¼ˆã‚°ãƒªãƒƒãƒ‰å˜ä½ï¼‰
+	const float ATTACK_CAM_ENTER_OFFSET = 1.5f;  // é¸æŠé–‹å§‹æ™‚ã®å‰é€²ã‚ªãƒ•ã‚»ãƒƒãƒˆ
+	const float ATTACK_CAM_AIM_OFFSET = 2.5f;    // æ–¹å‘å¤‰æ›´æ™‚ã®å‰é€²ã‚ªãƒ•ã‚»ãƒƒãƒˆ
+
+	// WASD / çŸ¢å°ã‚­ãƒ¼ã®æ–¹å‘å…¥åŠ›ã‚’èª­ã‚€ï¼ˆã‚¹ã‚¯ãƒªãƒ¼ãƒ³ç©ºé–“ã€ä¸Š=+Zï¼‰ã€‚å…¥åŠ›ãªã—ã¯ {0,0}
 	DirOffset ReadDirectionalInput() {
 		auto& input = CDirectInput::GetInstance();
 		if (input.CheckKeyBuffer(DIK_W) || input.CheckKeyBuffer(DIK_UP))    return { 0,  1 };
@@ -41,19 +46,19 @@ namespace {
 		return { 0, 0 };
 	}
 
-	// ƒXƒNƒŠ[ƒ“‹óŠÔ‚Ì“ü—Í‚ğAƒJƒƒ‰‚ÌŒü‚«ƒCƒ“ƒfƒbƒNƒX(0~3)‚É‰‚¶‚Ä
-	// ƒ[ƒ‹ƒhŠiq•ûŒü‚Ö‰ñ“]‚·‚éiDirOffset ‚Ì‰ñ“]‘ã”‚ğÄ—˜—pj
+	// ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ç©ºé–“ã®å…¥åŠ›ã‚’ã€ã‚«ãƒ¡ãƒ©ã®å‘ãã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹(0~3)ã«å¿œã˜ã¦
+	// ãƒ¯ãƒ¼ãƒ«ãƒ‰æ ¼å­æ–¹å‘ã¸å›è»¢ã™ã‚‹ï¼ˆDirOffset ã®å›è»¢ä»£æ•°ã‚’å†åˆ©ç”¨ï¼‰
 	DirOffset RotateInputByCamera(int camDir, DirOffset in) {
 		switch (camDir) {
-		case 1:  return in.MoveLeft();   // ³–Ê‰EƒJƒƒ‰
-		case 2:  return in.MoveBack();   // ”w–Ê‰EƒJƒƒ‰
-		case 3:  return in.MoveRight();  // ”w–Ê¶ƒJƒƒ‰
-		default: return in;              // ³–Ê¶iŠî–{ƒJƒƒ‰j
+		case 1:  return in.MoveLeft();   // æ­£é¢å³ã‚«ãƒ¡ãƒ©
+		case 2:  return in.MoveBack();   // èƒŒé¢å³ã‚«ãƒ¡ãƒ©
+		case 3:  return in.MoveRight();  // èƒŒé¢å·¦ã‚«ãƒ¡ãƒ©
+		default: return in;              // æ­£é¢å·¦ï¼ˆåŸºæœ¬ã‚«ãƒ¡ãƒ©ï¼‰
 		}
 	}
 }
 
-//Spawnƒtƒ@ƒNƒgƒŠ[
+//Spawnãƒ•ã‚¡ã‚¯ãƒˆãƒªãƒ¼
 std::unique_ptr<Player> Player::Spawn(GameContext* ctx, int gridX, int gridZ, const Vector3& worldPos) {
 	auto p = std::unique_ptr<Player>(new Player(ctx)); 
 	p->Init(); 
@@ -71,12 +76,12 @@ void Player::Init() {
 	m_actionView = std::make_unique<PlayerActionView>();
 	m_actionView->Init(m_context);
 
-	m_srt.scale = Vector3(0.8f, 0.8f, 0.8f);
+	m_srt.scale = Vector3(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
 	m_srt.rot = Vector3(0, 0, 0);
 
 	m_state = PlayerState::WAITING;
 	m_targetWorldPos = m_srt.pos;
-	m_moveSpeed = 5.0f;
+	m_moveSpeed = MOVE_SPEED;
 
 	SetFacing(Direction::South);
 	m_srt.rot.y = m_targetRot.y;
@@ -97,19 +102,19 @@ void Player::Update(uint64_t dt) {
 	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 	if (m_context->GetUIManager()->IsAnimating()) {return;}
 
-	// UIƒAƒjƒ[ƒVƒ‡ƒ“‚ªI‚í‚èAƒvƒŒƒCƒ„[‚ÌUpdate‚ªÄŠJ‚³‚ê‚½Å‰‚ÌƒtƒŒ[ƒ€‚Åƒƒjƒ…[‚ğŠJ‚­
+	// UIã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãŒçµ‚ã‚ã‚Šã€ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®UpdateãŒå†é–‹ã•ã‚ŒãŸæœ€åˆã®ãƒ•ãƒ¬ãƒ¼ãƒ ã§ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚’é–‹ã
 	if (m_isWaitingTurnStart) {
 		Ally* ally = m_context->GetAlly();
-		// ‚à‚µ’‡ŠÔ‚ª‘¶İ‚µA‚©‚Â’EoƒAƒjƒ[ƒVƒ‡ƒ“iÌŒ@‚âƒtƒF[ƒhj‚ÌÅ’†‚Å‚ ‚ê‚Î
+		// ã‚‚ã—ä»²é–“ãŒå­˜åœ¨ã—ã€ã‹ã¤è„±å‡ºã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ï¼ˆæ¡æ˜ã‚„ãƒ•ã‚§ãƒ¼ãƒ‰ï¼‰ã®æœ€ä¸­ã§ã‚ã‚Œã°
 		if (ally && ally->IsEscaping()) {
-			// ‚±‚ÌŠÔAƒvƒŒƒCƒ„[‚Ìó‘Ô‚Í WAITING ‚Ì‚Ü‚ÜˆÛ‚³‚êA“ü—Í‚Íó‚¯•t‚¯‚¸AƒJƒƒ‰‚à’‡ŠÔ‚ğ’‹‚µ‘±‚¯‚é
+			// ã“ã®é–“ã€ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®çŠ¶æ…‹ã¯ WAITING ã®ã¾ã¾ç¶­æŒã•ã‚Œã€å…¥åŠ›ã¯å—ã‘ä»˜ã‘ãšã€ã‚«ãƒ¡ãƒ©ã‚‚ä»²é–“ã‚’æ³¨è¦–ã—ç¶šã‘ã‚‹
 			return;
 		}
 		m_isWaitingTurnStart = false;
 		SwitchToMenuMain();
 	}
 
-	// UIƒAƒjƒ[ƒVƒ‡ƒ“I—¹ŒãAÅ‰‚ÌUpdate‚É‚ÄƒJƒƒ‰‚ÌƒY[ƒ€ƒCƒ“iÚ‹ßj‚ğŠJn
+	// UIã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³çµ‚äº†å¾Œã€æœ€åˆã®Updateã«ã¦ã‚«ãƒ¡ãƒ©ã®ã‚ºãƒ¼ãƒ ã‚¤ãƒ³ï¼ˆæ¥è¿‘ï¼‰ã‚’é–‹å§‹
 	if (!m_isZoomedIn) {
 		m_isZoomedIn = true;
 		if (m_context && m_context->GetCamera()) {
@@ -119,9 +124,9 @@ void Player::Update(uint64_t dt) {
 
 	UpdateFacingRotation(deltaSeconds);
 
-	//ƒAƒjƒƒVƒ‡ƒ“I‚í‚Á‚½ŒãA‚Ü‚½ƒƒjƒ…[‘JˆÚÀÛ‚ÉÀs‚·‚é
+	//ã‚¢ãƒ‹ãƒ¡ã‚·ãƒ§ãƒ³çµ‚ã‚ã£ãŸå¾Œã€ã¾ãŸãƒ¡ãƒ‹ãƒ¥ãƒ¼é·ç§»å®Ÿéš›ã«å®Ÿè¡Œã™ã‚‹
 	
-	//ƒƒCƒ“ƒƒjƒ…[ó‘Ô‚Ìê‡
+	//ãƒ¡ã‚¤ãƒ³ãƒ¡ãƒ‹ãƒ¥ãƒ¼çŠ¶æ…‹ã®å ´åˆ
 	if (m_state == PlayerState::MENU_MAIN && m_nextState != PlayerState::MENU_MAIN) {
 		if (m_nextState == PlayerState::MOVE_SELECT) SwitchToMoveSelect();
 		else if (m_nextState == PlayerState::ATTACK_DIR_SELECT) SwitchToAttackDirSelect(AttackType::Push);
@@ -129,7 +134,7 @@ void Player::Update(uint64_t dt) {
 		m_nextState = m_state;
 	}
 
-	//ƒvƒŒ[ƒ„[‚Ìó‘Ô‚É‰‚¶‚½XV
+	//ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ã®çŠ¶æ…‹ã«å¿œã˜ãŸæ›´æ–°
 	switch (m_state) {
 	case PlayerState::MENU_MAIN:
 		HandleMenuInput();
@@ -140,21 +145,21 @@ void Player::Update(uint64_t dt) {
 		if (m_state != PlayerState::MOVE_SELECT) break;
 		m_srt.pos = m_context->GetMapManager()->GetWorldPosition(m_previewGridX, m_previewGridZ);
 		UpdateWorldMatrix();
-		// ˆÚ“®—\‘zˆÊ’u‚ÉŠî‚Ã‚¢‚ÄAƒvƒŒƒCƒ„[‚Ìó‚¯ƒ_ƒ[ƒW—\‘ª‚ğŒvZ
+		// ç§»å‹•äºˆæƒ³ä½ç½®ã«åŸºã¥ã„ã¦ã€ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®å—ã‘ãƒ€ãƒ¡ãƒ¼ã‚¸äºˆæ¸¬ã‚’è¨ˆç®—
 		CalculateMovePreviewDamage();
 		break;
 
 	case PlayerState::ANIM_MOVE:
-		// y’ÇÕzFˆÚ“®ƒAƒjƒ[ƒVƒ‡ƒ“’†AƒvƒŒƒCƒ„[‚ğŒp‘±“I‚É’Ç]‚·‚é
+		// ã€è¿½è·¡ã€‘ï¼šç§»å‹•ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ä¸­ã€ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚’ç¶™ç¶šçš„ã«è¿½å¾“ã™ã‚‹
 		if (m_context && m_context->GetCamera()) {
 			m_context->GetCamera()->UpdateTrackingTarget(m_srt.pos);
 		}
 		if (UpdatePathMovement(deltaSeconds)) {
 			m_hasMoved = true;
-			// Œ»İˆÊ’u‚Ìƒ^ƒCƒ‹‚ÌƒCƒxƒ“ƒgiƒgƒ‰ƒbƒv“™j‚ğ”­‰Î‚³‚¹‚é
+			// ç¾åœ¨ä½ç½®ã®ã‚¿ã‚¤ãƒ«ã®ã‚¤ãƒ™ãƒ³ãƒˆï¼ˆãƒˆãƒ©ãƒƒãƒ—ç­‰ï¼‰ã‚’ç™ºç«ã•ã›ã‚‹
 			Tile* finalTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
 			if (finalTile && finalTile->structure) {
-				// ƒvƒŒƒCƒ„[‚ªƒIƒuƒWƒFƒNƒg‚ğ“¥‚ñ‚¾ii“ü‚µ‚½jÛ‚ÌƒCƒxƒ“ƒg‚ğÀs
+				// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’è¸ã‚“ã ï¼ˆé€²å…¥ã—ãŸï¼‰éš›ã®ã‚¤ãƒ™ãƒ³ãƒˆã‚’å®Ÿè¡Œ
 				finalTile->structure->OnEnter(this);
 			}
 			SwitchToMenuMain();
@@ -164,7 +169,7 @@ void Player::Update(uint64_t dt) {
 	case PlayerState::ATTACK_DIR_SELECT:
 		HandleAttackDirInput(deltaSeconds);
 		m_srt.pos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
-		// ƒvƒŒƒCƒ„[‚Ìƒ_ƒ[ƒW—\‘ª‚ğŒvZ‚µAƒ^[ƒQƒbƒg‚Ìƒ†ƒjƒbƒg‚Öİ’è
+		// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ãƒ€ãƒ¡ãƒ¼ã‚¸äºˆæ¸¬ã‚’è¨ˆç®—ã—ã€ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã®ãƒ¦ãƒ‹ãƒƒãƒˆã¸è¨­å®š
 		{
 			DirOffset offset = DirOffset::From(m_attackDir);
 			Tile* targetTile = m_context->GetMapManager()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
@@ -202,7 +207,7 @@ void Player::Update(uint64_t dt) {
 		if (m_slideEndPos.LengthSquared() > 0.001f) {
 			if (UpdateSlideAnimation(dt)) { 
 				m_slideEndPos = Vector3(0, 0, 0);
-				// ‰Ÿ‚µo‚³‚ê‚½æ‚Ìƒ^ƒCƒ‹‚ÉƒMƒ~ƒbƒNiã©‚È‚Çj‚ª‚ ‚é‚©ƒ`ƒFƒbƒN
+				// æŠ¼ã—å‡ºã•ã‚ŒãŸå…ˆã®ã‚¿ã‚¤ãƒ«ã«ã‚®ãƒŸãƒƒã‚¯ï¼ˆç½ ãªã©ï¼‰ãŒã‚ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
 				if (m_currentHP > 0) {
 					Tile* t = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
 					if (t && t->structure) t->structure->OnEnter(this);
@@ -212,7 +217,7 @@ void Player::Update(uint64_t dt) {
 			}
 		}
 		else {
-			// •Ç‚ÉÕ“Ë‚µ‚ÄˆÚ“®‚ª”­¶‚µ‚È‚©‚Á‚½ê‡
+			// å£ã«è¡çªã—ã¦ç§»å‹•ãŒç™ºç”Ÿã—ãªã‹ã£ãŸå ´åˆ
 			if (canControl && m_currentHP > 0) SwitchToMenuMain();
 			else m_state = PlayerState::WAITING;
 		}
@@ -255,7 +260,7 @@ void Player::OnPushed(Direction pushDir, Unit* attacker) {
 }
 
 void Player::SetPreviewDamage(int dmg) {
-	// yÕ•ÁzFˆÚ“®æ‚ğ‘I‘ğ’†‚ÌƒXƒe[ƒ^ƒX‚Å‚ ‚ê‚ÎAŠO•”i“Gj‚©‚ç‚ÌŒ³‚ÌÀ•W‚É‘Î‚·‚éƒ_ƒ[ƒW’“ü‚ğ–³‹‚·‚éB
+	// ã€é®è”½ã€‘ï¼šç§»å‹•å…ˆã‚’é¸æŠä¸­ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã§ã‚ã‚Œã°ã€å¤–éƒ¨ï¼ˆæ•µï¼‰ã‹ã‚‰ã®å…ƒã®åº§æ¨™ã«å¯¾ã™ã‚‹ãƒ€ãƒ¡ãƒ¼ã‚¸æ³¨å…¥ã‚’ç„¡è¦–ã™ã‚‹ã€‚
 	if (m_state == PlayerState::MOVE_SELECT) return;
 
 	Unit::SetPreviewDamage(dmg);
@@ -322,7 +327,7 @@ void Player::OnDrawFloorUI(uint64_t dt) {
 		m_actionView->DrawPathLine(m_currentPath, m_startGridX, m_startGridZ);
 	}
 	else if (m_state == PlayerState::ATTACK_DIR_SELECT) {
-		m_actionView->DrawAttackWarningFloor(m_gridX, m_gridZ, m_attackDir); // Ô‚¢ŒxƒGƒŠƒAi°–Êj
+		m_actionView->DrawAttackWarningFloor(m_gridX, m_gridZ, m_attackDir); // èµ¤ã„è­¦å‘Šã‚¨ãƒªã‚¢ï¼ˆåºŠé¢ï¼‰
 	}
 }
 
@@ -336,7 +341,7 @@ void Player::OnDrawTransparent(uint64_t dt) {
 
 void Player::OnDrawOverlay(uint64_t dt) {
 	if (m_state == PlayerState::ATTACK_DIR_SELECT) {
-		// UŒ‚ƒvƒŒƒrƒ…[i“G‚ÌƒmƒbƒNƒoƒbƒN—\‘ª‚ğŠÜ‚ŞÅ‘O–ÊUIj‚ğ•\¦
+		// æ”»æ’ƒãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ï¼ˆæ•µã®ãƒãƒƒã‚¯ãƒãƒƒã‚¯äºˆæ¸¬ã‚’å«ã‚€æœ€å‰é¢UIï¼‰ã‚’è¡¨ç¤º
 		bool isPush = (m_selectedAttackType == AttackType::Push);
 		m_actionView->DrawAttackWarningOverlay(m_gridX, m_gridZ, m_attackDir, isPush, this);
 	}
@@ -346,7 +351,7 @@ void Player::SwitchToMenuMain() {
 	m_state = PlayerState::MENU_MAIN;
 	m_nextState = PlayerState::MENU_MAIN;
 
-	// ƒJƒƒ‰‹AŠÒ
+	// ã‚«ãƒ¡ãƒ©å¸°é‚„
 	if (m_context && m_context->GetCamera()) {
 		m_context->GetCamera()->ChangeState(CameraState::Tracking, m_srt.pos);
 	}
@@ -354,22 +359,22 @@ void Player::SwitchToMenuMain() {
 	if (m_hasMoved) m_context->GetUIManager()->SetMoveOptionEnabled(false);
 	else m_context->GetUIManager()->SetMoveOptionEnabled(true);
 
-	// UŒ‚”ÍˆÍ“à‚É“G‚ª‚¢‚é‚©‚Ç‚¤‚©‚Ìƒ`ƒFƒbƒN
+	// æ”»æ’ƒç¯„å›²å†…ã«æ•µãŒã„ã‚‹ã‹ã©ã†ã‹ã®ãƒã‚§ãƒƒã‚¯
 	m_canAttack = false;
 	int dx[] = { 0, 0, -1, 1 };
 	int dz[] = { 1, -1, 0, 0 };
 	for (int i = 0; i < 4; ++i) {
 		for (int r = 1; r <= ATTACK_RANGE; ++r) {
 			Tile* t = m_context->GetMapManager()->GetTile(m_gridX + dx[i] * r, m_gridZ + dz[i] * r);
-			// ƒ}ƒX‚É’N‚©‚ª‘¶İ‚µA‚©‚Â‚»‚ê‚ª©•ª©g‚Å‚È‚¢ê‡‚Ì‚İA‰Ÿ‚µo‚µiPushj‘€ì‚ğ‹–‰Â‚·‚é
+			// ãƒã‚¹ã«èª°ã‹ãŒå­˜åœ¨ã—ã€ã‹ã¤ãã‚ŒãŒè‡ªåˆ†è‡ªèº«ã§ãªã„å ´åˆã®ã¿ã€æŠ¼ã—å‡ºã—ï¼ˆPushï¼‰æ“ä½œã‚’è¨±å¯ã™ã‚‹
 			if (t && t->occupant) {
 				Unit* targetUnit = dynamic_cast<Unit*>(t->occupant);
 				if (targetUnit && targetUnit != this) {
 					m_canAttack = true;
-					break; // ‘ÎÛ‚ªŒ©‚Â‚©‚Á‚½“_‚ÅA‚±‚Ì•ûŒü‚Ìƒ`ƒFƒbƒN‚ğŠ®—¹
+					break; // å¯¾è±¡ãŒè¦‹ã¤ã‹ã£ãŸæ™‚ç‚¹ã§ã€ã“ã®æ–¹å‘ã®ãƒã‚§ãƒƒã‚¯ã‚’å®Œäº†
 				}
 			}
-			if (m_canAttack) break; // “G‚ªŒ©‚Â‚©‚Á‚Ä‚¢‚ê‚Î‘Sƒ`ƒFƒbƒNI—¹
+			if (m_canAttack) break; // æ•µãŒè¦‹ã¤ã‹ã£ã¦ã„ã‚Œã°å…¨ãƒã‚§ãƒƒã‚¯çµ‚äº†
 		}
 	}
 
@@ -377,7 +382,7 @@ void Player::SwitchToMenuMain() {
 	m_context->GetUIManager()->HideGuideUI();
 	m_context->GetUIManager()->OpenMainMenu();
 
-	// ƒvƒŒ[ƒ„[ˆÊ’u‚ÌŒë·C³
+	// ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ä½ç½®ã®èª¤å·®ä¿®æ­£
 	m_srt.pos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 	UpdateWorldMatrix();
 }
@@ -386,9 +391,9 @@ void Player::SwitchToMoveSelect() {
 	m_state = PlayerState::MOVE_SELECT;
 	m_context->GetUIManager()->CloseMenu();
 
-	// ˆÚ“®ƒ‚[ƒhF–îˆó+ Enter + Esc
+	// ç§»å‹•ãƒ¢ãƒ¼ãƒ‰ï¼šçŸ¢å°+ Enter + Esc
 	m_context->GetUIManager()->ShowGuideUI(
-		m_srt.pos,  // –îˆó‚ğ•\¦‚·‚éˆÊ’u
+		m_srt.pos,  // çŸ¢å°ã‚’è¡¨ç¤ºã™ã‚‹ä½ç½®
 		true,       // Show Arrows
 		true,       // Show Enter
 		true        // Show Esc
@@ -407,18 +412,18 @@ void Player::SwitchToAttackDirSelect(AttackType type) {
 	m_context->GetUIManager()->CloseMenu();
 
 	m_attackDir = m_facing;
-	// UŒ‚•ûŒü‘I‘ğó‘ÔF–îˆó+ Enter + Esc
+	// æ”»æ’ƒæ–¹å‘é¸æŠçŠ¶æ…‹ï¼šçŸ¢å°+ Enter + Esc
 	m_context->GetUIManager()->ShowGuideUI(
 		m_srt.pos,
 		true,       // Show Arrows
 		true,       // Show Enter
 		true        // Show Esc
 	);
-	// yí“¬ƒJƒƒ‰‰‰ozFUŒ‚•ûŒü‚Ì‘I‘ğAƒJƒƒ‰‚ğUŒ‚•ûŒü‚Ö­‚µ‘OiiƒIƒtƒZƒbƒgj‚³‚¹‚é
+	// ã€æˆ¦é—˜ã‚«ãƒ¡ãƒ©æ¼”å‡ºã€‘ï¼šæ”»æ’ƒæ–¹å‘ã®é¸æŠæ™‚ã€ã‚«ãƒ¡ãƒ©ã‚’æ”»æ’ƒæ–¹å‘ã¸å°‘ã—å‰é€²ï¼ˆã‚ªãƒ•ã‚»ãƒƒãƒˆï¼‰ã•ã›ã‚‹
 	if (m_context && m_context->GetCamera()) {
 		DirOffset offset = DirOffset::From(m_attackDir);
-		// UŒ‚•ûŒü‚Ö 1.5 ƒ}ƒX•ªƒIƒtƒZƒbƒg‚³‚¹‚½ˆÊ’u‚ğƒ^[ƒQƒbƒg‚É‚·‚é
-		Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 1.5f;
+		// æ”»æ’ƒæ–¹å‘ã¸ 1.5 ãƒã‚¹åˆ†ã‚ªãƒ•ã‚»ãƒƒãƒˆã•ã›ãŸä½ç½®ã‚’ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã«ã™ã‚‹
+		Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * ATTACK_CAM_ENTER_OFFSET;
 		m_context->GetCamera()->ChangeState(CameraState::ActionFocus, targetPos);
 	}
 }
@@ -434,9 +439,9 @@ void Player::ExecuteMove() {
 	Tile* newTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
 	if (newTile) newTile->occupant = this;
 
-	// ƒvƒŒƒCƒ„[‚ÌˆÊ’u‚ğ—\‘zƒ|ƒCƒ“ƒg‚©‚çƒXƒ^[ƒgƒ|ƒCƒ“ƒg‚ÉƒŠƒZƒbƒg
+	// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ä½ç½®ã‚’äºˆæƒ³ãƒã‚¤ãƒ³ãƒˆã‹ã‚‰ã‚¹ã‚¿ãƒ¼ãƒˆãƒã‚¤ãƒ³ãƒˆã«ãƒªã‚»ãƒƒãƒˆ
 	m_srt.pos = m_context->GetMapManager()->GetWorldPosition(m_startGridX, m_startGridZ);
-	m_pathAnimIndex = 1; // ‚P‚©‚çn‚Ü‚éA‚O‚ÍƒXƒ^[ƒgˆÊ’u
+	m_pathAnimIndex = 1; // ï¼‘ã‹ã‚‰å§‹ã¾ã‚‹ã€ï¼ã¯ã‚¹ã‚¿ãƒ¼ãƒˆä½ç½®
 
 	m_state = PlayerState::ANIM_MOVE;
 }
@@ -491,12 +496,12 @@ void Player::PerformAttackStrike() {
 }
 
 void Player::HandleMenuInput() {
-	// ˆÚ“®‚µ‚Ä‚¢‚È‚¢ê‡‚Ì‚İAJƒL[‚ÅˆÚ“®‘I‘ğ‚ÉØ‚è‘Ö‚¦
+	// ç§»å‹•ã—ã¦ã„ãªã„å ´åˆã®ã¿ã€Jã‚­ãƒ¼ã§ç§»å‹•é¸æŠã«åˆ‡ã‚Šæ›¿ãˆ
 	if (!m_hasMoved && CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_J)) {
 		m_context->GetUIManager()->TriggerSelectAnim(0);
 		m_nextState = PlayerState::MOVE_SELECT;
 	}
-	// UŒ‚‰Â”\‚Èê‡‚Ì‚İKƒL[‚Ì“ü—Í‚ğó‚¯•t‚¯‚é
+	// æ”»æ’ƒå¯èƒ½ãªå ´åˆã®ã¿Kã‚­ãƒ¼ã®å…¥åŠ›ã‚’å—ã‘ä»˜ã‘ã‚‹
 	else if (m_canAttack && CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_K)) {
 		m_context->GetUIManager()->TriggerSelectAnim(1);
 		m_nextState = PlayerState::ATTACK_DIR_SELECT;
@@ -508,7 +513,7 @@ void Player::HandleMenuInput() {
 }
 
 void Player::HandleMoveInput(float dt) {
-	// ESC: ƒvƒŒ[ƒ„[ˆÊ’u‚ğƒŠƒZƒbƒg‚µ‚ÄƒƒCƒ“ƒƒjƒ…[‚É–ß‚é
+	// ESC: ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ä½ç½®ã‚’ãƒªã‚»ãƒƒãƒˆã—ã¦ãƒ¡ã‚¤ãƒ³ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã«æˆ»ã‚‹
 	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_ESCAPE)) {
 		m_context->GetUIManager()->HideGuideUI();
 		m_gridX = m_startGridX;
@@ -521,7 +526,7 @@ void Player::HandleMoveInput(float dt) {
 
 	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
 	else {
-		// ƒXƒNƒŠ[ƒ“‹óŠÔ‚Ì“ü—Í‚ğæ“¾‚µAƒJƒƒ‰‚ÌŒü‚«‚É‰‚¶‚Äƒ[ƒ‹ƒhŠiq•ûŒü‚Ö•ÏŠ·
+		// ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ç©ºé–“ã®å…¥åŠ›ã‚’å–å¾—ã—ã€ã‚«ãƒ¡ãƒ©ã®å‘ãã«å¿œã˜ã¦ãƒ¯ãƒ¼ãƒ«ãƒ‰æ ¼å­æ–¹å‘ã¸å¤‰æ›
 		DirOffset in = ReadDirectionalInput();
 		if (in.x != 0 || in.z != 0) {
 			int camDir = (m_context && m_context->GetCamera())
@@ -531,7 +536,7 @@ void Player::HandleMoveInput(float dt) {
 			int nextX = m_previewGridX + move.x;
 			int nextZ = m_previewGridZ + move.z;
 
-			// ˆÚ“®‚Å‚«‚é”ÍˆÍ‚Æ—\‘zˆÚ“®æ‚ÌŒŸØ
+			// ç§»å‹•ã§ãã‚‹ç¯„å›²ã¨äºˆæƒ³ç§»å‹•å…ˆã®æ¤œè¨¼
 			bool inRange = false;
 			for (auto* t : m_moveRangeTiles) {
 				if (t->gridX == nextX && t->gridZ == nextZ) {
@@ -544,16 +549,16 @@ void Player::HandleMoveInput(float dt) {
 				m_previewGridX = nextX;
 				m_previewGridZ = nextZ;
 				m_inputCooldown = UI_INPUT_COOLDOWN;
-				// ƒ‹[ƒg‚ÌXVFstart‚©‚çpreview‚Ü‚Å
+				// ãƒ«ãƒ¼ãƒˆã®æ›´æ–°ï¼šstartã‹ã‚‰previewã¾ã§
 				std::vector<Tile*> path = m_context->GetMapManager()->FindPaths(m_startGridX, m_startGridZ, m_previewGridX, m_previewGridZ, true);
 				m_currentPath.clear();
 
-				// Å‰‚ÉƒXƒ^[ƒgƒ^ƒCƒ‹‚ğ’Ç‰Á
+				// æœ€åˆã«ã‚¹ã‚¿ãƒ¼ãƒˆã‚¿ã‚¤ãƒ«ã‚’è¿½åŠ 
 				Tile* startTile = m_context->GetMapManager()->GetTile(m_startGridX, m_startGridZ);
 				if (startTile) m_currentPath.push_back(startTile);
-				// Ÿ‚ÉŒo—Rƒ^ƒCƒ‹‚ğ’Ç‰Á
+				// æ¬¡ã«çµŒç”±ã‚¿ã‚¤ãƒ«ã‚’è¿½åŠ 
 				m_currentPath.insert(m_currentPath.end(), path.begin(), path.end());
-				// ÅŒã‚É–Ú“I’nƒ^ƒCƒ‹‚ğ’Ç‰Á
+				// æœ€å¾Œã«ç›®çš„åœ°ã‚¿ã‚¤ãƒ«ã‚’è¿½åŠ 
 				Tile* destTile = m_context->GetMapManager()->GetTile(m_previewGridX, m_previewGridZ);
 				if (destTile) {
 					m_currentPath.push_back(destTile);
@@ -561,7 +566,7 @@ void Player::HandleMoveInput(float dt) {
 
 				SetFacingFromVector(Vector3((float)move.x, 0, (float)move.z));
 
-				// yƒJ[ƒ\ƒ‹ˆÚ“®zFƒJƒƒ‰‚Ì–Ú•W’‹“_‚ğƒJ[ƒ\ƒ‹‚ÌƒvƒŒƒrƒ…[ˆÊ’u‚ÉXV
+				// ã€ã‚«ãƒ¼ã‚½ãƒ«ç§»å‹•ã€‘ï¼šã‚«ãƒ¡ãƒ©ã®ç›®æ¨™æ³¨è¦–ç‚¹ã‚’ã‚«ãƒ¼ã‚½ãƒ«ã®ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ä½ç½®ã«æ›´æ–°
 				Vector3 previewPos = m_context->GetMapManager()->GetWorldPosition(m_previewGridX, m_previewGridZ);
 				m_context->GetCamera()->UpdateTrackingTarget(previewPos);
 			}
@@ -588,14 +593,14 @@ void Player::HandleAttackDirInput(float dt) {
 				? m_context->GetCamera()->GetNormalizedDirIndex() : 0;
 			DirOffset move = RotateInputByCamera(camDir, in);
 
-			// ƒ[ƒ‹ƒhŠiq•ûŒü ¨ Direction —ñ‹“iŠù‘¶‚Ì FromVector ‚ğÄ—˜—pj
+			// ãƒ¯ãƒ¼ãƒ«ãƒ‰æ ¼å­æ–¹å‘ â†’ Direction åˆ—æŒ™ï¼ˆæ—¢å­˜ã® FromVector ã‚’å†åˆ©ç”¨ï¼‰
 			m_attackDir = DirOffset::FromVector((float)move.x, (float)move.z);
 
-			// ƒ‚ƒfƒ‹‚ÌŒü‚«‚ÆípƒJƒƒ‰‚ÌƒIƒtƒZƒbƒg‚ğUŒ‚•ûŒü‚É‡‚í‚¹‚ÄXV
+			// ãƒ¢ãƒ‡ãƒ«ã®å‘ãã¨æˆ¦è¡“ã‚«ãƒ¡ãƒ©ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’æ”»æ’ƒæ–¹å‘ã«åˆã‚ã›ã¦æ›´æ–°
 			DirOffset offset = DirOffset::From(m_attackDir);
 			SetFacingFromVector(Vector3((float)offset.x, 0, (float)offset.z));
 			if (m_context && m_context->GetCamera()) {
-				Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * 2.5f;
+				Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * ATTACK_CAM_AIM_OFFSET;
 				m_context->GetCamera()->UpdateTrackingTarget(targetPos);
 			}
 		}
@@ -609,7 +614,7 @@ void Player::HandleAttackDirInput(float dt) {
 
 
 bool Player::UpdatePathMovement(float dt) {
-	if (m_currentPath.empty()) return true; //ƒpƒX‚Í‹ó‚È‚çI—¹
+	if (m_currentPath.empty()) return true; //ãƒ‘ã‚¹ã¯ç©ºãªã‚‰çµ‚äº†
 
 	Tile* targetTile = m_currentPath[m_pathAnimIndex];
 	Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(targetTile->gridX, targetTile->gridZ);
@@ -619,48 +624,48 @@ bool Player::UpdatePathMovement(float dt) {
 		SetFacingFromVector(diff);
 	}
 
-	// ƒxƒNƒgƒ‹‚Ì³‹K‰»‚Æ‹——£ŒvZ
+	// ãƒ™ã‚¯ãƒˆãƒ«ã®æ­£è¦åŒ–ã¨è·é›¢è¨ˆç®—
 	Vector3 dir = diff;
 	float dist = dir.Length();
 	float step = MOVE_SPEED * dt;
 
 	if (dist <= step) {
 		m_srt.pos = targetPos;
-		m_pathAnimIndex++;// Ÿ‚Ìƒ^[ƒQƒbƒg‚Ö
-		// ‚·‚×‚Ä‚Ìƒ^[ƒQƒbƒg‚É“’B‚µ‚½‚©ƒ`ƒFƒbƒN
+		m_pathAnimIndex++;// æ¬¡ã®ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã¸
+		// ã™ã¹ã¦ã®ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã«åˆ°é”ã—ãŸã‹ãƒã‚§ãƒƒã‚¯
 		if (m_pathAnimIndex >= m_currentPath.size()) {
-			return true; // ˆÚ“®Š®—¹
+			return true; // ç§»å‹•å®Œäº†
 		}
 	}else {
-		// ‚Ü‚¾“’B‚µ‚Ä‚¢‚È‚¢ê‡Ais
+		// ã¾ã åˆ°é”ã—ã¦ã„ãªã„å ´åˆã€é€²è¡Œ
 		dir.Normalize();
 		m_srt.pos += dir * step;
 	}
 
 	UpdateWorldMatrix(); 
-	return false; // ˆÚ“®’†
+	return false; // ç§»å‹•ä¸­
 }
 
 void Player::CalculateMovePreviewDamage() {
 	int expectedDamage = 0;
 	MapManager* map = m_context->GetMapManager();
 
-	// 1. —\‘ªFˆÚ“®æ‚ª–¢”­“®‚Ìã©‚ğ“¥‚ñ‚Å‚µ‚Ü‚¤‚©
+	// 1. äºˆæ¸¬ï¼šç§»å‹•å…ˆãŒæœªç™ºå‹•ã®ç½ ã‚’è¸ã‚“ã§ã—ã¾ã†ã‹
 	if (Trap* trap = Trap::GetArmedTrap(map->GetTile(m_previewGridX, m_previewGridZ))) {
 		expectedDamage += trap->GetTrapDamage();
 	}
 
-	// 2. —\‘ªF“G‚ÌUŒ‚ƒƒbƒNƒIƒ“”ÍˆÍ‚ÉN“ü‚µ‚Ä‚µ‚Ü‚¤‚©
+	// 2. äºˆæ¸¬ï¼šæ•µã®æ”»æ’ƒãƒ­ãƒƒã‚¯ã‚ªãƒ³ç¯„å›²ã«ä¾µå…¥ã—ã¦ã—ã¾ã†ã‹
 	if (m_context->GetEnemyManager()) {
 		const auto& enemies = m_context->GetEnemyManager()->GetAllEnemies();
 		for (auto* enemy : enemies) {
-			// “G‚ªƒ`ƒƒ[ƒWUŒ‚’†‚ÅA‚©‚ÂƒvƒŒƒCƒ„[‚ÌˆÚ“®—\’èˆÊ’u‚ğƒƒbƒNƒIƒ“‚µ‚Ä‚¢‚éê‡
+			// æ•µãŒãƒãƒ£ãƒ¼ã‚¸æ”»æ’ƒä¸­ã§ã€ã‹ã¤ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ç§»å‹•äºˆå®šä½ç½®ã‚’ãƒ­ãƒƒã‚¯ã‚ªãƒ³ã—ã¦ã„ã‚‹å ´åˆ
 			if (enemy->IsCharging() &&
 				enemy->GetLockedGridX() == m_previewGridX &&
 				enemy->GetLockedGridZ() == m_previewGridZ)
 			{
-				// ‰Ÿ‚µo‚³‚ê‚½Œã‚Ì˜A½Õ“Ë^ã©ƒ_ƒ[ƒW‚ğ—\‘ªˆÊ’u‚©‚çƒVƒ~ƒ…ƒŒ[ƒg
-				// i©•ª‚ÍˆÚ“®Ï‚İ‚Ì‘z’è ¨ è—L”»’è‚©‚ç©g‚ğœŠOj
+				// æŠ¼ã—å‡ºã•ã‚ŒãŸå¾Œã®é€£é–è¡çªï¼ç½ ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’äºˆæ¸¬ä½ç½®ã‹ã‚‰ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ãƒˆ
+				// ï¼ˆè‡ªåˆ†ã¯ç§»å‹•æ¸ˆã¿ã®æƒ³å®š â†’ å æœ‰åˆ¤å®šã‹ã‚‰è‡ªèº«ã‚’é™¤å¤–ï¼‰
 				expectedDamage += enemy->GetEnemyDamage()
 					+ SimulatePushChainDamage(map, m_previewGridX, m_previewGridZ,
 						enemy->GetFacing(), m_onPushDamage, this);
@@ -672,23 +677,23 @@ void Player::CalculateMovePreviewDamage() {
 }
 
 void Player::UpdateCelebration(float dt) {
-	// ‘O‰ñ‚ÌƒTƒCƒ“’l‚Æ¡‰ñ‚ÌƒTƒCƒ“’l‚ğ”äŠr‚µ‚ÄAƒWƒƒƒ“ƒv‚Ìã‰º“®‚ğÀŒ»
+	// å‰å›ã®ã‚µã‚¤ãƒ³å€¤ã¨ä»Šå›ã®ã‚µã‚¤ãƒ³å€¤ã‚’æ¯”è¼ƒã—ã¦ã€ã‚¸ãƒ£ãƒ³ãƒ—ã®ä¸Šä¸‹å‹•ã‚’å®Ÿç¾
 	float previousSin = sinf(m_jumpTimer * JUMP_SPEED);
 	m_jumpTimer += dt;
 	float currentSin = sinf(m_jumpTimer * JUMP_SPEED);
-	//fabsf‚ğg‚Á‚ÄAƒTƒCƒ“”g‚Ìã‰º“®‚ğ³‚Ì’l‚É•ÏŠ·‚µAƒWƒƒƒ“ƒv‚Ì‚‚³‚ğ’²®
+	//fabsfã‚’ä½¿ã£ã¦ã€ã‚µã‚¤ãƒ³æ³¢ã®ä¸Šä¸‹å‹•ã‚’æ­£ã®å€¤ã«å¤‰æ›ã—ã€ã‚¸ãƒ£ãƒ³ãƒ—ã®é«˜ã•ã‚’èª¿æ•´
 	float yOffset = fabsf(currentSin) * JUMP_HEIGHT;
 
 	Vector3 basePos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 	m_srt.pos.y = basePos.y + yOffset;
 
-	// ’…’n‚Ì”»’è (sin’l‚ª³‚©‚ç•‰‚É•Ï‚í‚éuŠÔ‚ğˆê‰ñ‚ÌƒWƒƒƒ“ƒvŠ®—¹‚Æ‚İ‚È‚·)
+	// ç€åœ°ã®åˆ¤å®š (sinå€¤ãŒæ­£ã‹ã‚‰è² ã«å¤‰ã‚ã‚‹ç¬é–“ã‚’ä¸€å›ã®ã‚¸ãƒ£ãƒ³ãƒ—å®Œäº†ã¨ã¿ãªã™)
 	if (previousSin >= 0.0f && currentSin < 0.0f) {
 		m_jumpCount++;
 	}
 
 	if (m_jumpCount >= MAX_JUMP_COUNT) {
-		m_srt.pos.y = basePos.y; // ŠmÀ‚ÉÚ’n‚³‚¹‚é
+		m_srt.pos.y = basePos.y; // ç¢ºå®Ÿã«æ¥åœ°ã•ã›ã‚‹
 		m_isCelebrationDone = true;
 	}
 }

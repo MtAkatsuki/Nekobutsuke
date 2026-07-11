@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "../../System/IScene.h"
 #include "../../System/Camera.h"
@@ -8,8 +8,8 @@
 #include <memory>
 
 // =========================================================
-// TitleScene ƒNƒ‰ƒX
-// ƒQ[ƒ€‹N“®‚Ìƒ^ƒCƒgƒ‹ƒƒS•\¦‚ÆAƒƒCƒ“ƒQ[ƒ€‚Ö‚Ì‘JˆÚ‚ğŠÇ—‚·‚éB
+// TitleScene ã‚¯ãƒ©ã‚¹
+// ã‚²ãƒ¼ãƒ èµ·å‹•æ™‚ã®ã‚¿ã‚¤ãƒˆãƒ«ãƒ­ã‚´è¡¨ç¤ºã¨ã€ãƒ¡ã‚¤ãƒ³ã‚²ãƒ¼ãƒ ã¸ã®é·ç§»ã‚’ç®¡ç†ã™ã‚‹ã€‚
 // =========================================================
 class TitleScene : public IScene {
 public:
@@ -18,25 +18,25 @@ public:
     TitleScene& operator=(const TitleScene&) = delete;
 
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
     // ---------------------------------------------------------
     void Init() override;
     void dispose() override;
     void update(uint64_t deltatime) override;
 
     // ---------------------------------------------------------
-    // ƒŒƒ“ƒ_ƒŠƒ“ƒO (Rendering)
+    // ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚° (Rendering)
     // ---------------------------------------------------------
     void draw(uint64_t deltatime) override;
 
 private:
     std::unique_ptr<SceneTransition> m_transition;
 
-    // --- ƒAƒZƒbƒg ---
+    // --- ã‚¢ã‚»ãƒƒãƒˆ ---
     std::unique_ptr<CSprite> m_image;
     std::unique_ptr<CSprite> m_hintSprite;
 
-    // --- ƒAƒjƒ[ƒVƒ‡ƒ“Eó‘ÔŠÇ— ---
+    // --- ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãƒ»çŠ¶æ…‹ç®¡ç† ---
     float m_blinkTimer = 0.0f;
-    float m_currentHintAlpha = 1.0f; // Update‚ÅŒvZ‚µADraw‚Å“K—p‚·‚éƒAƒ‹ƒtƒ@’lƒLƒƒƒbƒVƒ…
+    float m_currentHintAlpha = 1.0f; // Updateã§è¨ˆç®—ã—ã€Drawã§é©ç”¨ã™ã‚‹ã‚¢ãƒ«ãƒ•ã‚¡å€¤ã‚­ãƒ£ãƒƒã‚·ãƒ¥
 };

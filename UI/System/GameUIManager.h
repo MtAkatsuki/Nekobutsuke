@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <vector>
 #include <memory>
 #include <string>
@@ -8,8 +8,8 @@ class GameContext;
 
 enum class MenuType {
 	None,
-	Main,   // ˆÚ“®AUŒ‚AI—¹
-	Attack  // •’ÊUŒ‚AƒvƒbƒVƒ…
+	Main,   // ç§»å‹•ã€æ”»æ’ƒã€çµ‚äº†
+	Attack  // æ™®é€šæ”»æ’ƒã€ãƒ—ãƒƒã‚·ãƒ¥
 };
 
 struct MenuOption {
@@ -19,18 +19,18 @@ struct MenuOption {
 	bool isVisible = true;
 };
 
-// –îˆóUI‚²‚Æ‚ÌƒAƒjƒ[ƒVƒ‡ƒ“î•ñ‚ğ•Û‚·‚é\‘¢‘Ì
+// çŸ¢å°UIã”ã¨ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³æƒ…å ±ã‚’ä¿æŒã™ã‚‹æ§‹é€ ä½“
 struct TutorialArrow {
 	std::unique_ptr<CSprite> sprite;
-	Vector3 baseOffset;   // Šî€ƒIƒtƒZƒbƒg
-	Vector3 currentShake; // ƒVƒFƒCƒNƒAƒjƒ[ƒVƒ‡ƒ“‚ÌŒ»İ’l
-	float shakeTimer;     // ŒÂ•Ê‚Ìƒ^ƒCƒ}[
-	bool isVertical;      // c—h‚ê‚©‰¡—h‚ê‚©
+	Vector3 baseOffset;   // åŸºæº–ã‚ªãƒ•ã‚»ãƒƒãƒˆ
+	Vector3 currentShake; // ã‚·ã‚§ã‚¤ã‚¯ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®ç¾åœ¨å€¤
+	float shakeTimer;     // å€‹åˆ¥ã®ã‚¿ã‚¤ãƒãƒ¼
+	bool isVertical;      // ç¸¦æºã‚Œã‹æ¨ªæºã‚Œã‹
 };
 
 // =========================================================
-// GameUIManager ƒNƒ‰ƒX
-// ƒvƒŒƒCƒ„[‚Ì‘€ìƒƒjƒ…[iˆÚ“®EUŒ‚j‚âAWASDEEnter“™‚Ì‘€ìƒKƒCƒhUI‚ğ“‡ŠÇ—‚·‚é
+// GameUIManager ã‚¯ãƒ©ã‚¹
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®æ“ä½œãƒ¡ãƒ‹ãƒ¥ãƒ¼ï¼ˆç§»å‹•ãƒ»æ”»æ’ƒï¼‰ã‚„ã€WASDãƒ»Enterç­‰ã®æ“ä½œã‚¬ã‚¤ãƒ‰UIã‚’çµ±åˆç®¡ç†ã™ã‚‹
 // =========================================================
 class GameUIManager {
 public:
@@ -38,7 +38,7 @@ public:
 	~GameUIManager() = default;
 
 	// ---------------------------------------------------------
-	// ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+	// ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
 	// ---------------------------------------------------------
 	void Init(GameContext* context);
 	void Update(uint64_t dt);
@@ -46,7 +46,7 @@ public:
 	void Clear();
 
 	// ---------------------------------------------------------
-	// ƒƒjƒ…[§Œä (Menu Control)
+	// ãƒ¡ãƒ‹ãƒ¥ãƒ¼åˆ¶å¾¡ (Menu Control)
 	// ---------------------------------------------------------
 	void OpenMainMenu();
 	void CloseMenu();
@@ -58,20 +58,20 @@ public:
 	void SetEventBlock(bool block) { m_isEventBlocked = block; }
 
 	// ---------------------------------------------------------
-	// ƒKƒCƒhUI§Œä (Guide UI Control)
+	// ã‚¬ã‚¤ãƒ‰UIåˆ¶å¾¡ (Guide UI Control)
 	// ---------------------------------------------------------
-	// targetPos: ƒAƒjƒ[ƒVƒ‡ƒ“‚Ì’†SÀ•W
+	// targetPos: ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®ä¸­å¿ƒåº§æ¨™
 	void ShowGuideUI(const Vector3& targetPos, bool arrows = true, bool enter = true, bool esc = true);
 	void HideGuideUI();
 	void SetCameraRotateVisible(bool visible) { m_showCameraRotate = visible; }
 
-	// --- Debug ’²ß—p ---
+	// --- Debug èª¿ç¯€ç”¨ ---
 	Vector3& GetCameraRotatePos() { return m_cameraRotatePos; }
 	float& GetCameraRotateScale() { return m_cameraRotateScale; }
 
 private:
 	// ---------------------------------------------------------
-	// “à•”ƒTƒuƒ‹[ƒ`ƒ“ (Internal Sub-routines)
+	// å†…éƒ¨ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ (Internal Sub-routines)
 	// ---------------------------------------------------------
 	void LoadSprite(std::vector<MenuOption>& list, const std::string& path, float w, float h);
 	void DrawMenuGroup(std::vector<MenuOption>& list, float startX, float startY);
@@ -79,15 +79,15 @@ private:
 	void DrawGuideUI();
 
 	// =========================================================
-	// ƒƒ“ƒo[•Ï”
+	// ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•°
 	// =========================================================
 	GameContext* m_context = nullptr;
 
-	// --- ƒƒjƒ…[UIŠÖ˜A ---
+	// --- ãƒ¡ãƒ‹ãƒ¥ãƒ¼UIé–¢é€£ ---
 	MenuType m_currentMenu = MenuType::None;
 	std::vector<MenuOption> m_mainMenuOptions;
 
-	// --- ƒvƒŒƒCƒ„[“ªã‚Ì–îˆó—p
+	// --- ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼é ­ä¸Šã®çŸ¢å°ç”¨
 	float m_arrowTimer = 0.0f;
 	float m_arrowHoverY = 0.0f;
 
@@ -95,7 +95,7 @@ private:
 	int m_selectedIndex = -1;
 	bool m_isEventBlocked = false;
 
-	// --- ƒKƒCƒhUIŠÖ˜A ---
+	// --- ã‚¬ã‚¤ãƒ‰UIé–¢é€£ ---
 	bool m_isGuideActive = false;
 	bool m_showArrows = false;
 	bool m_showEnter = false;
@@ -110,7 +110,7 @@ private:
 	std::vector<TutorialArrow> m_arrows;
 
 
-	// --- ƒJƒƒ‰‰ñ“]ƒKƒCƒhUI ---
+	// --- ã‚«ãƒ¡ãƒ©å›è»¢ã‚¬ã‚¤ãƒ‰UI ---
 	std::unique_ptr<CSprite> m_cameraRotateHint;
 	bool m_showCameraRotate = false;
 	Vector3 m_cameraRotatePos{ 171.0f, 1018.0f, 0.0f };
