@@ -1,26 +1,26 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CommonTypes.h"
 #include "Renderer.h"
 #include "CPolar3D.h"
 #include "../Core/Application.h"
 
-// --- ƒJƒƒ‰‚Ì’Ç]ó‘Ô ---
+// --- ã‚«ãƒ¡ãƒ©ã®è¿½å¾“çŠ¶æ…‹ ---
 enum class CameraState {
-    BaseView,       // ‘S‘Ì˜ëáÕi“Á’è‚Ì‘ÎÛ‚ğ’ÇÕ‚µ‚È‚¢ŒÅ’è‹“_j
-    Tracking,       // ’ÇÕiƒvƒŒƒCƒ„[‚âƒJ[ƒ\ƒ‹‚ğƒtƒHƒ[j
-    ActionFocus,    // ƒAƒNƒVƒ‡ƒ“ƒtƒH[ƒJƒXiUŒ‚•ûŒü‚Ì‰‰o—p‚È‚Çj
-    TargetFocus,       // “ÁÊƒY[ƒ€iƒ`ƒ…[ƒgƒŠƒAƒ‹/’Eo‰‰o‚Ì17.0f‚È‚Çj
+    BaseView,       // å…¨ä½“ä¿¯ç°ï¼ˆç‰¹å®šã®å¯¾è±¡ã‚’è¿½è·¡ã—ãªã„å›ºå®šè¦–ç‚¹ï¼‰
+    Tracking,       // è¿½è·¡ï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚„ã‚«ãƒ¼ã‚½ãƒ«ã‚’ãƒ•ã‚©ãƒ­ãƒ¼ï¼‰
+    ActionFocus,    // ã‚¢ã‚¯ã‚·ãƒ§ãƒ³ãƒ•ã‚©ãƒ¼ã‚«ã‚¹ï¼ˆæ”»æ’ƒæ–¹å‘ã®æ¼”å‡ºç”¨ãªã©ï¼‰
+    TargetFocus,       // ç‰¹å†™ã‚ºãƒ¼ãƒ ï¼ˆãƒãƒ¥ãƒ¼ãƒˆãƒªã‚¢ãƒ«/è„±å‡ºæ¼”å‡ºæ™‚ã®17.0fãªã©ï¼‰
     Cinematic
 };
 
 enum class CinePhase { None, AttackZoom, KillLead, KillSlow };
 
 // =========================================================
-// Camera ƒNƒ‰ƒX
-// 3D‹óŠÔ‚Ì‹“_‚ğŠÇ—‚·‚éB
-// ‹ÉÀ•WŒniPolar 3Dj‚ğ—p‚¢‚½ƒXƒ€[ƒY‚È’Ç]iLerp•âŠÔj‚ÆA
-// 4•ûŒü‚ÌƒNƒH[ƒ^[ƒrƒ…[‰ñ“]§Œä‚ğ’ñ‹Ÿ‚·‚éB
+// Camera ã‚¯ãƒ©ã‚¹
+// 3Dç©ºé–“ã®è¦–ç‚¹ã‚’ç®¡ç†ã™ã‚‹ã€‚
+// æ¥µåº§æ¨™ç³»ï¼ˆPolar 3Dï¼‰ã‚’ç”¨ã„ãŸã‚¹ãƒ ãƒ¼ã‚ºãªè¿½å¾“ï¼ˆLerpè£œé–“ï¼‰ã¨ã€
+// 4æ–¹å‘ã®ã‚¯ã‚©ãƒ¼ã‚¿ãƒ¼ãƒ“ãƒ¥ãƒ¼å›è»¢åˆ¶å¾¡ã‚’æä¾›ã™ã‚‹ã€‚
 // =========================================================
 class Camera {
 public:
@@ -28,7 +28,7 @@ public:
     virtual ~Camera() = default;
 
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
     // ---------------------------------------------------------
     void Init();
     void Dispose();
@@ -36,18 +36,18 @@ public:
     void Draw();
 
     // ---------------------------------------------------------
-    // ƒJƒƒ‰§ŒäF’¼Úİ’è (Direct Setters)
+    // ã‚«ãƒ¡ãƒ©åˆ¶å¾¡ï¼šç›´æ¥è¨­å®š (Direct Setters)
     // ---------------------------------------------------------
     void SetPosition(const Vector3& position) { m_position = position; }
     void SetUP(const Vector3& up) { m_up = up; }
 
-    // ’‹“_‚ğ‘¦ˆÚ“®iLerp‚ğ–³‹‚µ‚ÄuŠÔˆÚ“®j
+    // æ³¨è¦–ç‚¹ã‚’å³æ™‚ç§»å‹•ï¼ˆLerpã‚’ç„¡è¦–ã—ã¦ç¬é–“ç§»å‹•ï¼‰
     void SetLookat(const Vector3& position) {
         m_lookat = position;
         m_targetLookAt = position;
     }
 
-    // ‹ÉÀ•Wi‹——£E•ûˆÊŠpE‹ÂŠpj‚ğ‘¦“K—p
+    // æ¥µåº§æ¨™ï¼ˆè·é›¢ãƒ»æ–¹ä½è§’ãƒ»ä»°è§’ï¼‰ã‚’å³æ™‚é©ç”¨
     void ForceSetPolar(float radius, float azimuth, float elevation) {
         m_radius = radius;    m_targetRadius = radius;
         m_azimuth = azimuth;   m_targetAzimuth = azimuth;
@@ -55,52 +55,52 @@ public:
     }
 
     // ---------------------------------------------------------
-    // ƒJƒƒ‰§ŒäF–Ú•W‹ì“® (Target-driven Smooth Controls)
-    // ¦ Lerp•âŠÔ‚É‚æ‚Á‚ÄŠŠ‚ç‚©‚É‘JˆÚ‚·‚é‚½‚ß‚Ìƒ^[ƒQƒbƒgİ’è
+    // ã‚«ãƒ¡ãƒ©åˆ¶å¾¡ï¼šç›®æ¨™é§†å‹• (Target-driven Smooth Controls)
+    // â€» Lerpè£œé–“ã«ã‚ˆã£ã¦æ»‘ã‚‰ã‹ã«é·ç§»ã™ã‚‹ãŸã‚ã®ã‚¿ãƒ¼ã‚²ãƒƒãƒˆè¨­å®š
     // ---------------------------------------------------------
     void SetTargetLookAt(const Vector3& target);
     void SetTargetRadius(float radius) { m_targetRadius = radius; }
     void SetTargetAzimuth(float azimuth) { m_targetAzimuth = azimuth; }
     void SetTargetElevation(float elevation) { m_targetElevation = elevation; }
 
-    // ƒV[ƒ“’†S‚Ö‚ÌƒVƒ‡[ƒgƒJƒbƒgƒRƒ}ƒ“ƒh
+    // ã‚·ãƒ¼ãƒ³ä¸­å¿ƒã¸ã®ã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆã‚³ãƒãƒ³ãƒ‰
     void SetLookAtCenter() { SetLookat(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z)); }
     void SetTargetToCenter() { SetTargetLookAt(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z)); }
-	//UŒ‚‰‰o—p‚ÌƒJƒƒ‰§Œä
+	//æ”»æ’ƒæ¼”å‡ºç”¨ã®ã‚«ãƒ¡ãƒ©åˆ¶å¾¡
     void PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, bool immediate = false);
     void PlayAttackZoom(const Vector3& focusPos);
 
     // ---------------------------------------------------------
-    // ƒJƒƒ‰§ŒäF4•ûŒü‰ñ“] (Quarter-View Rotation)
+    // ã‚«ãƒ¡ãƒ©åˆ¶å¾¡ï¼š4æ–¹å‘å›è»¢ (Quarter-View Rotation)
     // ---------------------------------------------------------
-    // ‡‰ñ“] (EƒL[‘Š“–)F³–Ê¶ -> ³–Ê‰E -> ”w–Ê‰E -> ”w–Ê¶
+    // é †å›è»¢ (Eã‚­ãƒ¼ç›¸å½“)ï¼šæ­£é¢å·¦ -> æ­£é¢å³ -> èƒŒé¢å³ -> èƒŒé¢å·¦
     void RotateCameraForward() {
         m_dirIndexOffset++;
         UpdateTargetAzimuth();
     }
 
-    // ‹t‰ñ“] (QƒL[‘Š“–)F³–Ê¶ -> ”w–Ê¶ -> ”w–Ê‰E -> ³–Ê‰E
+    // é€†å›è»¢ (Qã‚­ãƒ¼ç›¸å½“)ï¼šæ­£é¢å·¦ -> èƒŒé¢å·¦ -> èƒŒé¢å³ -> æ­£é¢å³
     void RotateCameraReverse() {
         m_dirIndexOffset--;
         UpdateTargetAzimuth();
     }
 
-    // Šî–{ƒJƒƒ‰ˆÊ’u(³–Ê¶)‚ÉƒŠƒZƒbƒg
+    // åŸºæœ¬ã‚«ãƒ¡ãƒ©ä½ç½®(æ­£é¢å·¦)ã«ãƒªã‚»ãƒƒãƒˆ
     void ResetCameraDirection() {
         m_dirIndexOffset = 0;
         UpdateTargetAzimuth();
     }
 
-    // Šî€•ûˆÊŠp(BASE_AZIMUTH)‚ÆŒ»İ‚ÌƒCƒ“ƒfƒbƒNƒX‚ÉŠî‚Ã‚­–Ú•WŠp‚ÌÄŒvZ
+    // åŸºæº–æ–¹ä½è§’(BASE_AZIMUTH)ã¨ç¾åœ¨ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã«åŸºã¥ãç›®æ¨™è§’ã®å†è¨ˆç®—
     void UpdateTargetAzimuth() {
         m_targetAzimuth = BASE_AZIMUTH + (m_dirIndexOffset * (PI / 2.0f));
     }
 
-    // •‰”‚ÌƒIƒtƒZƒbƒg‚ğˆÀ‘S‚É 0`3 ‚Ì”ÍˆÍ‚É³‹K‰»i—á: -1 -> 3j
+    // è² æ•°ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’å®‰å…¨ã« 0ï½3 ã®ç¯„å›²ã«æ­£è¦åŒ–ï¼ˆä¾‹: -1 -> 3ï¼‰
     int GetNormalizedDirIndex() const { return (m_dirIndexOffset % 4 + 4) % 4; }
 
     // ---------------------------------------------------------
-    // ó‘ÔŠÇ—EƒQƒbƒ^[ (State & Getters)
+    // çŠ¶æ…‹ç®¡ç†ãƒ»ã‚²ãƒƒã‚¿ãƒ¼ (State & Getters)
     // ---------------------------------------------------------
     void SetBounds(float minX, float maxX, float minZ, float maxZ);
     void ChangeState(CameraState state, const Vector3& targetPos = Vector3(0, 0, 0));
@@ -122,12 +122,12 @@ public:
     float GetBoundMaxZ() const { return m_maxZ; }
 
     bool IsCinematic() const { return m_cinePhase != CinePhase::None; }
-    // ¢ŠE‚ÌŠÔƒXƒP[ƒ‹iKillSlow ’†‚¾‚¯ <1A‘ŠŠ÷/UI ‚Í“Ç‚Ü‚È‚¢j
+    // ä¸–ç•Œã®æ™‚é–“ã‚¹ã‚±ãƒ¼ãƒ«ï¼ˆKillSlow ä¸­ã ã‘ <1ã€ç›¸æœº/UI ã¯èª­ã¾ãªã„ï¼‰
     float GetTimeScale() const { return (m_cinePhase == CinePhase::KillSlow) ? KILLCAM_TIME_SCALE : 1.0f; }
     void CaptureCineReturn();
     void RestoreCineReturn();
     // ---------------------------------------------------------
-    // İ’èŠÇ— (Config Management)
+    // è¨­å®šç®¡ç† (Config Management)
     // ---------------------------------------------------------
     static void SaveConfig();
     static void LoadConfig();
@@ -136,7 +136,7 @@ public:
 
 public:
     // ==========================================
-    // ƒJƒƒ‰§Œäƒpƒ‰ƒ[ƒ^’è”ŒQ (Public Parameters)
+    // ã‚«ãƒ¡ãƒ©åˆ¶å¾¡ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿å®šæ•°ç¾¤ (Public Parameters)
     // ==========================================
     static constexpr float TUTORIAL_RADIUS = 45.0f;
     static constexpr float BASE_RADIUS = 30.0f;
@@ -147,14 +147,14 @@ public:
     static constexpr float SCENE_CENTER_Y = 0.0f;
     static constexpr float SCENE_CENTER_Z = 0.0f;
 
-    // --- Às•ÏX‰Â”\‚Èƒpƒ‰ƒ[ƒ^ (inline •Ï”) ---
-    // ¦ İ’èƒtƒ@ƒCƒ‹(.ini)‚âƒfƒoƒbƒOUI‚©‚ç“®“I‚Éã‘‚«‚³‚ê‚é’l
+    // --- å®Ÿè¡Œæ™‚å¤‰æ›´å¯èƒ½ãªãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ (inline å¤‰æ•°) ---
+    // â€» è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«(.ini)ã‚„ãƒ‡ãƒãƒƒã‚°UIã‹ã‚‰å‹•çš„ã«ä¸Šæ›¸ãã•ã‚Œã‚‹å€¤
     static inline float ZOOM_RADIUS = 25.0f;
     static inline float BASE_AZIMUTH = 1.58f;
     static inline float BASE_ELEVATION = -1.08f;
     static inline float BOUND_PADDING = -2.0f;
 
-	// UŒ‚‰‰o—p‚ÌƒJƒƒ‰ƒpƒ‰ƒ[ƒ^
+	// æ”»æ’ƒæ¼”å‡ºç”¨ã®ã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
     static inline float KILLCAM_RADIUS = 13.0f;
     static inline float KILLCAM_ELEVATION = -1.35f;  
     static inline float KILLCAM_SHOULDER_YAW = 0.45f; 
@@ -164,16 +164,16 @@ public:
     static inline float KILLCAM_LEAD = 0.25f;
     static inline float KILLCAM_TIME_SCALE = 0.3f;
     static inline float ATTACK_ZOOM_LEAD = 0.15f;
-    static inline float KILLCAM_PITCH_LIFT = 9.0f;   // KillSlowF‚»‚Ìê‚ÅŒ©ã‚°‚é—Êi’‹“_‚ğã‚Ö‚¿ã‚°‚é‚‚³j
+    static inline float KILLCAM_PITCH_LIFT = 9.0f;   // KillSlowï¼šãã®å ´ã§è¦‹ä¸Šã’ã‚‹é‡ï¼ˆæ³¨è¦–ç‚¹ã‚’ä¸Šã¸æŒã¡ä¸Šã’ã‚‹é«˜ã•ï¼‰
 
 protected:
-    // --- ƒgƒ‰ƒ“ƒXƒtƒH[ƒ€Es—ñ ---
+    // --- ãƒˆãƒ©ãƒ³ã‚¹ãƒ•ã‚©ãƒ¼ãƒ ãƒ»è¡Œåˆ— ---
     Vector3   m_position{ 0.0f, 0.0f, 0.0f };
     Vector3   m_up{ 0.0f, 1.0f, 0.0f };
     Matrix4x4 m_viewmtx{};
     Matrix4x4 m_projmtx{};
 
-    // --- ƒR[ƒ^[ƒQƒbƒg‹ì“®•Ï” (‹ÉÀ•WE’‹“_) ---
+    // --- ã‚³ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆé§†å‹•å¤‰æ•° (æ¥µåº§æ¨™ãƒ»æ³¨è¦–ç‚¹) ---
     Vector3 m_lookat{};
     Vector3 m_targetLookAt{};
 
@@ -184,18 +184,18 @@ protected:
     float m_elevation = -1.08f;
     float m_targetElevation = -1.08f;
 
-    // --- ƒVƒlƒ}ƒeƒBƒbƒN‰‰o—p•Ï” ---
+    // --- ã‚·ãƒãƒãƒ†ã‚£ãƒƒã‚¯æ¼”å‡ºç”¨å¤‰æ•° ---
     CinePhase   m_cinePhase = CinePhase::None;
     float       m_cinePhaseTimer = 0.0f;
-    bool        m_killCamPitch = false;   // KillSlowF‚»‚ÌêŒ©ã‚°ƒ‚[ƒh
-    Vector3     m_killCamPos{};           // ŒÅ’è‚·‚éƒJƒƒ‰ˆÊ’u
+    bool        m_killCamPitch = false;   // KillSlowï¼šãã®å ´è¦‹ä¸Šã’ãƒ¢ãƒ¼ãƒ‰
+    Vector3     m_killCamPos{};           // å›ºå®šã™ã‚‹ã‚«ãƒ¡ãƒ©ä½ç½®
     CameraState m_cineReturnState = CameraState::BaseView;
     Vector3     m_cineReturnLookAt{};
     float       m_cineReturnRadius = BASE_RADIUS;
     float       m_cineReturnAzimuth = BASE_AZIMUTH;
     float       m_cineReturnElevation = BASE_ELEVATION;
 
-    // --- “®ì§ŒÀEó‘Ô ---
+    // --- å‹•ä½œåˆ¶é™ãƒ»çŠ¶æ…‹ ---
     float m_minX = -100.0f;
     float m_maxX = 100.0f;
     float m_minZ = -100.0f;
@@ -203,5 +203,5 @@ protected:
 
     CameraState m_state = CameraState::BaseView;
     float       m_lerpSpeed = 5.0f;
-    int         m_dirIndexOffset = 0; // ‰ñ“]ƒIƒtƒZƒbƒgF0=Šî–{, 1=‰E, 2=”wŒã‰E, 3=”wŒã¶
+    int         m_dirIndexOffset = 0; // å›è»¢ã‚ªãƒ•ã‚»ãƒƒãƒˆï¼š0=åŸºæœ¬, 1=å³, 2=èƒŒå¾Œå³, 3=èƒŒå¾Œå·¦
 };

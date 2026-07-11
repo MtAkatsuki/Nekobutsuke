@@ -1,4 +1,4 @@
-#include "CommonTypes.h"
+ï»¿#include "CommonTypes.h"
 #include "Renderer.h"
 #include "Camera.h"
 #include "../Core/Application.h"
@@ -8,13 +8,36 @@
 #include <string>
 
 namespace {
-	// --- ƒŒƒ“ƒ_ƒŠƒ“ƒOE“Š‰es—ñ—p’è” ---
-	constexpr float FOV_DEG = 15.0f;    // ‹–ìŠp (ƒ^ƒNƒeƒBƒJƒ‹RPG‚É“K‚µ‚½‹·Špİ’è)
-	constexpr float NEAR_PLANE = 0.1f;     // ƒjƒAƒNƒŠƒbƒv–Ê
-	constexpr float FAR_PLANE = 1000.0f;  // ƒtƒ@[ƒNƒŠƒbƒv–Ê
+	// --- ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ãƒ»æŠ•å½±è¡Œåˆ—ç”¨å®šæ•° ---
+	constexpr float FOV_DEG = 15.0f;    // è¦–é‡è§’ (ã‚¿ã‚¯ãƒ†ã‚£ã‚«ãƒ«RPGã«é©ã—ãŸç‹­è§’è¨­å®š)
+	constexpr float NEAR_PLANE = 0.1f;     // ãƒ‹ã‚¢ã‚¯ãƒªãƒƒãƒ—é¢
+	constexpr float FAR_PLANE = 1000.0f;  // ãƒ•ã‚¡ãƒ¼ã‚¯ãƒªãƒƒãƒ—é¢
 
-	// --- İ’èƒtƒ@ƒCƒ‹–¼ ---
+	// --- è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«å ---
 	const std::string CONFIG_FILE_NAME = "nekobutsuke_camera.ini";
+
+	// --- è¨­å®šã‚¨ãƒ³ãƒˆãƒªè¡¨ï¼šã‚­ãƒ¼åã¨å¤‰æ•°ã®å¯¾å¿œï¼‰---
+	struct ConfigEntry {
+		const char* key;
+		float* value;
+	};
+
+	const ConfigEntry CONFIG_TABLE[] = {
+		{ "ZOOM_RADIUS",          &Camera::ZOOM_RADIUS },
+		{ "BOUND_PADDING",        &Camera::BOUND_PADDING },
+		{ "BASE_AZIMUTH",         &Camera::BASE_AZIMUTH },
+		{ "BASE_ELEVATION",       &Camera::BASE_ELEVATION },
+		{ "KILLCAM_RADIUS",       &Camera::KILLCAM_RADIUS },
+		{ "KILLCAM_ELEVATION",    &Camera::KILLCAM_ELEVATION },
+		{ "KILLCAM_SHOULDER_YAW", &Camera::KILLCAM_SHOULDER_YAW },
+		{ "KILLCAM_LEAD",         &Camera::KILLCAM_LEAD },
+		{ "KILLCAM_HOLD",         &Camera::KILLCAM_HOLD },
+		{ "KILLCAM_TIME_SCALE",   &Camera::KILLCAM_TIME_SCALE },
+		{ "ATTACKZOOM_RADIUS",    &Camera::ATTACKZOOM_RADIUS },
+		{ "ATTACKZOOM_HOLD",      &Camera::ATTACKZOOM_HOLD },
+		{ "ATTACK_ZOOM_LEAD",     &Camera::ATTACK_ZOOM_LEAD },
+		{ "KILLCAM_PITCH_LIFT",   &Camera::KILLCAM_PITCH_LIFT },
+	};
 
 	float UnwrapNear(float ref, float angle) {
 		float d = angle - ref;
@@ -45,10 +68,10 @@ void Camera::Update(float dt) {
 			if (m_cinePhaseTimer >= KILLCAM_LEAD) {
 				m_cinePhase = CinePhase::KillSlow;
 				m_cinePhaseTimer = 0.0f;
-				// ‚»‚Ìê‚ÅŒ©ã‚°‚éFƒJƒƒ‰ˆÊ’u‚ğŒÅ’è‚µA’‹“_‚¾‚¯ã‚ÖU‚éiPitch‚Ì‚İj
+				// ãã®å ´ã§è¦‹ä¸Šã’ã‚‹ï¼šã‚«ãƒ¡ãƒ©ä½ç½®ã‚’å›ºå®šã—ã€æ³¨è¦–ç‚¹ã ã‘ä¸Šã¸æŒ¯ã‚‹ï¼ˆPitchã®ã¿ï¼‰
 				m_killCamPitch = true;
 				m_killCamPos = m_position;
-				m_targetLookAt = m_lookat + Vector3(0.0f, KILLCAM_PITCH_LIFT, 0.0f);  // ’‹“_‚ğã‚Ö
+				m_targetLookAt = m_lookat + Vector3(0.0f, KILLCAM_PITCH_LIFT, 0.0f);  // æ³¨è¦–ç‚¹ã‚’ä¸Šã¸
 			}
 			break;
 		case CinePhase::KillSlow:
@@ -58,7 +81,7 @@ void Camera::Update(float dt) {
 		}
 	}
 
-	// 1. ƒtƒŒ[ƒ€ƒŒ[ƒg‚ÉˆË‘¶‚µ‚È‚¢•½ŠŠ‰»iLerpjŒW”‚ÌŒvZ
+	// 1. ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¬ãƒ¼ãƒˆã«ä¾å­˜ã—ãªã„å¹³æ»‘åŒ–ï¼ˆLerpï¼‰ä¿‚æ•°ã®è¨ˆç®—
 
 	// t = 1 - f^dt
 
@@ -69,9 +92,9 @@ void Camera::Update(float dt) {
 		current += (target - current) * t;
 		};
 
-	// 2. –Ú•Wƒpƒ‰ƒ[ƒ^‚Ö‚Ì’Ç]
+	// 2. ç›®æ¨™ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã¸ã®è¿½å¾“
 
-	// üŒ`•âŠÔiLerpjFa + (b - a) * t
+	// ç·šå½¢è£œé–“ï¼ˆLerpï¼‰ï¼ša + (b - a) * t
 	LerpFunc(m_lookat.x, m_targetLookAt.x);
 	LerpFunc(m_lookat.y, m_targetLookAt.y);
 	LerpFunc(m_lookat.z, m_targetLookAt.z);
@@ -80,10 +103,10 @@ void Camera::Update(float dt) {
 	LerpFunc(m_azimuth, m_targetAzimuth);
 	LerpFunc(m_elevation, m_targetElevation);
 
-	// 3. ‹ÉÀ•W ¨ ƒfƒJƒ‹ƒgÀ•Wipitchƒ‚[ƒh‚ÍƒJƒƒ‰ˆÊ’u‚ğŒÅ’è‚µA’‹“_ã¸‚ÅŒ©ã‚°‚Ì‚İj
+	// 3. æ¥µåº§æ¨™ â†’ ãƒ‡ã‚«ãƒ«ãƒˆåº§æ¨™ï¼ˆpitchãƒ¢ãƒ¼ãƒ‰æ™‚ã¯ã‚«ãƒ¡ãƒ©ä½ç½®ã‚’å›ºå®šã—ã€æ³¨è¦–ç‚¹ä¸Šæ˜‡ã§è¦‹ä¸Šã’ã®ã¿ï¼‰
 	if (m_killCamPitch) {
 		m_position = m_killCamPos;
-		m_up = Vector3(0.0f, 1.0f, 0.0f);   // LookAtLH ‚ª…•½Šî€‚Å³‚µ‚­‹ÂŠp‚ğì‚é
+		m_up = Vector3(0.0f, 1.0f, 0.0f);   // LookAtLH ãŒæ°´å¹³åŸºæº–ã§æ­£ã—ãä»°è§’ã‚’ä½œã‚‹
 	}
 	else {
 		CPolor3D polor(m_radius, m_elevation, m_azimuth);
@@ -96,11 +119,11 @@ void Camera::Update(float dt) {
 }
 
 void Camera::Draw(){
-	// ¶èŒnƒrƒ…[s—ñ‚Ì¶¬
+	// å·¦æ‰‹ç³»ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ã®ç”Ÿæˆ
 	m_viewmtx = DirectX::XMMatrixLookAtLH(m_position, m_lookat, m_up);
 	Renderer::SetViewMatrix(&m_viewmtx);
 
-	// ƒvƒƒWƒFƒNƒVƒ‡ƒ“s—ñ‚Ì¶¬
+	// ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ã‚·ãƒ§ãƒ³è¡Œåˆ—ã®ç”Ÿæˆ
 	float aspectRatio = static_cast<float>(Application::GetWidth()) / static_cast<float>(Application::GetHeight());
 	float fovRad = DirectX::XMConvertToRadians(FOV_DEG);
 
@@ -109,7 +132,7 @@ void Camera::Draw(){
 }
 
 void Camera::ChangeState(CameraState state, const Vector3& targetPos) {
-	if (IsCinematic()) return;// ‰‰o’†‚ÍƒJƒƒ‰§Œä‚ğ’D‚í‚¹‚È‚¢iHOLD ‚ğÅŒã‚Ü‚Åç‚éj
+	if (IsCinematic()) return;// æ¼”å‡ºä¸­ã¯ã‚«ãƒ¡ãƒ©åˆ¶å¾¡ã‚’å¥ªã‚ã›ãªã„ï¼ˆHOLD ã‚’æœ€å¾Œã¾ã§å®ˆã‚‹ï¼‰
 	m_state = state;
 
 	switch (state) {
@@ -136,7 +159,7 @@ void Camera::ChangeState(CameraState state, const Vector3& targetPos) {
 }
 
 void Camera::UpdateTrackingTarget(const Vector3& targetPos) {
-	if (IsCinematic()) return;   // ‰‰o’†‚Í’Ç]‚Å’‹“_‚ğã‘‚«‚µ‚È‚¢
+	if (IsCinematic()) return;   // æ¼”å‡ºä¸­ã¯è¿½å¾“ã§æ³¨è¦–ç‚¹ã‚’ä¸Šæ›¸ãã—ãªã„
 	if (m_state == CameraState::Tracking ||
 		m_state == CameraState::TargetFocus ||
 		m_state == CameraState::ActionFocus) {
@@ -146,7 +169,7 @@ void Camera::UpdateTrackingTarget(const Vector3& targetPos) {
 
 void Camera::SetTargetLookAt(const Vector3& target) {
 	m_targetLookAt = target;
-	// ’‹“_‚ğƒNƒ‰ƒ“ƒv‚µAƒJƒƒ‰‚ª’ÇÕ‚µ‚·‚¬‚Ä‰æ–ÊŠO‚Ì–¢•`‰æ—Ìˆæiú–Êj‚ªŒ©‚¦‚é‚Ì‚ğ–h‚®
+	// æ³¨è¦–ç‚¹ã‚’ã‚¯ãƒ©ãƒ³ãƒ—ã—ã€ã‚«ãƒ¡ãƒ©ãŒè¿½è·¡ã—ã™ãã¦ç”»é¢å¤–ã®æœªæç”»é ˜åŸŸï¼ˆç©¿é¢ï¼‰ãŒè¦‹ãˆã‚‹ã®ã‚’é˜²ã
 	m_targetLookAt.x = std::clamp(m_targetLookAt.x, m_minX, m_maxX);
 	m_targetLookAt.z = std::clamp(m_targetLookAt.z, m_minZ, m_maxZ);
 }
@@ -159,44 +182,33 @@ void Camera::SetBounds(float minX, float maxX, float minZ, float maxZ) {
 }
 
 std::string Trim(const std::string& s) {
-	// •â•ŠÖ”F•¶š—ñ‚Ìæ“ª‚Æ––”ö‚©‚ç‹ó”’Aƒ^ƒuA‰üs‚È‚Ç‚ğæ‚èœ‚­
+	// è£œåŠ©é–¢æ•°ï¼šæ–‡å­—åˆ—ã®å…ˆé ­ã¨æœ«å°¾ã‹ã‚‰ç©ºç™½ã€ã‚¿ãƒ–ã€æ”¹è¡Œãªã©ã‚’å–ã‚Šé™¤ã
 	
-	// 1. Å‰‚ÉoŒ»‚·‚éy‹ó”’ˆÈŠOz‚Ì•¶š‚ÌˆÊ’u‚ğŒŸõ
+	// 1. æœ€åˆã«å‡ºç¾ã™ã‚‹ã€ç©ºç™½ä»¥å¤–ã€‘ã®æ–‡å­—ã®ä½ç½®ã‚’æ¤œç´¢
 	auto start = s.find_first_not_of(" \t\r\n");
 
-	// 2. ÅŒã‚ÉoŒ»‚·‚éy‹ó”’ˆÈŠOz‚Ì•¶š‚ÌˆÊ’u‚ğŒŸõ
+	// 2. æœ€å¾Œã«å‡ºç¾ã™ã‚‹ã€ç©ºç™½ä»¥å¤–ã€‘ã®æ–‡å­—ã®ä½ç½®ã‚’æ¤œç´¢
 	auto end = s.find_last_not_of(" \t\r\n");
 
-	// 3. ”»’è‚¨‚æ‚ÑØ‚èo‚µ
-	// ‹ó”’ˆÈŠO‚Ì•¶š‚ªŒ©‚Â‚©‚ç‚È‚¢ê‡i•¶š—ñ‘S‘Ì‚ª‹ó”’‚©‹ó‚Ìê‡j‚ÍA‹ó‚Ì•¶š—ñ "" ‚ğ•Ô‚·
+	// 3. åˆ¤å®šãŠã‚ˆã³åˆ‡ã‚Šå‡ºã—
+	// ç©ºç™½ä»¥å¤–ã®æ–‡å­—ãŒè¦‹ã¤ã‹ã‚‰ãªã„å ´åˆï¼ˆæ–‡å­—åˆ—å…¨ä½“ãŒç©ºç™½ã‹ç©ºã®å ´åˆï¼‰ã¯ã€ç©ºã®æ–‡å­—åˆ— "" ã‚’è¿”ã™
 	return (start == std::string::npos) ? "" : s.substr(start, end - start + 1);
 }
 
 void Camera::SaveConfig() {
-	// ƒvƒƒWƒFƒNƒg‚Ì .exe ‚Æ“¯ŠK‘w‚É nekobutsuke_camera.ini ‚ğ¶¬
-	std::ofstream file("nekobutsuke_camera.ini");
+	// ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆã® .exe ã¨åŒéšå±¤ã« nekobutsuke_camera.ini ã‚’ç”Ÿæˆ
+	std::ofstream file(CONFIG_FILE_NAME);
 	if (file.is_open()) {
-		file << "ZOOM_RADIUS=" << ZOOM_RADIUS << "\n";
-		file << "BOUND_PADDING=" << BOUND_PADDING << "\n";
-		file << "BASE_AZIMUTH=" << BASE_AZIMUTH << "\n";
-		file << "BASE_ELEVATION=" << BASE_ELEVATION << "\n";
-		file << "KILLCAM_RADIUS=" << KILLCAM_RADIUS << "\n";
-		file << "KILLCAM_ELEVATION=" << KILLCAM_ELEVATION << "\n";
-		file << "KILLCAM_SHOULDER_YAW=" << KILLCAM_SHOULDER_YAW << "\n";
-		file << "KILLCAM_LEAD=" << KILLCAM_LEAD << "\n";
-		file << "KILLCAM_HOLD=" << KILLCAM_HOLD << "\n";
-		file << "KILLCAM_TIME_SCALE=" << KILLCAM_TIME_SCALE << "\n";
-		file << "ATTACKZOOM_RADIUS=" << ATTACKZOOM_RADIUS << "\n";
-		file << "ATTACKZOOM_HOLD=" << ATTACKZOOM_HOLD << "\n";
-		file << "ATTACK_ZOOM_LEAD=" << ATTACK_ZOOM_LEAD << "\n";
-		file << "KILLCAM_PITCH_LIFT=" << KILLCAM_PITCH_LIFT << "\n";
+		for (const auto& e : CONFIG_TABLE) {
+			file << e.key << "=" << *e.value << "\n";
+		}
 		file.close();
-		std::cerr << "[Camera] Config Saved to nekobutsuke_camera.ini" << std::endl;
+		std::cerr << "[Camera] Config Saved to " << CONFIG_FILE_NAME << std::endl;
 	}
 }
 
 void Camera::LoadConfig() {
-	std::ifstream file("nekobutsuke_camera.ini");
+	std::ifstream file(CONFIG_FILE_NAME);
 	if (!file.is_open()) {
 		std::cerr << "[Camera] Warning: Could not open config file." << std::endl;
 		return;
@@ -204,43 +216,36 @@ void Camera::LoadConfig() {
 
 	std::string line;
 	while (std::getline(file, line)) {
-		// 1. æ“ª‚Æ––”ö‚Ì‹ó”’‚ğœ‹
+		// 1. å…ˆé ­ã¨æœ«å°¾ã®ç©ºç™½ã‚’é™¤å»
 		line = Trim(line);
 
-		// 2. ‹ósA‚Ü‚½‚Í # ‚â ; ‚Ån‚Ü‚éƒRƒƒ“ƒgs‚ğƒXƒLƒbƒv
+		// 2. ç©ºè¡Œã€ã¾ãŸã¯ # ã‚„ ; ã§å§‹ã¾ã‚‹ã‚³ãƒ¡ãƒ³ãƒˆè¡Œã‚’ã‚¹ã‚­ãƒƒãƒ—
 		if (line.empty() || line[0] == '#' || line[0] == ';') {
 			continue;
 		}
 
-		// 3. “™†i=j‚ğŒŸõ
+		// 3. ç­‰å·ï¼ˆ=ï¼‰ã‚’æ¤œç´¢
 		size_t delimiterPos = line.find('=');
 		if (delimiterPos != std::string::npos) {
-			// •ªŠ„‚µA‚³‚ç‚É key ‚Æ value ‚ğƒNƒŒƒ“ƒWƒ“ƒOi‹ó”’œ‹j
+			// åˆ†å‰²ã—ã€ã•ã‚‰ã« key ã¨ value ã‚’ã‚¯ãƒ¬ãƒ³ã‚¸ãƒ³ã‚°ï¼ˆç©ºç™½é™¤å»ï¼‰
 			//substr(start, length) :
-			// key: ƒCƒ“ƒfƒbƒNƒX 0 ‚©‚çŠJn‚µA“™†i=j‚Ì’¼‘O‚Ü‚Å‚ğØ‚èo‚·B
-			// valueStr: “™†‚ÌŸ‚ÌˆÊ’u‚©‚çŠJn‚µAs––‚Ü‚Å‚ğ‚·‚×‚ÄØ‚èo‚·B
+			// key: ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ 0 ã‹ã‚‰é–‹å§‹ã—ã€ç­‰å·ï¼ˆ=ï¼‰ã®ç›´å‰ã¾ã§ã‚’åˆ‡ã‚Šå‡ºã™ã€‚
+			// valueStr: ç­‰å·ã®æ¬¡ã®ä½ç½®ã‹ã‚‰é–‹å§‹ã—ã€è¡Œæœ«ã¾ã§ã‚’ã™ã¹ã¦åˆ‡ã‚Šå‡ºã™ã€‚
 			std::string key = Trim(line.substr(0, delimiterPos));
 			std::string valueStr = Trim(line.substr(delimiterPos + 1));
 
 			try {
 				float value = std::stof(valueStr);
-				if (key == "ZOOM_RADIUS") ZOOM_RADIUS = value;
-				else if (key == "BOUND_PADDING") BOUND_PADDING = value;
-				else if (key == "BASE_AZIMUTH") BASE_AZIMUTH = value;
-				else if (key == "BASE_ELEVATION") BASE_ELEVATION = value;
-				else if (key == "KILLCAM_RADIUS") KILLCAM_RADIUS = value;
-				else if (key == "KILLCAM_ELEVATION") KILLCAM_ELEVATION = value;
-				else if (key == "KILLCAM_SHOULDER_YAW") KILLCAM_SHOULDER_YAW = value;
-				else if (key == "KILLCAM_LEAD") KILLCAM_LEAD = value;
-				else if (key == "KILLCAM_HOLD") KILLCAM_HOLD = value;
-				else if (key == "KILLCAM_TIME_SCALE") KILLCAM_TIME_SCALE = value;
-				else if (key == "ATTACKZOOM_RADIUS") ATTACKZOOM_RADIUS = value;
-				else if (key == "ATTACKZOOM_HOLD") ATTACKZOOM_HOLD = value;
-				else if (key == "ATTACK_ZOOM_LEAD") ATTACK_ZOOM_LEAD = value;
-				else if (key == "KILLCAM_PITCH_LIFT") KILLCAM_PITCH_LIFT = value;
+				// è¡¨ã‚’ç·šå½¢æ¢ç´¢ã—ã¦ã‚­ãƒ¼ä¸€è‡´ã®å¤‰æ•°ã¸æ›¸ãè¾¼ã‚€ï¼ˆ14ä»¶ãªã®ã§ååˆ†é€Ÿã„ï¼‰
+				for (const auto& e : CONFIG_TABLE) {
+					if (key == e.key) {
+						*e.value = value;
+						break;
+					}
+				}
 			}
 			catch (const std::exception& e) {
-				// ”’l‚Ö‚Ì•ÏŠ·‚É¸”s‚µ‚½ê‡‚Ì‚İƒGƒ‰[‚ğo—Í
+				// æ•°å€¤ã¸ã®å¤‰æ›ã«å¤±æ•—ã—ãŸå ´åˆã®ã¿ã‚¨ãƒ©ãƒ¼ã‚’å‡ºåŠ›
 				std::cerr << "[Camera] Invalid value for " << key << ": " << valueStr << std::endl;
 			}
 		}
@@ -259,10 +264,10 @@ void Camera::CaptureCineReturn() {
 }
 
 void Camera::RestoreCineReturn() {
-	// pitchƒ‚[ƒh‚©‚ç–ß‚éAŒ»İ‚ÌƒJƒƒ‰ˆÊ’u‚ğ‹N“_‚É’Êíƒ‚ƒfƒ‹‚Ö˜A‘±Ú‘±iƒ|ƒbƒv–h~j
+	// pitchãƒ¢ãƒ¼ãƒ‰ã‹ã‚‰æˆ»ã‚‹æ™‚ã€ç¾åœ¨ã®ã‚«ãƒ¡ãƒ©ä½ç½®ã‚’èµ·ç‚¹ã«é€šå¸¸ãƒ¢ãƒ‡ãƒ«ã¸é€£ç¶šæ¥ç¶šï¼ˆãƒãƒƒãƒ—é˜²æ­¢ï¼‰
 	if (m_killCamPitch) {
 		CPolor3D polor(m_radius, m_elevation, m_azimuth);
-		m_lookat = m_killCamPos - polor.ToCartesian();  // pos = lookat+offset ‚ª m_killCamPos ‚Æˆê’v
+		m_lookat = m_killCamPos - polor.ToCartesian();  // pos = lookat+offset ãŒ m_killCamPos ã¨ä¸€è‡´
 		m_killCamPitch = false;
 	}
 
@@ -293,17 +298,17 @@ void Camera::PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, b
 	m_state = CameraState::Cinematic;
 
 	if (immediate) {
-		// ”½‰®i“G/ŠÂ‹«/–¡•û‚Ì’v€jFŒ¨‰z‚µƒ|[ƒY‚ÖuŠÔƒXƒiƒbƒv‚µA‘¦E€–SãÚÅ(KillSlow)‚Ö
+		// åå¿œå¼ï¼ˆæ•µ/ç’°å¢ƒ/å‘³æ–¹ã®è‡´æ­»ï¼‰ï¼šè‚©è¶Šã—ãƒãƒ¼ã‚ºã¸ç¬é–“ã‚¹ãƒŠãƒƒãƒ—ã—ã€å³ãƒ»æ­»äº¡èšç„¦(KillSlow)ã¸
 		m_lookat = m_targetLookAt;
 		m_radius = m_targetRadius;
 		m_azimuth = m_targetAzimuth;
 		m_elevation = m_targetElevation;
 
-		// ‚±‚ÌŒ¨‰z‚µƒ|[ƒY‚ÌƒJƒƒ‰ˆÊ’u‚ğŠm’èipitchƒ‚[ƒh‚ÌŠî€ˆÊ’uj
+		// ã“ã®è‚©è¶Šã—ãƒãƒ¼ã‚ºã®ã‚«ãƒ¡ãƒ©ä½ç½®ã‚’ç¢ºå®šï¼ˆpitchãƒ¢ãƒ¼ãƒ‰ã®åŸºæº–ä½ç½®ï¼‰
 		CPolor3D polor(m_radius, m_elevation, m_azimuth);
 		m_position = m_lookat + polor.ToCartesian();
 
-		// KillLead ‚ğ”ò‚Î‚µ‚Ä’¼Ú KillSlowi‚»‚ÌêŒ©ã‚°j
+		// KillLead ã‚’é£›ã°ã—ã¦ç›´æ¥ KillSlowï¼ˆãã®å ´è¦‹ä¸Šã’ï¼‰
 		m_cinePhase = CinePhase::KillSlow;
 		m_cinePhaseTimer = 0.0f;
 		m_killCamPitch = true;
@@ -311,7 +316,7 @@ void Camera::PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, b
 		m_targetLookAt = m_lookat + Vector3(0.0f, KILLCAM_PITCH_LIFT, 0.0f);
 	}
 	else {
-		// —\‘ª®i©ŒRUŒ‚jFKILLCAM_LEAD ‚©‚¯‚ÄŒ¨‰z‚µ‚ÖŠñ‚¹‚éi’~¨j
+		// äºˆæ¸¬å¼ï¼ˆè‡ªè»æ”»æ’ƒï¼‰ï¼šKILLCAM_LEAD ã‹ã‘ã¦è‚©è¶Šã—ã¸å¯„ã›ã‚‹ï¼ˆè“„å‹¢ï¼‰
 		m_cinePhase = CinePhase::KillLead;
 		m_cinePhaseTimer = 0.0f;
 	}
