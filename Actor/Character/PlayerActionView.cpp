@@ -2,7 +2,7 @@
 
 #include "../../System/Renderer.h"
 #include "../../System/CStaticMeshRenderer.h"
-#include "../../System/meshmanager.h"
+#include "../../System/MeshManager.h"
 #include "../../System/ZFightTunables.h"
 #include "../../System/Direction.h"
 #include "../../Core/GameContext.h"
@@ -25,8 +25,8 @@ namespace {
 
 void PlayerActionView::Init(GameContext* context) {
     m_context = context;
-    m_pathLineRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
-    m_pathCornerRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_corner_mesh");
+    m_pathLineRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
+    m_pathCornerRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_corner_mesh");
 }
 
 void PlayerActionView::DrawMoveRange(const std::vector<Tile*>& rangeTiles) {

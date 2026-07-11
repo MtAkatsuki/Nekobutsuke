@@ -78,8 +78,8 @@ private:
     void ExecuteAI();
     void EnemyEndAction();
     void EnemyStartMoveTo(std::vector<Tile*> path);
-    void updateMove(uint64_t delta);
-    void onMoveFinished();
+    void UpdateMove(uint64_t delta);
+    void OnMoveFinished();
     void StartCharge(Unit* target);
     void ReleaseChargeAttack();
     void Die();
@@ -89,7 +89,7 @@ private:
     // =========================================================
     // メンバー変数
     // =========================================================
-    CShader* m_EnemyShader = nullptr;
+    CShader* m_enemyShader = nullptr;
     CStaticMeshRenderer* m_pushArrowRenderer = nullptr;
     CStaticMeshRenderer* m_attackArrowRenderer = nullptr;
     std::unique_ptr<EnemyActionUI> m_actionUI;

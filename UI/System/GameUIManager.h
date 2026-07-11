@@ -106,7 +106,7 @@ private:
 
 	std::unique_ptr<CSprite> m_escHintSprite;
 	std::unique_ptr<CSprite> m_enterHintSprite;
-	std::unique_ptr<CSprite> m_pActiveArrow;
+	std::unique_ptr<CSprite> m_activeArrow;
 	std::vector<TutorialArrow> m_arrows;
 
 

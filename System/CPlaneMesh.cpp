@@ -1,4 +1,4 @@
-﻿#include    "commontypes.h"
+﻿#include    "CommonTypes.h"
 #include	"CPlaneMesh.h"
 #include	<iostream>
 

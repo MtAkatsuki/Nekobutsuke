@@ -82,4 +82,4 @@ namespace myAssimp
 	CTreeNode<std::string> GetBoneNameTree();
 }
 }	
-} // namespace GM31::GE::AssimpPerse
+} // namespace myAssimp

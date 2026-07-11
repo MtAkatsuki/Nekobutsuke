@@ -1,5 +1,5 @@
 ﻿#include "Enemy.h"    
-#include "../../System/meshmanager.h"
+#include "../../System/MeshManager.h"
 #include "../../System/ZFightTunables.h"
 #include "../../System/RandomEngine.h"
 #include "../../System/ModelRegistry.h"
@@ -42,7 +42,7 @@ std::unique_ptr<Enemy> Enemy::Spawn(GameContext* ctx, int gridX, int gridZ, cons
 	auto e = std::unique_ptr<Enemy>(new Enemy(ctx));
 	e->Init();
 	e->SetGridPosition(gridX, gridZ);
-	e->setPosition(worldPos);
+	e->SetPosition(worldPos);
 	e->UpdateWorldMatrix();
 	return e;
 }
@@ -50,7 +50,7 @@ std::unique_ptr<Enemy> Enemy::Spawn(GameContext* ctx, int gridX, int gridZ, cons
 void Enemy::Init() {
 	SetModelRenderer(ModelRegistry::RegisterModel(
 		"enemy_mesh", "Assets/model/character/Cat/Cat_01.obj", "Assets/model/character/Cat"));
-	m_EnemyShader = MeshManager::getShader<CShader>("toonshader");
+	m_enemyShader = MeshManager::GetShader<CShader>("toonshader");
 
 	m_actionUI = std::make_unique<EnemyActionUI>();
 	m_actionUI->Init(m_context);
@@ -68,8 +68,8 @@ void Enemy::Init() {
 	m_state = EnemyState::IDLE;
 	m_isDead = false;
 
-	m_pushArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_push_mesh");
-	m_attackArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_attack_mesh");
+	m_pushArrowRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_push_mesh");
+	m_attackArrowRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_attack_mesh");
 	if (!m_attackArrowRenderer) m_attackArrowRenderer = m_pushArrowRenderer;
 
 	UpdateWorldMatrix();
@@ -124,7 +124,7 @@ void Enemy::Update(uint64_t dt) {
 
 	switch (m_state) {
 	case EnemyState::MOVING:
-		updateMove(dt);
+		UpdateMove(dt);
 		break;
 
 	case EnemyState::ATTACKING:
@@ -195,7 +195,7 @@ void Enemy::Update(uint64_t dt) {
 
 void Enemy::OnDraw(uint64_t dt) {
 
-	if (m_EnemyShader != nullptr) m_EnemyShader->SetGPU();
+	if (m_enemyShader != nullptr) m_enemyShader->SetGPU();
 
 	// 蓄力中の震えは `m_srt.pos` を直接汚染せず、描画用の一時的な Matrix で処理する
 	if (m_isCharging) {
@@ -203,7 +203,7 @@ void Enemy::OnDraw(uint64_t dt) {
 			* Matrix4x4::CreateRotationY(m_srt.rot.y)
 			* Matrix4x4::CreateTranslation(m_srt.pos + m_shakeOffset); // オフセットを加算
 		Renderer::SetWorldMatrix(&shakeWorld);
-		if (m_Renderer) m_Renderer->Draw();
+		if (m_renderer) m_renderer->Draw();
 	}
 	else {
 		DrawModel();
@@ -267,7 +267,7 @@ void Enemy::OnTurnChanged(TurnState state) {
 void Enemy::OnPushed(Direction pushDir, Unit* attacker) {
 	if (m_currentHP <= 0 || m_state == EnemyState::DEAD_FLYING) return;
 
-	if (attacker) m_hitSourcePos = attacker->getSRT().pos;
+	if (attacker) m_hitSourcePos = attacker->GetSRT().pos;
 
 	m_state = EnemyState::KNOCKBACK;
 	int oldX = m_gridX;
@@ -287,7 +287,7 @@ void Enemy::OnPushed(Direction pushDir, Unit* attacker) {
 
 void Enemy::TakeDamage(int damage, Unit* attacker) {
 	Unit::TakeDamage(damage, attacker);
-	if (attacker) m_hitSourcePos = attacker->getSRT().pos;
+	if (attacker) m_hitSourcePos = attacker->GetSRT().pos;
 
 	if (m_currentHP <= 0 && m_state != EnemyState::DEAD_FLYING)
 	{
@@ -369,7 +369,7 @@ void Enemy::EnemyEndAction() {
 
 void Enemy::EnemyStartMoveTo(std::vector<Tile*> path) {
 	if (path.empty()) {
-		onMoveFinished();
+		OnMoveFinished();
 		return;
 	}
 	Tile* oldTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
@@ -381,16 +381,16 @@ void Enemy::EnemyStartMoveTo(std::vector<Tile*> path) {
 	m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
 }
 
-void Enemy::updateMove(uint64_t delta) {
-	Vector3 currentPos = this->getSRT().pos;
+void Enemy::UpdateMove(uint64_t delta) {
+	Vector3 currentPos = this->GetSRT().pos;
 	Vector3 direction = m_targetWorldPos - currentPos;
 	SetFacingFromVector(direction);
 
 	float distanceSq = direction.LengthSquared();
 	if (distanceSq < ARRIVE_EPSILON_SQ) {
-		this->setPosition(m_targetWorldPos);
+		this->SetPosition(m_targetWorldPos);
 		m_pathIndex++;
-		if (m_pathIndex >= m_currentPath.size()) onMoveFinished();
+		if (m_pathIndex >= m_currentPath.size()) OnMoveFinished();
 		else m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
 	}
 	else {
@@ -399,14 +399,14 @@ void Enemy::updateMove(uint64_t delta) {
 		float dist = std::sqrt(distanceSq);
 		if (dist > 0.0001f) {
 			direction = direction * (1.0f / dist);
-			if (moveStep >= dist) this->setPosition(m_targetWorldPos);
-			else this->setPosition(currentPos + direction * moveStep);
+			if (moveStep >= dist) this->SetPosition(m_targetWorldPos);
+			else this->SetPosition(currentPos + direction * moveStep);
 		}
 		UpdateWorldMatrix();
 	}
 }
 
-void Enemy::onMoveFinished() {
+void Enemy::OnMoveFinished() {
 	m_state = EnemyState::IDLE;
 	m_moveRangeTiles.clear();
 
@@ -527,7 +527,7 @@ void Enemy::OnDrawOverlay(uint64_t dt) {
 
 	// 敵の攻撃意図（赤い矢印）を最前面に描画
 	if (m_isCharging && m_attackArrowRenderer && m_context && m_context->GetMapManager()) {
-		if (m_EnemyShader) m_EnemyShader->SetGPU();
+		if (m_enemyShader) m_enemyShader->SetGPU();
 
 		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
 		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);

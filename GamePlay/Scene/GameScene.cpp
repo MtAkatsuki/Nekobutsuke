@@ -6,8 +6,8 @@
 #include "../../System/CDirectInput.h"
 #include "../../System/DebugUI.h"
 #include "../../System/CPolar3D.h"
-#include "../../System/meshmanager.h"
-#include "../../System/scenemanager.h"
+#include "../../System/MeshManager.h"
+#include "../../System/SceneManager.h"
 #include "../../System//FadeTransition.h"
 #include "../../System/BackgroundTransition.h"
 #include "../../System/ZFightTunables.h"
@@ -76,7 +76,7 @@ void GameScene::Init() {
 }
 
 // シーンの更新処理：表示・ロジック・フロー制御の優先度順に実行
-void GameScene::update(uint64_t deltatime)
+void GameScene::Update(uint64_t deltatime)
 {
 	float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
 
@@ -111,7 +111,7 @@ void GameScene::update(uint64_t deltatime)
 	if (m_resultJudge) m_resultJudge->Update(deltaSeconds);
 }
 // 描画処理：戦術ゲーム特有のレイヤー仕様（Zオーダー）を厳守するパイプライン
-void GameScene::draw(uint64_t deltatime) {
+void GameScene::Draw(uint64_t deltatime) {
 	// 1. 最背面：環境背景の描画
 	DrawBackgroundLayer();
 
@@ -140,7 +140,7 @@ void GameScene::draw(uint64_t deltatime) {
 }
 
 // シーン破棄時の安全処理：野ポインタ（Dangling Pointer）によるクラッシュを防止
-void GameScene::dispose()
+void GameScene::Dispose()
 {
 	if (m_context && m_damageNumberManager) {
 		m_damageNumberManager->ClearAll();
@@ -156,9 +156,9 @@ void GameScene::dispose()
 	}
 
 	//占有者（ユニット参照）をクリアする
-	if (m_MapManager) {
-		m_MapManager->ClearOccupants();
-		m_MapManager->SetScene(nullptr);
+	if (m_mapManager) {
+		m_mapManager->ClearOccupants();
+		m_mapManager->SetScene(nullptr);
 	}
 
 
@@ -184,7 +184,7 @@ void GameScene::dispose()
 void GameScene::SetGameContext(GameContext* context) {
 	m_context = context;
 	if (m_context) {
-		m_MapManager = m_context->GetMapManager();
+		m_mapManager = m_context->GetMapManager();
 	}
 }
 
@@ -223,14 +223,14 @@ void GameScene::InitializeCamera() {
 
 void GameScene::LoadGameResources() {
 	AudioManager::GetInstance().PlayBGM("Game", true, BGM_FADE_TIME);
-	resourceLoader();
-	m_tileShader = MeshManager::getShader<CShader>("toonshader");
+	LoadRenderResources();
+	m_tileShader = MeshManager::GetShader<CShader>("toonshader");
 	if (m_tileShader == nullptr) {
 		DBG_ERROR("   [FATAL] Shader 'toonshader' is NULL!");
 	}
 }
 
-void GameScene::resourceLoader() {
+void GameScene::LoadRenderResources() {
 	// 1. シェーダー（名前・VS・PS のテーブル駆動）
 	struct ShaderDef { const char* name; const char* vs; const char* ps; };
 	const ShaderDef shaderDefs[] = {
@@ -297,10 +297,10 @@ void GameScene::resourceLoader() {
 }
 
 void GameScene::InitializeMap() {
-	m_MapManager->SetScene(this);
-	m_MapManager->Init(m_context);
+	m_mapManager->SetScene(this);
+	m_mapManager->Init(m_context);
 	DBG_ERROR("   [GameScene] MapManager OK.");
-	m_MapManager->LoadLevel("Assets/level/level_01.csv", m_context);
+	m_mapManager->LoadLevel("Assets/level/level_01.csv", m_context);
 
 	// マップサイズに基づき、カメラの表示崩れを防ぐ境界範囲を自動計算
 	RecalculateCameraBounds();
@@ -334,10 +334,10 @@ void GameScene::SetupUserInterface() {
 				// ② ゲーム開始直後（第1ターン）は守るべき対象（味方）を注視し、プレイヤーに目標を認識させる
 				// ③ それ以外の通常ターンは操作対象であるプレイヤー自身を注視
 				if (m_isEscapeActive && m_ally && !m_ally->IsEscapeDone()) {
-					m_camera->ChangeState(CameraState::TargetFocus, m_ally->getSRT().pos);
+					m_camera->ChangeState(CameraState::TargetFocus, m_ally->GetSRT().pos);
 				}
 				else if (m_remainingTurns != INITIAL_TURN_COUNT) {
-					m_camera->ChangeState(CameraState::Tracking, m_player->getSRT().pos);
+					m_camera->ChangeState(CameraState::Tracking, m_player->GetSRT().pos);
 				}
 			}
 		}
@@ -365,7 +365,7 @@ void GameScene::InitializeDebugFeatures() {
 	DBG_ERROR("   [GameScene] Registering DebugUI...");
 
 	m_debugUI = std::make_unique<GameSceneDebugUI>(*this);
-	DebugUI::RedistDebugFunction([this]() { m_debugUI->DrawCameraTuningWindow(); });
+	DebugUI::RegisterDebugFunction([this]() { m_debugUI->DrawCameraTuningWindow(); });
 }
 
 
@@ -497,7 +497,7 @@ void GameScene::ProcessEscapeEvent()
 
 		// 脱出成功の強調：カメラを強制的にプレイヤーへズームインさせ達成感を高める
 		if (m_camera) {
-			m_camera->ChangeState(CameraState::TargetFocus, m_player->getSRT().pos);
+			m_camera->ChangeState(CameraState::TargetFocus, m_player->GetSRT().pos);
 		}
 
 		m_player->StartCelebration();
@@ -506,7 +506,7 @@ void GameScene::ProcessEscapeEvent()
 
 void GameScene::UpdateGameObjects(uint64_t deltatime)
 {
-	for (const auto& obj : m_GameObjectList) {
+	for (const auto& obj : m_gameObjectList) {
 		obj->Update(deltatime);
 	}
 
@@ -524,7 +524,7 @@ void GameScene::ProcessAllyTacticalDialogue()
 			if (!m_isAllyTalked) {
 				// 戦術の誘導：プレイヤーターンの開始時、生存している味方から行動のヒントを提示
 				if (m_ally && m_ally->GetHP() > 0) {
-					Vector3 allyPos = m_ally->getSRT().pos;
+					Vector3 allyPos = m_ally->GetSRT().pos;
 					if (m_dialogueUI) {
 						m_dialogueUI->ShowDialogue(allyPos, DialogueType::Help);
 					}
@@ -615,7 +615,7 @@ void GameScene::CheckAndTriggerEscapeEvent()
 			m_ally->TriggerEscape();
 
 			if (m_dialogueUI) {
-				m_dialogueUI->ShowDialogue(m_ally->getSRT().pos, DialogueType::Escape);
+				m_dialogueUI->ShowDialogue(m_ally->GetSRT().pos, DialogueType::Escape);
 			}
 			DBG_ERROR("[GameEvent] Survival Phase Ended. Escape Triggered at ("
 				<< m_escapeGridX << ", " << m_escapeGridZ << ").");
@@ -638,7 +638,7 @@ void GameScene::DrawBackgroundLayer() {
 }
 
 void GameScene::DrawFloorLayer(uint64_t deltatime) {
-	for (const auto& obj : m_GameObjectList) {
+	for (const auto& obj : m_gameObjectList) {
 		MapObject* mapObj = dynamic_cast<MapObject*>(obj.get());
 		if (mapObj && mapObj->GetType() == MapModelType::FLOOR) {
 			obj->Draw(deltatime);
@@ -648,7 +648,7 @@ void GameScene::DrawFloorLayer(uint64_t deltatime) {
 
 void GameScene::DrawFloorUIHints(uint64_t deltatime) {
 	Renderer::SetBlendState(BS_ALPHABLEND);
-	for (const auto& obj : m_GameObjectList) {
+	for (const auto& obj : m_gameObjectList) {
 		obj->DrawFloorUI(deltatime);
 	}
 	Renderer::SetBlendState(BS_NONE);
@@ -659,7 +659,7 @@ void GameScene::DrawEnvironmentAndEntities(uint64_t deltatime) {
 	// === 1. 床面特殊オブジェクトレイヤー (Trap) ===
 	
 	// 先に描画した床面UI（半透明）の上に確実に乗せるため、ここで描画する
-	for (const auto& obj : m_GameObjectList) {
+	for (const auto& obj : m_gameObjectList) {
 		MapObject* mapObj = dynamic_cast<MapObject*>(obj.get());
 		if (mapObj && mapObj->GetType() == MapModelType::TRAP) {
 			obj->Draw(deltatime);
@@ -667,7 +667,7 @@ void GameScene::DrawEnvironmentAndEntities(uint64_t deltatime) {
 	}
 
 	// === 2. 実体エンティティレイヤー (Props, Walls, Characters) ===
-	for (const auto& obj : m_GameObjectList) {
+	for (const auto& obj : m_gameObjectList) {
 		MapObject* mapObj = dynamic_cast<MapObject*>(obj.get());
 		if (mapObj) {
 			// 床とトラップ以外のマップオブジェクトを描画
@@ -691,7 +691,7 @@ void GameScene::DrawTransparentWorld(uint64_t deltatime) {
 	}
 
 	// 半透明エンティティ（残像など）
-	for (const auto& obj : m_GameObjectList) {
+	for (const auto& obj : m_gameObjectList) {
 		obj->DrawTransparent(deltatime);
 	}
 
@@ -709,7 +709,7 @@ void GameScene::DrawTacticalOverlays(uint64_t deltatime) {
 	Renderer::SetDepthEnable(false);
 	Renderer::SetBlendState(BS_ALPHABLEND);
 
-	for (const auto& obj : m_GameObjectList) {
+	for (const auto& obj : m_gameObjectList) {
 		obj->DrawOverlay(deltatime);   // 浮遊矢印、ヒット警告エフェクトなど
 	}
 
@@ -734,7 +734,7 @@ void GameScene::DrawScreenSpaceUI() {
 	// --- 1. キャラクター追従UI (低層) ---
 	if (m_player) m_player->DrawUI();
 	if (m_ally && m_ally->GetHP() > 0) m_ally->DrawUI();
-	for (const auto& obj : m_GameObjectList) {
+	for (const auto& obj : m_gameObjectList) {
 		Enemy* enemy = dynamic_cast<Enemy*>(obj.get());
 		if (enemy && !enemy->IsDead()) enemy->DrawUI();
 	}
@@ -764,15 +764,15 @@ void GameScene::DrawScreenSpaceUI() {
 
 void GameScene::RecalculateCameraBounds()
 {
-	if (!m_MapManager || !m_camera) return;
+	if (!m_mapManager || !m_camera) return;
 
-	const auto& allTiles = m_MapManager->GetAllTiles();
+	const auto& allTiles = m_mapManager->GetAllTiles();
 	if (!allTiles.empty()) {
 		float minX = FLT_MAX, maxX = -FLT_MAX;
 		float minZ = FLT_MAX, maxZ = -FLT_MAX;
 
 		for (const auto& tile : allTiles) {
-			Vector3 pos = m_MapManager->GetWorldPosition(tile);
+			Vector3 pos = m_mapManager->GetWorldPosition(tile);
 			if (pos.x < minX) minX = pos.x;
 			if (pos.x > maxX) maxX = pos.x;
 			if (pos.z < minZ) minZ = pos.z;
@@ -789,7 +789,7 @@ void GameScene::RecalculateCameraBounds()
 }
 
 void GameScene::DrawEscapeCube() {
-	CStaticMeshRenderer* escapeCube = MeshManager::getRenderer<CStaticMeshRenderer>("escape_cube_mesh");
+	CStaticMeshRenderer* escapeCube = MeshManager::GetRenderer<CStaticMeshRenderer>("escape_cube_mesh");
 	if (escapeCube) {
 		Vector3 pos = m_context->GetMapManager()->GetWorldPosition(m_escapeGridX, m_escapeGridZ);
 		pos.y += ESCAPE_CUBE_Y_OFFSET;

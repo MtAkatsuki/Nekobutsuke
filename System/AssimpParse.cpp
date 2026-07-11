@@ -3,7 +3,7 @@
 #include	<unordered_map>
 #include	<cassert>
 #include	"CTexture.h"
-#include	"AssimpPerse.h"
+#include	"AssimpParse.h"
 #include	"CTreeNode.h"
 
 //#pragma comment(lib, "assimp-vc143-mtd.lib")

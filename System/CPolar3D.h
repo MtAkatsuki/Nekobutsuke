@@ -1,17 +1,17 @@
 ﻿#pragma once
-#include "commontypes.h"
+#include "CommonTypes.h"
 
 // ３Ｄ極座標系
-class CPolor3D {
+class CPolar3D {
 	float m_radius;				// 半径		
 	float m_elevation;			// 仰角
 	float m_azimuth;			// 方位角
 public:
-	CPolor3D() = delete;
-	CPolor3D(float radius,
+	CPolar3D() = delete;
+	CPolar3D(float radius,
 		float elevation,
 		float azimuth) : m_radius(radius), m_elevation(elevation), m_azimuth(azimuth) {}
-	~CPolor3D() {}
+	~CPolar3D() {}
 
 	Vector3 ToCartesian() const{
 		Vector3 position;

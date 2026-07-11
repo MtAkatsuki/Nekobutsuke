@@ -1,4 +1,4 @@
-﻿#include "scenemanager.h"
+﻿#include "SceneManager.h"
 #include "SceneClassFactory.h"
 #include "../Core/GameContext.h"
 #include "DebugUI.h"
@@ -23,13 +23,13 @@ void SceneManager::Update(uint64_t deltatime) {
 
 	// --- トランジション（画面遷移）の進行管理 ---
 	if (m_transition) {
-		m_transition->update(deltatime);
+		m_transition->Update(deltatime);
 
 		// 画面が完全に暗転（または覆われた）タイミングで実際のシーンを切り替える
 		if (m_transition->canSwap() && !m_hasSwapped) {
 			InternalChangeScene(m_targetSceneName);
 			m_hasSwapped = true;
-			m_transition->onSceneSwapped(); // 新シーン描画開始（フェードイン等へ移行）
+			m_transition->OnSceneSwapped(); // 新シーン描画開始（フェードイン等へ移行）
 		}
 
 		// 遷移演出がすべて終了した際のクリーンアップ
@@ -42,7 +42,7 @@ void SceneManager::Update(uint64_t deltatime) {
 	// --- 現在のシーンの更新 ---
 	auto it = m_scenes.find(m_currentSceneName);
 	if (it != m_scenes.end() && it->second) {
-		it->second->update(deltatime);
+		it->second->Update(deltatime);
 	}
 }
 
@@ -50,19 +50,19 @@ void SceneManager::Draw(uint64_t deltatime) {
 	// 現在のシーンを描画
 	auto it = m_scenes.find(m_currentSceneName);
 	if (it != m_scenes.end() && it->second) {
-		it->second->draw(deltatime);
+		it->second->Draw(deltatime);
 	}
 	// シーンの上にトランジション（暗転用ポリゴンなど）を被せて描画
 	if (m_transition)
 	{
-		m_transition->draw();
+		m_transition->Draw();
 	}
 }
 
 void SceneManager::Dispose() {
 	for (auto& s : m_scenes) {
 		if (s.second) {
-			s.second->dispose();
+			s.second->Dispose();
 		}
 	}
 	m_scenes.clear();
@@ -85,7 +85,7 @@ void SceneManager::SetCurrentScene(const std::string& sceneName, std::unique_ptr
 		m_hasSwapped = false;
 		m_isTransitioning = true;
 
-		m_transition->start();
+		m_transition->Start();
 	}
 	else {
 		// トランジションなしの場合は即時切り替え

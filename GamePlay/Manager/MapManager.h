@@ -48,7 +48,7 @@ public:
 	// ---------------------------------------------------------
 	void Init(GameContext* context);
 	void LoadLevel(const std::string& csvPath, GameContext* context);
-	void SetScene(GameScene* scene) { m_Scene = scene; }
+	void SetScene(GameScene* scene) { m_scene = scene; }
 
 	// ---------------------------------------------------------
 	// 空間クエリ・属性取得
@@ -98,7 +98,7 @@ private:
 
 	std::vector<std::unique_ptr<MapObject>> m_mapObjects; // メモリ管理用コンテナ
 
-	GameScene* m_Scene = nullptr;
+	GameScene* m_scene = nullptr;
 	GameContext* m_context = nullptr;
 
 	class CStaticMeshRenderer* m_tileRenderer = nullptr;

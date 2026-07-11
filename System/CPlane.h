@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "commontypes.h"
+#include "CommonTypes.h"
 
 // 平面の方程式を表す構造体
 struct Plane {

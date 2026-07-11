@@ -1,5 +1,5 @@
-#pragma once
-#include "commontypes.h"
+﻿#pragma once
+#include "CommonTypes.h"
 #include "utility.h"
 #include "ConeDrawer.h"
 #include "SphereDrawer.h"

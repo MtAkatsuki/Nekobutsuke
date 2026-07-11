@@ -109,11 +109,11 @@ void Camera::Update(float dt) {
 		m_up = Vector3(0.0f, 1.0f, 0.0f);   // LookAtLH が水平基準で正しく仰角を作る
 	}
 	else {
-		CPolor3D polor(m_radius, m_elevation, m_azimuth);
+		CPolar3D polor(m_radius, m_elevation, m_azimuth);
 		Vector3 offset = polor.ToCartesian();
 		m_position = m_lookat + offset;
 
-		CPolor3D polorup(1.0f, m_elevation + PI / 2.0f, m_azimuth);
+		CPolar3D polorup(1.0f, m_elevation + PI / 2.0f, m_azimuth);
 		m_up = polorup.ToCartesian();
 	}
 }
@@ -266,7 +266,7 @@ void Camera::CaptureCineReturn() {
 void Camera::RestoreCineReturn() {
 	// pitchモードから戻る時、現在のカメラ位置を起点に通常モデルへ連続接続（ポップ防止）
 	if (m_killCamPitch) {
-		CPolor3D polor(m_radius, m_elevation, m_azimuth);
+		CPolar3D polor(m_radius, m_elevation, m_azimuth);
 		m_lookat = m_killCamPos - polor.ToCartesian();  // pos = lookat+offset が m_killCamPos と一致
 		m_killCamPitch = false;
 	}
@@ -305,7 +305,7 @@ void Camera::PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, b
 		m_elevation = m_targetElevation;
 
 		// この肩越しポーズのカメラ位置を確定（pitchモードの基準位置）
-		CPolor3D polor(m_radius, m_elevation, m_azimuth);
+		CPolar3D polor(m_radius, m_elevation, m_azimuth);
 		m_position = m_lookat + polor.ToCartesian();
 
 		// KillLead を飛ばして直接 KillSlow（その場見上げ）

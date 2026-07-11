@@ -1,6 +1,6 @@
-#include <iostream>
+﻿#include <iostream>
 #include "C3DShape.h"
-#include "commontypes.h"
+#include "CommonTypes.h"
 #include "SphereDrawer.h"
 #include "BoxDrawer.h"
 #include "CylinderDrawer.h"

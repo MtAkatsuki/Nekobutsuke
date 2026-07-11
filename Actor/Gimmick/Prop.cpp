@@ -1,5 +1,5 @@
 ﻿#include "Prop.h"
-#include "../../System/meshmanager.h"
+#include "../../System/MeshManager.h"
 #include "../../System/ZFightTunables.h"
 #include "../../Core/GameContext.h"
 #include "../Character/Player.h"      
@@ -31,10 +31,10 @@ void Prop::Init(MapModelType type, Vector3 position) {
     default: break;
     }
 
-    m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>(meshName);
+    m_renderer = MeshManager::GetRenderer<CStaticMeshRenderer>(meshName);
     if (!m_renderer) {
         OutputDebugStringA("[Prop] Warning: Specific 3D mesh not found, using floor_mesh.\n");
-        m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("floor_mesh");
+        m_renderer = MeshManager::GetRenderer<CStaticMeshRenderer>("floor_mesh");
     }
 
     m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
@@ -95,7 +95,7 @@ void Prop::OnDraw(uint64_t delta) {
 
     DrawPropShadow();
 
-    auto shader = MeshManager::getShader<CShader>("toonshader");
+    auto shader = MeshManager::GetShader<CShader>("toonshader");
     if (shader) {
         shader->SetGPU();
     }
@@ -103,7 +103,7 @@ void Prop::OnDraw(uint64_t delta) {
     // 半透明描画のためのステート設定
     Renderer::SetBlendState(BS_ALPHABLEND);
     Renderer::SetDepthEnable(true);
-    Renderer::SetWorldMatrix(&m_WorldMatrix);
+    Renderer::SetWorldMatrix(&m_worldMatrix);
 
     m_renderer->Draw();
     Renderer::SetBlendState(BS_NONE);
@@ -122,8 +122,8 @@ void Prop::GetDimensions(MapModelType type, int& outW, int& outD) {
 
 void Prop::DrawPropShadow() {
     if (!Renderer::s_shadowEnabled) return;
-    auto* blob = MeshManager::getShader<CShader>("blobshader");
-    auto* mesh = MeshManager::getRenderer<CStaticMeshRenderer>("range_panel_mesh"); // 1x1 plane
+    auto* blob = MeshManager::GetShader<CShader>("blobshader");
+    auto* mesh = MeshManager::GetRenderer<CStaticMeshRenderer>("range_panel_mesh"); // 1x1 plane
     if (!blob || !mesh) return;
 
     Vector3 p = m_srt.pos;              // Propのposは占有範囲の中心位置（Init内でoffset加算済み）
@@ -142,5 +142,5 @@ void Prop::DrawPropShadow() {
     Renderer::SetDepthEnable(true);
     Renderer::DisableCulling(true);
     Renderer::SetBlendState(BS_NONE);
-    MeshManager::getShader<CShader>("toonshader")->SetGPU(); // toonへ復元
+    MeshManager::GetShader<CShader>("toonshader")->SetGPU(); // toonへ復元
 }

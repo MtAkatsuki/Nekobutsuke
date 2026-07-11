@@ -1,4 +1,4 @@
-#include    "commontypes.h"
+#include    "CommonTypes.h"
 #include	"collision.h"
 
 namespace GM31 {

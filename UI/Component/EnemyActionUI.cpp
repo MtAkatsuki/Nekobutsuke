@@ -4,7 +4,7 @@
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../Core/Application.h"
 #include <cmath>
-#include "../../System/commontypes.h" //for pi
+#include "../../System/CommonTypes.h" //for pi
 
 namespace {
     // --- アニメーション定数 ---

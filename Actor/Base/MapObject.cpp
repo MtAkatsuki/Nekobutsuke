@@ -1,5 +1,5 @@
 ﻿#include	"../../Actor/Base/MapObject.h"
-#include    "../../System/meshmanager.h"
+#include    "../../System/MeshManager.h"
 
 MapObject::MapObject(GameContext* context):GameObject(context){}
 
@@ -28,7 +28,7 @@ void MapObject::Init(MapModelType type, Vector3 position) {
 	}
 
 	if (type == MapModelType::FLOOR) {
-		m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("floor_mesh");
+		m_renderer = MeshManager::GetRenderer<CStaticMeshRenderer>("floor_mesh");
 	}
 
 	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);

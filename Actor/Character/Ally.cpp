@@ -1,7 +1,7 @@
 ﻿#include "Ally.h"
 #include "../../Core/GameContext.h"
 #include "../../GamePlay/Manager/MapManager.h"
-#include "../../System/Meshmanager.h"
+#include "../../System/MeshManager.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../Core/Application.h"
 #include "../../UI/Component/DialogueUI.h"
@@ -32,7 +32,7 @@ std::unique_ptr<Ally> Ally::Spawn(GameContext* ctx, int gridX, int gridZ, const 
     auto a = std::unique_ptr<Ally>(new Ally(ctx));
     a->Init();
     a->SetGridPosition(gridX, gridZ);
-    a->setPosition(worldPos);
+    a->SetPosition(worldPos);
     a->UpdateWorldMatrix();
     return a;
 }
@@ -42,7 +42,7 @@ void Ally::Init()
     //モデル関連のソースをロード
     SetModelRenderer(ModelRegistry::RegisterModel(
         "ally_mesh", "Assets/model/character/Mouse/Mouse_Ally.obj", "Assets/model/character/Mouse"));
-    m_shader = MeshManager::getShader<CShader>("toonshader");
+    m_shader = MeshManager::GetShader<CShader>("toonshader");
 
 
     //初期ステータスを設置
@@ -124,7 +124,7 @@ void Ally::OnDraw(uint64_t deltatime) {
     if (m_shader) m_shader->SetGPU();
     Renderer::SetBlendState(BS_ALPHABLEND);
     Renderer::SetDepthEnable(true);
-    Renderer::SetWorldMatrix(&m_WorldMatrix);
+    Renderer::SetWorldMatrix(&m_worldMatrix);
 
     if (m_isEscaping) {
         // アルファブレンド用のマテリアルオーバーライド
@@ -141,9 +141,9 @@ void Ally::OnDraw(uint64_t deltatime) {
             renderer->GetMaterial(0)->SetMaterial(m);
             };
 
-        OverrideAlpha(m_Renderer);
+        OverrideAlpha(m_renderer);
         DrawModel();
-        RestoreAlpha(m_Renderer);
+        RestoreAlpha(m_renderer);
     }
     else {
        // 通常状態はそのまま描画

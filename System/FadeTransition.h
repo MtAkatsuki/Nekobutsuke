@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Scenemanager.h"
+#include "SceneManager.h"
 #include "SceneTransition.h"
 
 //FdaeTransitionは画面の明暗だけ管理する
@@ -48,19 +48,19 @@ public:
     *
     * @param nextSceneName 遷移先のシーン名
     */
-    void start() override;
+    void Start() override;
 
     /**
      * @brief フェード演出の更新処理
     *
     * @param deltaTime 前フレームからの経過時間（マイクロ秒）
     */
-    void update(uint64_t deltaTime) override;
+    void Update(uint64_t deltaTime) override;
 
     /**
     * @brief 黒フェード矩形の描画処理
     */
-    void draw() override;
+    void Draw() override;
 
     /**
      * @brief フェード演出の完了判定
@@ -71,5 +71,5 @@ public:
     bool isFinished() const override;
 
     bool canSwap() const override { return m_phase == Phase::Wait; }
-    void onSceneSwapped() override;
+    void OnSceneSwapped() override;
 };

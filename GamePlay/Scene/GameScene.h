@@ -42,9 +42,9 @@ public:
 	// IScene 継承ライフサイクル (Lifecycle Overrides)
 	// ---------------------------------------------------------
 	void Init() override;
-	void update(uint64_t deltatime) override;
-	void draw(uint64_t deltatime) override;
-	void dispose() override;
+	void Update(uint64_t deltatime) override;
+	void Draw(uint64_t deltatime) override;
+	void Dispose() override;
 
 	// ---------------------------------------------------------
 	// 外部インターフェース・初期設定 (Public Interfaces)
@@ -52,7 +52,7 @@ public:
 	void SetGameContext(GameContext* context) override;
 
 	void AddObject(std::unique_ptr<GameObject> obj) {
-		m_GameObjectList.push_back(std::move(obj));
+		m_gameObjectList.push_back(std::move(obj));
 	}
 
 	// 初期ターン数（脱出イベントまでのカウントダウン開始値）
@@ -70,7 +70,7 @@ private:
 	void ResetManagers();
 	void InitializeCamera();
 	void LoadGameResources();
-	void resourceLoader();
+	void LoadRenderResources();
 	void InitializeMap();
 	void SetupGameEntities();
 	void SetupUserInterface();
@@ -131,13 +131,13 @@ private:
 	// --- コアシステムとマネージャー ---
 	GameContext* m_context = nullptr;
 	Camera* m_camera = nullptr;
-	MapManager* m_MapManager = nullptr;
+	MapManager* m_mapManager = nullptr;
 	GameUIManager* m_gameUIManager = nullptr;
 	DamageNumberManager* m_damageNumberManager = nullptr;
 	CShader* m_tileShader = nullptr;
 
 	// --- ゲームエンティティ ---
-	std::vector<std::unique_ptr<GameObject>> m_GameObjectList;
+	std::vector<std::unique_ptr<GameObject>> m_gameObjectList;
 	Player* m_player = nullptr;
 	Ally* m_ally = nullptr;
 	std::unique_ptr<Background> m_background;

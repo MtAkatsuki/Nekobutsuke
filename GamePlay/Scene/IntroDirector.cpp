@@ -44,7 +44,7 @@ void IntroDirector::Update(float deltaSeconds, bool allyTalked) {
             Ally* ally = m_context ? m_context->GetAlly() : nullptr;
             if (ally && camera) {
                 // 味方へ視点を移動
-                camera->ChangeState(CameraState::TargetFocus, ally->getSRT().pos);
+                camera->ChangeState(CameraState::TargetFocus, ally->GetSRT().pos);
             }
         }
     }
@@ -76,7 +76,7 @@ void IntroDirector::Update(float deltaSeconds, bool allyTalked) {
                 Player* player = m_context ? m_context->GetPlayer() : nullptr;
                 if (player && camera) {
                     // プレイヤー追従カメラへ復帰
-                    camera->ChangeState(CameraState::Tracking, player->getSRT().pos);
+                    camera->ChangeState(CameraState::Tracking, player->GetSRT().pos);
                 }
             }
         }

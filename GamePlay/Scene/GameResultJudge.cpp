@@ -3,7 +3,7 @@
 #include "../../Core/GameContext.h"
 #include "../../Core/DebugLog.h"
 #include "../../System/Camera.h"
-#include "../../System/scenemanager.h"
+#include "../../System/SceneManager.h"
 #include "../../System/BackgroundTransition.h"
 #include "../../GamePlay/Manager/EnemyManager.h"
 #include "../../Actor/Character/Player.h"
@@ -13,7 +13,7 @@ namespace {
 	const float GAMEOVER_WAIT_DURATION = 1.0f;           // 敗北演出後、シーン遷移までの待機時間
 	const float GAMECLEAR_WAIT_DURATION = 1.0f;          // // 勝利確定後の待機時間
 	constexpr float FADE_IN_OUT_DURATION = 1000.0f;      // フェードイン・アウトの合計時間（ms）
-	constexpr float BackgroundTransitionTime = 4000.0f;  // 背景遷移のスクロール時間（ms）
+	constexpr float BACKGROUND_TRANSITION_TIME_MS = 4000.0f;  // 背景遷移のスクロール時間（ms）
 }
 
 void GameResultJudge::Update(float deltaSeconds) {
@@ -62,7 +62,7 @@ bool GameResultJudge::ProcessGameOverFlow(float deltaSeconds) {
 
 		SceneManager::GetInstance().SetCurrentScene(
 			"GameOverScene",
-			std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BackgroundTransitionTime)
+			std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BACKGROUND_TRANSITION_TIME_MS)
 		);
 	}
 	return true;
@@ -121,7 +121,7 @@ void GameResultJudge::ProcessGameClearFlow(float deltaSeconds) {
 
 		SceneManager::GetInstance().SetCurrentScene(
 			"GameClearScene",
-			std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BackgroundTransitionTime)
+			std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION, BACKGROUND_TRANSITION_TIME_MS)
 		);
 	}
 }

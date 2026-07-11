@@ -3,7 +3,7 @@
 #include <string>
 #include <functional>
 #include <memory>
-#include "meshmanager.h"
+#include "MeshManager.h"
 #include "CStaticMesh.h"
 #include "CStaticMeshRenderer.h"
 
@@ -17,7 +17,7 @@ namespace ModelRegistry {
 	{
 		// 登録済みならロードせず既存を返す（多重ディスクIO防止）
 		if (MeshManager::ContainsRenderer(name)) {
-			return MeshManager::getRenderer<CStaticMeshRenderer>(name);
+			return MeshManager::GetRenderer<CStaticMeshRenderer>(name);
 		}
 
 		auto mesh = std::make_unique<CStaticMesh>();

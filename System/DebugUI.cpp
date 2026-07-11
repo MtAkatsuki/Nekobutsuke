@@ -30,7 +30,7 @@ void DebugUI::DisposeUI() {
 }
 
 // デバッグ表示関数の登録
-void DebugUI::RedistDebugFunction(std::function<void(void)> f) {
+void DebugUI::RegisterDebugFunction(std::function<void(void)> f) {
     m_debugfunction.push_back(std::move(f));
 }
 

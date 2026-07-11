@@ -175,7 +175,7 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
         if (m_player) {
             m_player->StartCelebration();
             if (m_camera) {
-                m_camera->ChangeState(CameraState::TargetFocus, m_player->getSRT().pos);
+                m_camera->ChangeState(CameraState::TargetFocus, m_player->GetSRT().pos);
             }
         }
     }
@@ -245,15 +245,15 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
 Enemy* GameSceneDebugUI::SpawnDebugEnemyInFront(int hp) {
     Player* m_player = m_scene.m_player;
     GameContext* m_context = m_scene.m_context;
-    MapManager* m_MapManager = m_scene.m_MapManager;
+    MapManager* m_mapManager = m_scene.m_mapManager;
 
-    if (!m_player || !m_context || !m_MapManager) return nullptr;
+    if (!m_player || !m_context || !m_mapManager) return nullptr;
 
     // 前回テストで残ったデバッグ敵を掃除し、スタックを防ぐ
     if (m_debugEnemy) {
         if (m_context->GetEnemyManager())
             m_context->GetEnemyManager()->RemoveEnemy(m_debugEnemy);
-        Tile* prev = m_MapManager->GetTile(
+        Tile* prev = m_mapManager->GetTile(
             m_debugEnemy->GetUnitGridX(), m_debugEnemy->GetUnitGridZ());
         if (prev && prev->occupant == m_debugEnemy) prev->occupant = nullptr;
         m_debugEnemy->Destroy();
@@ -263,10 +263,10 @@ Enemy* GameSceneDebugUI::SpawnDebugEnemyInFront(int hp) {
     DirOffset o = DirOffset::From(m_player->GetFacing());
     int gx = m_player->GetUnitGridX() + o.x;
     int gz = m_player->GetUnitGridZ() + o.z;
-    Tile* t = m_MapManager->GetTile(gx, gz);
+    Tile* t = m_mapManager->GetTile(gx, gz);
     if (!t) return nullptr;
 
-    auto enemy = Enemy::Spawn(m_context, gx, gz, m_MapManager->GetWorldPosition(gx, gz));
+    auto enemy = Enemy::Spawn(m_context, gx, gz, m_mapManager->GetWorldPosition(gx, gz));
     if (hp > 0) enemy->DebugSetHP(hp);
 
     t->occupant = enemy.get();

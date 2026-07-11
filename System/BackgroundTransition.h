@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../System/scenemanager.h"
+#include "../System/SceneManager.h"
 #include "SceneTransition.h"
 #include "../GamePlay/Scene/Background.h"
 #include <memory>
@@ -29,16 +29,16 @@ public:
     // ---------------------------------------------------------
     // ライフサイクル・更新 (Lifecycle & Update)
     // ---------------------------------------------------------
-    void start() override;
-    void update(uint64_t deltaTime) override;
-    void draw() override;
+    void Start() override;
+    void Update(uint64_t deltaTime) override;
+    void Draw() override;
 
     // ---------------------------------------------------------
     // フロー制御 (Flow)
     // ---------------------------------------------------------
     bool isFinished() const override { return m_phase == Phase::Idle; }
     bool canSwap() const override { return m_phase == Phase::WaitSwap; }
-    void onSceneSwapped() override;
+    void OnSceneSwapped() override;
 
 private:
     std::unique_ptr<Background> m_bg;

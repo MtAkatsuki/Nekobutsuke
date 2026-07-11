@@ -1,7 +1,7 @@
 ﻿#include "Background.h"
 #include "../../Core/Application.h"
 #include "../../System/Utility/WorldToScreen.h"
-#include "../../System/commontypes.h" // for pi
+#include "../../System/CommonTypes.h" // for pi
 #include <cmath>
 
 namespace {

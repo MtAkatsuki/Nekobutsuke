@@ -50,11 +50,11 @@ public:
 		return static_cast<T*>(m_meshcontainer[key].get());
 	}
 	template<class T>
-	static T* getShader(std::string key) {
+	static T* GetShader(std::string key) {
 		return static_cast<T*>(m_shadercontainer[key].get());
 	}
 	template<class T>
-	static T* getRenderer(std::string key) {
+	static T* GetRenderer(std::string key) {
 		return static_cast<T*>(m_renderercontainer[key].get());
 	}
 

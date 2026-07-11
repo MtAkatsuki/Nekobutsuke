@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../../System/commontypes.h"
+#include "../../System/CommonTypes.h"
 
 // =========================================================
 // ScreenToWorld クラス

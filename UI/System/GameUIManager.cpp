@@ -97,7 +97,7 @@ void GameUIManager::Init(GameContext* context) {
     m_isGuideActive = false;
 
     // 3. プレイヤー頭上の指示矢印を復元
-    m_pActiveArrow = std::make_unique<CSprite>(ACTIVE_ARROW_TEX_W, ACTIVE_ARROW_TEX_H, "Assets/texture/ui/ui_arrow_down.png");
+    m_activeArrow = std::make_unique<CSprite>(ACTIVE_ARROW_TEX_W, ACTIVE_ARROW_TEX_H, "Assets/texture/ui/ui_arrow_down.png");
 
     // 4. カメラ回転UIをロードし、初期位置を設定
     m_cameraRotateScale = CAM_HINT_SCALE;
@@ -149,7 +149,7 @@ void GameUIManager::Draw() {
 
         // 1. プレイヤー頭上の矢印描画
         if (m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase) {
-            Vector3 arrowWorldPos = player->getSRT().pos;
+            Vector3 arrowWorldPos = player->GetSRT().pos;
             arrowWorldPos.y += ACTIVE_ARROW_Y_OFFSET;
 
             Vector2 arrowScreenPos = WorldToScreen(arrowWorldPos, camera->GetViewMatrix(), camera->GetProjMatrix(), screenW, screenH);
@@ -158,15 +158,15 @@ void GameUIManager::Draw() {
                 arrowScreenPos.y > -SCREEN_CULL_MARGIN && arrowScreenPos.y < screenH + SCREEN_CULL_MARGIN) {
 
                 Vector3 arrowPos(std::round(arrowScreenPos.x), std::round(arrowScreenPos.y + m_arrowHoverY), 0);
-                if (m_pActiveArrow) {
-                    m_pActiveArrow->Draw(Vector3(1.0f, 1.0f, 1.0f), Vector3(0, 0, 0), arrowPos);
+                if (m_activeArrow) {
+                    m_activeArrow->Draw(Vector3(1.0f, 1.0f, 1.0f), Vector3(0, 0, 0), arrowPos);
                 }
             }
         }
 
         // 2. メニューUI描画
         if (m_currentMenu == MenuType::Main) {
-            Vector3 headPos = player->getSRT().pos;
+            Vector3 headPos = player->GetSRT().pos;
             headPos.y += MENU_ANCHOR_Y_OFFSET;
             Vector2 screenPos = WorldToScreen(headPos, camera->GetViewMatrix(), camera->GetProjMatrix(), screenW, screenH);
 

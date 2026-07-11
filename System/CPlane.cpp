@@ -1,4 +1,4 @@
-﻿#include	"commontypes.h"
+﻿#include	"CommonTypes.h"
 #include	"CPlane.h"
 
 // 平面の方程式を作成する

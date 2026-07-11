@@ -1,6 +1,6 @@
-﻿#include    "commontypes.h"
+﻿#include    "CommonTypes.h"
 #include	"CStaticMesh.h"
-#include	"AssimpPerse.h"
+#include	"AssimpParse.h"
 #include <iostream>
 void CStaticMesh::Load(std::string filename, std::string texturedirectory)
 {

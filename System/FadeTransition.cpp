@@ -1,5 +1,5 @@
 ﻿#include    "../Core/main.h"
-#include    "Scenemanager.h"
+#include    "SceneManager.h"
 #include    "FadeTransition.h"
 #include    "BoxDrawer.h"
 
@@ -10,7 +10,7 @@
  *
  * @param nextSceneName 遷移先のシーン名
  */
-void FadeTransition::start() {
+void FadeTransition::Start() {
     m_elapsed = 0;
     m_alpha = 0.0f;
 
@@ -39,7 +39,7 @@ void FadeTransition::start() {
  *
  * @param deltaTime 前フレームからの経過時間（マイクロ秒）
  */
-void FadeTransition::update(uint64_t deltaTime) {
+void FadeTransition::Update(uint64_t deltaTime) {
     m_elapsed += deltaTime;
 
     switch (m_phase) {
@@ -74,7 +74,7 @@ void FadeTransition::update(uint64_t deltaTime) {
     }
 }
 
-void FadeTransition::onSceneSwapped() 
+void FadeTransition::OnSceneSwapped() 
 {
     //シーン遷移完了、モード必要となると、FadeIn始まる
     if (m_mode == Mode::FadeInOnly || m_mode == Mode::FadeInOut) {
@@ -90,7 +90,7 @@ void FadeTransition::onSceneSwapped()
  *
  * 現在の透明度に応じた黒い全画面オーバーレイを表示し、自然なフェード効果を演出する。
  */
-void FadeTransition::draw() {
+void FadeTransition::Draw() {
     if (m_phase != Phase::Idle) {
         //マスクは常に一番上にセットする
         Renderer::SetDepthEnable(false);

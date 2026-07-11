@@ -2,7 +2,7 @@
 
 #include "../../System/IScene.h"
 #include "../../System/Camera.h"
-#include "../../System/scenemanager.h"
+#include "../../System/SceneManager.h"
 #include "../../System/fadetransition.h"
 #include "../../System/CSprite.h"
 #include <memory>
@@ -21,13 +21,13 @@ public:
     // ライフサイクル (Lifecycle)
     // ---------------------------------------------------------
     void Init() override;
-    void dispose() override;
-    void update(uint64_t deltatime) override;
+    void Dispose() override;
+    void Update(uint64_t deltatime) override;
 
     // ---------------------------------------------------------
     // レンダリング (Rendering)
     // ---------------------------------------------------------
-    void draw(uint64_t deltatime) override;
+    void Draw(uint64_t deltatime) override;
 
 private:
     std::unique_ptr<SceneTransition> m_transition;

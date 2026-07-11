@@ -49,7 +49,7 @@
     <ClCompile Include="GamePlay\Scene\GameSceneDebugUI.cpp" />
     <ClCompile Include="GamePlay\Scene\IntroDirector.cpp" />
     <ClCompile Include="GamePlay\Scene\TitleScene.cpp" />
-    <ClCompile Include="System\AssimpPerse.cpp" />
+    <ClCompile Include="System\AssimpParse.cpp" />
     <ClCompile Include="System\Audio\AudioManager.cpp" />
     <ClCompile Include="System\BackgroundTransition.cpp" />
     <ClCompile Include="System\BoxDrawer.cpp" />
@@ -70,7 +70,7 @@
     <ClCompile Include="System\CTexture.cpp" />
     <ClCompile Include="System\CylinderDrawer.cpp" />
     <ClCompile Include="System\DebugUI.cpp" />
-    <ClCompile Include="System\DirectWrite .cpp" />
+    <ClCompile Include="System\DirectWrite.cpp" />
     <ClCompile Include="System\dx11helper.cpp" />
     <ClCompile Include="System\FadeTransition.cpp" />
     <ClCompile Include="System\imgui\imgui.cpp" />
@@ -81,7 +81,7 @@
     <ClCompile Include="System\imgui\imgui_tables.cpp" />
     <ClCompile Include="System\imgui\imgui_widgets.cpp" />
     <ClCompile Include="System\LineDrawer.cpp" />
-    <ClCompile Include="System\Meshmanager.cpp" />
+    <ClCompile Include="System\MeshManager.cpp" />
     <ClCompile Include="System\Renderer.cpp" />
     <ClCompile Include="System\SceneManager.cpp" />
     <ClCompile Include="System\SphereDrawer.cpp" />
@@ -99,7 +99,7 @@
     <ClCompile Include="UI\System\GameUIManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Actor\Base\Gameobject.h" />
+    <ClInclude Include="Actor\Base\GameObject.h" />
     <ClInclude Include="Actor\Base\MapObject.h" />
     <ClInclude Include="Actor\Base\Unit.h" />
     <ClInclude Include="Actor\Character\Ally.h" />
@@ -127,7 +127,7 @@
     <ClInclude Include="GamePlay\Scene\IntroDirector.h" />
     <ClInclude Include="GamePlay\Scene\TitleScene.h" />
     <ClInclude Include="System\AimOrientation.h" />
-    <ClInclude Include="System\AssimpPerse.h" />
+    <ClInclude Include="System\AssimpParse.h" />
     <ClInclude Include="System\Audio\AudioManager.h" />
     <ClInclude Include="System\BackgroundTransition.h" />
     <ClInclude Include="System\BoxDrawer.h" />
@@ -173,7 +173,7 @@
     <ClInclude Include="System\imgui\imstb_truetype.h" />
     <ClInclude Include="System\IScene.h" />
     <ClInclude Include="System\LineDrawer.h" />
-    <ClInclude Include="System\Meshmanager.h" />
+    <ClInclude Include="System\MeshManager.h" />
     <ClInclude Include="System\ModelRegistry.h" />
     <ClInclude Include="System\noncopyable.h" />
     <ClInclude Include="System\RandomEngine.h" />

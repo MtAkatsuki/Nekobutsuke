@@ -1,7 +1,7 @@
 ﻿#include	"Player.h"	
 #include    "PlayerActionView.h"
 #include    "../../System/CDirectInput.h"
-#include	"../../System/meshmanager.h"
+#include	"../../System/MeshManager.h"
 #include	"../../GamePlay/Scene/GameScene.h"	
 #include	"../../Core/GameContext.h"
 #include	"../../GamePlay/Manager/MapManager.h"
@@ -63,7 +63,7 @@ std::unique_ptr<Player> Player::Spawn(GameContext* ctx, int gridX, int gridZ, co
 	auto p = std::unique_ptr<Player>(new Player(ctx)); 
 	p->Init(); 
 	p->SetGridPosition(gridX, gridZ);
-	p->setPosition(worldPos);
+	p->SetPosition(worldPos);
 	p->UpdateWorldMatrix();
 	return p; 
 }
@@ -71,7 +71,7 @@ std::unique_ptr<Player> Player::Spawn(GameContext* ctx, int gridX, int gridZ, co
 Player::~Player() = default;
 
 void Player::Init() {
-	playerResourceLoader();
+	LoadPlayerResources();
 
 	m_actionView = std::make_unique<PlayerActionView>();
 	m_actionView->Init(m_context);
@@ -239,7 +239,7 @@ void Player::Update(uint64_t dt) {
 }
 
 void Player::OnDraw(uint64_t dt) {
-	if (m_PlayerShader != nullptr) m_PlayerShader->SetGPU();
+	if (m_playerShader != nullptr) m_playerShader->SetGPU();
 	DrawModel();
 }
 
@@ -320,7 +320,7 @@ void Player::OnTurnChanged(TurnState state) {
 }
 
 void Player::OnDrawFloorUI(uint64_t dt) {
-	if (m_PlayerShader != nullptr) m_PlayerShader->SetGPU();
+	if (m_playerShader != nullptr) m_playerShader->SetGPU();
 
 	if (m_state == PlayerState::MOVE_SELECT) {
 		m_actionView->DrawMoveRange(m_moveRangeTiles);
@@ -334,8 +334,8 @@ void Player::OnDrawFloorUI(uint64_t dt) {
 void Player::OnDrawTransparent(uint64_t dt) {
 	if (m_state == PlayerState::MOVE_SELECT) {
 		UpdateWorldMatrix(); 
-		m_actionView->DrawGhost(m_Renderer, m_srt.scale, m_srt.rot.y,
-			m_startGridX, m_startGridZ, m_WorldMatrix);
+		m_actionView->DrawGhost(m_renderer, m_srt.scale, m_srt.rot.y,
+			m_startGridX, m_startGridZ, m_worldMatrix);
 	}
 }
 
@@ -462,7 +462,7 @@ void Player::ExecuteAttack() {
 
 		if (m_context && m_context->GetCamera()) {
 			if (m_attackIsLethal)
-				m_context->GetCamera()->PlayKillCam(m_srt.pos, victim->getSRT().pos);
+				m_context->GetCamera()->PlayKillCam(m_srt.pos, victim->GetSRT().pos);
 			else
 				m_context->GetCamera()->PlayAttackZoom((m_srt.pos + targetPos) * 0.5f);
 		}
@@ -698,13 +698,13 @@ void Player::UpdateCelebration(float dt) {
 	}
 }
 
-void Player::playerResourceLoader() {
+void Player::LoadPlayerResources() {
 	auto* renderer = ModelRegistry::RegisterModel(
 		"player_mesh", "Assets/model/character/Mouse/Mouse_01.obj", "Assets/model/character/Mouse");
 	SetModelRenderer(renderer);
 
-	m_PlayerShader = MeshManager::getShader<CShader>("toonshader");
-	if (!m_PlayerShader) {
+	m_playerShader = MeshManager::GetShader<CShader>("toonshader");
+	if (!m_playerShader) {
 		DBG_ERROR("CRITICAL ERROR: 'toonshader' not found! Check shader file paths.");
 	}
 }

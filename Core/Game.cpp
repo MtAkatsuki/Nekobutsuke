@@ -2,7 +2,7 @@
 #include "../System/renderer.h"
 #include "../System/DebugUI.h"
 #include "../System/CDirectInput.h"
-#include "../System/scenemanager.h"
+#include "../System/SceneManager.h"
 #include "../System/Utility/FpsControl.h"
 #include "../Core/GameContext.h"
 #include "../System/FadeTransition.h"
@@ -21,7 +21,7 @@ namespace {
 
 static uint64_t g_accumulator = 0; // 固定ステップ更新用のタイムアキュムレータ
 
-void gameinit()
+void GameInit()
 {
 	DBG_TRACE("[Step 1] Initializing Renderer...");
 	Renderer::Init();
@@ -53,7 +53,7 @@ void gameinit()
 	DBG_TRACE("[Step 5] OK.");
 }
 
-void gameupdate(uint64_t deltatime){
+void GameUpdate(uint64_t deltatime){
 	// 入力デバイスの更新
 	CDirectInput::GetInstance().GetKeyBuffer();
 	CDirectInput::GetInstance().GetMouseState();
@@ -64,7 +64,7 @@ void gameupdate(uint64_t deltatime){
 	g_accumulator -= FIXED_STEP_MS;
 }
 
-void gamedraw(uint64_t deltatime){
+void GameDraw(uint64_t deltatime){
 	// F4 キーで ImGui の表示状態を切り替え
 	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_F4)) {
 		DebugUI::Toggle();
@@ -89,14 +89,14 @@ void gamedraw(uint64_t deltatime){
 	Renderer::Present();
 }
 
-void gamedispose(){
+void GameDispose(){
 	DebugUI::DisposeUI();
 	SceneManager::GetInstance().Dispose();
 	Renderer::Uninit();
 
 }
 
-void gameloop(){
+void GameLoop(){
 	static FPS fpsrate(TARGET_FPS);
 
 	// 前回実行されてからの経過時間を計算
@@ -108,8 +108,8 @@ void gameloop(){
 		delta_time = DELTA_TIME_MAX_MS;
 	}
 
-	gameupdate(delta_time);
-	gamedraw(delta_time);
+	GameUpdate(delta_time);
+	GameDraw(delta_time);
 
 	// 次のフレームまで待機(Wait)し、fpsrate内部の時間を更新する
 	fpsrate.Tick();

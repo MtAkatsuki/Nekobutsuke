@@ -17,7 +17,7 @@ public:
      *
      * 遷移が開始されたときに一度だけ呼ばれる。初期化や設定に利用。
      */
-    virtual void start() = 0;
+    virtual void Start() = 0;
 
     /**
      * @brief 遷移演出の更新処理
@@ -25,14 +25,14 @@ public:
      *
      * アニメーションや状態の更新に使用する。
      */
-    virtual void update(uint64_t deltaTime) = 0;
+    virtual void Update(uint64_t deltaTime) = 0;
 
     /**
      * @brief 遷移演出の描画処理
      *
      * 通常のシーン描画後に重ねて表示される。
      */
-    virtual void draw() = 0;
+    virtual void Draw() = 0;
 
     /**
      * @brief 演出が完了したかどうかを返す
@@ -45,5 +45,5 @@ public:
     //シーン切り替えの準備はできたのか
     virtual bool canSwap() const = 0;
     //シーン切り替え完了通知：以降のアニメーション（例：FadeIn）を実行
-    virtual void onSceneSwapped() = 0;
+    virtual void OnSceneSwapped() = 0;
 };

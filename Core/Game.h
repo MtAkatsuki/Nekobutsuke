@@ -5,8 +5,8 @@
 // ゲームコアインターフェース
 // Applicationのメインループから呼び出されるグローバル関数群。
 // =========================================================
-void gameinit();
-void gameloop();
-void gameupdate(uint64_t deltatime);
-void gamedraw(uint64_t deltatime);
-void gamedispose();
+void GameInit();
+void GameLoop();
+void GameUpdate(uint64_t deltatime);
+void GameDraw(uint64_t deltatime);
+void GameDispose();

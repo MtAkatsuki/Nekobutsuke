@@ -10,7 +10,7 @@
 #include "../../Actor/Base/MapObject.h"
 #include "../../System/RandomEngine.h"
 #include "../../System/Utility/WorldToScreen.h"
-#include "../../System/Meshmanager.h"
+#include "../../System/MeshManager.h"
 #include "../../System/ZFightTunables.h"
 #include "../../Actor/Character/Player.h"
 #include "../../Actor/Character/Enemy.h"
@@ -43,8 +43,8 @@ void MapManager::Init(GameContext* context) {
 	m_grid.resize(m_mapWidth * m_mapDepth);//一気にメモリーを確保
 
 
-	m_tileRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("floor_mesh");
-	m_rangeRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("range_panel_mesh");
+	m_tileRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("floor_mesh");
+	m_rangeRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("range_panel_mesh");
 }
 
 //Tile対象作らない、メモリーに効率がいい
@@ -448,7 +448,7 @@ void MapManager::SpawnFloorLayer(GameContext* context) {
 		for (int x = 0; x < m_mapWidth; x++) {
 			auto floorObj = std::make_unique<MapObject>(context);
 			floorObj->Init(MapModelType::FLOOR, GetWorldPosition(x, z));
-			if (m_Scene) m_Scene->AddObject(std::move(floorObj));
+			if (m_scene) m_scene->AddObject(std::move(floorObj));
 		}
 	}
 }
@@ -510,7 +510,7 @@ void MapManager::SpawnStaticStructures(const std::vector<std::vector<std::string
 					}
 				}
 
-				if (m_Scene) m_Scene->AddObject(std::move(newObj));
+				if (m_scene) m_scene->AddObject(std::move(newObj));
 			}
 		}
 	}
@@ -540,7 +540,7 @@ void MapManager::SpawnDynamicEntities(const std::vector<std::vector<std::string>
 				}
 				else {
 					pPlayer->SetGridPosition(x, z); 
-					pPlayer->setPosition(worldPos);
+					pPlayer->SetPosition(worldPos);
 					pPlayer->UpdateWorldMatrix();
 				}
 				GetTile(x, z)->occupant = pPlayer;
@@ -568,9 +568,9 @@ void MapManager::SpawnDynamicEntities(const std::vector<std::vector<std::string>
 		}
 	}
 
-	if (m_Scene) {
+	if (m_scene) {
 		for (auto& unitObj : unitsToSpawn) {
-			m_Scene->AddObject(std::move(unitObj));
+			m_scene->AddObject(std::move(unitObj));
 		}
 	}
 }

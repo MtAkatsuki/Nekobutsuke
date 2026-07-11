@@ -86,7 +86,7 @@ void Unit::OnTurnChanged(TurnState state) {}
 void Unit::TakeDamage(int damage, Unit* attacker) {
 	if (damage < 0) return;
 	m_currentHP = std::max(0, m_currentHP - damage);
-	if (attacker) m_hitSourcePos = attacker->getSRT().pos;
+	if (attacker) m_hitSourcePos = attacker->GetSRT().pos;
 
 	// 視覚的重複の回避：複数回ダメージを受けた際、エフェクトや数字が
 	
@@ -260,7 +260,7 @@ bool Unit::UpdateAttackAnimation(float dt, std::function<void()> onImpact) {
 	}
 
 	UpdateWorldMatrix();
-	Renderer::SetWorldMatrix(&m_WorldMatrix);
+	Renderer::SetWorldMatrix(&m_worldMatrix);
 
 	return isFinished;
 }
@@ -315,7 +315,7 @@ bool Unit::UpdateSlideAnimation(uint64_t dt) {
 		else                  m_srt.rot.z = angle;
 
 		UpdateWorldMatrix();
-		Renderer::SetWorldMatrix(&m_WorldMatrix);
+		Renderer::SetWorldMatrix(&m_worldMatrix);
 		return false;
 	}
 	else {
@@ -323,7 +323,7 @@ bool Unit::UpdateSlideAnimation(uint64_t dt) {
 		m_srt.rot.x = 0.0f;   // 意外な残留回転を防ぐため、X軸とZ軸の回転をリセット
 		m_srt.rot.z = 0.0f;
 		UpdateWorldMatrix();
-		Renderer::SetWorldMatrix(&m_WorldMatrix);
+		Renderer::SetWorldMatrix(&m_worldMatrix);
 		return true;
 	}
 }
@@ -344,32 +344,32 @@ void Unit::UpdateFacingRotation(float dt) {
 // ---------------------------------------------------------
 
 void Unit::SetModelRenderer(CStaticMeshRenderer* r) {
-	m_Renderer = r;
+	m_renderer = r;
 
 	m_srt.scale = Vector3(1.0f, 1.0f, 1.0f);
 	m_srt.rot = Vector3(0.0f, 0.0f, 0.0f);
 }
 
 void Unit::DrawModel() {
-	if (!m_Renderer) return;
+	if (!m_renderer) return;
 	if (!m_isDeathFlying) DrawBlobShadow();
-	Renderer::SetWorldMatrix(&m_WorldMatrix);
-	m_Renderer->Draw();
+	Renderer::SetWorldMatrix(&m_worldMatrix);
+	m_renderer->Draw();
 	DrawOutline();
 }
 
 void Unit::DrawOutline()
 {
 	if (Renderer::GetToonParam().OutlineColor.w <= 0.0001f) return;  // 幅0 = 無効化（不要な1回分のDrawを省略）
-	auto* outline = MeshManager::getShader<CShader>("outlineshader");
+	auto* outline = MeshManager::GetShader<CShader>("outlineshader");
 	if (!outline) return;
 
 	outline->SetGPU();          // アウトライン用VS/PSへ切り替え
 	Renderer::SetCullFront();   // 表面をカリングし、裏面シェルのみ描画
-	m_Renderer->Draw();         // 同じmeshを外側へ拡張して再描画
+	m_renderer->Draw();         // 同じmeshを外側へ拡張して再描画
 
 	// 復元：トゥーンシェーディング + 通常の裏面カリング
-	MeshManager::getShader<CShader>("toonshader")->SetGPU();
+	MeshManager::GetShader<CShader>("toonshader")->SetGPU();
 	Renderer::DisableCulling(true);  // true = CULL_BACK
 }
 
@@ -381,8 +381,8 @@ void Unit::DrawBlobShadow() {
 		* Matrix4x4::CreateTranslation(p);
 	Renderer::SetWorldMatrix(&w);
 
-	auto* blob = MeshManager::getShader<CShader>("blobshader");
-	auto* mesh = MeshManager::getRenderer<CStaticMeshRenderer>("range_panel_mesh");
+	auto* blob = MeshManager::GetShader<CShader>("blobshader");
+	auto* mesh = MeshManager::GetRenderer<CStaticMeshRenderer>("range_panel_mesh");
 	if (!blob || !mesh) return;
 
 	blob->SetGPU();
@@ -395,7 +395,7 @@ void Unit::DrawBlobShadow() {
 	Renderer::SetDepthEnable(true); 
 	Renderer::DisableCulling(true);
 	Renderer::SetBlendState(BS_NONE);
-	MeshManager::getShader<CShader>("toonshader")->SetGPU();
+	MeshManager::GetShader<CShader>("toonshader")->SetGPU();
 }
 
 void Unit::DrawUI() {
@@ -410,7 +410,7 @@ void Unit::DrawUI() {
 }
 
 void Unit::DrawPushPreview(Direction pushDir) {
-	auto* pushArrowRenderer = MeshManager::getRenderer<CStaticMeshRenderer>("arrow_push_mesh");
+	auto* pushArrowRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_push_mesh");
 	if (!pushArrowRenderer || !m_context || !m_context->GetMapManager()) return;
 
 	MapManager* map = m_context->GetMapManager();

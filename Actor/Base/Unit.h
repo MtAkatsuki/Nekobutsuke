@@ -8,7 +8,7 @@
 #include "../../System/Direction.h"
 #include "../../EnumClass/TurnState.h"
 #include "../../UI/Component/HPBar.h"
-#include "../../System/meshmanager.h"
+#include "../../System/MeshManager.h"
 
 class MapManager;
 class TurnManager;
@@ -118,7 +118,7 @@ protected:
 	// =========================================================
 
 	// --- レンダリング関連 ---
-	CStaticMeshRenderer* m_Renderer = nullptr;
+	CStaticMeshRenderer* m_renderer = nullptr;
 
 	std::unique_ptr<HPBar> m_hpBar;
 

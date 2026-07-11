@@ -205,7 +205,7 @@
     <ClCompile Include="System\DebugUI.cpp">
       <Filter>System</Filter>
     </ClCompile>
-    <ClCompile Include="System\DirectWrite .cpp">
+    <ClCompile Include="System\DirectWrite.cpp">
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="System\dx11helper.cpp">
@@ -217,7 +217,7 @@
     <ClCompile Include="System\LineDrawer.cpp">
       <Filter>System</Filter>
     </ClCompile>
-    <ClCompile Include="System\Meshmanager.cpp">
+    <ClCompile Include="System\MeshManager.cpp">
       <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="System\Renderer.cpp">
@@ -339,7 +339,7 @@
     <ClInclude Include="GamePlay\Scene\TitleScene.h">
       <Filter>GamePlay\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Actor\Base\Gameobject.h">
+    <ClInclude Include="Actor\Base\GameObject.h">
       <Filter>Actor\Base</Filter>
     </ClInclude>
     <ClInclude Include="Actor\Base\MapObject.h">
@@ -480,7 +480,7 @@
     <ClInclude Include="System\LineDrawer.h">
       <Filter>System</Filter>
     </ClInclude>
-    <ClInclude Include="System\Meshmanager.h">
+    <ClInclude Include="System\MeshManager.h">
       <Filter>System</Filter>
     </ClInclude>
     <ClInclude Include="System\noncopyable.h">

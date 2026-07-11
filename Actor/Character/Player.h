@@ -88,7 +88,7 @@ protected:
 
 private:
     void Init();
-    void playerResourceLoader();
+    void LoadPlayerResources();
 
     // --- 状態遷移 (State Transitions) ---
     void SwitchToMenuMain();
@@ -112,7 +112,7 @@ private:
     // =========================================================
     // メンバー変数
     // =========================================================
-    CShader* m_PlayerShader = nullptr;
+    CShader* m_playerShader = nullptr;
 
     PlayerState m_state = PlayerState::WAITING;
     PlayerState m_nextState = PlayerState::WAITING;

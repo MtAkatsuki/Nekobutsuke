@@ -11,7 +11,7 @@ BackgroundTransition::BackgroundTransition(float fadeDurationMs, float scrollDur
     : m_fadeDurationMs(fadeDurationMs), m_scrollDurationMs(scrollDurationMs) {
 }
 
-void BackgroundTransition::start() {
+void BackgroundTransition::Start() {
     m_bg = std::make_unique<Background>();
     m_bg->Init(TRANSITION_BG_PATH);
 
@@ -20,7 +20,7 @@ void BackgroundTransition::start() {
     m_phase = Phase::FadeInBg;
 }
 
-void BackgroundTransition::update(uint64_t deltaTime) {
+void BackgroundTransition::Update(uint64_t deltaTime) {
     if (!m_bg) return; 
 
     m_bg->Update(deltaTime);
@@ -59,7 +59,7 @@ void BackgroundTransition::update(uint64_t deltaTime) {
 
     case Phase::WaitSwap: {
         m_alpha = 1.0f;
-        // 備考: SceneManager から onSceneSwapped() が呼ばれるまでこの状態を維持する
+        // 備考: SceneManager から OnSceneSwapped() が呼ばれるまでこの状態を維持する
         break;
     }
 
@@ -78,13 +78,13 @@ void BackgroundTransition::update(uint64_t deltaTime) {
     }
 }
 
-void BackgroundTransition::onSceneSwapped() {
+void BackgroundTransition::OnSceneSwapped() {
     // SceneManager側で新しいシーンの Init が完了したタイミングで呼ばれる
     m_phase = Phase::FadeOutBg;
     m_elapsedMs = 0.0f;
 }
 
-void BackgroundTransition::draw() {
+void BackgroundTransition::Draw() {
     // 待機中（Idle）以外、かつ背景が存在する場合のみ描画コマンドを発行
     if (m_phase != Phase::Idle && m_bg) {
         m_bg->SetAlpha(m_alpha);

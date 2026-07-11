@@ -1,5 +1,5 @@
 ﻿#include "Trap.h"
-#include "../../System/Meshmanager.h"
+#include "../../System/MeshManager.h"
 #include "../../System/ZFightTunables.h"
 #include "../Base/Unit.h"
 #include "../../Core/DebugLog.h"
@@ -15,7 +15,7 @@ void Trap::Init(MapModelType type, Vector3 position) {
     MapObject::Init(type, position);
     GetDimensions(type, m_sizeX, m_sizeZ);
 
-    m_renderer = MeshManager::getRenderer<CStaticMeshRenderer>("trap_mesh");
+    m_renderer = MeshManager::GetRenderer<CStaticMeshRenderer>("trap_mesh");
     if (!m_renderer) {
         OutputDebugStringA("[Trap] Warning: trap_mesh not found.\n");
     }
@@ -66,14 +66,14 @@ void Trap::OnDraw(uint64_t delta) {
     // 完全に縮小されている（消失済み）場合は描画をスキップし、GPU負荷を軽減する
     if (m_srt.scale.x <= 0.001f || !m_renderer) return;
 
-    auto shader = MeshManager::getShader<CShader>("toonshader");
+    auto shader = MeshManager::GetShader<CShader>("toonshader");
     if (shader) {
         shader->SetGPU();
     }
 
     Renderer::SetBlendState(BS_ALPHABLEND);
     Renderer::SetDepthEnable(true);
-    Renderer::SetWorldMatrix(&m_WorldMatrix);
+    Renderer::SetWorldMatrix(&m_worldMatrix);
 
     // 【描画責務】：Updateで計算された m_currentAlpha をマテリアルに適用するだけ
     if (auto* mat = m_renderer->GetMaterial(0)) {

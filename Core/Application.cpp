@@ -116,9 +116,9 @@ void Application::MainLoop()
 
     try
     {
-        DBG_ERROR("Calling gameinit()...");
-        gameinit();
-        DBG_ERROR("gameinit() finished successfully.");
+        DBG_ERROR("Calling GameInit()...");
+        GameInit();
+        DBG_ERROR("GameInit() finished successfully.");
     }
     catch (const std::exception& e)
     {
@@ -144,11 +144,11 @@ void Application::MainLoop()
         }
         else {
             // OSからのメッセージ処理がない空き時間にゲームループを回す
-            gameloop();
+            GameLoop();
         }
     }
 
-    gamedispose();
+    GameDispose();
 
 }
 
