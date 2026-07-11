@@ -8,7 +8,7 @@
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../Core/Application.h"
 #include "../../Core/GameContext.h"
-#include "../../System/Direction.h"
+#include "../../Types/Direction.h"
 #include "../../GamePlay/Manager/MapManager.h"
 #include "../../GamePlay/Manager/EnemyManager.h"
 #include "../../GamePlay/Manager/TurnManager.h"

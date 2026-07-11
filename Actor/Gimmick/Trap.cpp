@@ -108,9 +108,9 @@ void Trap::OnEnter(Unit* unit) {
 
 void Trap::GetDimensions(MapModelType type, int& outW, int& outD)
 {
-    switch (type) {
-    case MapModelType::TRAP: default: outW = 1; outD = 1; break;
-    }
+    const PropDef* def = FindPropDef(type);
+    outW = def ? def->sizeX : 1;
+    outD = def ? def->sizeZ : 1;
 }
 
 Trap* Trap::GetArmedTrap(const Tile* tile) {

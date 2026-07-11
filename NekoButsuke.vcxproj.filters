@@ -55,14 +55,14 @@
     <Filter Include="UI\System">
       <UniqueIdentifier>{f12c4b04-bb58-4d6b-aaa4-7ca1c387f6f9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="EnumClass">
-      <UniqueIdentifier>{f9f3a156-9619-4e67-b6e4-60476801752f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader">
       <UniqueIdentifier>{d0edc08a-caf3-4edb-ae09-b882f04bb26f}</UniqueIdentifier>
     </Filter>
     <Filter Include="System\imgui">
       <UniqueIdentifier>{67344c5e-bc37-4a43-a53d-9302c1a2002b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Types">
+      <UniqueIdentifier>{f9f3a156-9619-4e67-b6e4-60476801752f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -144,9 +144,6 @@
     </ClCompile>
     <ClCompile Include="System\Audio\AudioManager.cpp">
       <Filter>System\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="System\AssimpPerse.cpp">
-      <Filter>System</Filter>
     </ClCompile>
     <ClCompile Include="System\BackgroundTransition.cpp">
       <Filter>System</Filter>
@@ -298,6 +295,9 @@
     <ClCompile Include="GamePlay\Scene\GameResultJudge.cpp">
       <Filter>GamePlay\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="System\AssimpParse.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h">
@@ -367,9 +367,6 @@
       <Filter>System\Audio</Filter>
     </ClInclude>
     <ClInclude Include="System\AimOrientation.h">
-      <Filter>System</Filter>
-    </ClInclude>
-    <ClInclude Include="System\AssimpPerse.h">
       <Filter>System</Filter>
     </ClInclude>
     <ClInclude Include="System\BackgroundTransition.h">
@@ -462,9 +459,6 @@
     <ClInclude Include="System\DebugUI.h">
       <Filter>System</Filter>
     </ClInclude>
-    <ClInclude Include="System\Direction.h">
-      <Filter>System</Filter>
-    </ClInclude>
     <ClInclude Include="System\DirectWrite.h">
       <Filter>System</Filter>
     </ClInclude>
@@ -549,9 +543,6 @@
     <ClInclude Include="System\Utility\FpsControl.h">
       <Filter>System\Utility</Filter>
     </ClInclude>
-    <ClInclude Include="EnumClass\TurnState.h">
-      <Filter>EnumClass</Filter>
-    </ClInclude>
     <ClInclude Include="System\imgui\imconfig.h">
       <Filter>System\imgui</Filter>
     </ClInclude>
@@ -596,6 +587,30 @@
     </ClInclude>
     <ClInclude Include="System\ModelRegistry.h">
       <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="System\AssimpParse.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Direction.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\TurnState.h">
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Team.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\PlayerState.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\AttackType.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\DialogueType.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\MapModelType.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

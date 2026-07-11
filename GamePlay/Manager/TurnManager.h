@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <vector>
 #include <functional>
-#include "../../EnumClass/TurnState.h"
+#include "../../Types/TurnState.h"
 
 // =========================================================
 // TurnManager クラス

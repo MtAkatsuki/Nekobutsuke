@@ -5,10 +5,11 @@
 #include <memory>
 
 #include "GameObject.h"
-#include "../../System/Direction.h"
-#include "../../EnumClass/TurnState.h"
+#include "../../Types/Direction.h"
+#include "../../Types/TurnState.h"
 #include "../../UI/Component/HPBar.h"
 #include "../../System/MeshManager.h"
+#include "../../Types/Team.h"
 
 class MapManager;
 class TurnManager;
@@ -22,11 +23,6 @@ class CStaticMeshRenderer;
 // =========================================================
 class Unit : public GameObject {
 public:
-	enum class Team {
-		Player,
-		Enemy,
-		Ally
-	};
 
 	explicit Unit(GameContext* context);
 	Unit(const Unit&) = delete;

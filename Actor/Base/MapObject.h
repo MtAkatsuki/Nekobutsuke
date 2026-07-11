@@ -2,24 +2,9 @@
 
 #include "../../Actor/Base/GameObject.h"
 #include "../../System/CStaticMeshRenderer.h"
+#include "../../Types/MapModelType.h"
 
 class Unit;
-
-// =========================================================
-// マップモデルの種類
-// =========================================================
-enum class MapModelType {
-	FLOOR,            // 床
-	WALL,             // 壁
-	TRAP,             // トラップ
-
-	// --- 家具・プロップ (長方形・大型物件) ---
-	PROP_SOFA_YOKO,   // ソファ（横向き 3x1）
-	PROP_SOFA_TATE,   // ソファ（縦向き 1x3）
-	PROP_BOOKSHELF,   // 本棚（横 2x1）
-	PROP_CATTOWER,    // キャットタワー（横 2x1）
-	PROP_TABLE        // テーブル（正方形 2x2）
-};
 
 // =========================================================
 // MapObject クラス

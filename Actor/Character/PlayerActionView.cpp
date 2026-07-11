@@ -4,7 +4,7 @@
 #include "../../System/CStaticMeshRenderer.h"
 #include "../../System/MeshManager.h"
 #include "../../System/ZFightTunables.h"
-#include "../../System/Direction.h"
+#include "../../Types/Direction.h"
 #include "../../Core/GameContext.h"
 #include "../../GamePlay/Manager/MapManager.h"
 #include "../Gimmick/Trap.h"

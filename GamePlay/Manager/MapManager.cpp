@@ -466,30 +466,19 @@ void MapManager::SpawnStaticStructures(const std::vector<std::vector<std::string
 			if (currentTile->structure != nullptr) continue;
 
 			std::string token = csvData[csvRowIndex][x];
-			MapModelType propType = MapModelType::FLOOR;
-			bool isTrap = false;
+			// プロップ定義テーブルからトークンを解決（未知トークン＝床は生成しない）
+			const PropDef* def = FindPropDefByToken(token);
 
-			if (token == "W")                propType = MapModelType::WALL;
-			else if (token == "W_T_SOFA")    propType = MapModelType::PROP_SOFA_TATE;
-			else if (token == "W_Y_SOFA")    propType = MapModelType::PROP_SOFA_YOKO;
-			else if (token == "W_CATTOWER")  propType = MapModelType::PROP_CATTOWER;
-			else if (token == "W_TABLE")     propType = MapModelType::PROP_TABLE;
-			else if (token == "W_BOOKSHELF") propType = MapModelType::PROP_BOOKSHELF;
-			else if (token == "T") { propType = MapModelType::TRAP; isTrap = true; }
+			if (def) {
+				MapModelType propType = def->type;
+				int sizeX = def->sizeX, sizeZ = def->sizeZ;
 
-			if (propType != MapModelType::FLOOR) {
-				std::unique_ptr<MapObject> newObj = nullptr;
-				int sizeX = 1, sizeZ = 1;
-
-				if (isTrap) {
-					auto trap = std::make_unique<Trap>(context);
-					Trap::GetDimensions(propType, sizeX, sizeZ);
-					newObj = std::move(trap);
+				std::unique_ptr<MapObject> newObj;
+				if (propType == MapModelType::TRAP) {
+					newObj = std::make_unique<Trap>(context);
 				}
 				else {
-					auto prop = std::make_unique<Prop>(context);
-					Prop::GetDimensions(propType, sizeX, sizeZ);
-					newObj = std::move(prop);
+					newObj = std::make_unique<Prop>(context);
 				}
 
 				float offsetX = (sizeX - 1) * m_tileSize * 0.5f;

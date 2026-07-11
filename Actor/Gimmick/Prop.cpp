@@ -20,16 +20,9 @@ void Prop::Init(MapModelType type, Vector3 position) {
     MapObject::Init(type, position);
     GetDimensions(type, m_sizeX, m_sizeZ);
 
-    // 2. 物件タイプに応じたメッシュ名の解決
-    std::string meshName = "prop_plane_mesh";
-    switch (type) {
-    case MapModelType::PROP_SOFA_YOKO: meshName = "sofa_yoko_mesh"; break;
-    case MapModelType::PROP_SOFA_TATE: meshName = "sofa_tate_mesh"; break;
-    case MapModelType::PROP_TABLE:     meshName = "table_mesh";     break;
-    case MapModelType::PROP_BOOKSHELF: meshName = "bookshelf_mesh"; break;
-    case MapModelType::PROP_CATTOWER:  meshName = "cattower_mesh";  break;
-    default: break;
-    }
+    // 2. 物件タイプに応じたメッシュ名の解決（プロップ定義テーブル参照）
+    const PropDef* def = FindPropDef(type);
+    std::string meshName = (def && def->meshName) ? def->meshName : "prop_plane_mesh";
 
     m_renderer = MeshManager::GetRenderer<CStaticMeshRenderer>(meshName);
     if (!m_renderer) {
@@ -110,14 +103,9 @@ void Prop::OnDraw(uint64_t delta) {
 }
 
 void Prop::GetDimensions(MapModelType type, int& outW, int& outD) {
-    switch (type) {
-    case MapModelType::PROP_SOFA_YOKO:    outW = 3; outD = 1; break;
-    case MapModelType::PROP_SOFA_TATE:    outW = 1; outD = 3; break;
-    case MapModelType::PROP_TABLE:        outW = 3; outD = 2; break;
-    case MapModelType::PROP_BOOKSHELF:    outW = 2; outD = 1; break;
-    case MapModelType::PROP_CATTOWER:     outW = 2; outD = 1; break;
-    default:                              outW = 1; outD = 1; break;
-    }
+    const PropDef* def = FindPropDef(type);
+    outW = def ? def->sizeX : 1;
+    outD = def ? def->sizeZ : 1;
 }
 
 void Prop::DrawPropShadow() {

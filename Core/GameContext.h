@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include <memory>
-#include "../EnumClass/TurnState.h"
+#include "../Types/TurnState.h"
 
 class MapManager;
 class TurnManager;

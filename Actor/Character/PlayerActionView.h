@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "../../System/CommonTypes.h"   // Vector3 / Matrix4x4 / Color
-#include "../../System/Direction.h"     // Direction
+#include "../../Types/Direction.h"     // Direction
 
 class GameContext;
 class CStaticMeshRenderer;

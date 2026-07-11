@@ -7,25 +7,9 @@ void MapObject::Init(MapModelType type, Vector3 position) {
 	m_srt.pos = position;
 	m_type = type;
 
-	// オブジェクトタイプに基づく通行可能属性（Walkable）の初期設定
-	switch (type) {
-	case MapModelType::WALL:
-	case MapModelType::PROP_SOFA_TATE:
-	case MapModelType::PROP_SOFA_YOKO:
-	case MapModelType::PROP_CATTOWER:
-	case MapModelType::PROP_TABLE:
-	case MapModelType::PROP_BOOKSHELF:
-		m_isWalkable = false; // 障害物は通行不可
-		break;
-
-	case MapModelType::TRAP:
-		m_isWalkable = true;  // トラップは進入可能なため true に設定（ダメージはOnEnterで処理）
-		break;
-
-	default:
-		m_isWalkable = true;  // 床などはデフォルトで通行可能
-		break;
-	}
+	// 通行可能属性はプロップ定義テーブルから取得（未登録タイプ＝床などは通行可能）
+	const PropDef* def = FindPropDef(type);
+	m_isWalkable = def ? def->walkable : true;
 
 	if (type == MapModelType::FLOOR) {
 		m_renderer = MeshManager::GetRenderer<CStaticMeshRenderer>("floor_mesh");

@@ -113,7 +113,12 @@
     <ClInclude Include="Core\Game.h" />
     <ClInclude Include="Core\GameContext.h" />
     <ClInclude Include="Core\main.h" />
-    <ClInclude Include="EnumClass\TurnState.h" />
+    <ClInclude Include="Types\AttackType.h" />
+    <ClInclude Include="Types\DialogueType.h" />
+    <ClInclude Include="Types\MapModelType.h" />
+    <ClInclude Include="Types\PlayerState.h" />
+    <ClInclude Include="Types\Team.h" />
+    <ClInclude Include="Types\TurnState.h" />
     <ClInclude Include="GamePlay\Manager\EffectManager.h" />
     <ClInclude Include="GamePlay\Manager\EnemyManager.h" />
     <ClInclude Include="GamePlay\Manager\MapManager.h" />
@@ -159,7 +164,7 @@
     <ClInclude Include="System\CVertexBuffer.h" />
     <ClInclude Include="System\CylinderDrawer.h" />
     <ClInclude Include="System\DebugUI.h" />
-    <ClInclude Include="System\Direction.h" />
+    <ClInclude Include="Types\Direction.h" />
     <ClInclude Include="System\DirectWrite.h" />
     <ClInclude Include="System\dx11helper.h" />
     <ClInclude Include="System\FadeTransition.h" />
