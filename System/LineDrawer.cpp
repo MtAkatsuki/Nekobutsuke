@@ -1,4 +1,4 @@
-#include	<iostream>
+ï»¿#include	<iostream>
 
 #include	"CommonTypes.h"
 #include	"CMeshRenderer.h"
@@ -13,7 +13,7 @@ static CMaterial g_material;
 static CShader g_shader;
 static ComPtr<ID3D11Buffer> g_linewidthbuffer;
 
-// ü‚Ì‘¾‚³İ’è—p’è”ƒoƒbƒtƒ@
+// ç·šã®å¤ªã•è¨­å®šç”¨å®šæ•°ãƒãƒƒãƒ•ã‚¡
 struct LINEWIDTHCBUFFER {
 	float width[4];				
 };
@@ -24,7 +24,7 @@ void LineDrawerInit()
 	g_renderer.Init(g_mesh);
 
 	MATERIAL mtrl;
-	// ƒ}ƒeƒŠƒAƒ‹¶¬
+	// ãƒãƒ†ãƒªã‚¢ãƒ«ç”Ÿæˆ
 	mtrl.Ambient = Color(0, 0, 0, 0);
 	mtrl.Diffuse = Color(1, 1, 1, 1);
 	mtrl.Emission = Color(0, 0, 0, 0);
@@ -34,18 +34,18 @@ void LineDrawerInit()
 
 	g_material.Create(mtrl);
 
-	// ƒVƒF[ƒ_[‚Ì‰Šú‰»
+	// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã®åˆæœŸåŒ–
 	g_shader.Create(
-		"shader/unlitTextureVS.hlsl",			// ’¸“_ƒVƒF[ƒ_[
-		"shader/unlitTexturePS.hlsl",			// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[
-		"shader/GeometryShader.hlsl"			// ƒWƒIƒƒgƒŠƒVƒF[ƒ_
+		"shader/unlitTextureVS.hlsl",			// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
+		"shader/unlitTexturePS.hlsl",			// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
+		"shader/GeometryShader.hlsl"			// ã‚¸ã‚ªãƒ¡ãƒˆãƒªã‚·ã‚§ãƒ¼ãƒ€
 	);
 
-	// ’è”ƒoƒbƒtƒ@‚ğì¬‚·‚éiü‚Ì‘¾‚³‚ğ“n‚·‚½‚ßjadd 20250724 by tomoki suzuki
+	// å®šæ•°ãƒãƒƒãƒ•ã‚¡ã‚’ä½œæˆã™ã‚‹ï¼ˆç·šã®å¤ªã•ã‚’æ¸¡ã™ãŸã‚ï¼‰add 20250724 by tomoki suzuki
 	bool sts = CreateConstantBuffer(
-		Renderer::GetDevice(),					// ƒfƒoƒCƒXƒIƒuƒWƒFƒNƒg
-		sizeof(LINEWIDTHCBUFFER),				// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@ƒTƒCƒY
-		g_linewidthbuffer.GetAddressOf()		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@
+		Renderer::GetDevice(),					// ãƒ‡ãƒã‚¤ã‚¹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
+		sizeof(LINEWIDTHCBUFFER),				// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚º
+		g_linewidthbuffer.GetAddressOf()		// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡
 	);
 
 	assert(sts);
@@ -57,10 +57,10 @@ void SetLineWidth(float linewidth)
 
 	float writedata[4] = { linewidth ,linewidth ,linewidth ,linewidth };
 
-	// ’è”ƒoƒbƒtƒ@‚Ö‘‚«‚İ
+	// å®šæ•°ãƒãƒƒãƒ•ã‚¡ã¸æ›¸ãè¾¼ã¿
 	Renderer::GetDeviceContext()->UpdateSubresource(g_linewidthbuffer.Get(), 0, nullptr, writedata, 0, 0);
 
-	// ƒWƒIƒƒgƒŠƒVƒF[ƒ_[‚ÉƒZƒbƒg
+	// ã‚¸ã‚ªãƒ¡ãƒˆãƒªã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã«ã‚»ãƒƒãƒˆ
 	Renderer::GetDeviceContext()->GSSetConstantBuffers(6, 1, g_linewidthbuffer.GetAddressOf());
 
 }
@@ -75,7 +75,7 @@ void LineDrawerDraw(
 	g_mesh.Init(start, direction, length);
 	Matrix4x4 mtx = Matrix4x4::Identity;
 
-	// ’¸“_ƒoƒbƒtƒ@‚ğXV
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’æ›´æ–°
 	g_renderer.Modify(g_mesh.GetVertices());
 
 	Renderer::SetWorldMatrix(&mtx);

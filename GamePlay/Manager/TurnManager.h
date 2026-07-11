@@ -1,20 +1,20 @@
-#pragma once
+ï»¿#pragma once
 #include <vector>
 #include <functional>
 #include "../../EnumClass/TurnState.h"
 
 // =========================================================
-// TurnManager ƒNƒ‰ƒX
-// ƒ^[ƒ“§‚Ìisó‘ÔiƒtƒF[ƒYj‚ğŠÇ—‚µAƒIƒuƒU[ƒo[ƒpƒ^[ƒ“‚ğ—p‚¢‚Ä
-// ŠeƒGƒ“ƒeƒBƒeƒBiPlayer, Enemy “™j‚ÖƒtƒF[ƒY‘JˆÚ‚ğ‘aŒ‹‡‚É’Ê’m‚·‚é
+// TurnManager ã‚¯ãƒ©ã‚¹
+// ã‚¿ãƒ¼ãƒ³åˆ¶ã®é€²è¡ŒçŠ¶æ…‹ï¼ˆãƒ•ã‚§ãƒ¼ã‚ºï¼‰ã‚’ç®¡ç†ã—ã€ã‚ªãƒ–ã‚¶ãƒ¼ãƒãƒ¼ãƒ‘ã‚¿ãƒ¼ãƒ³ã‚’ç”¨ã„ã¦
+// å„ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ï¼ˆPlayer, Enemy ç­‰ï¼‰ã¸ãƒ•ã‚§ãƒ¼ã‚ºé·ç§»ã‚’ç–çµåˆã«é€šçŸ¥ã™ã‚‹
 // =========================================================
 class TurnManager {
 public:
-	// ƒ^[ƒ“ó‘Ô‚Ì•ÏX’Ê’m‚ğó‚¯æ‚é‚½‚ß‚ÌƒR[ƒ‹ƒoƒbƒNŒ^
+	// ã‚¿ãƒ¼ãƒ³çŠ¶æ…‹ã®å¤‰æ›´é€šçŸ¥ã‚’å—ã‘å–ã‚‹ãŸã‚ã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯å‹
 	using TurnCallBack = std::function<void(TurnState)>;
 
 	// ---------------------------------------------------------
-	// ƒIƒuƒU[ƒo[ŠÇ— (Observer Management)
+	// ã‚ªãƒ–ã‚¶ãƒ¼ãƒãƒ¼ç®¡ç† (Observer Management)
 	// ---------------------------------------------------------
 	void RegisterObserver(TurnCallBack callback) {
 		m_callbacksList.push_back(callback);
@@ -25,12 +25,12 @@ public:
 	}
 
 	// ---------------------------------------------------------
-	// ƒXƒe[ƒg§Œä (State Control)
+	// ã‚¹ãƒ†ãƒ¼ãƒˆåˆ¶å¾¡ (State Control)
 	// ---------------------------------------------------------
 	void SetState(TurnState newState) {
 		m_currentState = newState;
-		m_isTurnChangeRequested = false; // ó‘ÔˆÚs‚ªŠ®—¹‚µ‚½‚½‚ßA—v‹ƒtƒ‰ƒO‚ğƒŠƒZƒbƒg
-		NotifyObservers();               // “o˜^‚³‚ê‚½‘SƒIƒuƒWƒFƒNƒg‚Öó‘Ô•Ï‰»‚ğˆêÄ’Ê’m
+		m_isTurnChangeRequested = false; // çŠ¶æ…‹ç§»è¡ŒãŒå®Œäº†ã—ãŸãŸã‚ã€è¦æ±‚ãƒ•ãƒ©ã‚°ã‚’ãƒªã‚»ãƒƒãƒˆ
+		NotifyObservers();               // ç™»éŒ²ã•ã‚ŒãŸå…¨ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¸çŠ¶æ…‹å¤‰åŒ–ã‚’ä¸€æ–‰é€šçŸ¥
 	}
 
 	void RequestEndTurn() {
@@ -38,7 +38,7 @@ public:
 	}
 
 	// ---------------------------------------------------------
-	// ó‘ÔƒNƒGƒŠ (State Queries)
+	// çŠ¶æ…‹ã‚¯ã‚¨ãƒª (State Queries)
 	// ---------------------------------------------------------
 	bool IsTurnChangeRequested() const {
 		return m_isTurnChangeRequested;
@@ -56,7 +56,7 @@ private:
 	}
 
 	// =========================================================
-	// ƒƒ“ƒo[•Ï” (Member Variables)
+	// ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•° (Member Variables)
 	// =========================================================
 	TurnState m_currentState = TurnState::PlayerPhase;
 	std::vector<TurnCallBack> m_callbacksList;

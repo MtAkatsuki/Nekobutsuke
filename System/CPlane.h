@@ -1,18 +1,18 @@
-#pragma once
+ï»¿#pragma once
 #include "commontypes.h"
 
-// •½–Ê‚Ì•û’ö®‚ğ•\‚·\‘¢‘Ì
+// å¹³é¢ã®æ–¹ç¨‹å¼ã‚’è¡¨ã™æ§‹é€ ä½“
 struct Plane {
 	float a, b, c, d;
 };
 
-// ’nŒ`ƒf[ƒ^‚Ì–Ê‚Ì•û’ö®î•ñ
+// åœ°å½¢ãƒ‡ãƒ¼ã‚¿ã®é¢ã®æ–¹ç¨‹å¼æƒ…å ±
 struct PLANEINFO {
-	Plane		plane{};			//•½–Ê‚Ì•û’ö®
-	Vector3		p0{}, p1{}, p2{};	//’¸“_À•W
+	Plane		plane{};			//å¹³é¢ã®æ–¹ç¨‹å¼
+	Vector3		p0{}, p1{}, p2{};	//é ‚ç‚¹åº§æ¨™
 };
 
-// •½–ÊƒNƒ‰ƒX
+// å¹³é¢ã‚¯ãƒ©ã‚¹
 class CPlane {
 	PLANEINFO	m_planeinfo;
 public:

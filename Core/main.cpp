@@ -1,34 +1,34 @@
-#include "main.h"
+ï»¿#include "main.h"
 #include "Application.h"
-#include <objbase.h> // COM‰Šú‰»—p
+#include <objbase.h> // COMåˆæœŸåŒ–ç”¨
 
 // =========================================================
-// ƒGƒ“ƒgƒŠ[ƒ|ƒCƒ“ƒg
-// ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚Ì‰ŠúÝ’èiƒƒ‚ƒŠƒŠ[ƒNŒŸ’mAƒRƒ“ƒ\[ƒ‹§ŒäACOM‰Šú‰»j‚ðs‚¢A
-// ƒƒCƒ“ƒ‹[ƒv‚Öˆ—‚ðˆÏ÷‚·‚éB
+// ã‚¨ãƒ³ãƒˆãƒªãƒ¼ãƒã‚¤ãƒ³ãƒˆ
+// ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®åˆæœŸè¨­å®šï¼ˆãƒ¡ãƒ¢ãƒªãƒªãƒ¼ã‚¯æ¤œçŸ¥ã€ã‚³ãƒ³ã‚½ãƒ¼ãƒ«åˆ¶å¾¡ã€COMåˆæœŸåŒ–ï¼‰ã‚’è¡Œã„ã€
+// ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—ã¸å‡¦ç†ã‚’å§”è­²ã™ã‚‹ã€‚
 // =========================================================
 int main(void) {
 
 #if defined(DEBUG) || defined(_DEBUG)
-    // ƒfƒoƒbƒOŽž‚Íƒƒ‚ƒŠƒŠ[ƒNŒŸo‚ð—LŒø‰»
+    // ãƒ‡ãƒãƒƒã‚°æ™‚ã¯ãƒ¡ãƒ¢ãƒªãƒªãƒ¼ã‚¯æ¤œå‡ºã‚’æœ‰åŠ¹åŒ–
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #else
-    // ƒŠƒŠ[ƒXƒrƒ‹ƒhŽž‚ÍƒRƒ“ƒ\[ƒ‹ƒEƒBƒ“ƒhƒE‚ð”ñ•\Ž¦(SW_HIDE)‚É‚·‚é
+    // ãƒªãƒªãƒ¼ã‚¹ãƒ“ãƒ«ãƒ‰æ™‚ã¯ã‚³ãƒ³ã‚½ãƒ¼ãƒ«ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’éžè¡¨ç¤º(SW_HIDE)ã«ã™ã‚‹
     HWND consoleWindow = GetConsoleWindow();
     if (consoleWindow) {
         ShowWindow(consoleWindow, SW_HIDE);
     }
 #endif
 
-    // COM(Component Object Model)‚Ì‰Šú‰» (ƒ}ƒ‹ƒ`ƒXƒŒƒbƒhƒ‚ƒfƒ‹)
-    // ¦ DirectX‚ÌŠeŽíƒRƒ“ƒ|[ƒlƒ“ƒgiWIC“™j‚ð—˜—p‚·‚é‚½‚ß‚É•K{
+    // COM(Component Object Model)ã®åˆæœŸåŒ– (ãƒžãƒ«ãƒã‚¹ãƒ¬ãƒƒãƒ‰ãƒ¢ãƒ‡ãƒ«)
+    // â€» DirectXã®å„ç¨®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆï¼ˆWICç­‰ï¼‰ã‚’åˆ©ç”¨ã™ã‚‹ãŸã‚ã«å¿…é ˆ
     HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
     if (FAILED(hr)) {
         OutputDebugStringA("Failed to initialize COM!\n");
-        return -1; // –hŒä“IƒvƒƒOƒ‰ƒ~ƒ“ƒOFCOM‰Šú‰»Ž¸”sŽž‚Í‹N“®‚µ‚È‚¢
+        return -1; // é˜²å¾¡çš„ãƒ—ãƒ­ã‚°ãƒ©ãƒŸãƒ³ã‚°ï¼šCOMåˆæœŸåŒ–å¤±æ•—æ™‚ã¯èµ·å‹•ã—ãªã„
     }
 
-    // ƒAƒvƒŠƒP[ƒVƒ‡ƒ“ŽÀs
+    // ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³å®Ÿè¡Œ
     Application app(SCREEN_WIDTH, SCREEN_HEIGHT);
     app.Run();
 

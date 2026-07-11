@@ -1,49 +1,49 @@
-#pragma once
+﻿#pragma once
 #include <string>
 
 /**
- * @brief �V�[���J�ډ��o�̃C���^�[�t�F�[�X
+ * @brief シーン遷移演出のインターフェース
  *
- * �t�F�[�h�C���E�t�F�[�h�A�E�g��N���X�t�F�[�h�ȂǁA���o�I�ȃV�[���؂�ւ����o�𒊏ۉ������N���X�B
- * SceneManager �ɂ���ė��p����A�V�[���̐؂�ւ����ɉ��o���������ނ��߂̊��N���X�B
+ * フェードイン・フェードアウトやクロスフェードなど、視覚的なシーン切り替え演出を抽象化したクラス。
+ * SceneManager によって利用され、シーンの切り替え時に演出処理を挟むための基底クラス。
  */
 class SceneTransition {
 public:
-    /// @brief �f�t�H���g�̉��z�f�X�g���N�^�i�p���N���X�̈��S�Ȕj���̂��߁j
+    /// @brief デフォルトの仮想デストラクタ（継承クラスの安全な破棄のため）
     virtual ~SceneTransition() = default;
 
     /**
-     * @brief �J�ډ��o�̊J�n����
+     * @brief 遷移演出の開始処理
      *
-     * �J�ڂ��J�n���ꂽ�Ƃ��Ɉ�x�����Ă΂��B��������ݒ�ɗ��p�B
+     * 遷移が開始されたときに一度だけ呼ばれる。初期化や設定に利用。
      */
     virtual void start() = 0;
 
     /**
-     * @brief �J�ډ��o�̍X�V����
-     * @param deltaTime �O�t���[������̌o�ߎ��ԁi�}�C�N���b�Ȃǁj
+     * @brief 遷移演出の更新処理
+     * @param deltaTime 前フレームからの経過時間（マイクロ秒など）
      *
-     * �A�j���[�V�������Ԃ̍X�V�Ɏg�p����B
+     * アニメーションや状態の更新に使用する。
      */
     virtual void update(uint64_t deltaTime) = 0;
 
     /**
-     * @brief �J�ډ��o�̕`�揈��
+     * @brief 遷移演出の描画処理
      *
-     * �ʏ�̃V�[���`���ɏd�˂ĕ\�������B
+     * 通常のシーン描画後に重ねて表示される。
      */
     virtual void draw() = 0;
 
     /**
-     * @brief ���o�������������ǂ�����Ԃ�
-     * @return true ���������i�V�[���؂�ւ��j
-     * @return false ���o���i�܂��؂�ւ��s�j
+     * @brief 演出が完了したかどうかを返す
+     * @return true 完了した（シーン切り替え可）
+     * @return false 演出中（まだ切り替え不可）
      *
-     * SceneManager �͂�����Ď����āA�V�[����؂�ւ���^�C�~���O�𐧌䂷��B
+     * SceneManager はこれを監視して、シーンを切り替えるタイミングを制御する。
      */
     virtual bool isFinished() const = 0;
-    //�V�[���؂�ւ��̏����͂ł����̂�
+    //シーン切り替えの準備はできたのか
     virtual bool canSwap() const = 0;
-    //�V�[���؂�ւ������ʒm�F�ȍ~�̃A�j���[�V�����i��FFadeIn�j�����s
+    //シーン切り替え完了通知：以降のアニメーション（例：FadeIn）を実行
     virtual void onSceneSwapped() = 0;
 };

@@ -1,20 +1,20 @@
-#pragma once
+ï»¿#pragma once
 class GameContext;
 
 class GameResultJudge {
 public:
     explicit GameResultJudge(GameContext* context) : m_context(context) {}
 
-    // –ˆƒtƒŒ[ƒ€Ÿ”s‚ğ”»’è‚µAŠm’èŒã‚Í—]‰CŠÔ‚ğŒo‚ÄƒV[ƒ“‘JˆÚ‚Ü‚ÅÀs‚·‚é
+    // æ¯ãƒ•ãƒ¬ãƒ¼ãƒ å‹æ•—ã‚’åˆ¤å®šã—ã€ç¢ºå®šå¾Œã¯ä½™éŸ»æ™‚é–“ã‚’çµŒã¦ã‚·ãƒ¼ãƒ³é·ç§»ã¾ã§å®Ÿè¡Œã™ã‚‹
     void Update(float deltaSeconds);
 
-    // Œ»İA”s–kğŒ‚ğ–‚½‚µ‚Ä‚¢‚é‚©iƒ^[ƒ“is‚Ì—}~‚Ég—pj
+    // ç¾åœ¨ã€æ•—åŒ—æ¡ä»¶ã‚’æº€ãŸã—ã¦ã„ã‚‹ã‹ï¼ˆã‚¿ãƒ¼ãƒ³é€²è¡Œã®æŠ‘æ­¢ã«ä½¿ç”¨ï¼‰
     bool IsGameOverCondition() const;
 
-    // ”s–k‰‰o‚Ì‘Ò‹@’†‚©
+    // æ•—åŒ—æ¼”å‡ºã®å¾…æ©Ÿä¸­ã‹
     bool IsGameOverProcessing() const { return m_isGameOverProcessing; }
 
-    // ƒV[ƒ“‘JˆÚŠJnÏ‚İ‚©iˆÈ~‚Ì“ü—Í‚ğ–³Œø‰»j
+    // ã‚·ãƒ¼ãƒ³é·ç§»é–‹å§‹æ¸ˆã¿ã‹ï¼ˆä»¥é™ã®å…¥åŠ›ã‚’ç„¡åŠ¹åŒ–ï¼‰
     bool IsSceneChanging() const { return m_isSceneChanging; }
 
 private:
@@ -24,7 +24,7 @@ private:
     bool IsGameClearCondition() const;
     bool IsFieldBusyForClear() const;
 
-    GameContext* m_context = nullptr;   // ”ñŠ—L
+    GameContext* m_context = nullptr;   // éæ‰€æœ‰
 
     bool  m_isGameOverProcessing = false;
     bool  m_isSceneChanging = false;

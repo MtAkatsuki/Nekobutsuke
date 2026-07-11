@@ -1,14 +1,14 @@
-#include "transform.h"
+ï»¿#include "transform.h"
 #include "CSprite.h"
 #include "renderer.h"
 
-/// @brief ƒXƒvƒ‰ƒCƒg—p‚Ì‹¤’ÊƒVƒF[ƒ_
+/// @brief ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆç”¨ã®å…±é€šã‚·ã‚§ãƒ¼ãƒ€
 CShader CSprite::m_Shader{};
 
 /**
- * @brief ƒ}ƒeƒŠƒAƒ‹‚ğ‰Šú‰»‚·‚é
+ * @brief ãƒãƒ†ãƒªã‚¢ãƒ«ã‚’åˆæœŸåŒ–ã™ã‚‹
  *
- * ƒfƒtƒHƒ‹ƒg‚Ìƒ‰ƒCƒeƒBƒ“ƒO‚È‚µ”’ƒ}ƒeƒŠƒAƒ‹‚ğİ’è‚µAƒeƒNƒXƒ`ƒƒ‚ğ—LŒø‚É‚µ‚Ü‚·B
+ * ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ãƒ©ã‚¤ãƒ†ã‚£ãƒ³ã‚°ãªã—ç™½ãƒãƒ†ãƒªã‚¢ãƒ«ã‚’è¨­å®šã—ã€ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æœ‰åŠ¹ã«ã—ã¾ã™ã€‚
  */
 void CSprite::CreateMtrl() {
 	MATERIAL mtrl;
@@ -23,28 +23,28 @@ void CSprite::CreateMtrl() {
 }
 
 /**
- * @brief ƒ}ƒeƒŠƒAƒ‹‚ğ‰Šú‰»‚·‚é
+ * @brief ãƒãƒ†ãƒªã‚¢ãƒ«ã‚’åˆæœŸåŒ–ã™ã‚‹
  *
- * ƒfƒtƒHƒ‹ƒg‚Ìƒ‰ƒCƒeƒBƒ“ƒO‚È‚µ”’ƒ}ƒeƒŠƒAƒ‹‚ğİ’è‚µAƒeƒNƒXƒ`ƒƒ‚ğ—LŒø‚É‚µ‚Ü‚·B
+ * ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ãƒ©ã‚¤ãƒ†ã‚£ãƒ³ã‚°ãªã—ç™½ãƒãƒ†ãƒªã‚¢ãƒ«ã‚’è¨­å®šã—ã€ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æœ‰åŠ¹ã«ã—ã¾ã™ã€‚
  */
 void CSprite::ModifyMtrl(MATERIAL mtrl) {
 	m_Material.SetMaterial(mtrl);
 }
 /**
- * @brief ƒXƒvƒ‰ƒCƒg—p‚ÌƒVƒF[ƒ_‚ğ“Ç‚İ‚İE¶¬‚·‚é
+ * @brief ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆç”¨ã®ã‚·ã‚§ãƒ¼ãƒ€ã‚’èª­ã¿è¾¼ã¿ãƒ»ç”Ÿæˆã™ã‚‹
  *
- * ’¸“_ƒVƒF[ƒ_‚ÆƒsƒNƒZƒ‹ƒVƒF[ƒ_‚ğƒ[ƒh‚µ‚ÄƒoƒCƒ“ƒh‰Â”\‚Èó‘Ô‚É‚µ‚Ü‚·B
+ * é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ã¨ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ã‚’ãƒ­ãƒ¼ãƒ‰ã—ã¦ãƒã‚¤ãƒ³ãƒ‰å¯èƒ½ãªçŠ¶æ…‹ã«ã—ã¾ã™ã€‚
  */
 void CSprite::CreateShader() {
 	m_Shader.Create("shader/unlitTextureVS.hlsl", "shader/unlitTexturePS.hlsl");
 }
 
 /**
- * @brief ƒeƒNƒXƒ`ƒƒ‚ğ“Ç‚İ‚Ş
+ * @brief ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’èª­ã¿è¾¼ã‚€
  *
- * @param texfilename “Ç‚İ‚ŞƒeƒNƒXƒ`ƒƒƒtƒ@ƒCƒ‹‚ÌƒpƒX
+ * @param texfilename èª­ã¿è¾¼ã‚€ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ‘ã‚¹
  *
- * @note “Ç‚İ‚İ‚É¸”s‚µ‚½ê‡‚Í assert ‚É‚æ‚èƒNƒ‰ƒbƒVƒ…‚µ‚Ü‚·B
+ * @note èª­ã¿è¾¼ã¿ã«å¤±æ•—ã—ãŸå ´åˆã¯ assert ã«ã‚ˆã‚Šã‚¯ãƒ©ãƒƒã‚·ãƒ¥ã—ã¾ã™ã€‚
  */
 void CSprite::CreateTexture(const std::string& texfilename) {
 	bool sts = m_Texture.Load(texfilename, true);
@@ -52,14 +52,14 @@ void CSprite::CreateTexture(const std::string& texfilename) {
 }
 
 /**
- * @brief ƒXƒvƒ‰ƒCƒg‚ÌƒRƒ“ƒXƒgƒ‰ƒNƒ^
+ * @brief ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
  *
- * w’è‚³‚ê‚½•E‚‚³EƒeƒNƒXƒ`ƒƒEUV‚ÅƒXƒvƒ‰ƒCƒg‚ğ‰Šú‰»‚µ‚Ü‚·B
+ * æŒ‡å®šã•ã‚ŒãŸå¹…ãƒ»é«˜ã•ãƒ»ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒ»UVã§ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’åˆæœŸåŒ–ã—ã¾ã™ã€‚
  *
- * @param width ƒXƒvƒ‰ƒCƒg‚Ì•iƒsƒNƒZƒ‹j
- * @param height ƒXƒvƒ‰ƒCƒg‚Ì‚‚³iƒsƒNƒZƒ‹j
- * @param texfilename g—p‚·‚éƒeƒNƒXƒ`ƒƒ‚Ìƒtƒ@ƒCƒ‹–¼
- * @param uv UVÀ•Wi¶ãA‰EãA¶‰ºA‰E‰ºj‚Ì”z—ñ
+ * @param width ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®å¹…ï¼ˆãƒ”ã‚¯ã‚»ãƒ«ï¼‰
+ * @param height ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®é«˜ã•ï¼ˆãƒ”ã‚¯ã‚»ãƒ«ï¼‰
+ * @param texfilename ä½¿ç”¨ã™ã‚‹ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ãƒ•ã‚¡ã‚¤ãƒ«å
+ * @param uv UVåº§æ¨™ï¼ˆå·¦ä¸Šã€å³ä¸Šã€å·¦ä¸‹ã€å³ä¸‹ï¼‰ã®é…åˆ—
  */
 
 CSprite::CSprite(int width, int height, std::string texfilename, std::array<Vector2, 4> uv)
@@ -91,11 +91,11 @@ CSprite::CSprite(int width, int height, std::string texfilename, std::array<Vect
 }
 
 /**
- * @brief UVÀ•W‚ğXV‚·‚é
+ * @brief UVåº§æ¨™ã‚’æ›´æ–°ã™ã‚‹
  *
- * @param uv V‚µ‚¢UVÀ•Wi”z—ñ’·4F¶ãE‰EãE¶‰ºE‰E‰ºj
+ * @param uv æ–°ã—ã„UVåº§æ¨™ï¼ˆé…åˆ—é•·4ï¼šå·¦ä¸Šãƒ»å³ä¸Šãƒ»å·¦ä¸‹ãƒ»å³ä¸‹ï¼‰
  *
- * @note •ÏXŒã‚Í’¸“_ƒoƒbƒtƒ@‚ªÄ\’z‚³‚ê‚Ü‚·B
+ * @note å¤‰æ›´å¾Œã¯é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ãŒå†æ§‹ç¯‰ã•ã‚Œã¾ã™ã€‚
  */
 void CSprite::ModifyUV(const Vector2* uv)
 {
@@ -108,13 +108,13 @@ void CSprite::ModifyUV(const Vector2* uv)
 }
 
 /**
- * @brief ƒXƒvƒ‰ƒCƒg‚ğ•`‰æ‚·‚é
+ * @brief ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’æç”»ã™ã‚‹
  *
- * w’è‚³‚ê‚½ƒXƒP[ƒ‹E‰ñ“]EˆÊ’u‚ÅƒXƒvƒ‰ƒCƒg‚ğ•`‰æ‚µ‚Ü‚·B
+ * æŒ‡å®šã•ã‚ŒãŸã‚¹ã‚±ãƒ¼ãƒ«ãƒ»å›è»¢ãƒ»ä½ç½®ã§ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’æç”»ã—ã¾ã™ã€‚
  *
- * @param scale ƒXƒP[ƒŠƒ“ƒOiX, Y, Zj
- * @param rotation ‰ñ“]ŠpiX, Y, ZFƒ‰ƒWƒAƒ“j
- * @param pos ƒ[ƒ‹ƒh‹óŠÔã‚ÌˆÊ’u
+ * @param scale ã‚¹ã‚±ãƒ¼ãƒªãƒ³ã‚°ï¼ˆX, Y, Zï¼‰
+ * @param rotation å›è»¢è§’ï¼ˆX, Y, Zï¼šãƒ©ã‚¸ã‚¢ãƒ³ï¼‰
+ * @param pos ãƒ¯ãƒ¼ãƒ«ãƒ‰ç©ºé–“ä¸Šã®ä½ç½®
  */
 void CSprite::Draw(Vector3 scale, Vector3 rotation, Vector3 pos)
 {
@@ -138,16 +138,16 @@ void CSprite::Draw(Vector3 scale, Vector3 rotation, Vector3 pos)
 	m_Texture.SetGPU();
 
 	devicecontext->DrawIndexed(
-		4, // ƒCƒ“ƒfƒbƒNƒX”
-		0, // ŠJnƒCƒ“ƒfƒbƒNƒX
-		0  // ’¸“_ƒoƒbƒtƒ@‚ÌƒIƒtƒZƒbƒg
+		4, // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+		0, // é–‹å§‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+		0  // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ
 	);
 }
 
 /**
- * @brief ƒXƒvƒ‰ƒCƒg‚ğ•`‰æ
+ * @brief ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’æç”»
  *
- * @param Matrix4x4 s—ñ
+ * @param Matrix4x4 è¡Œåˆ—
  */
 void CSprite::Draw(Matrix4x4 mtx) 
 {
@@ -164,18 +164,18 @@ void CSprite::Draw(Matrix4x4 mtx)
 	m_Texture.SetGPU();
 
 	devicecontext->DrawIndexed(
-		4, // ƒCƒ“ƒfƒbƒNƒX”
-		0, // ŠJnƒCƒ“ƒfƒbƒNƒX
-		0  // ’¸“_ƒoƒbƒtƒ@‚ÌƒIƒtƒZƒbƒg
+		4, // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+		0, // é–‹å§‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+		0  // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ
 	);
 }
 
 /**
- * @brief g—p‚µ‚Ä‚¢‚éƒŠƒ\[ƒX‚ğ‰ğ•ú‚·‚é
+ * @brief ä½¿ç”¨ã—ã¦ã„ã‚‹ãƒªã‚½ãƒ¼ã‚¹ã‚’è§£æ”¾ã™ã‚‹
  *
- * @note Œ»İ‚Í–¢À‘•‚Å‚·‚ªA–¾¦“I‚È‰ğ•úˆ—‚ğ’Ç‰Á‚·‚éÛ‚Ég—p‚µ‚Ü‚·B
+ * @note ç¾åœ¨ã¯æœªå®Ÿè£…ã§ã™ãŒã€æ˜ç¤ºçš„ãªè§£æ”¾å‡¦ç†ã‚’è¿½åŠ ã™ã‚‹éš›ã«ä½¿ç”¨ã—ã¾ã™ã€‚
  */
 void CSprite::Dispose()
 {
-	// •K—v‚É‰‚¶‚ÄƒŠƒ\[ƒX‰ğ•ú‚ğ‹Lq
+	// å¿…è¦ã«å¿œã˜ã¦ãƒªã‚½ãƒ¼ã‚¹è§£æ”¾ã‚’è¨˜è¿°
 }

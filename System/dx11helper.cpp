@@ -1,25 +1,25 @@
-#include	<vector>
+ï»¿#include	<vector>
 #include	<string>
 #include	"dx11helper.h"
 
 #pragma comment(lib,"d3dcompiler.lib")
 
 //--------------------------------------------------------------------------------------
-// ƒtƒ@ƒCƒ‹–¼‚ğæ“¾‚·‚é
+// ãƒ•ã‚¡ã‚¤ãƒ«åã‚’å–å¾—ã™ã‚‹
 //--------------------------------------------------------------------------------------
 std::string ExtractFileName(std::string fullpath, char split)
 {
 	unsigned int path_i = static_cast<unsigned int>(fullpath.find_last_of(split) + 1);//7
 	unsigned int ext_i = static_cast<unsigned int>(fullpath.find_last_of("."));//10
-	std::string pathname = fullpath.substr(0, path_i + 1);//0•¶š–Ú‚©‚ç‚V•¶šØ‚èo‚· "C:\\aaa\\"
-	std::string extname = fullpath.substr(ext_i, fullpath.size() - ext_i); // 10•¶š–Ú‚©‚ç‚S•¶šØ‚èo‚· ".txt"
+	std::string pathname = fullpath.substr(0, path_i + 1);//0æ–‡å­—ç›®ã‹ã‚‰ï¼—æ–‡å­—åˆ‡ã‚Šå‡ºã™ "C:\\aaa\\"
+	std::string extname = fullpath.substr(ext_i, fullpath.size() - ext_i); // 10æ–‡å­—ç›®ã‹ã‚‰ï¼”æ–‡å­—åˆ‡ã‚Šå‡ºã™ ".txt"
 	std::string filename = fullpath.substr(path_i, ext_i - path_i);//
 
 	return filename + extname;
 }
 
 //--------------------------------------------------------------------------------------
-// ƒtƒ@ƒCƒ‹‚ÌŠg’£q‚ğæ“¾‚·‚é
+// ãƒ•ã‚¡ã‚¤ãƒ«ã®æ‹¡å¼µå­ã‚’å–å¾—ã™ã‚‹
 //--------------------------------------------------------------------------------------
 std::string GetFileExt(const char* filename) {
 	std::string extname;
@@ -31,7 +31,7 @@ std::string GetFileExt(const char* filename) {
 }
 
 //--------------------------------------------------------------------------------------
-// ƒRƒ“ƒpƒCƒ‹Ï‚İƒVƒF[ƒ_[ƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚Ş
+// ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«æ¸ˆã¿ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚€
 //--------------------------------------------------------------------------------------
 bool readShader(const char* csoName, std::vector<unsigned char>& byteArray)
 {
@@ -52,7 +52,7 @@ bool readShader(const char* csoName, std::vector<unsigned char>& byteArray)
 }
 
 //--------------------------------------------------------------------------------------
-// ƒVƒF[ƒ_[‚ğƒtƒ@ƒCƒ‹Šg’£q‚É‡‚í‚¹‚ÄƒRƒ“ƒpƒCƒ‹
+// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ãƒ•ã‚¡ã‚¤ãƒ«æ‹¡å¼µå­ã«åˆã‚ã›ã¦ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«
 //--------------------------------------------------------------------------------------
 HRESULT CompileShader(const char* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, void** ShaderObject, size_t& ShaderObjectSize, ID3DBlob** ppBlobOut) {
 
@@ -87,7 +87,7 @@ HRESULT CompileShader(const char* szFileName, LPCSTR szEntryPoint, LPCSTR szShad
 }
 
 //--------------------------------------------------------------------------------------
-// ƒVƒF[ƒ_[‚ğƒRƒ“ƒpƒCƒ‹
+// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«
 //--------------------------------------------------------------------------------------
 HRESULT CompileShaderFromFile(const char* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut)
 {
@@ -99,7 +99,7 @@ HRESULT CompileShaderFromFile(const char* szFileName, LPCSTR szEntryPoint, LPCST
 	size_t 	wLen = 0;
 	int err = 0;
 
-	// char -> wchar‚É•ÏŠ·
+	// char -> wcharã«å¤‰æ›
 	setlocale(LC_ALL, "japanese");
 	err = mbstowcs_s(&wLen, filename, 512, szFileName, _TRUNCATE);
 
@@ -138,7 +138,7 @@ HRESULT CompileShaderFromFile(const char* szFileName, LPCSTR szEntryPoint, LPCST
 }
 
 //--------------------------------------------------------------------------------------
-// ’¸“_ƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ğ¶¬‚·‚é
+// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆã™ã‚‹
 //--------------------------------------------------------------------------------------
 bool CreateVertexShader(
 	ID3D11Device* device,
@@ -157,7 +157,7 @@ bool CreateVertexShader(
 	void* ShaderObject;
 	size_t	ShaderObjectSize;
 
-	// ƒtƒ@ƒCƒ‹‚ÌŠg’£q‚É‡‚í‚¹‚ÄƒRƒ“ƒpƒCƒ‹
+	// ãƒ•ã‚¡ã‚¤ãƒ«ã®æ‹¡å¼µå­ã«åˆã‚ã›ã¦ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«
 	hr = CompileShader(szFileName, szEntryPoint, szShaderModel, &ShaderObject, ShaderObjectSize, &pBlob);
 	if (FAILED(hr))
 	{
@@ -165,7 +165,7 @@ bool CreateVertexShader(
 		return false;
 	}
 
-	// ’¸“_ƒVƒF[ƒ_[‚ğ¶¬
+	// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ç”Ÿæˆ
 	hr = device->CreateVertexShader(ShaderObject, ShaderObjectSize, nullptr, ppVertexShader);
 	if (FAILED(hr))
 	{
@@ -173,7 +173,7 @@ bool CreateVertexShader(
 		return false;
 	}
 
-	// ’¸“_ƒf[ƒ^’è‹`¶¬
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿å®šç¾©ç”Ÿæˆ
 	hr = device->CreateInputLayout(
 		layout,
 		numElements,
@@ -190,7 +190,7 @@ bool CreateVertexShader(
 }
 
 //--------------------------------------------------------------------------------------
-// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ğ¶¬‚·‚é
+// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆã™ã‚‹
 //--------------------------------------------------------------------------------------
 bool CreatePixelShader(ID3D11Device* device,
 	const char* szFileName,
@@ -205,14 +205,14 @@ bool CreatePixelShader(ID3D11Device* device,
 	void* ShaderObject;
 	size_t	ShaderObjectSize;
 
-	// ƒtƒ@ƒCƒ‹‚ÌŠg’£q‚É‡‚í‚¹‚ÄƒRƒ“ƒpƒCƒ‹
+	// ãƒ•ã‚¡ã‚¤ãƒ«ã®æ‹¡å¼µå­ã«åˆã‚ã›ã¦ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«
 	hr = CompileShader(szFileName, szEntryPoint, szShaderModel, &ShaderObject, ShaderObjectSize, &pBlob);
 	if (FAILED(hr))
 	{
 		return false;
 	}
 
-	// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[‚ğ¶¬
+	// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ç”Ÿæˆ
 	hr = device->CreatePixelShader(ShaderObject, ShaderObjectSize, nullptr, ppPixelShader);
 	if (FAILED(hr))
 	{
@@ -224,7 +224,7 @@ bool CreatePixelShader(ID3D11Device* device,
 }
 
 //--------------------------------------------------------------------------------------
-// ƒWƒIƒƒgƒŠƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ğ¶¬‚·‚é
+// ã‚¸ã‚ªãƒ¡ãƒˆãƒªã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆã™ã‚‹
 //--------------------------------------------------------------------------------------
 bool CreateGeometryShader(ID3D11Device* device,
 	const char* szFileName,
@@ -239,14 +239,14 @@ bool CreateGeometryShader(ID3D11Device* device,
 	void* ShaderObject;
 	size_t	ShaderObjectSize;
 
-	// ƒtƒ@ƒCƒ‹‚ÌŠg’£q‚É‡‚í‚¹‚ÄƒRƒ“ƒpƒCƒ‹
+	// ãƒ•ã‚¡ã‚¤ãƒ«ã®æ‹¡å¼µå­ã«åˆã‚ã›ã¦ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«
 	hr = CompileShader(szFileName, szEntryPoint, szShaderModel, &ShaderObject, ShaderObjectSize, &pBlob);
 	if (FAILED(hr))
 	{
 		return false;
 	}
 
-	// ƒWƒIƒƒgƒŠƒVƒF[ƒ_[‚ğ¶¬
+	// ã‚¸ã‚ªãƒ¡ãƒˆãƒªã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ç”Ÿæˆ
 	hr = device->CreateGeometryShader(ShaderObject, ShaderObjectSize, nullptr, ppGeometryShader);
 	if (FAILED(hr))
 	{
@@ -258,22 +258,22 @@ bool CreateGeometryShader(ID3D11Device* device,
 }
 
 /*----------------------------
-ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@‚ğì¬
+ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ã‚’ä½œæˆ
 ------------------------------*/
 bool CreateConstantBuffer(
-	ID3D11Device* device,					// ƒfƒoƒCƒXƒIƒuƒWƒFƒNƒg
-	unsigned int bytesize,					// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@ƒTƒCƒY
-	ID3D11Buffer** pConstantBuffer			// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@
+	ID3D11Device* device,					// ãƒ‡ãƒã‚¤ã‚¹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
+	unsigned int bytesize,					// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚º
+	ID3D11Buffer** pConstantBuffer			// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡
 	){
 
-	// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@¶¬
+	// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	D3D11_BUFFER_DESC bd;
 
 	ZeroMemory(&bd, sizeof(bd));
-	bd.Usage = D3D11_USAGE_DEFAULT;								// ƒoƒbƒtƒ@g—p•û–@
-	bd.ByteWidth = bytesize;									// ƒoƒbƒtƒ@‚Ì‘å‚«
-	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;					// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@
-	bd.CPUAccessFlags = 0;										// CPUƒAƒNƒZƒX•s—v
+	bd.Usage = D3D11_USAGE_DEFAULT;								// ãƒãƒƒãƒ•ã‚¡ä½¿ç”¨æ–¹æ³•
+	bd.ByteWidth = bytesize;									// ãƒãƒƒãƒ•ã‚¡ã®å¤§ã
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;					// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡
+	bd.CPUAccessFlags = 0;										// CPUã‚¢ã‚¯ã‚»ã‚¹ä¸è¦
 
 	HRESULT hr = device->CreateBuffer(&bd, nullptr, pConstantBuffer);
 	if (FAILED(hr)){
@@ -285,22 +285,22 @@ bool CreateConstantBuffer(
 }
 
 /*----------------------------
-ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@‚ğì¬(MAP‚Å‘‚«Š·‚¦‰Â”\)
+ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ã‚’ä½œæˆ(MAPã§æ›¸ãæ›ãˆå¯èƒ½)
 ------------------------------*/
 bool CreateConstantBufferWrite(
-	ID3D11Device* device,					// ƒfƒoƒCƒXƒIƒuƒWƒFƒNƒg
-	unsigned int bytesize,					// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@ƒTƒCƒY
-	ID3D11Buffer** pConstantBuffer			// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@
+	ID3D11Device* device,					// ãƒ‡ãƒã‚¤ã‚¹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
+	unsigned int bytesize,					// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚º
+	ID3D11Buffer** pConstantBuffer			// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡
 ) {
 
-	// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@¶¬
+	// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	D3D11_BUFFER_DESC bd;
 
 	ZeroMemory(&bd, sizeof(bd));
-	bd.Usage = D3D11_USAGE_DYNAMIC;							// ƒoƒbƒtƒ@g—p•û–@
-	bd.ByteWidth = bytesize;									// ƒoƒbƒtƒ@‚Ì‘å‚«
-	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;					// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;					// CPUƒAƒNƒZƒX‰Â”\
+	bd.Usage = D3D11_USAGE_DYNAMIC;							// ãƒãƒƒãƒ•ã‚¡ä½¿ç”¨æ–¹æ³•
+	bd.ByteWidth = bytesize;									// ãƒãƒƒãƒ•ã‚¡ã®å¤§ã
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;					// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;					// CPUã‚¢ã‚¯ã‚»ã‚¹å¯èƒ½
 
 	HRESULT hr = device->CreateBuffer(&bd, nullptr, pConstantBuffer);
 	if (FAILED(hr)) {
@@ -312,23 +312,23 @@ bool CreateConstantBufferWrite(
 }
 
 /*------------------------
-ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ğì¬
+ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ä½œæˆ
 --------------------------*/
 bool CreateIndexBuffer(
-	ID3D11Device* device,						// ƒfƒoƒCƒXƒIƒuƒWƒFƒNƒg
-	unsigned int indexnum,						// ƒCƒ“ƒfƒbƒNƒX”
-	void* indexdata,							// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
-	ID3D11Buffer** pIndexBuffer){				// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@
+	ID3D11Device* device,						// ãƒ‡ãƒã‚¤ã‚¹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
+	unsigned int indexnum,						// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+	void* indexdata,							// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+	ID3D11Buffer** pIndexBuffer){				// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡
 
-	// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@¶¬
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	D3D11_BUFFER_DESC bd;
 	D3D11_SUBRESOURCE_DATA InitData;
 
 	ZeroMemory(&bd, sizeof(bd));
-	bd.Usage = D3D11_USAGE_DEFAULT;								// ƒoƒbƒtƒ@g—p•û
-	bd.ByteWidth = sizeof(unsigned int) * indexnum;				// ƒoƒbƒtƒ@‚Ì‘å‚«
-	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;						// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@
-	bd.CPUAccessFlags = 0;										// CPUƒAƒNƒZƒX•s—v
+	bd.Usage = D3D11_USAGE_DEFAULT;								// ãƒãƒƒãƒ•ã‚¡ä½¿ç”¨æ–¹
+	bd.ByteWidth = sizeof(unsigned int) * indexnum;				// ãƒãƒƒãƒ•ã‚¡ã®å¤§ã
+	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;						// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡
+	bd.CPUAccessFlags = 0;										// CPUã‚¢ã‚¯ã‚»ã‚¹ä¸è¦
 
 	ZeroMemory(&InitData, sizeof(InitData));
 	InitData.pSysMem = indexdata;
@@ -343,31 +343,31 @@ bool CreateIndexBuffer(
 }
 
 /*------------------------
-’¸“_ƒoƒbƒtƒ@‚ğì¬
+é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ä½œæˆ
 --------------------------*/
 bool CreateVertexBuffer(
 	ID3D11Device* device,
-	unsigned int stride,				// ‚P’¸“_“–‚½‚èƒoƒCƒg”
-	unsigned int vertexnum,				// ’¸“_”
-	void* vertexdata,					// ’¸“_ƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
-	ID3D11Buffer** pVertexBuffer		// ’¸“_ƒoƒbƒtƒ@
+	unsigned int stride,				// ï¼‘é ‚ç‚¹å½“ãŸã‚Šãƒã‚¤ãƒˆæ•°
+	unsigned int vertexnum,				// é ‚ç‚¹æ•°
+	void* vertexdata,					// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+	ID3D11Buffer** pVertexBuffer		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 	){
 
 	HRESULT hr;
 
-	// ’¸“_ƒoƒbƒtƒ@¶¬
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
-	bd.Usage = D3D11_USAGE_DEFAULT;				// ƒoƒbƒtƒ@g—p•û–@
-	bd.ByteWidth = stride * vertexnum;			// ƒoƒbƒtƒ@‚Ì‘å‚«‚³
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// ’¸“_ƒoƒbƒtƒ@
-	bd.CPUAccessFlags = 0;						// CPUƒAƒNƒZƒX•s—v
+	bd.Usage = D3D11_USAGE_DEFAULT;				// ãƒãƒƒãƒ•ã‚¡ä½¿ç”¨æ–¹æ³•
+	bd.ByteWidth = stride * vertexnum;			// ãƒãƒƒãƒ•ã‚¡ã®å¤§ãã•
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
+	bd.CPUAccessFlags = 0;						// CPUã‚¢ã‚¯ã‚»ã‚¹ä¸è¦
 
 	D3D11_SUBRESOURCE_DATA InitData;
 	ZeroMemory(&InitData, sizeof(InitData));
-	InitData.pSysMem = vertexdata;				// ƒoƒbƒtƒ@‚Ì‰Šú’l
+	InitData.pSysMem = vertexdata;				// ãƒãƒƒãƒ•ã‚¡ã®åˆæœŸå€¤
 
-	hr = device->CreateBuffer(&bd, &InitData, pVertexBuffer);		// ƒoƒbƒtƒ@¶¬
+	hr = device->CreateBuffer(&bd, &InitData, pVertexBuffer);		// ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	if (FAILED(hr)){
 		MessageBox(nullptr, "CreateBuffer(vertex buffer) error", "Error", MB_OK);
 		return false;
@@ -377,31 +377,31 @@ bool CreateVertexBuffer(
 }
 
 /*------------------------
-’¸“_ƒoƒbƒtƒ@‚ğì¬(‚b‚o‚t‘‚«‚İ‰Â”\)
+é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ä½œæˆ(ï¼£ï¼°ï¼µæ›¸ãè¾¼ã¿å¯èƒ½)
 --------------------------*/
 bool CreateVertexBufferWrite(
 	ID3D11Device* device,
-	unsigned int stride,				// ‚P’¸“_“–‚½‚èƒoƒCƒg”
-	unsigned int vertexnum,				// ’¸“_”
-	void* vertexdata,					// ’¸“_ƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
-	ID3D11Buffer** pVertexBuffer		// ’¸“_ƒoƒbƒtƒ@
+	unsigned int stride,				// ï¼‘é ‚ç‚¹å½“ãŸã‚Šãƒã‚¤ãƒˆæ•°
+	unsigned int vertexnum,				// é ‚ç‚¹æ•°
+	void* vertexdata,					// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+	ID3D11Buffer** pVertexBuffer		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 ) {
 
 	HRESULT hr;
 
-	// ’¸“_ƒoƒbƒtƒ@¶¬
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
-	bd.Usage = D3D11_USAGE_DYNAMIC;							// ƒoƒbƒtƒ@g—p•û–@
-	bd.ByteWidth = stride * vertexnum;						// ƒoƒbƒtƒ@‚Ì‘å‚«‚³
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;				// ’¸“_ƒoƒbƒtƒ@
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;				// CPUƒAƒNƒZƒX‰Â”\
+	bd.Usage = D3D11_USAGE_DYNAMIC;							// ãƒãƒƒãƒ•ã‚¡ä½¿ç”¨æ–¹æ³•
+	bd.ByteWidth = stride * vertexnum;						// ãƒãƒƒãƒ•ã‚¡ã®å¤§ãã•
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;				// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;				// CPUã‚¢ã‚¯ã‚»ã‚¹å¯èƒ½
 
 	D3D11_SUBRESOURCE_DATA InitData;
 	ZeroMemory(&InitData, sizeof(InitData));
-	InitData.pSysMem = vertexdata;							// ƒoƒbƒtƒ@‚Ì‰Šú’l
+	InitData.pSysMem = vertexdata;							// ãƒãƒƒãƒ•ã‚¡ã®åˆæœŸå€¤
 
-	hr = device->CreateBuffer(&bd, &InitData, pVertexBuffer);		// ƒoƒbƒtƒ@¶¬
+	hr = device->CreateBuffer(&bd, &InitData, pVertexBuffer);		// ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	if (FAILED(hr)) {
 		MessageBox(nullptr, "CreateBuffer(vertex buffer) error", "Error", MB_OK);
 		return false;
@@ -411,21 +411,21 @@ bool CreateVertexBufferWrite(
 }
 
 /*------------------------
-’¸“_ƒoƒbƒtƒ@(UAV)‚ğì¬
+é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡(UAV)ã‚’ä½œæˆ
 --------------------------*/
 bool CreateVertexBufferUAV(
 	ID3D11Device* device,
-	unsigned int stride,				// ‚P’¸“_“–‚½‚èƒoƒCƒg”
-	unsigned int vertexnum,				// ’¸“_”
-	void* vertexdata,					// ’¸“_ƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
-	ID3D11Buffer** pVertexBuffer		// ’¸“_ƒoƒbƒtƒ@
+	unsigned int stride,				// ï¼‘é ‚ç‚¹å½“ãŸã‚Šãƒã‚¤ãƒˆæ•°
+	unsigned int vertexnum,				// é ‚ç‚¹æ•°
+	void* vertexdata,					// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+	ID3D11Buffer** pVertexBuffer		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 	){
 
 	HRESULT hr;
 
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
-	bd.ByteWidth = stride * vertexnum;						// ƒoƒbƒtƒ@‚Ì‘å‚«‚³
+	bd.ByteWidth = stride * vertexnum;						// ãƒãƒƒãƒ•ã‚¡ã®å¤§ãã•
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.BindFlags =
 		D3D11_BIND_VERTEX_BUFFER |
@@ -436,9 +436,9 @@ bool CreateVertexBufferUAV(
 
 	D3D11_SUBRESOURCE_DATA InitData;
 	ZeroMemory(&InitData, sizeof(InitData));
-	InitData.pSysMem = vertexdata;							// ƒoƒbƒtƒ@‚Ì‰Šú’l
+	InitData.pSysMem = vertexdata;							// ãƒãƒƒãƒ•ã‚¡ã®åˆæœŸå€¤
 
-	hr = device->CreateBuffer(&bd, &InitData, pVertexBuffer);		// ƒoƒbƒtƒ@¶¬
+	hr = device->CreateBuffer(&bd, &InitData, pVertexBuffer);		// ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	if (FAILED(hr)){
 		MessageBox(nullptr, "CreateBuffer(vertex buffer) error", "Error", MB_OK);
 		return false;
@@ -448,38 +448,38 @@ bool CreateVertexBufferUAV(
 }
 
 /*------------------------
- Structuredƒoƒbƒtƒ@‚ğì¬
+ Structuredãƒãƒƒãƒ•ã‚¡ã‚’ä½œæˆ
 --------------------------*/
 bool CreateStructuredBuffer(
 	ID3D11Device* device,
-	unsigned int stride,				// ƒXƒgƒ‰ƒCƒhƒoƒCƒg”
-	unsigned int num,					// ŒÂ”
-	void* data,							// ƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
+	unsigned int stride,				// ã‚¹ãƒˆãƒ©ã‚¤ãƒ‰ãƒã‚¤ãƒˆæ•°
+	unsigned int num,					// å€‹æ•°
+	void* data,							// ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
 	ID3D11Buffer** pStructuredBuffer	// RWStructuredBuffer
 	){
 
 	HRESULT hr;
 
-	// Structuredƒoƒbƒtƒ@¶¬
+	// Structuredãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 
-	bd.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;		// UAƒoƒbƒtƒ@
-	bd.ByteWidth = stride * num;													// ƒoƒbƒtƒ@‚Ì‘å‚«‚³
+	bd.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;		// UAãƒãƒƒãƒ•ã‚¡
+	bd.ByteWidth = stride * num;													// ãƒãƒƒãƒ•ã‚¡ã®å¤§ãã•
 	bd.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;							// RWStructuredBuffer
-	bd.StructureByteStride = stride;												// \‘¢‰»ƒoƒbƒtƒ@ƒTƒCƒY
-	bd.CPUAccessFlags = 0;															// CPUƒAƒNƒZƒX•s—v
+	bd.StructureByteStride = stride;												// æ§‹é€ åŒ–ãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚º
+	bd.CPUAccessFlags = 0;															// CPUã‚¢ã‚¯ã‚»ã‚¹ä¸è¦
 
 	if (data != nullptr){
 		D3D11_SUBRESOURCE_DATA InitData;
 		ZeroMemory(&InitData, sizeof(InitData));
 
-		InitData.pSysMem = data;							// ƒoƒbƒtƒ@‚Ì‰Šú’l
+		InitData.pSysMem = data;							// ãƒãƒƒãƒ•ã‚¡ã®åˆæœŸå€¤
 
-		hr = device->CreateBuffer(&bd, &InitData, pStructuredBuffer);		// ƒoƒbƒtƒ@¶¬
+		hr = device->CreateBuffer(&bd, &InitData, pStructuredBuffer);		// ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	}
 	else{
-		hr = device->CreateBuffer(&bd, nullptr, pStructuredBuffer);		// ƒoƒbƒtƒ@¶¬
+		hr = device->CreateBuffer(&bd, nullptr, pStructuredBuffer);		// ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	}
 	if (FAILED(hr)){
 		MessageBox(nullptr, "CreateBuffer(StructuredBuffer) error", "Error", MB_OK);
@@ -490,7 +490,7 @@ bool CreateStructuredBuffer(
 }
 
 /*---------------------------------
-STAGINGƒoƒbƒtƒ@‚ğì¬‚µƒRƒs[‚·‚é
+STAGINGãƒãƒƒãƒ•ã‚¡ã‚’ä½œæˆã—ã‚³ãƒ”ãƒ¼ã™ã‚‹
 ----------------------------------*/
 ID3D11Buffer* CreateAndCopyToBuffer(
 	ID3D11Device* device,
@@ -501,7 +501,7 @@ ID3D11Buffer* CreateAndCopyToBuffer(
 	HRESULT hr;
 	ID3D11Buffer* CloneBuffer = nullptr;
 
-	// Structuredƒoƒbƒtƒ@¶¬
+	// Structuredãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 
@@ -520,7 +520,7 @@ ID3D11Buffer* CreateAndCopyToBuffer(
 	return CloneBuffer;
 }
 /*------------------------
-ShaderResourceView‚ğì¬
+ShaderResourceViewã‚’ä½œæˆ
 --------------------------*/
 bool CreateShaderResourceView(
 	ID3D11Device* device,
@@ -560,7 +560,7 @@ bool CreateShaderResourceView(
 }
 
 /*------------------------
-UnOrderedAccessView‚ğì¬
+UnOrderedAccessViewã‚’ä½œæˆ
 --------------------------*/
 bool CreateUnOrderAccessView(
 	ID3D11Device* device,

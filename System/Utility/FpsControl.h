@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <chrono>
 #include <thread>
 #include <iostream>
@@ -6,21 +6,21 @@
 
 /**
  * @class FPS
- * @brief w’è‚µ‚½FPSƒŒ[ƒg‚Åˆ—‚ğ§Œä‚·‚é‚½‚ß‚Ìƒ†[ƒeƒBƒŠƒeƒBƒNƒ‰ƒX
+ * @brief æŒ‡å®šã—ãŸFPSãƒ¬ãƒ¼ãƒˆã§å‡¦ç†ã‚’åˆ¶å¾¡ã™ã‚‹ãŸã‚ã®ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ã‚¯ãƒ©ã‚¹
  *
- * w’è‚³‚ê‚½FPS‚ÉŠî‚Ã‚¢‚ÄƒtƒŒ[ƒ€‚²‚Æ‚Ì‘Ò‹@ˆ—‚ğs‚¤‚±‚Æ‚ÅA
- * •`‰æ‚È‚Ç‚Ìˆ—‚ğˆÀ’è‚µ‚½ƒtƒŒ[ƒ€ƒŒ[ƒg‚ÅÀs‚Å‚«‚é‚æ‚¤‚É‚µ‚Ü‚·B
+ * æŒ‡å®šã•ã‚ŒãŸFPSã«åŸºã¥ã„ã¦ãƒ•ãƒ¬ãƒ¼ãƒ ã”ã¨ã®å¾…æ©Ÿå‡¦ç†ã‚’è¡Œã†ã“ã¨ã§ã€
+ * æç”»ãªã©ã®å‡¦ç†ã‚’å®‰å®šã—ãŸãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¬ãƒ¼ãƒˆã§å®Ÿè¡Œã§ãã‚‹ã‚ˆã†ã«ã—ã¾ã™ã€‚
  */
 class FPS {
 public:
     /**
-     * @brief ƒfƒtƒHƒ‹ƒgƒRƒ“ƒXƒgƒ‰ƒNƒ^‚Í‹Ö~
+     * @brief ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã¯ç¦æ­¢
      */
     FPS() = delete;
 
     /**
-     * @brief FPS‚ğw’è‚µ‚Ä‰Šú‰»
-     * @param fps –Ú•W‚Æ‚·‚éƒtƒŒ[ƒ€–ˆ•b”
+     * @brief FPSã‚’æŒ‡å®šã—ã¦åˆæœŸåŒ–
+     * @param fps ç›®æ¨™ã¨ã™ã‚‹ãƒ•ãƒ¬ãƒ¼ãƒ æ¯ç§’æ•°
      */
     explicit FPS(uint64_t fps)
         : m_MicrosecondsPerFrame(1000000 / fps),
@@ -29,8 +29,8 @@ public:
     }
 
     /**
-     * @brief ‘O‰ñ‚ÌTick()‚©‚ç‚ÌŒo‰ßŠÔ‚ğƒ}ƒCƒNƒ•b’PˆÊ‚Åæ“¾im_last_time‚ÍXV‚µ‚È‚¢j
-     * @return Œo‰ßŠÔiƒ}ƒCƒNƒ•bj
+     * @brief å‰å›ã®Tick()ã‹ã‚‰ã®çµŒéæ™‚é–“ã‚’ãƒã‚¤ã‚¯ãƒ­ç§’å˜ä½ã§å–å¾—ï¼ˆm_last_timeã¯æ›´æ–°ã—ãªã„ï¼‰
+     * @return çµŒéæ™‚é–“ï¼ˆãƒã‚¤ã‚¯ãƒ­ç§’ï¼‰
      */
     uint64_t CalcDelta() {
         auto now = std::chrono::steady_clock::now();
@@ -39,24 +39,24 @@ public:
     }
 
     /**
-     * @brief c‚èŠÔ‚ª‚ ‚éê‡‚Ì‚İƒXƒŠ[ƒv‚µ‚ÄFPS‚ğˆÛ
+     * @brief æ®‹ã‚Šæ™‚é–“ãŒã‚ã‚‹å ´åˆã®ã¿ã‚¹ãƒªãƒ¼ãƒ—ã—ã¦FPSã‚’ç¶­æŒ
      *
-     * @note m_delta_time ‚Í Tick() ‚ÅXV‚³‚ê‚Ä‚¢‚é‚±‚Æ‚ª‘O’ñB
-     * ƒtƒŒ[ƒ€ˆ—ŠÔ‚ªw’èFPS‚æ‚è‚à’·‚¢ê‡isleep_us <= 0j‚ÍƒXƒŠ[ƒv‚µ‚Ü‚¹‚ñB
+     * @note m_delta_time ã¯ Tick() ã§æ›´æ–°ã•ã‚Œã¦ã„ã‚‹ã“ã¨ãŒå‰æã€‚
+     * ãƒ•ãƒ¬ãƒ¼ãƒ å‡¦ç†æ™‚é–“ãŒæŒ‡å®šFPSã‚ˆã‚Šã‚‚é•·ã„å ´åˆï¼ˆsleep_us <= 0ï¼‰ã¯ã‚¹ãƒªãƒ¼ãƒ—ã—ã¾ã›ã‚“ã€‚
      */
     void Wait() const {
         int64_t sleep_us = static_cast<int64_t>(m_MicrosecondsPerFrame) - static_cast<int64_t>(m_delta_time);
         if (sleep_us > 0) {
             std::this_thread::sleep_for(std::chrono::microseconds(sleep_us));
         }
-        // sleep_us <= 0 ‚È‚çƒtƒŒ[ƒ€‚ª’x‚ê‚Ä‚¢‚é‚½‚ßAƒXƒŠ[ƒv‚Ís‚í‚È‚¢
+        // sleep_us <= 0 ãªã‚‰ãƒ•ãƒ¬ãƒ¼ãƒ ãŒé…ã‚Œã¦ã„ã‚‹ãŸã‚ã€ã‚¹ãƒªãƒ¼ãƒ—ã¯è¡Œã‚ãªã„
     }
 
     /**
-     * @brief Tick‚ğŒÄ‚Ño‚·‚±‚Æ‚ÅAŸ‚ÌƒtƒŒ[ƒ€‚Ü‚Å‚Ì‘Ò‹@‚Ædelta_time‚ÌXV‚ğs‚¤
+     * @brief Tickã‚’å‘¼ã³å‡ºã™ã“ã¨ã§ã€æ¬¡ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã¾ã§ã®å¾…æ©Ÿã¨delta_timeã®æ›´æ–°ã‚’è¡Œã†
      *
-     * ‚±‚ÌŠÖ”‚É‚æ‚èA‘OƒtƒŒ[ƒ€‚©‚ç‚ÌŒo‰ßŠÔ‚ğŒv‘ª‚µA–Ú•WFPS‚æ‚è’Z‚¢ê‡‚É‚Í‘Ò‹@‚µ‚Ü‚·B
-     * ÄŒv‘ªŒã‚É m_last_time ‚ğXV‚µ‚Ü‚·B
+     * ã“ã®é–¢æ•°ã«ã‚ˆã‚Šã€å‰ãƒ•ãƒ¬ãƒ¼ãƒ ã‹ã‚‰ã®çµŒéæ™‚é–“ã‚’è¨ˆæ¸¬ã—ã€ç›®æ¨™FPSã‚ˆã‚ŠçŸ­ã„å ´åˆã«ã¯å¾…æ©Ÿã—ã¾ã™ã€‚
+     * å†è¨ˆæ¸¬å¾Œã« m_last_time ã‚’æ›´æ–°ã—ã¾ã™ã€‚
      */
     void Tick() {
         auto now = std::chrono::steady_clock::now();
@@ -64,7 +64,7 @@ public:
         int64_t sleep_us = static_cast<int64_t>(m_MicrosecondsPerFrame) - static_cast<int64_t>(delta_us);
         if (sleep_us > 0) {
             std::this_thread::sleep_for(std::chrono::microseconds(sleep_us));
-            now = std::chrono::steady_clock::now(); // ƒXƒŠ[ƒvŒã‚ÉÄæ“¾
+            now = std::chrono::steady_clock::now(); // ã‚¹ãƒªãƒ¼ãƒ—å¾Œã«å†å–å¾—
             delta_us = std::chrono::duration_cast<std::chrono::microseconds>(now - m_last_time).count();
         }
         m_last_time = now;
@@ -72,12 +72,12 @@ public:
     }
 
     /*
-        /// @brief y‹ŒÀ‘•zCalcDelta: ŒÄ‚Ño‚µ‚Ém_last_time‚ğXV‚µ‚Ädelta_time‚ğ•Ô‚·
-        /// @return Œo‰ßŠÔiƒ}ƒCƒNƒ•bj
+        /// @brief ã€æ—§å®Ÿè£…ã€‘CalcDelta: å‘¼ã³å‡ºã—æ™‚ã«m_last_timeã‚’æ›´æ–°ã—ã¦delta_timeã‚’è¿”ã™
+        /// @return çµŒéæ™‚é–“ï¼ˆãƒã‚¤ã‚¯ãƒ­ç§’ï¼‰
         ///
-        /// @bug ‚±‚ÌÀ‘•‚Å‚Í Wait() ŒÄ‚Ño‚µ‘O‚É m_last_time ‚ğXV‚µ‚Ä‚µ‚Ü‚¤‚½‚ßA
-        /// ÀÛ‚Ì‘Ò‹@ŠÔ‚ª’Z‚­ŒvZ‚³‚êAw’èFPSˆÈã‚É‘¬‚­‚È‚éƒoƒO‚ª‚ ‚è‚Ü‚µ‚½B
-        /// Tick() ‚Ì‚æ‚¤‚ÉAƒXƒŠ[ƒvŒã‚É³Šm‚È‚ğæ“¾‚µ‚ÄXV‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B
+        /// @bug ã“ã®å®Ÿè£…ã§ã¯ Wait() å‘¼ã³å‡ºã—å‰ã« m_last_time ã‚’æ›´æ–°ã—ã¦ã—ã¾ã†ãŸã‚ã€
+        /// å®Ÿéš›ã®å¾…æ©Ÿæ™‚é–“ãŒçŸ­ãè¨ˆç®—ã•ã‚Œã€æŒ‡å®šFPSä»¥ä¸Šã«é€Ÿããªã‚‹ãƒã‚°ãŒã‚ã‚Šã¾ã—ãŸã€‚
+        /// Tick() ã®ã‚ˆã†ã«ã€ã‚¹ãƒªãƒ¼ãƒ—å¾Œã«æ­£ç¢ºãªæ™‚åˆ»ã‚’å–å¾—ã—ã¦æ›´æ–°ã™ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚
 
         uint64_t CalcDelta() {
             auto now = std::chrono::steady_clock::now();
@@ -89,11 +89,11 @@ public:
     */
 
     /*
-        /// @brief y‹ŒÀ‘•zWait: ‘O‰ñ‚ÌCalcDelta‚Å“¾‚½m_delta_time‚ÉŠî‚Ã‚¢‚Ä‘Ò‹@
+        /// @brief ã€æ—§å®Ÿè£…ã€‘Wait: å‰å›ã®CalcDeltaã§å¾—ãŸm_delta_timeã«åŸºã¥ã„ã¦å¾…æ©Ÿ
         ///
-        /// @bug CalcDelta() ‚ª m_last_time ‚ğXV‚µ‚Ä‚µ‚Ü‚¤‚½‚ßA
-        /// Wait() ‚Å‚ÍŒÃ‚¢î•ñ‚ğg‚Á‚Ä‚µ‚Ü‚¢³Šm‚È‘Ò‹@ŠÔ‚ª“¾‚ç‚ê‚Ü‚¹‚ñ‚Å‚µ‚½B
-        /// ‚Ü‚½ATick() ‚ª“±“ü‚³‚ê‚½‚±‚Æ‚Åˆ—‚Ì®‡«‚ª•Û‚½‚ê‚é‚æ‚¤‚É‰ü‘P‚³‚ê‚Ü‚µ‚½B
+        /// @bug CalcDelta() ãŒ m_last_time ã‚’æ›´æ–°ã—ã¦ã—ã¾ã†ãŸã‚ã€
+        /// Wait() ã§ã¯å¤ã„æƒ…å ±ã‚’ä½¿ã£ã¦ã—ã¾ã„æ­£ç¢ºãªå¾…æ©Ÿæ™‚é–“ãŒå¾—ã‚‰ã‚Œã¾ã›ã‚“ã§ã—ãŸã€‚
+        /// ã¾ãŸã€Tick() ãŒå°å…¥ã•ã‚ŒãŸã“ã¨ã§å‡¦ç†ã®æ•´åˆæ€§ãŒä¿ãŸã‚Œã‚‹ã‚ˆã†ã«æ”¹å–„ã•ã‚Œã¾ã—ãŸã€‚
 
         void Wait() const {
             int64_t sleep_us = static_cast<int64_t>(m_MicrosecondsPerFrame) - static_cast<int64_t>(m_delta_time);
@@ -107,7 +107,7 @@ public:
     */
 
 private:
-    uint64_t m_MicrosecondsPerFrame = 0;  ///< 1ƒtƒŒ[ƒ€‚ ‚½‚è‚Ì–Ú•WŠÔiƒ}ƒCƒNƒ•bj
-    uint64_t m_delta_time = 0;            ///< ‘OƒtƒŒ[ƒ€‚©‚ç‚ÌŒo‰ßŠÔiƒ}ƒCƒNƒ•bj
-    std::chrono::steady_clock::time_point m_last_time; ///< ‘O‰ñTick‚Ü‚½‚Í‰Šú‰»
+    uint64_t m_MicrosecondsPerFrame = 0;  ///< 1ãƒ•ãƒ¬ãƒ¼ãƒ ã‚ãŸã‚Šã®ç›®æ¨™æ™‚é–“ï¼ˆãƒã‚¤ã‚¯ãƒ­ç§’ï¼‰
+    uint64_t m_delta_time = 0;            ///< å‰ãƒ•ãƒ¬ãƒ¼ãƒ ã‹ã‚‰ã®çµŒéæ™‚é–“ï¼ˆãƒã‚¤ã‚¯ãƒ­ç§’ï¼‰
+    std::chrono::steady_clock::time_point m_last_time; ///< å‰å›Tickã¾ãŸã¯åˆæœŸåŒ–æ™‚åˆ»
 };

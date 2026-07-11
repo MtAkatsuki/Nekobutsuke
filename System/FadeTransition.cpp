@@ -1,29 +1,29 @@
-#include    "../Core/main.h"
+ï»¿#include    "../Core/main.h"
 #include    "Scenemanager.h"
 #include    "FadeTransition.h"
 #include    "BoxDrawer.h"
 
 /**
- * @brief ƒtƒF[ƒh‘JˆÚ‚ÌŠJnˆ—
+ * @brief ãƒ•ã‚§ãƒ¼ãƒ‰é·ç§»ã®é–‹å§‹å‡¦ç†
  *
- * ƒ‚[ƒh‚É‰‚¶‚ÄƒtƒF[ƒY‚ğİ’è‚µA•K—v‚É‰‚¶‚Äæ‚ÉƒV[ƒ“‚ğØ‚è‘Ö‚¦‚éB
+ * ãƒ¢ãƒ¼ãƒ‰ã«å¿œã˜ã¦ãƒ•ã‚§ãƒ¼ã‚ºã‚’è¨­å®šã—ã€å¿…è¦ã«å¿œã˜ã¦å…ˆã«ã‚·ãƒ¼ãƒ³ã‚’åˆ‡ã‚Šæ›¿ãˆã‚‹ã€‚
  *
- * @param nextSceneName ‘JˆÚæ‚ÌƒV[ƒ“–¼
+ * @param nextSceneName é·ç§»å…ˆã®ã‚·ãƒ¼ãƒ³å
  */
 void FadeTransition::start() {
     m_elapsed = 0;
     m_alpha = 0.0f;
 
     switch (m_mode) {
-    case Mode::FadeOutOnly://•‚É‚È‚é‚¾‚¯F[„•–‹
+    case Mode::FadeOutOnly://é»’ã«ãªã‚‹ã ã‘ï¼šãƒ¼ï¼é»’å¹•
         m_alpha = 0.0f;
         m_phase = Phase::FadeOut;
         break;
-    case Mode::FadeInOut://[„•–‹[„ƒV[ƒ“•ÏX[„“§–¾
+    case Mode::FadeInOut://ãƒ¼ï¼é»’å¹•ãƒ¼ï¼ã‚·ãƒ¼ãƒ³å¤‰æ›´ãƒ¼ï¼é€æ˜
         m_alpha = 0.0f;
         m_phase = Phase::FadeOut;
         break;
-    case Mode::FadeInOnly://–¾‚é‚­‚È‚é‚¾‚¯F•–‹(WAIT)[„ƒV[ƒ“•ÏX
+    case Mode::FadeInOnly://æ˜ã‚‹ããªã‚‹ã ã‘ï¼šé»’å¹•(WAIT)ãƒ¼ï¼ã‚·ãƒ¼ãƒ³å¤‰æ›´
         m_alpha = 1.0f;
         m_phase = Phase::Wait;
         break;
@@ -32,12 +32,12 @@ void FadeTransition::start() {
 }
 
 /**
- * @brief ƒtƒF[ƒh‚Ìis‚ğXV‚·‚é
+ * @brief ãƒ•ã‚§ãƒ¼ãƒ‰ã®é€²è¡Œã‚’æ›´æ–°ã™ã‚‹
  *
- * Œo‰ßŠÔ‚ÉŠî‚Ã‚¢‚Ä“§–¾“xim_alphaj‚ğ•Ï‰»‚³‚¹‚éB
- * ƒtƒF[ƒhƒAƒEƒgI—¹Œã‚ÍƒV[ƒ“‚ğØ‚è‘Ö‚¦AƒtƒF[ƒhƒCƒ“‚ÉˆÚs‚·‚éB
+ * çµŒéæ™‚é–“ã«åŸºã¥ã„ã¦é€æ˜åº¦ï¼ˆm_alphaï¼‰ã‚’å¤‰åŒ–ã•ã›ã‚‹ã€‚
+ * ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆçµ‚äº†å¾Œã¯ã‚·ãƒ¼ãƒ³ã‚’åˆ‡ã‚Šæ›¿ãˆã€ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ã«ç§»è¡Œã™ã‚‹ã€‚
  *
- * @param deltaTime ‘OƒtƒŒ[ƒ€‚©‚ç‚ÌŒo‰ßŠÔiƒ}ƒCƒNƒ•bj
+ * @param deltaTime å‰ãƒ•ãƒ¬ãƒ¼ãƒ ã‹ã‚‰ã®çµŒéæ™‚é–“ï¼ˆãƒã‚¤ã‚¯ãƒ­ç§’ï¼‰
  */
 void FadeTransition::update(uint64_t deltaTime) {
     m_elapsed += deltaTime;
@@ -60,13 +60,13 @@ void FadeTransition::update(uint64_t deltaTime) {
 
     case Phase::FadeIn:
         m_alpha = 1.0f - static_cast<float>(m_elapsed) / m_duration;
-        if (m_elapsed >= m_duration) {//fade inƒAƒjƒƒVƒ‡ƒ“I‚í‚è
-            m_alpha = 0.0f;//ÅI‚Èalpha’l‚É‚È‚é
+        if (m_elapsed >= m_duration) {//fade inã‚¢ãƒ‹ãƒ¡ã‚·ãƒ§ãƒ³çµ‚ã‚ã‚Š
+            m_alpha = 0.0f;//æœ€çµ‚ãªalphaå€¤ã«ãªã‚‹
             m_phase = Phase::Idle;
         }
         break;
     case Phase::Wait:
-        m_alpha = 1.0f;//•‚Å‘Ò‚Â
+        m_alpha = 1.0f;//é»’ã§å¾…ã¤
         break;
 
     default:
@@ -76,7 +76,7 @@ void FadeTransition::update(uint64_t deltaTime) {
 
 void FadeTransition::onSceneSwapped() 
 {
-    //ƒV[ƒ“‘JˆÚŠ®—¹Aƒ‚[ƒh•K—v‚Æ‚È‚é‚ÆAFadeInn‚Ü‚é
+    //ã‚·ãƒ¼ãƒ³é·ç§»å®Œäº†ã€ãƒ¢ãƒ¼ãƒ‰å¿…è¦ã¨ãªã‚‹ã¨ã€FadeInå§‹ã¾ã‚‹
     if (m_mode == Mode::FadeInOnly || m_mode == Mode::FadeInOut) {
         m_phase = Phase::FadeIn;
         m_elapsed = 0;
@@ -86,27 +86,27 @@ void FadeTransition::onSceneSwapped()
 }
 
 /**
- * @brief ƒtƒF[ƒh—p‚Ì•‚¢‹éŒ`‚ğ‰æ–Ê‚É•`‰æ‚·‚é
+ * @brief ãƒ•ã‚§ãƒ¼ãƒ‰ç”¨ã®é»’ã„çŸ©å½¢ã‚’ç”»é¢ã«æç”»ã™ã‚‹
  *
- * Œ»İ‚Ì“§–¾“x‚É‰‚¶‚½•‚¢‘S‰æ–ÊƒI[ƒo[ƒŒƒC‚ğ•\¦‚µA©‘R‚ÈƒtƒF[ƒhŒø‰Ê‚ğ‰‰o‚·‚éB
+ * ç¾åœ¨ã®é€æ˜åº¦ã«å¿œã˜ãŸé»’ã„å…¨ç”»é¢ã‚ªãƒ¼ãƒãƒ¼ãƒ¬ã‚¤ã‚’è¡¨ç¤ºã—ã€è‡ªç„¶ãªãƒ•ã‚§ãƒ¼ãƒ‰åŠ¹æœã‚’æ¼”å‡ºã™ã‚‹ã€‚
  */
 void FadeTransition::draw() {
     if (m_phase != Phase::Idle) {
-        //ƒ}ƒXƒN‚Íí‚Éˆê”Ôã‚ÉƒZƒbƒg‚·‚é
+        //ãƒã‚¹ã‚¯ã¯å¸¸ã«ä¸€ç•ªä¸Šã«ã‚»ãƒƒãƒˆã™ã‚‹
         Renderer::SetDepthEnable(false);
 
-        //1.’PˆÊs—ñ‚ğƒZƒbƒg(ƒJƒƒ‰‚ÌˆÊ’u‚ğŠî–{ó‘Ô‚É–ß‚é)
+        //1.å˜ä½è¡Œåˆ—ã‚’ã‚»ãƒƒãƒˆ(ã‚«ãƒ¡ãƒ©ã®ä½ç½®ã‚’åŸºæœ¬çŠ¶æ…‹ã«æˆ»ã‚‹)
         Matrix4x4 view = Matrix4x4::Identity;
         Renderer::SetViewMatrix(&view);
-        //2.’¼“Š‰eƒZƒbƒg‚·‚é
-        //¶ã:(0,0);‰E‰º(Width, Height)
+        //2.ç›´æŠ•å½±ã‚»ãƒƒãƒˆã™ã‚‹
+        //å·¦ä¸Š:(0,0);å³ä¸‹(Width, Height)
         Matrix4x4 proj = Matrix4x4::CreateOrthographicOffCenter
-        (0.0f, (float)SCREEN_WIDTH,//¶ -> ‰E
-        (float)SCREEN_HEIGHT, 0.0f,// ‰º -> ã
-         0.0f, 1.0f                //‹ß‚¢[„‰“‚¢
+        (0.0f, (float)SCREEN_WIDTH,//å·¦ -> å³
+        (float)SCREEN_HEIGHT, 0.0f,// ä¸‹ -> ä¸Š
+         0.0f, 1.0f                //è¿‘ã„ãƒ¼ï¼é ã„
         );
         Renderer::SetProjectionMatrix(&proj);
-        //3.•`‰æ
+        //3.æç”»
         BoxDrawerDraw(
             (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT, 1.0f,
             Color(0, 0, 0, m_alpha),
@@ -117,12 +117,12 @@ void FadeTransition::draw() {
 }
 
 /**
- * @brief ƒtƒF[ƒh‰‰o‚ªŠ®—¹‚µ‚½‚©‚ğ”»’è‚·‚é
+ * @brief ãƒ•ã‚§ãƒ¼ãƒ‰æ¼”å‡ºãŒå®Œäº†ã—ãŸã‹ã‚’åˆ¤å®šã™ã‚‹
  *
- * Œ»İ‚ÌƒtƒF[ƒY‚ª None ‚É‚È‚Á‚Ä‚¢‚ê‚Î‰‰oŠ®—¹B
+ * ç¾åœ¨ã®ãƒ•ã‚§ãƒ¼ã‚ºãŒ None ã«ãªã£ã¦ã„ã‚Œã°æ¼”å‡ºå®Œäº†ã€‚
  *
- * @return true ƒtƒF[ƒh‚ªŠ®—¹‚µ‚Ä‚¢‚é
- * @return false ‚Ü‚¾‰‰o’†‚Å‚ ‚é
+ * @return true ãƒ•ã‚§ãƒ¼ãƒ‰ãŒå®Œäº†ã—ã¦ã„ã‚‹
+ * @return false ã¾ã æ¼”å‡ºä¸­ã§ã‚ã‚‹
  */
 bool FadeTransition::isFinished() const {
     return m_phase == Phase::Idle;

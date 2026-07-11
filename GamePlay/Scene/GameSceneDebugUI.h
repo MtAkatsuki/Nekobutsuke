@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 
 // =========================================================
 // GameSceneDebugUI
-// ƒfƒoƒbƒO‹@”\‚ÍƒQ[ƒ€is‚Æ‚ÍXV•p“xEƒ‰ƒCƒtƒTƒCƒNƒ‹E—˜—pÒ‚ªˆÙ‚È‚é‚½‚ßA
-// ê—pƒNƒ‰ƒX‚ÖØ‚èo‚µ‚Ä GameScene ‚ğƒQ[ƒ€isƒƒWƒbƒN‚Éê”O‚³‚¹‚éB
-// ƒ`ƒ…[ƒjƒ“ƒO‘ÎÛ‚Í GameScene ‚Ì“à•”ó‘Ô‚Ì‚½‚ßAfriend Œo—R‚ÅƒAƒNƒZƒX‚·‚éB
+// ãƒ‡ãƒãƒƒã‚°æ©Ÿèƒ½ã¯ã‚²ãƒ¼ãƒ é€²è¡Œã¨ã¯æ›´æ–°é »åº¦ãƒ»ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«ãƒ»åˆ©ç”¨è€…ãŒç•°ãªã‚‹ãŸã‚ã€
+// å°‚ç”¨ã‚¯ãƒ©ã‚¹ã¸åˆ‡ã‚Šå‡ºã—ã¦ GameScene ã‚’ã‚²ãƒ¼ãƒ é€²è¡Œãƒ­ã‚¸ãƒƒã‚¯ã«å°‚å¿µã•ã›ã‚‹ã€‚
+// ãƒãƒ¥ãƒ¼ãƒ‹ãƒ³ã‚°å¯¾è±¡ã¯ GameScene ã®å†…éƒ¨çŠ¶æ…‹ã®ãŸã‚ã€friend çµŒç”±ã§ã‚¢ã‚¯ã‚»ã‚¹ã™ã‚‹ã€‚
 // =========================================================
 class GameScene;
 class Enemy;
@@ -13,14 +13,14 @@ class GameSceneDebugUI {
 public:
     explicit GameSceneDebugUI(GameScene& scene) : m_scene(scene) {}
 
-    // Debug UI ‚Ì•`‰æ
+    // Debug UI ã®æç”»
     void DrawCameraTuningWindow();      
 
 private:
-    // ƒeƒXƒg—pFƒvƒŒƒCƒ„[‘O•û‚ÖƒfƒoƒbƒO—pEnemy‚ğ¶¬i‘O‰ñ¶¬•ª‚Ííœ‚µ‚Äd•¡¶¬‚ğ–h~j
+    // ãƒ†ã‚¹ãƒˆç”¨ï¼šãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼å‰æ–¹ã¸ãƒ‡ãƒãƒƒã‚°ç”¨Enemyã‚’ç”Ÿæˆï¼ˆå‰å›ç”Ÿæˆåˆ†ã¯å‰Šé™¤ã—ã¦é‡è¤‡ç”Ÿæˆã‚’é˜²æ­¢ï¼‰
     Enemy* SpawnDebugEnemyInFront(int hp = -1);
 
-    GameScene& m_scene;             // ”ñŠ—LiGameScene ‚ª–{ƒNƒ‰ƒX‚ğ•Ûj
+    GameScene& m_scene;             // éæ‰€æœ‰ï¼ˆGameScene ãŒæœ¬ã‚¯ãƒ©ã‚¹ã‚’ä¿æŒï¼‰
     Enemy* m_debugEnemy = nullptr;
     bool m_enabled = true;
 };

@@ -1,11 +1,11 @@
-#include	"CShader.h"
+ï»¿#include	"CShader.h"
 #include	"dx11helper.h"
 #include	"renderer.h"
 
 void CShader::Create(std::string vs, std::string ps, std::string gs)
 {
 
-	// ’¸“_ƒf[ƒ^‚Ì’è‹`
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã®å®šç¾©
 //	D3D11_INPUT_ELEMENT_DESC layout[] =
 //	{
 //		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,		0,	D3D11_APPEND_ALIGNED_ELEMENT,	D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -14,7 +14,7 @@ void CShader::Create(std::string vs, std::string ps, std::string gs)
 //		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,			0,	D3D11_APPEND_ALIGNED_ELEMENT,   D3D11_INPUT_PER_VERTEX_DATA, 0 }
 //	};
 
-	// ƒƒ“ƒXƒLƒ“‘Î‰ž@20231227’Ç‰Á
+	// ãƒ¯ãƒ³ã‚¹ã‚­ãƒ³å¯¾å¿œã€€20231227è¿½åŠ 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -30,7 +30,7 @@ void CShader::Create(std::string vs, std::string ps, std::string gs)
 	ID3D11Device* device;
 	device = Renderer::GetDevice();
 
-	// ’¸“_ƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ð¶¬A“¯Žž‚É’¸“_ƒŒƒCƒAƒEƒg‚à¶¬
+	// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆã€åŒæ™‚ã«é ‚ç‚¹ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆã‚‚ç”Ÿæˆ
 	bool sts = CreateVertexShader(device,
 			vs.c_str(),
 			"main",
@@ -44,9 +44,9 @@ void CShader::Create(std::string vs, std::string ps, std::string gs)
 		return;
 	}
 
-	// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[‚ð¶¬
-	sts = CreatePixelShader(			// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ð¶¬
-		device,							// ƒfƒoƒCƒXƒIƒuƒWƒFƒNƒg
+	// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ç”Ÿæˆ
+	sts = CreatePixelShader(			// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆ
+		device,							// ãƒ‡ãƒã‚¤ã‚¹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
 		ps.c_str(),
 		"main",
 		"ps_5_0",
@@ -57,9 +57,9 @@ void CShader::Create(std::string vs, std::string ps, std::string gs)
 	}
 
 	if (gs != "") {
-		// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[‚ð¶¬
-		sts = CreateGeometryShader(			// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ð¶¬
-			device,							// ƒfƒoƒCƒXƒIƒuƒWƒFƒNƒg
+		// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ç”Ÿæˆ
+		sts = CreateGeometryShader(			// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆ
+			device,							// ãƒ‡ãƒã‚¤ã‚¹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
 			gs.c_str(),
 			"main",
 			"gs_5_0",
@@ -79,9 +79,9 @@ void CShader::SetGPU() {
 
 	devicecontext = Renderer::GetDeviceContext();
 
-	devicecontext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);		// ’¸“_ƒVƒF[ƒ_[‚ðƒZƒbƒg
-	devicecontext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);		// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[‚ðƒZƒbƒg
-	devicecontext->GSSetShader(m_pGeometryShader.Get(), nullptr, 0);	// ƒWƒIƒƒgƒŠƒVƒF[ƒ_[‚ðƒZƒbƒg
-	devicecontext->IASetInputLayout(m_pVertexLayout.Get());				// ’¸“_ƒŒƒCƒAƒEƒgƒZƒbƒg
+	devicecontext->VSSetShader(m_pVertexShader.Get(), nullptr, 0);		// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ã‚»ãƒƒãƒˆ
+	devicecontext->PSSetShader(m_pPixelShader.Get(), nullptr, 0);		// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ã‚»ãƒƒãƒˆ
+	devicecontext->GSSetShader(m_pGeometryShader.Get(), nullptr, 0);	// ã‚¸ã‚ªãƒ¡ãƒˆãƒªã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ã‚»ãƒƒãƒˆ
+	devicecontext->IASetInputLayout(m_pVertexLayout.Get());				// é ‚ç‚¹ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆã‚»ãƒƒãƒˆ
 }
 

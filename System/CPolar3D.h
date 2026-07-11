@@ -1,11 +1,11 @@
-#pragma once
+ï»¿#pragma once
 #include "commontypes.h"
 
-// ‚R‚c‹ÉÀ•WŒn
+// ï¼“ï¼¤æ¥µåº§æ¨™ç³»
 class CPolor3D {
-	float m_radius;				// ”¼Œa		
-	float m_elevation;			// ‹ÂŠp
-	float m_azimuth;			// •ûˆÊŠp
+	float m_radius;				// åŠå¾„		
+	float m_elevation;			// ä»°è§’
+	float m_azimuth;			// æ–¹ä½è§’
 public:
 	CPolor3D() = delete;
 	CPolor3D(float radius,

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <cstdint>
 #include <stdexcept>
 #include "../../System/transform.h"
@@ -7,15 +7,15 @@
 class GameContext;
 
 // =========================================================
-// GameObject ƒNƒ‰ƒX
-// ƒQ[ƒ€“à‚·‚×‚Ä‚Ìˆê“IE‰i‘±“IƒGƒ“ƒeƒBƒeƒB‚ÌŠî’êƒNƒ‰ƒX
-// ‹óŠÔƒgƒ‰ƒ“ƒXƒtƒH[ƒ€‚Æ•`‰æƒŒƒCƒ„[iZƒI[ƒ_[j‚ÌŠî‘b‚ğ’ñ‹Ÿ‚·‚é
+// GameObject ã‚¯ãƒ©ã‚¹
+// ã‚²ãƒ¼ãƒ å†…ã™ã¹ã¦ã®ä¸€æ™‚çš„ãƒ»æ°¸ç¶šçš„ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®åŸºåº•ã‚¯ãƒ©ã‚¹
+// ç©ºé–“ãƒˆãƒ©ãƒ³ã‚¹ãƒ•ã‚©ãƒ¼ãƒ ã¨æç”»ãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼ˆZã‚ªãƒ¼ãƒ€ãƒ¼ï¼‰ã®åŸºç¤ã‚’æä¾›ã™ã‚‹
 // =========================================================
 class GameObject {
 public:
 	GameObject() = delete;
 
-	// ˆË‘¶«‚Ì’“üF–¾Šm‚ÈGameContext‚ğ—v‹‚µAnull‚Ìê‡‚Í—áŠO‚ğ“Š‚°‚éi–hŒä“IƒvƒƒOƒ‰ƒ~ƒ“ƒOj
+	// ä¾å­˜æ€§ã®æ³¨å…¥ï¼šæ˜ç¢ºãªGameContextã‚’è¦æ±‚ã—ã€nullã®å ´åˆã¯ä¾‹å¤–ã‚’æŠ•ã’ã‚‹ï¼ˆé˜²å¾¡çš„ãƒ—ãƒ­ã‚°ãƒ©ãƒŸãƒ³ã‚°ï¼‰
 	explicit GameObject(GameContext* context) : m_context(context) {
 		if (!m_context) {
 			throw std::invalid_argument("GameContext pointer is null");
@@ -28,7 +28,7 @@ public:
 	virtual void Dispose() = 0;
 
 	// ---------------------------------------------------------
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒpƒCƒvƒ‰ƒCƒ“ŒÄ‚Ño‚µŒû
+	// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³å‘¼ã³å‡ºã—å£
 	// ---------------------------------------------------------
 
 	void UpdateWorldMatrix() {
@@ -41,32 +41,32 @@ public:
 			* Matrix4x4::CreateTranslation(m_srt.pos);
 	}
 
-	// •`‰æ‡ 3: °–Êƒqƒ“ƒg UI ƒŒƒCƒ„[ (’n–Ê‚ÉÚ’nAƒgƒ‰ƒbƒv‚Ì‰º)
+	// æç”»é † 3: åºŠé¢ãƒ’ãƒ³ãƒˆ UI ãƒ¬ã‚¤ãƒ¤ãƒ¼ (åœ°é¢ã«æ¥åœ°ã€ãƒˆãƒ©ãƒƒãƒ—ã®ä¸‹)
 	void DrawFloorUI(uint64_t delta) {
 		Renderer::SetWorldMatrix(&m_WorldMatrix);
 		OnDrawFloorUI(delta);
 	}
 
-	// •`‰æ‡ 5.1: •s“§–¾ƒGƒ“ƒeƒBƒeƒBƒŒƒCƒ„[ (ƒLƒƒƒ‰ƒNƒ^[–{‘Ì‚È‚Ç)
+	// æç”»é † 5.1: ä¸é€æ˜ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ãƒ¬ã‚¤ãƒ¤ãƒ¼ (ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼æœ¬ä½“ãªã©)
 	void Draw(uint64_t delta) {
 		Renderer::SetWorldMatrix(&m_WorldMatrix);
 		OnDraw(delta);
 	}
 
-	// •`‰æ‡ 5.3: ”¼“§–¾ƒGƒ“ƒeƒBƒeƒBƒŒƒCƒ„[ (c‘œAƒGƒtƒFƒNƒg‚È‚Ç)
+	// æç”»é † 5.3: åŠé€æ˜ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ãƒ¬ã‚¤ãƒ¤ãƒ¼ (æ®‹åƒã€ã‚¨ãƒ•ã‚§ã‚¯ãƒˆãªã©)
 	void DrawTransparent(uint64_t delta) {
 		Renderer::SetWorldMatrix(&m_WorldMatrix);
 		OnDrawTransparent(delta);
 	}
 
-	// •`‰æ‡ 6: UŒ‚ƒvƒŒƒrƒ…[ƒqƒ“ƒgƒŒƒCƒ„[ (Å‘O–Ê3DUIAƒfƒvƒX–³‹)
+	// æç”»é † 6: æ”»æ’ƒãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼ãƒ’ãƒ³ãƒˆãƒ¬ã‚¤ãƒ¤ãƒ¼ (æœ€å‰é¢3DUIã€ãƒ‡ãƒ—ã‚¹ç„¡è¦–)
 	void DrawOverlay(uint64_t delta) {
 		Renderer::SetWorldMatrix(&m_WorldMatrix);
 		OnDrawOverlay(delta);
 	}
 
 	// ---------------------------------------------------------
-	// ƒQƒbƒ^[ / ƒZƒbƒ^[
+	// ã‚²ãƒƒã‚¿ãƒ¼ / ã‚»ãƒƒã‚¿ãƒ¼
 	// ---------------------------------------------------------
 	const SRT& getSRT() const { return m_srt; }
 	void setSRT(const SRT& srt) { m_srt = srt; }
@@ -76,7 +76,7 @@ public:
 	void Destroy() { m_isDead = true; }
 
 protected:
-	// --- ƒTƒuƒNƒ‰ƒX‚ÅÀ‘•‚·‚é‹ï‘Ì“I‚È•`‰æƒƒWƒbƒN ---
+	// --- ã‚µãƒ–ã‚¯ãƒ©ã‚¹ã§å®Ÿè£…ã™ã‚‹å…·ä½“çš„ãªæç”»ãƒ­ã‚¸ãƒƒã‚¯ ---
 	virtual void OnDrawFloorUI(uint64_t delta) {}
 	virtual void OnDraw(uint64_t delta) {}
 	virtual void OnDrawTransparent(uint64_t delta) {}

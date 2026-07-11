@@ -1,4 +1,4 @@
-#include "Prop.h"
+ï»¿#include "Prop.h"
 #include "../../System/meshmanager.h"
 #include "../../System/ZFightTunables.h"
 #include "../../Core/GameContext.h"
@@ -8,19 +8,19 @@
 #include "../Character/Enemy.h"
 
 namespace {
-    // ”¼“§–¾‰»iƒIƒNƒ‹[ƒWƒ‡ƒ“j§Œä‚Ì’è”
-    const float OCCLUDED_ALPHA = 0.4f;      // ƒ†ƒjƒbƒg‚ª‰B‚ê‚½‚Ì“§–¾“x
-    const float NORMAL_ALPHA = 1.0f;        // ’Êí‚Ì“§–¾“x
-    const float ALPHA_FADE_SPEED = 5.0f;    // “§–¾“x‚Ì‘JˆÚƒXƒs[ƒh
-    const int   OCCLUSION_DEPTH = 1;        // ƒIƒuƒWƒFƒNƒg‚Ì— ‰½ƒ}ƒX‚Ü‚Å‚ğu‰B‚ê‚Ä‚¢‚év‚Æ”»’è‚·‚é‚©
+    // åŠé€æ˜åŒ–ï¼ˆã‚ªã‚¯ãƒ«ãƒ¼ã‚¸ãƒ§ãƒ³ï¼‰åˆ¶å¾¡ã®å®šæ•°
+    const float OCCLUDED_ALPHA = 0.4f;      // ãƒ¦ãƒ‹ãƒƒãƒˆãŒéš ã‚ŒãŸæ™‚ã®é€æ˜åº¦
+    const float NORMAL_ALPHA = 1.0f;        // é€šå¸¸æ™‚ã®é€æ˜åº¦
+    const float ALPHA_FADE_SPEED = 5.0f;    // é€æ˜åº¦ã®é·ç§»ã‚¹ãƒ”ãƒ¼ãƒ‰
+    const int   OCCLUSION_DEPTH = 1;        // ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®è£ä½•ãƒã‚¹ã¾ã§ã‚’ã€Œéš ã‚Œã¦ã„ã‚‹ã€ã¨åˆ¤å®šã™ã‚‹ã‹
 }
 
 void Prop::Init(MapModelType type, Vector3 position) {
-    // 1. Šî–{‰Šú‰»‚ÆƒTƒCƒY‚Ìæ“¾
+    // 1. åŸºæœ¬åˆæœŸåŒ–ã¨ã‚µã‚¤ã‚ºã®å–å¾—
     MapObject::Init(type, position);
     GetDimensions(type, m_sizeX, m_sizeZ);
 
-    // 2. •¨Œƒ^ƒCƒv‚É‰‚¶‚½ƒƒbƒVƒ…–¼‚Ì‰ğŒˆ
+    // 2. ç‰©ä»¶ã‚¿ã‚¤ãƒ—ã«å¿œã˜ãŸãƒ¡ãƒƒã‚·ãƒ¥åã®è§£æ±º
     std::string meshName = "prop_plane_mesh";
     switch (type) {
     case MapModelType::PROP_SOFA_YOKO: meshName = "sofa_yoko_mesh"; break;
@@ -48,7 +48,7 @@ void Prop::Update(uint64_t delta) {
     if (!m_context) return;
     float dt = static_cast<float>(delta) / 1000.0f;
 
-    // 1. ‘Sƒ†ƒjƒbƒg‚ÌûWF‹”F«‚ğŠm•Û‚·‚×‚«‘S‘ÎÛ‚ğƒŠƒXƒgƒAƒbƒv
+    // 1. å…¨ãƒ¦ãƒ‹ãƒƒãƒˆã®åé›†ï¼šè¦–èªæ€§ã‚’ç¢ºä¿ã™ã¹ãå…¨å¯¾è±¡ã‚’ãƒªã‚¹ãƒˆã‚¢ãƒƒãƒ—
     std::vector<Unit*> unitsToCheck;
     if (m_context->GetPlayer()) unitsToCheck.push_back(m_context->GetPlayer());
     if (m_context->GetAlly()) unitsToCheck.push_back(m_context->GetAlly());
@@ -60,13 +60,13 @@ void Prop::Update(uint64_t delta) {
         }
     }
 
-    // 2. Õ•ÁiƒIƒNƒ‹[ƒWƒ‡ƒ“jŒŸ’mƒƒWƒbƒN
+    // 2. é®è”½ï¼ˆã‚ªã‚¯ãƒ«ãƒ¼ã‚¸ãƒ§ãƒ³ï¼‰æ¤œçŸ¥ãƒ­ã‚¸ãƒƒã‚¯
     bool isOccluding = false;
     int propMinX = m_gridX;
     int propMaxX = m_gridX + m_sizeX - 1;
     int propMaxZ = m_gridZ + m_sizeZ - 1;
 
-    // ‹——£§ŒÀF‰Æ‹ï‚ÌŒã‚ë[‚­i‰“‚­j‚É‚¢‚éê‡‚ÍA‹Šo“I‚É–â‘è‚È‚¢‚½‚ß“§–¾‰»‚ğ‰ğœ‚·‚é
+    // è·é›¢åˆ¶é™ï¼šå®¶å…·ã®å¾Œã‚æ·±ãï¼ˆé ãï¼‰ã«ã„ã‚‹å ´åˆã¯ã€è¦–è¦šçš„ã«å•é¡Œãªã„ãŸã‚é€æ˜åŒ–ã‚’è§£é™¤ã™ã‚‹
     int occlusionLimitZ = propMaxZ + OCCLUSION_DEPTH;
 
     for (const auto* unit : unitsToCheck) {
@@ -75,7 +75,7 @@ void Prop::Update(uint64_t delta) {
         int unitX = unit->GetUnitGridX();
         int unitZ = unit->GetUnitGridZ();
 
-        // ‰Æ‹ï‚Ì•(X²)‚Éû‚Ü‚Á‚Ä‚¨‚èA‚©‚Â‰Æ‹ï‚Ì‚·‚®— (Z²)‚É‚¢‚éê‡
+        // å®¶å…·ã®å¹…(Xè»¸)ã«åã¾ã£ã¦ãŠã‚Šã€ã‹ã¤å®¶å…·ã®ã™ãè£(Zè»¸)ã«ã„ã‚‹å ´åˆ
         if (unitX >= propMinX && unitX <= propMaxX &&
             unitZ >= m_gridZ && unitZ <= occlusionLimitZ) {
             isOccluding = true;
@@ -83,7 +83,7 @@ void Prop::Update(uint64_t delta) {
         }
     }
 
-    // 3. ó‘Ô‚É‰‚¶‚½–Ú•WƒAƒ‹ƒtƒ@‚Ìİ’è‚ÆüŒ`•âŠÔiLerpj‚É‚æ‚éƒtƒF[ƒh
+    // 3. çŠ¶æ…‹ã«å¿œã˜ãŸç›®æ¨™ã‚¢ãƒ«ãƒ•ã‚¡ã®è¨­å®šã¨ç·šå½¢è£œé–“ï¼ˆLerpï¼‰ã«ã‚ˆã‚‹ãƒ•ã‚§ãƒ¼ãƒ‰
     m_targetAlpha = isOccluding ? OCCLUDED_ALPHA : NORMAL_ALPHA;
     m_currentAlpha += (m_targetAlpha - m_currentAlpha) * ALPHA_FADE_SPEED * dt;
 
@@ -100,7 +100,7 @@ void Prop::OnDraw(uint64_t delta) {
         shader->SetGPU();
     }
 
-    // ”¼“§–¾•`‰æ‚Ì‚½‚ß‚ÌƒXƒe[ƒgİ’è
+    // åŠé€æ˜æç”»ã®ãŸã‚ã®ã‚¹ãƒ†ãƒ¼ãƒˆè¨­å®š
     Renderer::SetBlendState(BS_ALPHABLEND);
     Renderer::SetDepthEnable(true);
     Renderer::SetWorldMatrix(&m_WorldMatrix);
@@ -126,7 +126,7 @@ void Prop::DrawPropShadow() {
     auto* mesh = MeshManager::getRenderer<CStaticMeshRenderer>("range_panel_mesh"); // 1x1 plane
     if (!blob || !mesh) return;
 
-    Vector3 p = m_srt.pos;              // Prop‚Ìpos‚Íè—L”ÍˆÍ‚Ì’†SˆÊ’uiInit“à‚Åoffset‰ÁZÏ‚İj
+    Vector3 p = m_srt.pos;              // Propã®posã¯å æœ‰ç¯„å›²ã®ä¸­å¿ƒä½ç½®ï¼ˆInitå†…ã§offsetåŠ ç®—æ¸ˆã¿ï¼‰
     p.y = ZFight::Blob;
     float gx = m_sizeX;
     float gz = m_sizeZ;
@@ -135,12 +135,12 @@ void Prop::DrawPropShadow() {
 
     blob->SetGPU();
     Renderer::SetBlendState(BS_ALPHABLEND);
-    Renderer::DisableCulling(false);   // •Ğ–Êplane ¨ —¼–Ê•`‰æ
-    Renderer::SetDepthReadOnly();      // ƒLƒƒƒ‰ƒNƒ^[‚â‘¼‚Ì‰e‚Æ‚Ìz-fighting‚ğ–h~
+    Renderer::DisableCulling(false);   // ç‰‡é¢plane â†’ ä¸¡é¢æç”»
+    Renderer::SetDepthReadOnly();      // ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ã‚„ä»–ã®å½±ã¨ã®z-fightingã‚’é˜²æ­¢
     mesh->Draw();
 
     Renderer::SetDepthEnable(true);
     Renderer::DisableCulling(true);
     Renderer::SetBlendState(BS_NONE);
-    MeshManager::getShader<CShader>("toonshader")->SetGPU(); // toon‚Ö•œŒ³
+    MeshManager::getShader<CShader>("toonshader")->SetGPU(); // toonã¸å¾©å…ƒ
 }

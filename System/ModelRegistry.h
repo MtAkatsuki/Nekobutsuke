@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <string>
 #include <functional>
@@ -15,7 +15,7 @@ namespace ModelRegistry {
 		const std::string& texDir,
 		const std::function<void(CStaticMeshRenderer&)>& setup = nullptr)
 	{
-		// “o˜^Ï‚İ‚È‚çƒ[ƒh‚¹‚¸Šù‘¶‚ğ•Ô‚·i‘½dƒfƒBƒXƒNIO–h~j
+		// ç™»éŒ²æ¸ˆã¿ãªã‚‰ãƒ­ãƒ¼ãƒ‰ã›ãšæ—¢å­˜ã‚’è¿”ã™ï¼ˆå¤šé‡ãƒ‡ã‚£ã‚¹ã‚¯IOé˜²æ­¢ï¼‰
 		if (MeshManager::ContainsRenderer(name)) {
 			return MeshManager::getRenderer<CStaticMeshRenderer>(name);
 		}

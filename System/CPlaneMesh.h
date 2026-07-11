@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "Library/DirectXTK/include/SimpleMath.h"
 #include	<random>
 #include	"CMesh.h"
@@ -19,20 +19,20 @@ public:
 	void CreateVertex();
 	void CreateVertexXZ();
 
-	void CreateIndexCW();						// Œv‰ñ‚è‚ÉƒCƒ“ƒfƒbƒNƒX‚ğ¶¬
-	void CreateIndexCCW();						// ”½Œv‰ñ‚è‚ÉƒCƒ“ƒfƒbƒNƒX‚ğ¶¬		
+	void CreateIndexCW();						// æ™‚è¨ˆå›ã‚Šã«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’ç”Ÿæˆ
+	void CreateIndexCCW();						// åæ™‚è¨ˆå›ã‚Šã«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’ç”Ÿæˆ		
 
-	// •
+	// å¹…
 	float GetWidth();
-	// ‚‚³
+	// é«˜ã•
 	float GetHeight();
 	int GetDivX();
 	int GetDivY();
 
-	// w’è‚µ‚½3ŠpŒ`”Ô†‚ÌOŠpŒ`‚ğ\¬‚·‚é’¸“_ƒCƒ“ƒfƒbƒNƒX‚ğæ“¾
+	// æŒ‡å®šã—ãŸ3è§’å½¢ç•ªå·ã®ä¸‰è§’å½¢ã‚’æ§‹æˆã™ã‚‹é ‚ç‚¹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’å–å¾—
 	CPlaneMesh::FACE GetTriangle(int triangleno);
 
-	// ‰½”Ô–Ú‚ÌlŠpŒ`‚©‚ğŒ©‚Â‚¯‚é
+	// ä½•ç•ªç›®ã®å››è§’å½¢ã‹ã‚’è¦‹ã¤ã‘ã‚‹
 	int GetSquareNo(DirectX::SimpleMath::Vector3 pos);
 
 private:

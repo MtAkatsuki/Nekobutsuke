@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include	<Windows.h>
 #include	<d3d11.h>
 #include	<wrl/client.h>
@@ -7,7 +7,7 @@
 #include	"NonCopyable.h"
 #include    <iostream>
 
-// ƒ}ƒeƒŠƒAƒ‹
+// ãƒžãƒ†ãƒªã‚¢ãƒ«
 /*
 struct MATERIAL {
 	DirectX::XMFLOAT4 Ambient;
@@ -53,11 +53,11 @@ public:
 		ID3D11Device* dev;
 		dev = Renderer::GetDevice();
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@ì¬
+		// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ä½œæˆ
 		bool sts = CreateConstantBuffer(
-			dev,								// ƒfƒoƒCƒX
-			sizeof(ConstantBufferMaterial),		// ƒTƒCƒY
-			m_pConstantBufferMaterial.GetAddressOf());		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@‚S
+			dev,								// ãƒ‡ãƒã‚¤ã‚¹
+			sizeof(ConstantBufferMaterial),		// ã‚µã‚¤ã‚º
+			m_pConstantBufferMaterial.GetAddressOf());		// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ï¼”
 		if (!sts) {
 			MessageBox(NULL, "CreateBuffer(constant buffer Material) error", "Error", MB_OK);
 			return false;
@@ -90,10 +90,10 @@ public:
 			&cb,
 			0, 0);
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ð‚‚3ƒŒƒWƒXƒ^‚ÖƒZƒbƒgi’¸“_ƒVƒF[ƒ_[—pj
+		// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚3ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆï¼ˆé ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨ï¼‰
 		devcontext->VSSetConstantBuffers(3, 1, m_pConstantBufferMaterial.GetAddressOf());
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ð‚‚3ƒŒƒWƒXƒ^‚ÖƒZƒbƒg(ƒsƒNƒZƒ‹ƒVƒF[ƒ_[—p)
+		// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚3ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆ(ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨)
 		devcontext->PSSetConstantBuffers(3, 1, m_pConstantBufferMaterial.GetAddressOf());
 
 	}
@@ -103,10 +103,10 @@ public:
 		ID3D11DeviceContext* devcontext;
 		devcontext = Renderer::GetDeviceContext();
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ð‚‚3ƒŒƒWƒXƒ^‚ÖƒZƒbƒgi’¸“_ƒVƒF[ƒ_[—pj
+		// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚3ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆï¼ˆé ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨ï¼‰
 		devcontext->VSSetConstantBuffers(3, 1, m_pConstantBufferMaterial.GetAddressOf());
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ð‚‚3ƒŒƒWƒXƒ^‚ÖƒZƒbƒg(ƒsƒNƒZƒ‹ƒVƒF[ƒ_[—p)
+		// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚3ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆ(ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨)
 		devcontext->PSSetConstantBuffers(3, 1, m_pConstantBufferMaterial.GetAddressOf());
 	}
 
@@ -126,10 +126,10 @@ public:
 			&cb,
 			0, 0);
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ð‚‚3ƒŒƒWƒXƒ^‚ÖƒZƒbƒgi’¸“_ƒVƒF[ƒ_[—pj
+		// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚3ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆï¼ˆé ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨ï¼‰
 		devcontext->VSSetConstantBuffers(3, 1, m_pConstantBufferMaterial.GetAddressOf());
 
-		// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@4‚ð‚‚3ƒŒƒWƒXƒ^‚ÖƒZƒbƒg(ƒsƒNƒZƒ‹ƒVƒF[ƒ_[—p)
+		// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡4ã‚’ï½‚3ãƒ¬ã‚¸ã‚¹ã‚¿ã¸ã‚»ãƒƒãƒˆ(ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ç”¨)
 		devcontext->PSSetConstantBuffers(3, 1, m_pConstantBufferMaterial.GetAddressOf());
 
 	}

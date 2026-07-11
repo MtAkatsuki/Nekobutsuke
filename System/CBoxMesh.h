@@ -1,11 +1,11 @@
-#pragma once
+ï»¿#pragma once
 #include	"CommonTypes.h"
 #include	"CMesh.h"
 
 
 class CBoxMesh : public CMesh {
-	// –@üƒxƒNƒgƒ‹‚ğŒvZ
-// ’¸“_À•W‚ğƒm[ƒ}ƒ‰ƒCƒY
+	// æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’è¨ˆç®—
+// é ‚ç‚¹åº§æ¨™ã‚’ãƒãƒ¼ãƒãƒ©ã‚¤ã‚º
 	void Normalize(
 		Vector3 vec, 
 		Vector3& Normal) {
@@ -21,25 +21,25 @@ public:
 		float depth,
 		Color color)
 	{
-		// ƒTƒCƒY‚ğ•Û‘¶
+		// ã‚µã‚¤ã‚ºã‚’ä¿å­˜
 		m_lengthx = width;
 		m_lengthy = height;
 		m_lengthz = depth;
 
 
-		// ƒJƒ‰[’l‚ğ•Û‘¶
+		// ã‚«ãƒ©ãƒ¼å€¤ã‚’ä¿å­˜
 		m_color = color;
 
-		// ‹…‚ÌƒCƒ“ƒfƒbƒNƒXƒf[ƒ^‚ğì¬
+		// çƒã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’ä½œæˆ
 		CreateIndex();
 
-		// ‹…‚Ì’¸“_ƒf[ƒ^‚ğì¬
+		// çƒã®é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚’ä½œæˆ
 		CreateVertex();
 	}
 
-	// ’¸“_ƒf[ƒ^¶¬
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ç”Ÿæˆ
 	void CreateVertex() {
-		// ’¸“_ƒNƒŠƒA
+		// é ‚ç‚¹ã‚¯ãƒªã‚¢
 		m_vertices.clear();
 
 		m_vertices.resize(12);
@@ -76,29 +76,29 @@ public:
 		m_vertices[7].Position.z = (m_lengthz / 2.0f);
 
 		for (int i = 0; i < 8; i++) {
-			// ’¸“_ƒJƒ‰[İ’è
+			// é ‚ç‚¹ã‚«ãƒ©ãƒ¼è¨­å®š
 			m_vertices[i].Diffuse = m_color;
 
-			// ƒm[ƒ}ƒ‰ƒCƒY
+			// ãƒãƒ¼ãƒãƒ©ã‚¤ã‚º
 			Normalize(
 				m_vertices[i].Position,
 				m_vertices[i].Normal);
 		}
 	}
 
-	// ƒCƒ“ƒfƒbƒNƒX¶¬
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ç”Ÿæˆ
 	void CreateIndex() {
 		struct FACE {
 			unsigned int idx[3];
 		};
 
-		// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^ƒNƒŠƒA
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚¯ãƒªã‚¢
 		m_indices.clear();
 
-		// ƒCƒ“ƒfƒbƒNƒX‚ğ¶¬
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’ç”Ÿæˆ
 		FACE faces[12];
 
-		faces[0].idx[0] = 0;		// è‘O  ok
+		faces[0].idx[0] = 0;		// æ‰‹å‰  ok
 		faces[0].idx[1] = 1;
 		faces[0].idx[2] = 2;
 
@@ -106,7 +106,7 @@ public:
 		faces[1].idx[1] = 3;
 		faces[1].idx[2] = 0;
 
-		faces[2].idx[0] = 5;		// ‰œ  ok
+		faces[2].idx[0] = 5;		// å¥¥  ok
 		faces[2].idx[1] = 4;
 		faces[2].idx[2] = 7;
 
@@ -114,7 +114,7 @@ public:
 		faces[3].idx[1] = 6;
 		faces[3].idx[2] = 5;
 
-		faces[4].idx[0] = 4;		// ¶‘¤ ok
+		faces[4].idx[0] = 4;		// å·¦å´ ok
 		faces[4].idx[1] = 0;
 		faces[4].idx[2] = 7;
 
@@ -122,7 +122,7 @@ public:
 		faces[5].idx[1] = 3;
 		faces[5].idx[2] = 7;
 
-		faces[6].idx[0] = 1;		// ‰E‘¤ ok
+		faces[6].idx[0] = 1;		// å³å´ ok
 		faces[6].idx[1] = 5;
 		faces[6].idx[2] = 6;
 
@@ -130,7 +130,7 @@ public:
 		faces[7].idx[1] = 6;
 		faces[7].idx[2] = 2;
 
-		faces[8].idx[0] = 0;		// ã‘¤ ok
+		faces[8].idx[0] = 0;		// ä¸Šå´ ok
 		faces[8].idx[1] = 4;
 		faces[8].idx[2] = 1;
 
@@ -138,7 +138,7 @@ public:
 		faces[9].idx[1] = 5;
 		faces[9].idx[2] = 1;
 
-		faces[10].idx[0] = 3;		// ‰º‘¤
+		faces[10].idx[0] = 3;		// ä¸‹å´
 		faces[10].idx[1] = 2;
 		faces[10].idx[2] = 7;
 
@@ -146,7 +146,7 @@ public:
 		faces[11].idx[1] = 7;
 		faces[11].idx[2] = 2;
 
-		// ƒCƒ“ƒfƒbƒNƒX“o˜^
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ç™»éŒ²
 		for (int i = 0; i < 12; i++) {
 			m_indices.emplace_back(faces[i].idx[0]);
 			m_indices.emplace_back(faces[i].idx[1]);

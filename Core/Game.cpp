@@ -1,4 +1,4 @@
-#include "Game.h"
+ï»¿#include "Game.h"
 #include "../System/renderer.h"
 #include "../System/DebugUI.h"
 #include "../System/CDirectInput.h"
@@ -12,14 +12,14 @@
 #include <iostream>
 
 namespace {
-	// --- İ’èE’è”  ---
+	// --- è¨­å®šãƒ»å®šæ•°  ---
 	constexpr uint64_t TARGET_FPS = 60;
-	constexpr uint64_t FIXED_STEP_MS = 16;  // 16ms (–ñ60FPS‘Š“–‚ÌŒÅ’èƒXƒeƒbƒv)
-	constexpr uint64_t DELTA_TIME_MAX_MS = 100; // delta_time‚ÌƒNƒ‰ƒ“ƒvãŒÀiƒXƒpƒCƒN‘Îôj
+	constexpr uint64_t FIXED_STEP_MS = 16;  // 16ms (ç´„60FPSç›¸å½“ã®å›ºå®šã‚¹ãƒ†ãƒƒãƒ—)
+	constexpr uint64_t DELTA_TIME_MAX_MS = 100; // delta_timeã®ã‚¯ãƒ©ãƒ³ãƒ—ä¸Šé™ï¼ˆã‚¹ãƒ‘ã‚¤ã‚¯å¯¾ç­–ï¼‰
 	constexpr float    INITIAL_FADE_DURATION = 100.0f;
 }
 
-static uint64_t g_accumulator = 0; // ŒÅ’èƒXƒeƒbƒvXV—p‚Ìƒ^ƒCƒ€ƒAƒLƒ…ƒ€ƒŒ[ƒ^
+static uint64_t g_accumulator = 0; // å›ºå®šã‚¹ãƒ†ãƒƒãƒ—æ›´æ–°ç”¨ã®ã‚¿ã‚¤ãƒ ã‚¢ã‚­ãƒ¥ãƒ ãƒ¬ãƒ¼ã‚¿
 
 void gameinit()
 {
@@ -54,18 +54,18 @@ void gameinit()
 }
 
 void gameupdate(uint64_t deltatime){
-	// “ü—ÍƒfƒoƒCƒX‚ÌXV
+	// å…¥åŠ›ãƒ‡ãƒã‚¤ã‚¹ã®æ›´æ–°
 	CDirectInput::GetInstance().GetKeyBuffer();
 	CDirectInput::GetInstance().GetMouseState();
 
-	// ƒV[ƒ“ƒ}ƒl[ƒWƒƒ‚ÌXV (Œ»İ‚ÍŒÅ’èƒXƒeƒbƒv‚Å‰ñ‚µ‚Ä‚¢‚é)
+	// ã‚·ãƒ¼ãƒ³ãƒãƒãƒ¼ã‚¸ãƒ£ã®æ›´æ–° (ç¾åœ¨ã¯å›ºå®šã‚¹ãƒ†ãƒƒãƒ—ã§å›ã—ã¦ã„ã‚‹)
 	SceneManager::GetInstance().Update(FIXED_STEP_MS);
 
 	g_accumulator -= FIXED_STEP_MS;
 }
 
 void gamedraw(uint64_t deltatime){
-	// F4 ƒL[‚Å ImGui ‚Ì•\¦ó‘Ô‚ğØ‚è‘Ö‚¦
+	// F4 ã‚­ãƒ¼ã§ ImGui ã®è¡¨ç¤ºçŠ¶æ…‹ã‚’åˆ‡ã‚Šæ›¿ãˆ
 	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_F4)) {
 		DebugUI::Toggle();
 	}
@@ -74,7 +74,7 @@ void gamedraw(uint64_t deltatime){
 		DebugUI::BeginFrame();
 	}
 
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒO‘Oˆ—
+	// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°å‰å‡¦ç†
 	Renderer::Begin();
 
 	SceneManager::GetInstance().Draw(deltatime);
@@ -82,10 +82,10 @@ void gamedraw(uint64_t deltatime){
 
 	if (DebugUI::IsVisible()) {
 		DebugUI::Draw();
-		DebugUI::EndFrame(); // ImGui ‚Ì•`‰æƒf[ƒ^‚ğ GPU ‚É‘—M
+		DebugUI::EndFrame(); // ImGui ã®æç”»ãƒ‡ãƒ¼ã‚¿ã‚’ GPU ã«é€ä¿¡
 	}
 
-	// --- ƒŒƒ“ƒ_ƒŠƒ“ƒOƒpƒCƒvƒ‰ƒCƒ“I—¹ ---
+	// --- ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³çµ‚äº† ---
 	Renderer::Present();
 }
 
@@ -99,11 +99,11 @@ void gamedispose(){
 void gameloop(){
 	static FPS fpsrate(TARGET_FPS);
 
-	// ‘O‰ñÀs‚³‚ê‚Ä‚©‚ç‚ÌŒo‰ßŠÔ‚ğŒvZ
+	// å‰å›å®Ÿè¡Œã•ã‚Œã¦ã‹ã‚‰ã®çµŒéæ™‚é–“ã‚’è¨ˆç®—
 	uint64_t delta_time = fpsrate.CalcDelta();
 
-	// ƒXƒpƒCƒN‘ÎôFƒEƒBƒ“ƒhƒEˆÚ“®‚È‚Ç‚ÅOS‘¤‚Åˆ—‚ª’â~‚µ‚½ê‡A
-	// delta_time ‚ªˆÙí‚È’l‚É‚È‚è•¨—‰‰Z‚ª”j’]‚·‚é‚Ì‚ğ–h‚®B
+	// ã‚¹ãƒ‘ã‚¤ã‚¯å¯¾ç­–ï¼šã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ç§»å‹•ãªã©ã§OSå´ã§å‡¦ç†ãŒåœæ­¢ã—ãŸå ´åˆã€
+	// delta_time ãŒç•°å¸¸ãªå€¤ã«ãªã‚Šç‰©ç†æ¼”ç®—ãŒç ´ç¶»ã™ã‚‹ã®ã‚’é˜²ãã€‚
 	if (delta_time > DELTA_TIME_MAX_MS) {
 		delta_time = DELTA_TIME_MAX_MS;
 	}
@@ -111,6 +111,6 @@ void gameloop(){
 	gameupdate(delta_time);
 	gamedraw(delta_time);
 
-	// Ÿ‚ÌƒtƒŒ[ƒ€‚Ü‚Å‘Ò‹@(Wait)‚µAfpsrate“à•”‚ÌŠÔ‚ğXV‚·‚é
+	// æ¬¡ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã¾ã§å¾…æ©Ÿ(Wait)ã—ã€fpsrateå†…éƒ¨ã®æ™‚é–“ã‚’æ›´æ–°ã™ã‚‹
 	fpsrate.Tick();
 }

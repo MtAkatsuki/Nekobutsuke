@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 #include	<wrl/client.h>
 #include	<cstdint>
 #include	<numbers>
 #include    "Library/DirectXTK/include/SimpleMath.h"
 
-// Šî–{Œ^‚ÌƒGƒCƒŠƒAƒX
+// åŸºæœ¬å‹ã®ã‚¨ã‚¤ãƒªã‚¢ã‚¹
 using Vector4 = DirectX::SimpleMath::Vector4;
 using Vector3 = DirectX::SimpleMath::Vector3;
 using Vector2 = DirectX::SimpleMath::Vector2;

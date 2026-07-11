@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <Audio.h> 
 #include <map>
 #include <string>
@@ -6,9 +6,9 @@
 #include <iostream>
 
 // =========================================================
-// AudioManager ƒNƒ‰ƒX (Singleton)
-// DirectX AudioEngine ‚ğƒ‰ƒbƒv‚µABGM‚ÌƒNƒƒXƒtƒF[ƒh‚â
-// SEiŒø‰Ê‰¹j‚ÌÄ¶ó‘Ô‚ğˆêŠ‡ŠÇ—‚·‚éƒTƒEƒ“ƒhƒVƒXƒeƒ€
+// AudioManager ã‚¯ãƒ©ã‚¹ (Singleton)
+// DirectX AudioEngine ã‚’ãƒ©ãƒƒãƒ—ã—ã€BGMã®ã‚¯ãƒ­ã‚¹ãƒ•ã‚§ãƒ¼ãƒ‰ã‚„
+// SEï¼ˆåŠ¹æœéŸ³ï¼‰ã®å†ç”ŸçŠ¶æ…‹ã‚’ä¸€æ‹¬ç®¡ç†ã™ã‚‹ã‚µã‚¦ãƒ³ãƒ‰ã‚·ã‚¹ãƒ†ãƒ 
 // =========================================================
 class AudioManager
 {
@@ -19,26 +19,26 @@ public:
 	}
 
 	// ---------------------------------------------------------
-	// ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+	// ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
 	// ---------------------------------------------------------
 	void Init();
 	void Update(float dt);
-	void Suspend(); // ƒoƒbƒNƒOƒ‰ƒEƒ“ƒhˆÚs‚Ìˆê’â~
-	void Resume();  // ƒtƒHƒAƒOƒ‰ƒEƒ“ƒh•œ‹A‚ÌÄŠJ
+	void Suspend(); // ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰ç§»è¡Œæ™‚ã®ä¸€æ™‚åœæ­¢
+	void Resume();  // ãƒ•ã‚©ã‚¢ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰å¾©å¸°æ™‚ã®å†é–‹
 
 	// ---------------------------------------------------------
-	// BGM §Œä (Background Music Control)
+	// BGM åˆ¶å¾¡ (Background Music Control)
 	// ---------------------------------------------------------
-	// BGM‚ÌÄ¶iŠù‘¶‹È‚ª‚ ‚éê‡‚Í©“®“I‚ÉƒNƒƒXƒtƒF[ƒh‚ğs‚¤j
+	// BGMã®å†ç”Ÿï¼ˆæ—¢å­˜æ›²ãŒã‚ã‚‹å ´åˆã¯è‡ªå‹•çš„ã«ã‚¯ãƒ­ã‚¹ãƒ•ã‚§ãƒ¼ãƒ‰ã‚’è¡Œã†ï¼‰
 	void PlayBGM(const std::string& name, bool loop = true, float fadeTime = 1.0f);
 	void StopBGM(float fadeTime = 1.0f);
 
 	// ---------------------------------------------------------
-	// SE §Œä (Sound Effects Control)
+	// SE åˆ¶å¾¡ (Sound Effects Control)
 	// ---------------------------------------------------------
 	void LoadSE(const std::string& name, const std::wstring& path);
 
-	// SE‚ÌÄ¶ (Fire-and-forget •û®F’P”­‚Ì‰¹‚ÌÄ¶‚É“Á‰»)
+	// SEã®å†ç”Ÿ (Fire-and-forget æ–¹å¼ï¼šå˜ç™ºã®éŸ³ã®å†ç”Ÿã«ç‰¹åŒ–)
 	void PlaySE(const std::string& name, float volume = 1.0f, float pitch = 0.0f, float pan = 0.0f);
 
 private:
@@ -48,16 +48,16 @@ private:
 	AudioManager& operator=(const AudioManager&) = delete;
 
 	// =========================================================
-	// ƒƒ“ƒo[•Ï”
+	// ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•°
 	// =========================================================
 	std::unique_ptr<DirectX::AudioEngine> m_audEngine;
 	std::map<std::string, std::unique_ptr<DirectX::SoundEffect>> m_soundEffects;
 
-	// --- BGM Ä¶ƒCƒ“ƒXƒ^ƒ“ƒX ---
-	std::unique_ptr<DirectX::SoundEffectInstance> m_currentBGM; // Ä¶’†EƒtƒF[ƒhƒAƒEƒg’†
-	std::unique_ptr<DirectX::SoundEffectInstance> m_nextBGM;    // €”õ’†EƒtƒF[ƒhƒCƒ“’†
+	// --- BGM å†ç”Ÿã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ ---
+	std::unique_ptr<DirectX::SoundEffectInstance> m_currentBGM; // å†ç”Ÿä¸­ãƒ»ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆä¸­
+	std::unique_ptr<DirectX::SoundEffectInstance> m_nextBGM;    // æº–å‚™ä¸­ãƒ»ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ä¸­
 
-	// --- ƒtƒF[ƒh§ŒäƒXƒe[ƒg ---
+	// --- ãƒ•ã‚§ãƒ¼ãƒ‰åˆ¶å¾¡ã‚¹ãƒ†ãƒ¼ãƒˆ ---
 	bool m_isCrossFading = false;
 	bool m_isStopping = false;
 	float m_fadeTimer = 0.0f;

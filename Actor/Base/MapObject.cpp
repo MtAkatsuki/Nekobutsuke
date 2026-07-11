@@ -1,4 +1,4 @@
-#include	"../../Actor/Base/MapObject.h"
+ï»¿#include	"../../Actor/Base/MapObject.h"
 #include    "../../System/meshmanager.h"
 
 MapObject::MapObject(GameContext* context):GameObject(context){}
@@ -7,7 +7,7 @@ void MapObject::Init(MapModelType type, Vector3 position) {
 	m_srt.pos = position;
 	m_type = type;
 
-	// ƒIƒuƒWƒFƒNƒgƒ^ƒCƒv‚ÉŠî‚Ã‚­’Ês‰Â”\‘®«iWalkablej‚Ì‰Šúİ’è
+	// ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚¿ã‚¤ãƒ—ã«åŸºã¥ãé€šè¡Œå¯èƒ½å±æ€§ï¼ˆWalkableï¼‰ã®åˆæœŸè¨­å®š
 	switch (type) {
 	case MapModelType::WALL:
 	case MapModelType::PROP_SOFA_TATE:
@@ -15,15 +15,15 @@ void MapObject::Init(MapModelType type, Vector3 position) {
 	case MapModelType::PROP_CATTOWER:
 	case MapModelType::PROP_TABLE:
 	case MapModelType::PROP_BOOKSHELF:
-		m_isWalkable = false; // áŠQ•¨‚Í’Ês•s‰Â
+		m_isWalkable = false; // éšœå®³ç‰©ã¯é€šè¡Œä¸å¯
 		break;
 
 	case MapModelType::TRAP:
-		m_isWalkable = true;  // ƒgƒ‰ƒbƒv‚Íi“ü‰Â”\‚È‚½‚ß true ‚Éİ’èiƒ_ƒ[ƒW‚ÍOnEnter‚Åˆ—j
+		m_isWalkable = true;  // ãƒˆãƒ©ãƒƒãƒ—ã¯é€²å…¥å¯èƒ½ãªãŸã‚ true ã«è¨­å®šï¼ˆãƒ€ãƒ¡ãƒ¼ã‚¸ã¯OnEnterã§å‡¦ç†ï¼‰
 		break;
 
 	default:
-		m_isWalkable = true;  // °‚È‚Ç‚ÍƒfƒtƒHƒ‹ƒg‚Å’Ês‰Â”\
+		m_isWalkable = true;  // åºŠãªã©ã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§é€šè¡Œå¯èƒ½
 		break;
 	}
 
@@ -36,7 +36,7 @@ void MapObject::Init(MapModelType type, Vector3 position) {
 }
 
 void MapObject::Update(uint64_t delta) {
-    // ƒx[ƒXƒNƒ‰ƒX‚ÌUpdate‚Í‹óÀ‘•i”h¶ƒNƒ‰ƒX‚Å•K—v‚É‰‚¶‚ÄŠg’£j
+    // ãƒ™ãƒ¼ã‚¹ã‚¯ãƒ©ã‚¹ã®Updateã¯ç©ºå®Ÿè£…ï¼ˆæ´¾ç”Ÿã‚¯ãƒ©ã‚¹ã§å¿…è¦ã«å¿œã˜ã¦æ‹¡å¼µï¼‰
 }
 
 void MapObject::OnDraw(uint64_t delta)

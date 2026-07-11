@@ -1,26 +1,26 @@
-#include    "CommonTypes.h"
+ï»¿#include    "CommonTypes.h"
 #include	<filesystem>
 #include	<string>
 #include	<Windows.h>
 #include	"Library/Assimp/include/assimp/scene.h"
 
 namespace utility {
-    // std::string —p‚ÌƒfƒBƒŒƒNƒgƒŠæ“¾ŠÖ”
+    // std::string ç”¨ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå–å¾—é–¢æ•°
     std::filesystem::path get_directory(const std::string& path) {
         return std::filesystem::path(path).parent_path();
     }
 
-    // std::u8string —p‚ÌƒfƒBƒŒƒNƒgƒŠæ“¾ŠÖ”
+    // std::u8string ç”¨ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå–å¾—é–¢æ•°
     std::filesystem::path get_directory(const std::u8string& path) {
         return std::filesystem::path(path).parent_path();
     }
 
-    // std::wstring —p‚ÌƒfƒBƒŒƒNƒgƒŠæ“¾ŠÖ”
+    // std::wstring ç”¨ã®ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå–å¾—é–¢æ•°
     std::filesystem::path get_directory(const std::wstring& path) {
         return std::filesystem::path(path).parent_path();
     }
 
-	// ƒƒCƒh•¶š(utf16)‚ğ‚“|‚Š‚‰‚“‚É
+	// ãƒ¯ã‚¤ãƒ‰æ–‡å­—(utf16)ã‚’ï½“ï¼ï½Šï½‰ï½“ã«
 	std::string wide_to_multi_winapi(std::wstring const& src)
 	{
 		auto const dest_size = ::WideCharToMultiByte(
@@ -49,11 +49,11 @@ namespace utility {
 		return std::string(dest.begin(), dest.end());
 	}
 
-	// utf-8‚ğƒƒCƒh•¶š(utf-16)‚É
+	// utf-8ã‚’ãƒ¯ã‚¤ãƒ‰æ–‡å­—(utf-16)ã«
 	std::wstring utf8_to_wide_winapi(std::string const& src)
 	{
 		auto const dest_size = ::MultiByteToWideChar(
-			CP_UTF8,			 // ƒ\[ƒX‘¤‚ªUTF-8
+			CP_UTF8,			 // ã‚½ãƒ¼ã‚¹å´ãŒUTF-8
 			0U,
 			src.data(),
 			-1,
@@ -68,7 +68,7 @@ namespace utility {
 		return std::wstring(dest.begin(), dest.end());
 	}
 
-	// utf8‚ğS-JIS‚É
+	// utf8ã‚’S-JISã«
 	std::string utf8_to_multi_winapi(std::string const& src)
 	{
 		auto const wide = utf8_to_wide_winapi(src);
@@ -89,10 +89,10 @@ namespace utility {
 
 	Matrix4x4 CaliculateBillBoardMtx(Matrix4x4 mtxView)
 	{
-		// ƒ[ƒ‹ƒhƒ}ƒgƒŠƒbƒNƒX‚Ì‰Šú‰»
+		// ãƒ¯ãƒ¼ãƒ«ãƒ‰ãƒãƒˆãƒªãƒƒã‚¯ã‚¹ã®åˆæœŸåŒ–
 		Matrix4x4 mtxWorld = Matrix4x4::Identity;
 
-		// ƒrƒ‹ƒ{[ƒh—ps—ñì¬
+		// ãƒ“ãƒ«ãƒœãƒ¼ãƒ‰ç”¨è¡Œåˆ—ä½œæˆ
 		mtxWorld._11 = mtxView._11;
 		mtxWorld._12 = mtxView._21;
 		mtxWorld._13 = mtxView._31;
@@ -106,7 +106,7 @@ namespace utility {
 		return mtxWorld;
 	}
 
-	// ƒ^[ƒQƒbƒg‚Ì•ûŒü‚ğŒü‚­ƒNƒI[ƒ^ƒjƒIƒ“‚ğì¬‚·‚éŠÖ”(ãŒÅ’è‚È‚µ)
+	// ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã®æ–¹å‘ã‚’å‘ãã‚¯ã‚ªãƒ¼ã‚¿ãƒ‹ã‚ªãƒ³ã‚’ä½œæˆã™ã‚‹é–¢æ•°(ä¸Šå›ºå®šãªã—)
 	Quaternion CreateTargetQuaternion(
 		const Vector3 start,
 		const Vector3 end)
@@ -122,8 +122,8 @@ namespace utility {
 		float dotFloat = normalizedStart.Dot(normalizedEnd);
 
 		if (dotFloat < -0.999999f) {
-			// ƒxƒNƒgƒ‹‚ª‚Ù‚Ú”½‘Î•ûŒü‚Ìê‡
-			// ”CˆÓ‚Ì’¼ŒğƒxƒNƒgƒ‹‚ğ²‚Æ‚µ‚Ä180“x‰ñ“]
+			// ãƒ™ã‚¯ãƒˆãƒ«ãŒã»ã¼åå¯¾æ–¹å‘ã®å ´åˆ
+			// ä»»æ„ã®ç›´äº¤ãƒ™ã‚¯ãƒˆãƒ«ã‚’è»¸ã¨ã—ã¦180åº¦å›è»¢
 			Vector3 orthogonal = normalizedStart.Cross(Vector3(1.0f, 0.0f, 0.0f));
 
 			if (orthogonal.LengthSquared() < 0.1f) {
@@ -134,8 +134,8 @@ namespace utility {
 		}
 
 		if (dotFloat > 0.999999f) {
-			// ƒxƒNƒgƒ‹‚ª‚Ù‚Ú“¯‚¶•ûŒü‚Ìê‡
-			// ”CˆÓ‚Ì’¼ŒğƒxƒNƒgƒ‹‚ğ²‚Æ‚µ‚Ä0“x‰ñ“]
+			// ãƒ™ã‚¯ãƒˆãƒ«ãŒã»ã¼åŒã˜æ–¹å‘ã®å ´åˆ
+			// ä»»æ„ã®ç›´äº¤ãƒ™ã‚¯ãƒˆãƒ«ã‚’è»¸ã¨ã—ã¦0åº¦å›è»¢
 			Vector3 orthogonal = normalizedStart.Cross(Vector3(1.0f, 0.0f, 0.0f));
 
 			if (orthogonal.LengthSquared() < 0.1f) {
@@ -150,7 +150,7 @@ namespace utility {
 		return Quaternion::CreateFromAxisAngle(cross, angle);
 	}
 
-	// ƒ^[ƒQƒbƒg‚Ì•ûŒü‚ğŒü‚­ƒNƒI[ƒ^ƒjƒIƒ“‚ğì¬‚·‚éŠÖ”(ãŒÅ’è‚ ‚è)
+	// ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã®æ–¹å‘ã‚’å‘ãã‚¯ã‚ªãƒ¼ã‚¿ãƒ‹ã‚ªãƒ³ã‚’ä½œæˆã™ã‚‹é–¢æ•°(ä¸Šå›ºå®šã‚ã‚Š)
 	Quaternion CreateLookatQuaternion(
 		const Vector3 start,
 		const Vector3 end,
@@ -162,13 +162,13 @@ namespace utility {
 		Vector3 axisy{};
 		Vector3 axisz=(end-start);
 
-		// ŠOÏ‚ÅX²‚ğ‹‚ß‚é
+		// å¤–ç©ã§Xè»¸ã‚’æ±‚ã‚ã‚‹
 		axisx = up.Cross(axisz);
 
-		// ŠOÏ‚ÅY²‚ğ‹‚ß‚é
+		// å¤–ç©ã§Yè»¸ã‚’æ±‚ã‚ã‚‹
 		axisy = axisz.Cross(axisx);
 
-		// ³‹K‰»
+		// æ­£è¦åŒ–
 		axisx.Normalize();
 		axisy.Normalize();
 		axisz.Normalize();

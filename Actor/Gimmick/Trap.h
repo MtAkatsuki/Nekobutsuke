@@ -1,11 +1,11 @@
-#pragma once
+ï»¿#pragma once
 
 #include "../Base/MapObject.h"
 
 // =========================================================
-// Trap ƒNƒ‰ƒX
-// ƒ}ƒbƒvã‚Ìã©ƒMƒ~ƒbƒNBƒ†ƒjƒbƒg‚ªi“ü(OnEnter)‚µ‚½Û‚Éƒ_ƒ[ƒW‚ğ—^‚¦A
-// ”­“®Œã‚ÍƒAƒjƒ[ƒVƒ‡ƒ“‚ğ”º‚Á‚ÄÁ–Å‚·‚éB
+// Trap ã‚¯ãƒ©ã‚¹
+// ãƒãƒƒãƒ—ä¸Šã®ç½ ã‚®ãƒŸãƒƒã‚¯ã€‚ãƒ¦ãƒ‹ãƒƒãƒˆãŒé€²å…¥(OnEnter)ã—ãŸéš›ã«ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’ä¸ãˆã€
+// ç™ºå‹•å¾Œã¯ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã‚’ä¼´ã£ã¦æ¶ˆæ»…ã™ã‚‹ã€‚
 // =========================================================
 struct Tile;
 class Trap : public MapObject {
@@ -13,36 +13,36 @@ public:
 	using MapObject::MapObject;
 
 	// ---------------------------------------------------------
-	// ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+	// ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
 	// ---------------------------------------------------------
 	void Init(MapModelType type, Vector3 position) override;
 	void Update(uint64_t delta) override;
 
 	// ---------------------------------------------------------
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒO (Rendering)
+	// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚° (Rendering)
 	// ---------------------------------------------------------
 	void OnDraw(uint64_t delta) override;
 
 	// ---------------------------------------------------------
-	// ƒCƒxƒ“ƒgEó‘Ô (Events & Status)
+	// ã‚¤ãƒ™ãƒ³ãƒˆãƒ»çŠ¶æ…‹ (Events & Status)
 	// ---------------------------------------------------------
 	void OnEnter(Unit* unit) override;
 
 	static void GetDimensions(MapModelType type, int& outW, int& outD);
-	// ƒ^ƒCƒ‹ã‚Éu–¢”­“®‚Ìã©v‚ª‚ ‚ê‚Î‚»‚ê‚ğ•Ô‚·i‚È‚¯‚ê‚Î nullptrj
+	// ã‚¿ã‚¤ãƒ«ä¸Šã«ã€Œæœªç™ºå‹•ã®ç½ ã€ãŒã‚ã‚Œã°ãã‚Œã‚’è¿”ã™ï¼ˆãªã‘ã‚Œã° nullptrï¼‰
 	static Trap* GetArmedTrap(const Tile* tile);
 	bool IsActivated() const { return m_hasActivated; }
 	int GetTrapDamage() const { return m_trapDamage; }
 
 private:
-	bool m_hasActivated = false;   // ã©‚ª”­“®Ï‚İ‚©‚Ç‚¤‚©‚Ìƒtƒ‰ƒO
-	int m_trapDamage = 5;          // ƒgƒ‰ƒbƒv‚ÌŠî–{ƒ_ƒ[ƒW—Ê
+	bool m_hasActivated = false;   // ç½ ãŒç™ºå‹•æ¸ˆã¿ã‹ã©ã†ã‹ã®ãƒ•ãƒ©ã‚°
+	int m_trapDamage = 5;          // ãƒˆãƒ©ãƒƒãƒ—ã®åŸºæœ¬ãƒ€ãƒ¡ãƒ¼ã‚¸é‡
 
 	int m_sizeX = 1;
 	int m_sizeZ = 1;
 
-	// --- ƒAƒjƒ[ƒVƒ‡ƒ“§Œä ---
-	bool m_isDisappearing = false; // Á¸ƒAƒjƒ[ƒVƒ‡ƒ“Ä¶’†ƒtƒ‰ƒO
-	float m_animTimer = 0.0f;      // ƒAƒjƒ[ƒVƒ‡ƒ“isƒ^ƒCƒ}[
-	Vector3 m_initialScale;        // ŠJn‚ÌŠî€ƒXƒP[ƒ‹
+	// --- ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³åˆ¶å¾¡ ---
+	bool m_isDisappearing = false; // æ¶ˆå¤±ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å†ç”Ÿä¸­ãƒ•ãƒ©ã‚°
+	float m_animTimer = 0.0f;      // ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³é€²è¡Œã‚¿ã‚¤ãƒãƒ¼
+	Vector3 m_initialScale;        // é–‹å§‹æ™‚ã®åŸºæº–ã‚¹ã‚±ãƒ¼ãƒ«
 };

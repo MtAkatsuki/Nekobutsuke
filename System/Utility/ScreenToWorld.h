@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 #include "../../System/commontypes.h"
 
 // =========================================================
-// ScreenToWorld ƒNƒ‰ƒX
-// ƒ}ƒEƒXƒNƒŠƒbƒN‚È‚Ç‚Ì2DƒXƒNƒŠ[ƒ“À•W‚©‚çA‹t•ÏŠ·ŒvZ‚ğs‚Á‚Ä
-// 3D‹óŠÔ‚Ìƒ[ƒ‹ƒhÀ•WiƒŒƒC‚Ìn“_‚È‚Çj‚ğZo‚·‚éB
+// ScreenToWorld ã‚¯ãƒ©ã‚¹
+// ãƒã‚¦ã‚¹ã‚¯ãƒªãƒƒã‚¯ãªã©ã®2Dã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ã‹ã‚‰ã€é€†å¤‰æ›è¨ˆç®—ã‚’è¡Œã£ã¦
+// 3Dç©ºé–“ã®ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ï¼ˆãƒ¬ã‚¤ã®å§‹ç‚¹ãªã©ï¼‰ã‚’ç®—å‡ºã™ã‚‹ã€‚
 // =========================================================
 class ScreenToWorld {
 public:
@@ -14,13 +14,13 @@ public:
     }
     ~ScreenToWorld() = default;
 
-    // ³‹K‰»ƒfƒoƒCƒXÀ•W (NDC) ‚Ìæ“¾
+    // æ­£è¦åŒ–ãƒ‡ãƒã‚¤ã‚¹åº§æ¨™ (NDC) ã®å–å¾—
     Vector3 GetNDC() const;
 
-    // ƒrƒ…[‹óŠÔ‚ÌÀ•W‚ğæ“¾ (depth: ‹‚ß‚½‚¢[“xZ)
+    // ãƒ“ãƒ¥ãƒ¼ç©ºé–“ã®åº§æ¨™ã‚’å–å¾— (depth: æ±‚ã‚ãŸã„æ·±åº¦Z)
     Vector3 GetViewCoordinate(float depth, const Matrix4x4& projmtx) const;
 
-    // ƒ[ƒ‹ƒh‹óŠÔ‚ÌÀ•W‚ğæ“¾
+    // ãƒ¯ãƒ¼ãƒ«ãƒ‰ç©ºé–“ã®åº§æ¨™ã‚’å–å¾—
     Vector3 GetWorldCoordinate(float depth, const Matrix4x4& projmtx, const Matrix4x4& viewmtx) const;
 
 private:

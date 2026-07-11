@@ -1,21 +1,21 @@
-#pragma once
+ï»¿#pragma once
 #include "CommonTypes.h"
 #include "CMesh.h"
 
 /**
- * @brief ‹…‘ÌƒƒbƒVƒ…‚ğ¶¬EŠÇ—‚·‚éƒNƒ‰ƒX
+ * @brief çƒä½“ãƒ¡ãƒƒã‚·ãƒ¥ã‚’ç”Ÿæˆãƒ»ç®¡ç†ã™ã‚‹ã‚¯ãƒ©ã‚¹
  *
- * CMesh ‚ğŒp³‚µAw’è‚³‚ê‚½•ªŠ„”‚Æ”¼Œa‚ÉŠî‚Ã‚¢‚Ä‹…‘Ì‚Ì’¸“_EƒCƒ“ƒfƒbƒNƒX‚ğ¶¬‚µ‚Ü‚·B
+ * CMesh ã‚’ç¶™æ‰¿ã—ã€æŒ‡å®šã•ã‚ŒãŸåˆ†å‰²æ•°ã¨åŠå¾„ã«åŸºã¥ã„ã¦çƒä½“ã®é ‚ç‚¹ãƒ»ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’ç”Ÿæˆã—ã¾ã™ã€‚
  */
 class CSphereMesh : public CMesh {
 public:
     /**
-     * @brief ‹…ƒƒbƒVƒ…‚Ì‰Šú‰»‚ğs‚¤
+     * @brief çƒãƒ¡ãƒƒã‚·ãƒ¥ã®åˆæœŸåŒ–ã‚’è¡Œã†
      *
-     * @param radius ‹…‚Ì”¼Œa
-     * @param color ’¸“_ƒJƒ‰[
-     * @param division_horizontal Œo“x•ûŒüi‰¡j‚Ì•ªŠ„”
-     * @param division_vertical ˆÜ“x•ûŒüicj‚Ì•ªŠ„”
+     * @param radius çƒã®åŠå¾„
+     * @param color é ‚ç‚¹ã‚«ãƒ©ãƒ¼
+     * @param division_horizontal çµŒåº¦æ–¹å‘ï¼ˆæ¨ªï¼‰ã®åˆ†å‰²æ•°
+     * @param division_vertical ç·¯åº¦æ–¹å‘ï¼ˆç¸¦ï¼‰ã®åˆ†å‰²æ•°
      */
     void Init(float radius,
         Color color,
@@ -32,15 +32,15 @@ public:
     }
 
     /**
-     * @brief ‹…‘Ì‚Ì’¸“_ƒf[ƒ^‚ğ¶¬‚·‚é
+     * @brief çƒä½“ã®é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚’ç”Ÿæˆã™ã‚‹
      *
-     * ‹ÂŠp‚Æ•ûˆÊŠp‚ÉŠî‚Ã‚«‹…‘Ì‚Ì’¸“_ˆÊ’u‚Æ–@üƒxƒNƒgƒ‹‚ğŒvZ‚µ‚ÄŠi”[‚µ‚Ü‚·B
+     * ä»°è§’ã¨æ–¹ä½è§’ã«åŸºã¥ãçƒä½“ã®é ‚ç‚¹ä½ç½®ã¨æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’è¨ˆç®—ã—ã¦æ ¼ç´ã—ã¾ã™ã€‚
      */
     void CreateVertex() {
         m_vertices.clear();
 
-        float azimuth = 0.0f;   ///< •ûˆÊŠp
-        float elevation = 0.0f; ///< ‹ÂŠp
+        float azimuth = 0.0f;   ///< æ–¹ä½è§’
+        float elevation = 0.0f; ///< ä»°è§’
 
         Vector3 Normal;
 
@@ -56,7 +56,7 @@ public:
                 v.Position.y = m_radius * cosf(elevation);
                 v.Position.z = r * sinf(azimuth);
 
-                Normalize(v.Position, Normal); ///< –@üƒxƒNƒgƒ‹‚ğ³‹K‰»
+                Normalize(v.Position, Normal); ///< æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’æ­£è¦åŒ–
                 v.Normal = Normal;
                 v.Diffuse = m_color;
 
@@ -66,9 +66,9 @@ public:
     }
 
     /**
-     * @brief ‹…‘Ì‚ÌƒCƒ“ƒfƒbƒNƒXƒf[ƒ^‚ğ¶¬‚·‚é
+     * @brief çƒä½“ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’ç”Ÿæˆã™ã‚‹
      *
-     * ’¸“_ƒCƒ“ƒfƒbƒNƒX‚ğOŠpŒ`ƒ|ƒŠƒSƒ“‚ÌƒŠƒXƒg‚Æ‚µ‚Ä¶¬‚µ‚Ü‚·B
+     * é ‚ç‚¹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’ä¸‰è§’å½¢ãƒãƒªã‚´ãƒ³ã®ãƒªã‚¹ãƒˆã¨ã—ã¦ç”Ÿæˆã—ã¾ã™ã€‚
      */
     void CreateIndex() {
         struct FACE {
@@ -81,12 +81,12 @@ public:
             for (unsigned int x = 0; x < m_divX; x++) {
                 int count = (m_divX + 1) * y + x;
 
-                // ãOŠpŒ`
+                // ä¸Šä¸‰è§’å½¢
                 m_indices.emplace_back(count);
                 m_indices.emplace_back(count + 1);
                 m_indices.emplace_back(count + 1 + (m_divX + 1));
 
-                // ‰ºOŠpŒ`
+                // ä¸‹ä¸‰è§’å½¢
                 m_indices.emplace_back(count);
                 m_indices.emplace_back(count + (m_divX + 1) + 1);
                 m_indices.emplace_back(count + (m_divX + 1));
@@ -96,18 +96,18 @@ public:
 
 private:
     /**
-     * @brief –@üƒxƒNƒgƒ‹‚ğ³‹K‰»‚·‚é
+     * @brief æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’æ­£è¦åŒ–ã™ã‚‹
      *
-     * @param vec “ü—ÍƒxƒNƒgƒ‹
-     * @param Normal o—Í‚³‚ê‚é³‹K‰»ƒxƒNƒgƒ‹iQÆ“n‚µj
+     * @param vec å…¥åŠ›ãƒ™ã‚¯ãƒˆãƒ«
+     * @param Normal å‡ºåŠ›ã•ã‚Œã‚‹æ­£è¦åŒ–ãƒ™ã‚¯ãƒˆãƒ«ï¼ˆå‚ç…§æ¸¡ã—ï¼‰
      */
     void Normalize(Vector3 vec, Vector3& Normal) {
         vec.Normalize();
         Normal = vec;
     }
 
-    unsigned int m_divX = 1;   ///< ‰¡•ûŒü‚Ì•ªŠ„”iŒo“xj
-    unsigned int m_divY = 1;   ///< c•ûŒü‚Ì•ªŠ„”iˆÜ“xj
-    float m_radius = 100.0f;   ///< ‹…‚Ì”¼Œa
-    Color m_color;             ///< ’¸“_ƒJƒ‰[
+    unsigned int m_divX = 1;   ///< æ¨ªæ–¹å‘ã®åˆ†å‰²æ•°ï¼ˆçµŒåº¦ï¼‰
+    unsigned int m_divY = 1;   ///< ç¸¦æ–¹å‘ã®åˆ†å‰²æ•°ï¼ˆç·¯åº¦ï¼‰
+    float m_radius = 100.0f;   ///< çƒã®åŠå¾„
+    Color m_color;             ///< é ‚ç‚¹ã‚«ãƒ©ãƒ¼
 };

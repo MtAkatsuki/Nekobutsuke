@@ -1,4 +1,4 @@
-#include "scenemanager.h"
+ï»¿#include "scenemanager.h"
 #include "SceneClassFactory.h"
 #include "../Core/GameContext.h"
 #include "DebugUI.h"
@@ -18,28 +18,28 @@ void SceneManager::Init() {
 void SceneManager::Update(uint64_t deltatime) {
 	float deltaSeconds = static_cast<float>(deltatime) / 1000.0f;
 
-	// í’“ƒVƒXƒeƒ€‚ÌXV
+	// å¸¸é§ã‚·ã‚¹ãƒ†ãƒ ã®æ›´æ–°
 	AudioManager::GetInstance().Update(deltaSeconds);
 
-	// --- ƒgƒ‰ƒ“ƒWƒVƒ‡ƒ“i‰æ–Ê‘JˆÚj‚ÌisŠÇ— ---
+	// --- ãƒˆãƒ©ãƒ³ã‚¸ã‚·ãƒ§ãƒ³ï¼ˆç”»é¢é·ç§»ï¼‰ã®é€²è¡Œç®¡ç† ---
 	if (m_transition) {
 		m_transition->update(deltatime);
 
-		// ‰æ–Ê‚ªŠ®‘S‚ÉˆÃ“]i‚Ü‚½‚Í•¢‚í‚ê‚½jƒ^ƒCƒ~ƒ“ƒO‚ÅÀÛ‚ÌƒV[ƒ“‚ğØ‚è‘Ö‚¦‚é
+		// ç”»é¢ãŒå®Œå…¨ã«æš—è»¢ï¼ˆã¾ãŸã¯è¦†ã‚ã‚ŒãŸï¼‰ã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§å®Ÿéš›ã®ã‚·ãƒ¼ãƒ³ã‚’åˆ‡ã‚Šæ›¿ãˆã‚‹
 		if (m_transition->canSwap() && !m_hasSwapped) {
 			InternalChangeScene(m_targetSceneName);
 			m_hasSwapped = true;
-			m_transition->onSceneSwapped(); // VƒV[ƒ“•`‰æŠJniƒtƒF[ƒhƒCƒ““™‚ÖˆÚsj
+			m_transition->onSceneSwapped(); // æ–°ã‚·ãƒ¼ãƒ³æç”»é–‹å§‹ï¼ˆãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ç­‰ã¸ç§»è¡Œï¼‰
 		}
 
-		// ‘JˆÚ‰‰o‚ª‚·‚×‚ÄI—¹‚µ‚½Û‚ÌƒNƒŠ[ƒ“ƒAƒbƒv
+		// é·ç§»æ¼”å‡ºãŒã™ã¹ã¦çµ‚äº†ã—ãŸéš›ã®ã‚¯ãƒªãƒ¼ãƒ³ã‚¢ãƒƒãƒ—
 		if (m_transition->isFinished()) {
 			m_isTransitioning = false;
 			m_transition = nullptr;
 		}
 	}
 
-	// --- Œ»İ‚ÌƒV[ƒ“‚ÌXV ---
+	// --- ç¾åœ¨ã®ã‚·ãƒ¼ãƒ³ã®æ›´æ–° ---
 	auto it = m_scenes.find(m_currentSceneName);
 	if (it != m_scenes.end() && it->second) {
 		it->second->update(deltatime);
@@ -47,12 +47,12 @@ void SceneManager::Update(uint64_t deltatime) {
 }
 
 void SceneManager::Draw(uint64_t deltatime) {
-	// Œ»İ‚ÌƒV[ƒ“‚ğ•`‰æ
+	// ç¾åœ¨ã®ã‚·ãƒ¼ãƒ³ã‚’æç”»
 	auto it = m_scenes.find(m_currentSceneName);
 	if (it != m_scenes.end() && it->second) {
 		it->second->draw(deltatime);
 	}
-	// ƒV[ƒ“‚Ìã‚Éƒgƒ‰ƒ“ƒWƒVƒ‡ƒ“iˆÃ“]—pƒ|ƒŠƒSƒ“‚È‚Çj‚ğ”í‚¹‚Ä•`‰æ
+	// ã‚·ãƒ¼ãƒ³ã®ä¸Šã«ãƒˆãƒ©ãƒ³ã‚¸ã‚·ãƒ§ãƒ³ï¼ˆæš—è»¢ç”¨ãƒãƒªã‚´ãƒ³ãªã©ï¼‰ã‚’è¢«ã›ã¦æç”»
 	if (m_transition)
 	{
 		m_transition->draw();
@@ -71,9 +71,9 @@ void SceneManager::Dispose() {
 }
 
 void SceneManager::SetCurrentScene(const std::string& sceneName, std::unique_ptr<SceneTransition> transition) {
-	DebugUI::ClearDebugFunction(); // ‘JˆÚ‚É•s—v‚ÈƒfƒoƒbƒOUI‚ğ”jŠü
+	DebugUI::ClearDebugFunction(); // é·ç§»æ™‚ã«ä¸è¦ãªãƒ‡ãƒãƒƒã‚°UIã‚’ç ´æ£„
 
-	// “ñd‘JˆÚ‚Ì–h~i–hŒä“IƒvƒƒOƒ‰ƒ~ƒ“ƒOj
+	// äºŒé‡é·ç§»ã®é˜²æ­¢ï¼ˆé˜²å¾¡çš„ãƒ—ãƒ­ã‚°ãƒ©ãƒŸãƒ³ã‚°ï¼‰
 	if (m_isTransitioning || m_transition != nullptr) {
 		std::cerr << "[SceneManager] Warning: Ignored SetCurrentScene. Transition already active." << std::endl;
 		return;
@@ -88,7 +88,7 @@ void SceneManager::SetCurrentScene(const std::string& sceneName, std::unique_ptr
 		m_transition->start();
 	}
 	else {
-		// ƒgƒ‰ƒ“ƒWƒVƒ‡ƒ“‚È‚µ‚Ìê‡‚Í‘¦Ø‚è‘Ö‚¦
+		// ãƒˆãƒ©ãƒ³ã‚¸ã‚·ãƒ§ãƒ³ãªã—ã®å ´åˆã¯å³æ™‚åˆ‡ã‚Šæ›¿ãˆ
 		InternalChangeScene(sceneName);
 	}
 }
@@ -101,7 +101,7 @@ void SceneManager::InternalChangeScene(const std::string& sceneName)
 	auto nowScene = SceneClassFactory::getInstance().create(sceneName);
 	if (nowScene) 
 	{
-		m_scenes.clear();//Œ»İg—p’†‚ÌƒV[ƒ“‚ğíœ
+		m_scenes.clear();//ç¾åœ¨ä½¿ç”¨ä¸­ã®ã‚·ãƒ¼ãƒ³ã‚’å‰Šé™¤
 		nowScene->SetGameContext(m_context.get());
 		nowScene->Init();
 		m_scenes[m_currentSceneName] = std::move(nowScene);

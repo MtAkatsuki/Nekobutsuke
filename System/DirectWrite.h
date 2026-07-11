@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <string>
 #include <wrl/client.h>
@@ -8,19 +8,19 @@
 #pragma warning(disable:4005)
 
 #include <d2d1.h>						// Direct2D
-#include <dwrite_3.h>					// DirectWrite(ŠO•”ƒtƒHƒ“ƒgg—p‚Ì‚½‚ß
-#include "CommonTypes.h"			// ”ŠwŒnƒ‰ƒCƒuƒ‰ƒŠ
+#include <dwrite_3.h>					// DirectWrite(å¤–éƒ¨ãƒ•ã‚©ãƒ³ãƒˆä½¿ç”¨ã®ãŸã‚
+#include "CommonTypes.h"			// æ•°å­¦ç³»ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
 
 #pragma warning(pop)
 
-#pragma comment(lib,"d2d1.lib")			// Direct2D—p
-#pragma comment(lib,"Dwrite.lib")		// DirectWrite—p
+#pragma comment(lib,"d2d1.lib")			// Direct2Dç”¨
+#pragma comment(lib,"Dwrite.lib")		// DirectWriteç”¨
 
 using Microsoft::WRL::ComPtr;
 
 class CustomFontCollectionLoader;
 
-//g—p‚·‚éƒtƒHƒ“ƒg–¼‚ğ‚±‚±‚É’Ç‰Á‚·‚é
+//ä½¿ç”¨ã™ã‚‹ãƒ•ã‚©ãƒ³ãƒˆåã‚’ã“ã“ã«è¿½åŠ ã™ã‚‹
 namespace FontList
 {
 	enum class FontName
@@ -30,24 +30,24 @@ namespace FontList
 	};
 }
 
-//
-//		ƒtƒHƒ“ƒgƒf[ƒ^
-//
+//ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼
+//		ãƒ•ã‚©ãƒ³ãƒˆãƒ‡ãƒ¼ã‚¿
+//ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼
 struct FontData
 {
-	FontList::FontName font;							// ƒtƒHƒ“ƒg–¼
-	DWRITE_FONT_WEIGHT fontWeight;						// ƒtƒHƒ“ƒg‚Ì‘¾‚³
-	DWRITE_FONT_STYLE fontStyle;						// ƒtƒHƒ“ƒgƒXƒ^ƒCƒ‹
-	DWRITE_FONT_STRETCH fontStretch;					// ƒtƒHƒ“ƒg‚Ì•
-	FLOAT fontSize;										// ƒtƒHƒ“ƒgƒTƒCƒY
-	std::wstring localeName;							// ƒƒP[ƒ‹–¼
-	DWRITE_TEXT_ALIGNMENT textAlignment;				// ƒeƒLƒXƒg‚Ì”z’u
-	D2D1_COLOR_F Color;									// ƒtƒHƒ“ƒg‚ÌF
+	FontList::FontName font;							// ãƒ•ã‚©ãƒ³ãƒˆå
+	DWRITE_FONT_WEIGHT fontWeight;						// ãƒ•ã‚©ãƒ³ãƒˆã®å¤ªã•
+	DWRITE_FONT_STYLE fontStyle;						// ãƒ•ã‚©ãƒ³ãƒˆã‚¹ã‚¿ã‚¤ãƒ«
+	DWRITE_FONT_STRETCH fontStretch;					// ãƒ•ã‚©ãƒ³ãƒˆã®å¹…
+	FLOAT fontSize;										// ãƒ•ã‚©ãƒ³ãƒˆã‚µã‚¤ã‚º
+	std::wstring localeName;							// ãƒ­ã‚±ãƒ¼ãƒ«å
+	DWRITE_TEXT_ALIGNMENT textAlignment;				// ãƒ†ã‚­ã‚¹ãƒˆã®é…ç½®
+	D2D1_COLOR_F Color;									// ãƒ•ã‚©ãƒ³ãƒˆã®è‰²
 
-	D2D1_COLOR_F shadowColor;							// ‰e‚ÌF
-	D2D1_POINT_2F shadowOffset;							// ‰e‚ÌƒIƒtƒZƒbƒg
+	D2D1_COLOR_F shadowColor;							// å½±ã®è‰²
+	D2D1_POINT_2F shadowOffset;							// å½±ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ
 
-	// ƒfƒtƒHƒ‹ƒgİ’èiƒRƒ“ƒXƒgƒ‰ƒNƒ^j
+	// ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆè¨­å®šï¼ˆã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ï¼‰
 	FontData()
 	{
 		font = FontList::FontName::Google;
@@ -65,101 +65,101 @@ struct FontData
 	}
 };
 
-//
-//		DirectWriteƒNƒ‰ƒX
-//
+//ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼
+//		DirectWriteã‚¯ãƒ©ã‚¹
+//ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼
 class DirectWrite
 {
 private:
-	ComPtr <ID2D1Factory>			m_cpD2DFactory = nullptr;		// Direct2DƒŠƒ\[ƒX
-	ComPtr <ID2D1RenderTarget>		m_cpRenderTarget = nullptr;		// Direct2DƒŒƒ“ƒ_[ƒ^[ƒQƒbƒg
-	ComPtr <ID2D1SolidColorBrush>	m_cpBrush = nullptr;			// Direct2Dƒuƒ‰ƒVİ’è
-	ComPtr <ID2D1SolidColorBrush>	m_cpShadowBrush = nullptr;		// Direct2Dƒuƒ‰ƒVİ’èi‰ej
-	ComPtr <IDWriteFactory5>		m_cpDWriteFactory;				// DirectWriteƒŠƒ\[ƒX
-	ComPtr <IDWriteTextFormat>		m_cpTextFormat = nullptr;		// DirectWriteƒeƒLƒXƒgŒ`®
-	ComPtr <IDWriteTextLayout>		m_cpTextLayout = nullptr;		// DirectWriteƒeƒLƒXƒg‘®
-	ComPtr <IDXGISurface>			m_cpBackBuffer = nullptr;		// ƒT[ƒtƒFƒXî•ñ
+	ComPtr <ID2D1Factory>			m_cpD2DFactory = nullptr;		// Direct2Dãƒªã‚½ãƒ¼ã‚¹
+	ComPtr <ID2D1RenderTarget>		m_cpRenderTarget = nullptr;		// Direct2Dãƒ¬ãƒ³ãƒ€ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆ
+	ComPtr <ID2D1SolidColorBrush>	m_cpBrush = nullptr;			// Direct2Dãƒ–ãƒ©ã‚·è¨­å®š
+	ComPtr <ID2D1SolidColorBrush>	m_cpShadowBrush = nullptr;		// Direct2Dãƒ–ãƒ©ã‚·è¨­å®šï¼ˆå½±ï¼‰
+	ComPtr <IDWriteFactory5>		m_cpDWriteFactory;				// DirectWriteãƒªã‚½ãƒ¼ã‚¹
+	ComPtr <IDWriteTextFormat>		m_cpTextFormat = nullptr;		// DirectWriteãƒ†ã‚­ã‚¹ãƒˆå½¢å¼
+	ComPtr <IDWriteTextLayout>		m_cpTextLayout = nullptr;		// DirectWriteãƒ†ã‚­ã‚¹ãƒˆæ›¸å¼
+	ComPtr <IDXGISurface>			m_cpBackBuffer = nullptr;		// ã‚µãƒ¼ãƒ•ã‚§ã‚¹æƒ…å ±
 
 	static ComPtr <CustomFontCollectionLoader> pFontCollectionLoader;
 
-	std::wstring m_CurrentText;										//Œ»İ•`‰æ‚µ‚Ä‚¢‚é•¶š‚ğ•Û‘¶‚·‚é•Ï”
+	std::wstring m_CurrentText;										//ç¾åœ¨æç”»ã—ã¦ã„ã‚‹æ–‡å­—ã‚’ä¿å­˜ã™ã‚‹å¤‰æ•°
 
-	// ƒtƒHƒ“ƒgƒtƒ@ƒCƒ‹ƒŠƒXƒg
+	// ãƒ•ã‚©ãƒ³ãƒˆãƒ•ã‚¡ã‚¤ãƒ«ãƒªã‚¹ãƒˆ
 	std::vector<ComPtr<IDWriteFontFile>> m_cpFontFileList;
 
-	// ƒtƒHƒ“ƒgƒf[ƒ^
+	// ãƒ•ã‚©ãƒ³ãƒˆãƒ‡ãƒ¼ã‚¿
 	FontData  m_Setting;
 
-	// ƒtƒHƒ“ƒg–¼ƒŠƒXƒg
+	// ãƒ•ã‚©ãƒ³ãƒˆåãƒªã‚¹ãƒˆ
 	std::vector<std::wstring> m_FontNamesList;
 
-	// ƒtƒHƒ“ƒg‚Ìƒtƒ@ƒCƒ‹–¼‚ğæ“¾‚·‚é
+	// ãƒ•ã‚©ãƒ³ãƒˆã®ãƒ•ã‚¡ã‚¤ãƒ«åã‚’å–å¾—ã™ã‚‹
 	std::wstring GetFontFileNameWithoutExtension(const std::wstring& _filePath);
 
-	// string‚ğwstring‚Ö•ÏŠ·‚·‚é
+	// stringã‚’wstringã¸å¤‰æ›ã™ã‚‹
 	std::wstring StringToWString(std::string _oString);
 
-	//•¶š•\¦‚·‚éŠÔ‚Ì•Û‚·‚é•Ï”
+	//æ–‡å­—è¡¨ç¤ºã™ã‚‹æ™‚é–“ã®ä¿æŒã™ã‚‹å¤‰æ•°
 	float m_TotalTime = 0.0f;
 
 public:
-	// ƒfƒtƒHƒ‹ƒgƒRƒ“ƒXƒgƒ‰ƒNƒ^‚ğ§ŒÀ
+	// ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã‚’åˆ¶é™
 	DirectWrite()
 	{
 
 	}
 
-	// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
-	// ‘æ1ˆø”FƒtƒHƒ“ƒgİ’è
+	// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+	// ç¬¬1å¼•æ•°ï¼šãƒ•ã‚©ãƒ³ãƒˆè¨­å®š
 	DirectWrite(FontData* _set) :m_Setting(*_set) {};
 
-	// ‰Šú‰»ŠÖ”
+	// åˆæœŸåŒ–é–¢æ•°
 	HRESULT Init(IDXGISwapChain* _swapChain);
 
 	/// <summary>
-	/// ƒtƒHƒ“ƒgƒf[ƒ^\‘¢‘Ì
+	/// ãƒ•ã‚©ãƒ³ãƒˆãƒ‡ãƒ¼ã‚¿æ§‹é€ ä½“
 	/// </summary>
 	void SetFont(FontData _set);
 
 	/// <summary>
-	/// // ƒtƒHƒ“ƒgİ’è
-	// ‘æ1ˆø”FƒtƒHƒ“ƒg–¼iL"ƒƒCƒŠƒI", L"Arial", L"Meiryo UI"“™j
-	// ‘æ2ˆø”FƒtƒHƒ“ƒg‚Ì‘¾‚³iDWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_WEIGHT_BOLD“™j
-	// ‘æ3ˆø”FƒtƒHƒ“ƒgƒXƒ^ƒCƒ‹iDWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STYLE_OBLIQUE, DWRITE_FONT_STYLE_ITALICj
-	// ‘æ4ˆø”FƒtƒHƒ“ƒg‚Ì•iDWRITE_FONT_STRETCH_NORMAL,DWRITE_FONT_STRETCH_EXTRA_EXPANDED“™j
-	// ‘æ5ˆø”FƒtƒHƒ“ƒgƒTƒCƒYi20, 30“™j
-	// ‘æ6ˆø”FƒƒP[ƒ‹–¼iL"ja-jp"“™j
-	// ‘æ7ˆø”FƒeƒLƒXƒg‚Ì”z’uiDWRITE_TEXT_ALIGNMENT_LEADINGF‘O, “™j
-	// ‘æ8ˆø”FƒtƒHƒ“ƒg‚ÌFiD2D1::ColorF(D2D1::ColorF::Black)F•, D2D1::ColorF(D2D1::ColorF(0.0f, 0.2f, 0.9f, 1.0f))FRGBAw’è“™j
-	// ‘æ9ˆø”F‰e‚ÌFiD2D1::ColorF(D2D1::ColorF::Black)F•, D2D1::ColorF(D2D1::ColorF(0.0f, 0.2f, 0.9f, 1.0f))FRGBAw’è“™j
-	// ‘æ10ˆø”F‰e‚ÌƒIƒtƒZƒbƒgiD2D1::Point2F(2.0f, 2.0f)F‰E‰º‚Éƒ|ƒCƒ“ƒg‚¸‚ç‚·j
+	/// // ãƒ•ã‚©ãƒ³ãƒˆè¨­å®š
+	// ç¬¬1å¼•æ•°ï¼šãƒ•ã‚©ãƒ³ãƒˆåï¼ˆL"ãƒ¡ã‚¤ãƒªã‚ª", L"Arial", L"Meiryo UI"ç­‰ï¼‰
+	// ç¬¬2å¼•æ•°ï¼šãƒ•ã‚©ãƒ³ãƒˆã®å¤ªã•ï¼ˆDWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_WEIGHT_BOLDç­‰ï¼‰
+	// ç¬¬3å¼•æ•°ï¼šãƒ•ã‚©ãƒ³ãƒˆã‚¹ã‚¿ã‚¤ãƒ«ï¼ˆDWRITE_FONT_STYLE_NORMAL, DWRITE_FONT_STYLE_OBLIQUE, DWRITE_FONT_STYLE_ITALICï¼‰
+	// ç¬¬4å¼•æ•°ï¼šãƒ•ã‚©ãƒ³ãƒˆã®å¹…ï¼ˆDWRITE_FONT_STRETCH_NORMAL,DWRITE_FONT_STRETCH_EXTRA_EXPANDEDç­‰ï¼‰
+	// ç¬¬5å¼•æ•°ï¼šãƒ•ã‚©ãƒ³ãƒˆã‚µã‚¤ã‚ºï¼ˆ20, 30ç­‰ï¼‰
+	// ç¬¬6å¼•æ•°ï¼šãƒ­ã‚±ãƒ¼ãƒ«åï¼ˆL"ja-jp"ç­‰ï¼‰
+	// ç¬¬7å¼•æ•°ï¼šãƒ†ã‚­ã‚¹ãƒˆã®é…ç½®ï¼ˆDWRITE_TEXT_ALIGNMENT_LEADINGï¼šå‰, ç­‰ï¼‰
+	// ç¬¬8å¼•æ•°ï¼šãƒ•ã‚©ãƒ³ãƒˆã®è‰²ï¼ˆD2D1::ColorF(D2D1::ColorF::Black)ï¼šé»’, D2D1::ColorF(D2D1::ColorF(0.0f, 0.2f, 0.9f, 1.0f))ï¼šRGBAæŒ‡å®šç­‰ï¼‰
+	// ç¬¬9å¼•æ•°ï¼šå½±ã®è‰²ï¼ˆD2D1::ColorF(D2D1::ColorF::Black)ï¼šé»’, D2D1::ColorF(D2D1::ColorF(0.0f, 0.2f, 0.9f, 1.0f))ï¼šRGBAæŒ‡å®šç­‰ï¼‰
+	// ç¬¬10å¼•æ•°ï¼šå½±ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆï¼ˆD2D1::Point2F(2.0f, 2.0f)ï¼šå³ä¸‹ã«ãƒã‚¤ãƒ³ãƒˆãšã‚‰ã™ï¼‰
 	/// </summary>
 	void SetFonts
 	(
-		FontList::FontName		_fontname,											// ƒtƒHƒ“ƒg–¼
-		DWRITE_FONT_WEIGHT		_fontWeight = DWRITE_FONT_WEIGHT_NORMAL,			// ƒtƒHƒ“ƒg‚Ì‘¾‚³
-		DWRITE_FONT_STYLE		_fontStyle = DWRITE_FONT_STYLE_NORMAL,				// ƒtƒHƒ“ƒgƒXƒ^ƒCƒ‹
-		DWRITE_FONT_STRETCH		_fontStretch = DWRITE_FONT_STRETCH_NORMAL,			// ƒtƒHƒ“ƒg‚Ì•
-		FLOAT					_fontSize = 20,										// ƒtƒHƒ“ƒgƒTƒCƒY
-		std::wstring _localeName = L"ja-jp",										// ƒƒP[ƒ‹–¼
-		DWRITE_TEXT_ALIGNMENT	_textAlignment = DWRITE_TEXT_ALIGNMENT_LEADING,		// ƒeƒLƒXƒg‚Ì”z’u
-		D2D1_COLOR_F			_Color = D2D1::ColorF(D2D1::ColorF::White),			// ƒtƒHƒ“ƒg‚ÌF
-		D2D1_COLOR_F			_shadowColor = D2D1::ColorF(D2D1::ColorF::Black),	// ‰e‚ÌF
-		D2D1_POINT_2F			_shadowOffset = D2D1::Point2F(2.0f, -2.0f)			// ‰e‚ÌƒIƒtƒZƒbƒg
+		FontList::FontName		_fontname,											// ãƒ•ã‚©ãƒ³ãƒˆå
+		DWRITE_FONT_WEIGHT		_fontWeight = DWRITE_FONT_WEIGHT_NORMAL,			// ãƒ•ã‚©ãƒ³ãƒˆã®å¤ªã•
+		DWRITE_FONT_STYLE		_fontStyle = DWRITE_FONT_STYLE_NORMAL,				// ãƒ•ã‚©ãƒ³ãƒˆã‚¹ã‚¿ã‚¤ãƒ«
+		DWRITE_FONT_STRETCH		_fontStretch = DWRITE_FONT_STRETCH_NORMAL,			// ãƒ•ã‚©ãƒ³ãƒˆã®å¹…
+		FLOAT					_fontSize = 20,										// ãƒ•ã‚©ãƒ³ãƒˆã‚µã‚¤ã‚º
+		std::wstring _localeName = L"ja-jp",										// ãƒ­ã‚±ãƒ¼ãƒ«å
+		DWRITE_TEXT_ALIGNMENT	_textAlignment = DWRITE_TEXT_ALIGNMENT_LEADING,		// ãƒ†ã‚­ã‚¹ãƒˆã®é…ç½®
+		D2D1_COLOR_F			_Color = D2D1::ColorF(D2D1::ColorF::White),			// ãƒ•ã‚©ãƒ³ãƒˆã®è‰²
+		D2D1_COLOR_F			_shadowColor = D2D1::ColorF(D2D1::ColorF::Black),	// å½±ã®è‰²
+		D2D1_POINT_2F			_shadowOffset = D2D1::Point2F(2.0f, -2.0f)			// å½±ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ
 	);
 
 	/// <summary>
-	/// •¶š•`‰æ
-	// stringF•¶š—ñ
-	// posF•`‰æƒ|ƒWƒVƒ‡ƒ“
-	// optionsFƒeƒLƒXƒg‚Ì®Œ`
+	/// æ–‡å­—æç”»
+	// stringï¼šæ–‡å­—åˆ—
+	// posï¼šæç”»ãƒã‚¸ã‚·ãƒ§ãƒ³
+	// optionsï¼šãƒ†ã‚­ã‚¹ãƒˆã®æ•´å½¢
 	/// </summary>
 	HRESULT DrawString(std::wstring _str, DirectX::SimpleMath::Vector2 _pos,
 		D2D1_DRAW_TEXT_OPTIONS _options = D2D1_DRAW_TEXT_OPTIONS_NONE, bool _shadow = false);
 
 
 	/// <summary>
-	/// •¶š‚ğˆê•¶š‚¸‚Â•`‰æ
+	/// æ–‡å­—ã‚’ä¸€æ–‡å­—ãšã¤æç”»
 	/// </summary>
 	/// <param name="_num"></param>
 	/// <returns></returns>
@@ -169,44 +169,44 @@ public:
 		D2D1_DRAW_TEXT_OPTIONS _options = D2D1_DRAW_TEXT_OPTIONS_NONE
 		);
 
-	// •¶š•`‰æ
-	// stringF•¶š—ñ
-	// rectF—Ìˆæw’è
-	// optionsFƒeƒLƒXƒg‚Ì®Œ`
+	// æ–‡å­—æç”»
+	// stringï¼šæ–‡å­—åˆ—
+	// rectï¼šé ˜åŸŸæŒ‡å®š
+	// optionsï¼šãƒ†ã‚­ã‚¹ãƒˆã®æ•´å½¢
 	HRESULT DrawString(std::string _str, D2D1_RECT_F _rect,
 		D2D1_DRAW_TEXT_OPTIONS _options, bool _shadow = false);
 
-	// w’è‚³‚ê‚½ƒpƒX‚ÌƒtƒHƒ“ƒg‚ğ“Ç‚İ‚Ş
+	// æŒ‡å®šã•ã‚ŒãŸãƒ‘ã‚¹ã®ãƒ•ã‚©ãƒ³ãƒˆã‚’èª­ã¿è¾¼ã‚€
 	HRESULT FontLoader();
 
-	// ƒtƒHƒ“ƒg–¼‚ğæ“¾‚·‚é
+	// ãƒ•ã‚©ãƒ³ãƒˆåã‚’å–å¾—ã™ã‚‹
 	std::wstring GetFontName(int _num);
 
-	// “Ç‚İ‚ñ‚¾ƒtƒHƒ“ƒg–¼‚Ì”‚ğæ“¾‚·‚é
+	// èª­ã¿è¾¼ã‚“ã ãƒ•ã‚©ãƒ³ãƒˆåã®æ•°ã‚’å–å¾—ã™ã‚‹
 	int GetFontNameNum();
 
-	// ƒtƒHƒ“ƒg–¼‚ğæ“¾‚µ’¼‚·
+	// ãƒ•ã‚©ãƒ³ãƒˆåã‚’å–å¾—ã—ç›´ã™
 	HRESULT GetFontFamilyName(IDWriteFontCollection* _customFontCollection,
 		std::wstring _locale = L"ja-jp");
 
-	// ‘S‚Ä‚ÌƒtƒHƒ“ƒg–¼‚ğæ“¾‚µ’¼‚·
+	// å…¨ã¦ã®ãƒ•ã‚©ãƒ³ãƒˆåã‚’å–å¾—ã—ç›´ã™
 	HRESULT GetAllFontFamilyName(IDWriteFontCollection* _customFontCollection);
 
 	/// <summary>
-	/// ƒtƒHƒ“ƒgƒtƒ@ƒCƒ‹ƒŠƒXƒg‚ÉŠO•”ƒtƒHƒ“ƒg‚ğ’Ç‰Á‚·‚é
+	/// ãƒ•ã‚©ãƒ³ãƒˆãƒ•ã‚¡ã‚¤ãƒ«ãƒªã‚¹ãƒˆã«å¤–éƒ¨ãƒ•ã‚©ãƒ³ãƒˆã‚’è¿½åŠ ã™ã‚‹
 	/// </summary>
 	HRESULT LoadFontFiles(const std::vector<std::wstring>& fontPaths);
 
-	// ƒJƒXƒ^ƒ€ƒtƒHƒ“ƒgƒRƒŒƒNƒVƒ‡ƒ“
+	// ã‚«ã‚¹ã‚¿ãƒ ãƒ•ã‚©ãƒ³ãƒˆã‚³ãƒ¬ã‚¯ã‚·ãƒ§ãƒ³
 	ComPtr <IDWriteFontCollection> fontCollection = nullptr;
 
 	/// <summary>
-	/// ƒV[ƒ“ƒ`ƒFƒ“ƒW‚·‚é‚Æ‚«‚ÉŒÄ‚Ño‚·‚Æ
-	/// ‚à‚¤ˆê“xˆê•¶š‚¸‚Â•\¦‚·‚é
+	/// ã‚·ãƒ¼ãƒ³ãƒã‚§ãƒ³ã‚¸ã™ã‚‹ã¨ãã«å‘¼ã³å‡ºã™ã¨
+	/// ã‚‚ã†ä¸€åº¦ä¸€æ–‡å­—ãšã¤è¡¨ç¤ºã™ã‚‹
 	/// </summary>
 	void ResetText();
 
-	//ˆê•”‚Ì•¶š‚ÌƒtƒHƒ“ƒg‚ğ•ÏX
+	//ä¸€éƒ¨ã®æ–‡å­—ã®ãƒ•ã‚©ãƒ³ãƒˆã‚’å¤‰æ›´
 	HRESULT ChangeTextFont(IDWriteTextLayout* _textLayout,
 		FontList::FontName _fontName,  UINT32 _startChar, UINT32 _endChar)
 	{
@@ -221,12 +221,12 @@ public:
 
 const std::wstring FontPath[] =
 {
-	L"Assets\\font\\MelodyLine-free.otf",			//ƒƒƒfƒB[ƒ‰ƒCƒ“
-	L"Assets\\font\\NotoSansJP-Black.otf",			//Google“ú–{Œê•¶š
+	L"Assets\\font\\MelodyLine-free.otf",			//ãƒ¡ãƒ­ãƒ‡ã‚£ãƒ¼ãƒ©ã‚¤ãƒ³
+	L"Assets\\font\\NotoSansJP-Black.otf",			//Googleæ—¥æœ¬èªæ–‡å­—
 };
 
 //=============================================================================
-//		ƒJƒXƒ^ƒ€ƒtƒ@ƒCƒ‹ƒ[ƒ_[
+//		ã‚«ã‚¹ã‚¿ãƒ ãƒ•ã‚¡ã‚¤ãƒ«ãƒ­ãƒ¼ãƒ€ãƒ¼
 //=============================================================================
 class CustomFontFileEnumerator : public IDWriteFontFileEnumerator
 {
@@ -262,9 +262,9 @@ public:
 		{
 			delete this;
 		}
-		else if (newCount > static_cast<ULONG>(-1)) // ƒI[ƒo[ƒtƒ[‘Îô
+		else if (newCount > static_cast<ULONG>(-1)) // ã‚ªãƒ¼ãƒãƒ¼ãƒ•ãƒ­ãƒ¼å¯¾ç­–
 		{
-			__debugbreak(); // ƒfƒoƒbƒO—p‚É’â~
+			__debugbreak(); // ãƒ‡ãƒãƒƒã‚°ç”¨ã«åœæ­¢
 		}
 
 		return newCount;
@@ -297,22 +297,22 @@ public:
 
 private:
 	ULONG refCount_ = 0;
-	ComPtr<IDWriteFactory> factory_;   // ComPtr ‚ğg—p‚µ‚Ä©“®“I‚ÉŠÇ—
+	ComPtr<IDWriteFactory> factory_;   // ComPtr ã‚’ä½¿ç”¨ã—ã¦è‡ªå‹•çš„ã«ç®¡ç†
 	std::vector<std::wstring> fontFilePaths_;
 	int currentFileIndex_ = -1;
 };
 
 
 //=============================================================================
-//		ƒJƒXƒ^ƒ€ƒtƒHƒ“ƒgƒRƒŒƒNƒVƒ‡ƒ“ƒ[ƒ_[
+//		ã‚«ã‚¹ã‚¿ãƒ ãƒ•ã‚©ãƒ³ãƒˆã‚³ãƒ¬ã‚¯ã‚·ãƒ§ãƒ³ãƒ­ãƒ¼ãƒ€ãƒ¼
 //=============================================================================
 class CustomFontCollectionLoader : public IDWriteFontCollectionLoader
 {
 public:
-	// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	CustomFontCollectionLoader() : refCount_(0) {}
 
-	// IUnknown ƒƒ\ƒbƒh
+	// IUnknown ãƒ¡ã‚½ãƒƒãƒ‰
 	IFACEMETHODIMP QueryInterface(REFIID iid, void** ppvObject) override
 	{
 		if (ppvObject == nullptr)
@@ -343,15 +343,15 @@ public:
 		{
 			delete this;
 		}
-		else if (newCount > static_cast<ULONG>(-1)) // ƒI[ƒo[ƒtƒ[‘Îô
+		else if (newCount > static_cast<ULONG>(-1)) // ã‚ªãƒ¼ãƒãƒ¼ãƒ•ãƒ­ãƒ¼å¯¾ç­–
 		{
-			__debugbreak(); // ƒfƒoƒbƒO—p‚É’â~
+			__debugbreak(); // ãƒ‡ãƒãƒƒã‚°ç”¨ã«åœæ­¢
 		}
 
 		return newCount;
 	}
 
-	// IDWriteFontCollectionLoader ƒƒ\ƒbƒh
+	// IDWriteFontCollectionLoader ãƒ¡ã‚½ãƒƒãƒ‰
 	IFACEMETHODIMP CreateEnumeratorFromKey
 	(
 		IDWriteFactory* factory,
@@ -367,7 +367,7 @@ public:
 
 		std::vector<std::wstring> fontFilePaths(std::begin(FontPath), std::end(FontPath));
 
-		// new ‚Å‚Í‚È‚­QÆƒJƒEƒ“ƒgŠÇ—
+		// new ã§ã¯ãªãå‚ç…§ã‚«ã‚¦ãƒ³ãƒˆç®¡ç†
 		ComPtr<CustomFontFileEnumerator> enumerator =
 			new (std::nothrow) CustomFontFileEnumerator(factory, fontFilePaths);
 
@@ -376,11 +376,11 @@ public:
 			return E_OUTOFMEMORY;
 		}
 
-		*fontFileEnumerator = enumerator.Detach(); // ComPtr ‚©‚çŠ—LŒ ‚ğˆÚ“®
+		*fontFileEnumerator = enumerator.Detach(); // ComPtr ã‹ã‚‰æ‰€æœ‰æ¨©ã‚’ç§»å‹•
 		return S_OK;
 	}
 
 
 private:
-	ULONG refCount_; // QÆƒJƒEƒ“ƒg
+	ULONG refCount_; // å‚ç…§ã‚«ã‚¦ãƒ³ãƒˆ
 };

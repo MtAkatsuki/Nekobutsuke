@@ -1,7 +1,7 @@
-#include	"commontypes.h"
+ï»¿#include	"commontypes.h"
 #include	"CPlane.h"
 
-// •½–Ê‚Ì•û’ö®‚ğì¬‚·‚é
+// å¹³é¢ã®æ–¹ç¨‹å¼ã‚’ä½œæˆã™ã‚‹
 void CPlane::MakeEquatation(
 	Vector3 p0,
 	Vector3 p1,
@@ -15,19 +15,19 @@ void CPlane::MakeEquatation(
 	p0p1 = p1 - p0;
 	p1p2 = p2 - p1;
 
-	// ŠOÏ‚ğ‹‚ß‚é
+	// å¤–ç©ã‚’æ±‚ã‚ã‚‹
 	normal = p0p1.Cross(p1p2);
 
-	// ³‹K‰»
+	// æ­£è¦åŒ–
 	normal.Normalize();
 
-	// a,b,c,d‚ğ‹‚ß‚é
+	// a,b,c,dã‚’æ±‚ã‚ã‚‹
 	p.a = normal.x;
 	p.b = normal.y;
 	p.c = normal.z;
 	p.d = -(p.a * p0.x + p.b * p0.y + p.c * p0.z);
 
-	// ƒƒ“ƒo•Ï”‚ÖƒZƒbƒg
+	// ãƒ¡ãƒ³ãƒå¤‰æ•°ã¸ã‚»ãƒƒãƒˆ
 	m_planeinfo.plane = p;
 
 	m_planeinfo.p0 = p0;

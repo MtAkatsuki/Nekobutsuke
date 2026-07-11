@@ -1,12 +1,12 @@
-#include "AudioManager.h"
+ï»¿#include "AudioManager.h"
 
 namespace {
-    // ƒTƒEƒ“ƒhƒ~ƒLƒVƒ“ƒO’è” (Audio Mixing Constants)
-    const float MAX_BGM_VOLUME = 0.5f; // BGM‚ÌÅ‘å‰¹—Êi‰¹Š„‚ê–h~ESE‚ğÛ—§‚½‚¹‚é‚½‚ß‚Ìƒwƒbƒhƒ‹[ƒ€Šm•Ûj
+    // ã‚µã‚¦ãƒ³ãƒ‰ãƒŸã‚­ã‚·ãƒ³ã‚°å®šæ•° (Audio Mixing Constants)
+    const float MAX_BGM_VOLUME = 0.5f; // BGMã®æœ€å¤§éŸ³é‡ï¼ˆéŸ³å‰²ã‚Œé˜²æ­¢ãƒ»SEã‚’éš›ç«‹ãŸã›ã‚‹ãŸã‚ã®ãƒ˜ãƒƒãƒ‰ãƒ«ãƒ¼ãƒ ç¢ºä¿ï¼‰
 }
 
 void AudioManager::Init() {
-    // 1. ƒI[ƒfƒBƒIƒGƒ“ƒWƒ“‚Ì¶¬
+    // 1. ã‚ªãƒ¼ãƒ‡ã‚£ã‚ªã‚¨ãƒ³ã‚¸ãƒ³ã®ç”Ÿæˆ
     DirectX::AUDIO_ENGINE_FLAGS eflags = DirectX::AudioEngine_Default;
 #ifdef _DEBUG
     eflags |= DirectX::AudioEngine_Debug;
@@ -20,7 +20,7 @@ void AudioManager::Init() {
         return;
     }
 
-    // 2. BGMƒŠƒ\[ƒX‚Ì“Ç‚İ‚İ (wavƒtƒ@ƒCƒ‹‚Ì‘¶İ‚ğ‘O’ñ‚Æ‚·‚é)
+    // 2. BGMãƒªã‚½ãƒ¼ã‚¹ã®èª­ã¿è¾¼ã¿ (wavãƒ•ã‚¡ã‚¤ãƒ«ã®å­˜åœ¨ã‚’å‰æã¨ã™ã‚‹)
     try {
         m_soundEffects["Title"] = std::make_unique<DirectX::SoundEffect>(m_audEngine.get(), L"Assets/sound/bgm_title.wav");
         m_soundEffects["Game"] = std::make_unique<DirectX::SoundEffect>(m_audEngine.get(), L"Assets/sound/bgm_game.wav");
@@ -38,42 +38,42 @@ void AudioManager::Update(float dt) {
     if (!m_audEngine) return;
 
     if (!m_audEngine->Update()) {
-        // ƒI[ƒfƒBƒIƒfƒoƒCƒX‚ÌƒƒXƒgi—áFƒCƒ„ƒzƒ“‚Ì”²‚«·‚µj”­¶AƒŠƒZƒbƒg‚ğs
+        // ã‚ªãƒ¼ãƒ‡ã‚£ã‚ªãƒ‡ãƒã‚¤ã‚¹ã®ãƒ­ã‚¹ãƒˆï¼ˆä¾‹ï¼šã‚¤ãƒ¤ãƒ›ãƒ³ã®æŠœãå·®ã—ï¼‰ç™ºç”Ÿæ™‚ã€ãƒªã‚»ãƒƒãƒˆã‚’è©¦è¡Œ
         if (m_audEngine->IsCriticalError()) {
             std::cerr << "[AudioManager] Critical Error! Resetting..." << std::endl;
             m_audEngine->Reset();
         }
     }
 
-    // ƒNƒƒXƒtƒF[ƒhEƒtƒF[ƒhƒAƒEƒg‚ÌƒƒWƒbƒN
+    // ã‚¯ãƒ­ã‚¹ãƒ•ã‚§ãƒ¼ãƒ‰ãƒ»ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆã®ãƒ­ã‚¸ãƒƒã‚¯
     if (m_isCrossFading || m_isStopping) {
         m_fadeTimer += dt;
         float progress = m_fadeTimer / m_fadeDuration;
         if (progress > 1.0f) progress = 1.0f;
 
-        // Œ»İ‚ÌBGM‚ÌƒtƒF[ƒhƒAƒEƒg
+        // ç¾åœ¨ã®BGMã®ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆ
         if (m_currentBGM) {
             float vol = MAX_BGM_VOLUME * (1.0f - progress);
             m_currentBGM->SetVolume(vol);
         }
 
-        // Ÿ‚ÌBGM‚ÌƒtƒF[ƒhƒCƒ“
+        // æ¬¡ã®BGMã®ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³
         if (m_nextBGM && !m_isStopping) {
             float vol = MAX_BGM_VOLUME * progress;
             m_nextBGM->SetVolume(vol);
         }
 
-        // ƒtƒF[ƒhŠ®—¹‚ÌƒXƒe[ƒg‘JˆÚ
+        // ãƒ•ã‚§ãƒ¼ãƒ‰å®Œäº†æ™‚ã®ã‚¹ãƒ†ãƒ¼ãƒˆé·ç§»
         if (progress >= 1.0f) {
             if (m_currentBGM) {
                 m_currentBGM->Stop();
                 m_currentBGM.reset();
             }
 
-            // Ÿ‚ÌBGM‚ª‚ ‚éê‡A‚»‚ê‚ğŒ»İ‚ÌBGM‚Æ‚µ‚Ä¸Ši‚³‚¹‚é
+            // æ¬¡ã®BGMãŒã‚ã‚‹å ´åˆã€ãã‚Œã‚’ç¾åœ¨ã®BGMã¨ã—ã¦æ˜‡æ ¼ã•ã›ã‚‹
             if (m_nextBGM) {
                 m_currentBGM = std::move(m_nextBGM);
-                m_currentBGM->SetVolume(MAX_BGM_VOLUME); // ‰¹—Ê‚ğŠ®‘S‚ÉŒÅ’è‚³‚¹‚é
+                m_currentBGM->SetVolume(MAX_BGM_VOLUME); // éŸ³é‡ã‚’å®Œå…¨ã«å›ºå®šã•ã›ã‚‹
             }
 
             m_isCrossFading = false;
@@ -91,10 +91,10 @@ void AudioManager::PlayBGM(const std::string& name, bool loop, float fadeTime) {
 
     std::cerr << "[AudioManager] Request PlayBGM: " << name << std::endl;
 
-    // ‚·‚Å‚ÉƒtƒF[ƒh’†‚Ìê‡‚ÍA‘O‰ñ‚Ìˆ—‚ğ‹­§I—¹‚µ‚ÄV‚µ‚¢ƒtƒF[ƒh‚ğŠJn‚·‚é
+    // ã™ã§ã«ãƒ•ã‚§ãƒ¼ãƒ‰ä¸­ã®å ´åˆã¯ã€å‰å›ã®å‡¦ç†ã‚’å¼·åˆ¶çµ‚äº†ã—ã¦æ–°ã—ã„ãƒ•ã‚§ãƒ¼ãƒ‰ã‚’é–‹å§‹ã™ã‚‹
     if (m_isCrossFading) {
         if (m_currentBGM) m_currentBGM->Stop();
-        m_currentBGM = std::move(m_nextBGM); // ƒtƒF[ƒhƒCƒ“’†‚¾‚Á‚½‚à‚Ì‚ğŒ»İ‚ÌBGM‚ÉŒJ‚èã‚°‚é
+        m_currentBGM = std::move(m_nextBGM); // ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ä¸­ã ã£ãŸã‚‚ã®ã‚’ç¾åœ¨ã®BGMã«ç¹°ã‚Šä¸Šã’ã‚‹
         m_nextBGM.reset();
     }
 
@@ -102,8 +102,8 @@ void AudioManager::PlayBGM(const std::string& name, bool loop, float fadeTime) {
     m_nextBGM = effect->CreateInstance();
 
     if (m_nextBGM) {
-        // GameScene‚Íƒ‹[ƒvA‚»‚Ì‘¼‚Í”ñƒ‹[ƒviˆø” loop ‚Å§Œäj
-        m_nextBGM->SetVolume(0.0f);// ‰Šú‰¹—Ê‚ğ0‚Éİ’èiƒtƒF[ƒhƒCƒ“‚Ì€”õj
+        // GameSceneã¯ãƒ«ãƒ¼ãƒ—ã€ãã®ä»–ã¯éãƒ«ãƒ¼ãƒ—ï¼ˆå¼•æ•° loop ã§åˆ¶å¾¡ï¼‰
+        m_nextBGM->SetVolume(0.0f);// åˆæœŸéŸ³é‡ã‚’0ã«è¨­å®šï¼ˆãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ã®æº–å‚™ï¼‰
         m_nextBGM->Play(loop);
 
         m_fadeDuration = fadeTime;
@@ -156,8 +156,8 @@ void AudioManager::PlaySE(const std::string& name, float volume, float pitch, fl
 
     auto it = m_soundEffects.find(name);
     if (it != m_soundEffects.end()) {
-        // Playƒƒ\ƒbƒh‚Í Fire-and-forget Œ`®‚Ì‚½‚ßA’Z‚¢Œø‰Ê‰¹‚É“K‚µ‚Ä‚¢‚é
-        it->second->Play(volume, pitch, pan);//Pitchiƒsƒbƒ` / ‰¹‚jAPaniƒpƒ“ / ‰¹‚Ì’èˆÊj‚É‚Â‚¢‚ÄF
+        // Playãƒ¡ã‚½ãƒƒãƒ‰ã¯ Fire-and-forget å½¢å¼ã®ãŸã‚ã€çŸ­ã„åŠ¹æœéŸ³ã«é©ã—ã¦ã„ã‚‹
+        it->second->Play(volume, pitch, pan);//Pitchï¼ˆãƒ”ãƒƒãƒ / éŸ³é«˜ï¼‰ã€Panï¼ˆãƒ‘ãƒ³ / éŸ³ã®å®šä½ï¼‰ã«ã¤ã„ã¦ï¼š
     }
     else {
         std::cerr << "[AudioManager] ERROR: SE Not Found in map: " << name << std::endl;

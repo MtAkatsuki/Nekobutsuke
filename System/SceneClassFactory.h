@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -6,9 +6,9 @@
 #include "IScene.h"
 
 // =========================================================
-// SceneClassFactory �N���X (Singleton)
-// �����񖼂��� IScene �h���N���X�̃C���X�^���X�𓮓I�ɐ������邽�߂̃t�@�N�g���B
-// REGISTER_CLASS �}�N���ɂ���Ċe�V�[���������o�^�����d�g�݂�񋟂���B
+// SceneClassFactory クラス (Singleton)
+// 文字列名から IScene 派生クラスのインスタンスを動的に生成するためのファクトリ。
+// REGISTER_CLASS マクロによって各シーンが自動登録される仕組みを提供する。
 // =========================================================
 class SceneClassFactory {
 public:
@@ -36,8 +36,8 @@ private:
 };
 
 // =========================================================
-// �����o�^�}�N��
-// �e�V�[���� .cpp �����ɋL�q���邱�ƂŁA�N�����ɐÓI�Ƀt�@�N�g���֓o�^�����B
+// 自動登録マクロ
+// 各シーンの .cpp 末尾に記述することで、起動時に静的にファクトリへ登録される。
 // =========================================================
 #define REGISTER_CLASS(CLASSNAME) \
     namespace { \

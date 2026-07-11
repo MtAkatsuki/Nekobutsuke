@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include	"CommonTypes.h"
 #include	"transform.h"
 #include	"C3DShape.h"
@@ -7,61 +7,61 @@
 
 namespace GM31 {namespace GE {namespace {}
 	namespace Collision {
-		// ‰~’Œ’è‹`
+		// å††æŸ±å®šç¾©
 		struct BoundingCylinder {
-			Vector3    bottom;						// ’ê
-			Vector3    top;							// ã
-			float      radius;						// ”¼Œa
+			Vector3    bottom;						// åº•
+			Vector3    top;							// ä¸Š
+			float      radius;						// åŠå¾„
 		};
 
-		// ‹…’è‹`
+		// çƒå®šç¾©
 		struct BoundingSphere {
 			Vector3	center;
 			float	radius;
 		};
 
-		// ƒZƒOƒƒ“ƒgiü•ªj
+		// ã‚»ã‚°ãƒ¡ãƒ³ãƒˆï¼ˆç·šåˆ†ï¼‰
 		struct Segment {
-			Vector3		startpoint;				// ŠJn“_
-			Vector3		endpoint;				// I—¹“_
+			Vector3		startpoint;				// é–‹å§‹ç‚¹
+			Vector3		endpoint;				// çµ‚äº†ç‚¹
 		};
 
-		// ’¼ü
+		// ç›´ç·š
 		struct Line {
-			Vector3		point;					// ’¼üã‚Ì”CˆÓ‚Ì“_
-			Vector3		direction;				// •ûŒü
+			Vector3		point;					// ç›´ç·šä¸Šã®ä»»æ„ã®ç‚¹
+			Vector3		direction;				// æ–¹å‘
 		};
 
-		// ‹«ŠEƒ{ƒbƒNƒXAABB
+		// å¢ƒç•Œãƒœãƒƒã‚¯ã‚¹AABB
 		struct BoundingBoxAABB {
 			Vector3 min;
 			Vector3 max;
 		};
 
-		// ‹«ŠEƒ{ƒbƒNƒXOBB
+		// å¢ƒç•Œãƒœãƒƒã‚¯ã‚¹OBB
 		struct BoundingBoxOBB : public BoundingBoxAABB {
 			Vector3 center;
 			Vector3 worldcenter;
 
-			// ’†S²iX²AY²AZ²j
+			// ä¸­å¿ƒè»¸ï¼ˆXè»¸ã€Yè»¸ã€Zè»¸ï¼‰
 			Vector3 axisX;
 			Vector3 axisY;
 			Vector3 axisZ;
 
-			// BOXƒTƒCƒY
+			// BOXã‚µã‚¤ã‚º
 			float	lengthx;
 			float	lengthy;
 			float	lengthz;
 		};
 
-		// ‹«ŠEƒJƒvƒZƒ‹
+		// å¢ƒç•Œã‚«ãƒ—ã‚»ãƒ«
 		struct BoundingCapsule {
-			Vector3		startpoint;				// ŠJn“_
-			Vector3		endpoint;				// I—¹“_
-			float		radius;					// ”¼Œa
+			Vector3		startpoint;				// é–‹å§‹ç‚¹
+			Vector3		endpoint;				// çµ‚äº†ç‚¹
+			float		radius;					// åŠå¾„
 		};
 
-		// ‹…
+		// çƒ
 		bool CollisionSphere(BoundingSphere p1, BoundingSphere p2);
 
 		// AABB
@@ -70,146 +70,146 @@ namespace GM31 {namespace GE {namespace {}
 		// make AABB
 		BoundingBoxAABB SetAABB(Vector3 centerposition, float width, float height, float depth);
 
-		// ’¼ü‚Æ“_‚Ì‹——£‚ğ‹‚ß‚é
+		// ç›´ç·šã¨ç‚¹ã®è·é›¢ã‚’æ±‚ã‚ã‚‹
 		float calcPointLineDist(
 			const Vector3& point,
 			const Segment& segment,
 			Vector3& intersectionpoint,
 			float& t);
 
-		// ’¼ü‚Æ“_‚Ì‹——£‚ğ‹‚ß‚é
+		// ç›´ç·šã¨ç‚¹ã®è·é›¢ã‚’æ±‚ã‚ã‚‹
 		float calcPointLineDist(
 			const Vector3& point,
 			const Segment& segment,
 			Vector3& intersectionpoint,
 			float& t);
 
-		// ü•ª‚Æ’¼ü‚Ì’·‚³‚ğ‹‚ß‚é
+		// ç·šåˆ†ã¨ç›´ç·šã®é•·ã•ã‚’æ±‚ã‚ã‚‹
 		float calcPointSegmentDist(
 			const Vector3& p,
 			const Segment& segment,
 			Vector3& intersectionpoint,
 			float& t);
 
-		// ‰~’Œ‚Æ‹…‚Ì“–‚½‚è”»’è
+		// å††æŸ±ã¨çƒã®å½“ãŸã‚Šåˆ¤å®š
 		bool CollisionSphereCylinder(
 			BoundingSphere sphere,
 			BoundingCylinder cylinder);
 
-		// AABB‚Æ“_‚ÌÅ‹ßÚ“_‚ğ‹‚ß‚é
+		// AABBã¨ç‚¹ã®æœ€è¿‘æ¥ç‚¹ã‚’æ±‚ã‚ã‚‹
 		void ClosestPtPointAABB(Vector3 p, BoundingBoxAABB aabb, Vector3& q);
 
-		// AABB‚Æ“_‚Ì‹——£‚ğ‹‚ß‚é
+		// AABBã¨ç‚¹ã®è·é›¢ã‚’æ±‚ã‚ã‚‹
 		float SqDistPointAABB(Vector3 p, BoundingBoxAABB aabb);
 
-		// AABB‚Æ‹…‚Ì“–‚½‚è”»’è
+		// AABBã¨çƒã®å½“ãŸã‚Šåˆ¤å®š
 		bool CollisionSphereAABB(
 			BoundingSphere sphere,
 			BoundingBoxAABB aabb);
 
-		// OBB‚Æ“_‚Ì‚à‚Á‚Æ‹ß‚¢“_‚ğ‹‚ß‚é
+		// OBBã¨ç‚¹ã®ã‚‚ã£ã¨è¿‘ã„ç‚¹ã‚’æ±‚ã‚ã‚‹
 		void ClosestPtPointOBB(Vector3 point, BoundingBoxOBB obb, Vector3& answer);
 
-		// OBB‚Æ“_‚Ì‹——£‚ğ‹‚ß‚é
+		// OBBã¨ç‚¹ã®è·é›¢ã‚’æ±‚ã‚ã‚‹
 		float DistPointOBB(Vector3 point, BoundingBoxOBB obb);
 
 		BoundingBoxOBB SetOBB(
-			Vector3 rot,					// p¨i‰ñ“]Šp“xj
-			Vector3 pos,					// ’†SÀ•Wiƒ[ƒ‹ƒhj
-			float width,					// •
-			float height,					// ‚‚³
-			float depth);					// ‰œs‚«
+			Vector3 rot,					// å§¿å‹¢ï¼ˆå›è»¢è§’åº¦ï¼‰
+			Vector3 pos,					// ä¸­å¿ƒåº§æ¨™ï¼ˆãƒ¯ãƒ¼ãƒ«ãƒ‰ï¼‰
+			float width,					// å¹…
+			float height,					// é«˜ã•
+			float depth);					// å¥¥è¡Œã
 
-		// OBB‚Æ‹…‚Ì“–‚½‚è”»’è
+		// OBBã¨çƒã®å½“ãŸã‚Šåˆ¤å®š
 		bool CollisionSphereOBB(
 			BoundingSphere sphere,
 			BoundingBoxOBB obb);
 
-		// ƒJƒvƒZƒ‹“¯m‚Ì“–‚½‚è”»’è
+		// ã‚«ãƒ—ã‚»ãƒ«åŒå£«ã®å½“ãŸã‚Šåˆ¤å®š
 		bool CollisionCapsule(BoundingCapsule p1, BoundingCapsule p2);
 
-		// ü•ª‚Æü•ª‚ÌÅ’Z‹——£‚ğ‹‚ß‚é
+		// ç·šåˆ†ã¨ç·šåˆ†ã®æœ€çŸ­è·é›¢ã‚’æ±‚ã‚ã‚‹
 		float ClosestPtSegmentSegment(
-			const Segment& seg1,				// ü•ª‚P
-			const Segment& seg2, 				// ü•ª‚Q	
-			float& s,							// ü•ª‚P‚ÌÅ’Z‹——£‚Ìƒpƒ‰ƒ[ƒ^
-			float& t,							// ü•ª‚Q‚ÌÅ’Z‹——£‚Ìƒpƒ‰ƒ[ƒ^
-			Vector3& p1, 						// ü•ª‚P‚ÌÅ’Z‹——£‚Ì“_	
-			Vector3& p2);						// ü•ª‚Q‚ÌÅ’Z‹——£‚Ì“_
+			const Segment& seg1,				// ç·šåˆ†ï¼‘
+			const Segment& seg2, 				// ç·šåˆ†ï¼’	
+			float& s,							// ç·šåˆ†ï¼‘ã®æœ€çŸ­è·é›¢ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+			float& t,							// ç·šåˆ†ï¼’ã®æœ€çŸ­è·é›¢ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+			Vector3& p1, 						// ç·šåˆ†ï¼‘ã®æœ€çŸ­è·é›¢ã®ç‚¹	
+			Vector3& p2);						// ç·šåˆ†ï¼’ã®æœ€çŸ­è·é›¢ã®ç‚¹
 
-		// ‘S’¸“_‚ğÀ•W•ÏŠ·‚µ‚½Œã‚ğAABB‹‚ß‚é
+		// å…¨é ‚ç‚¹ã‚’åº§æ¨™å¤‰æ›ã—ãŸå¾Œã‚’AABBæ±‚ã‚ã‚‹
 		BoundingBoxAABB calcAABB(
 			const std::vector<Vector3>& vertices,
 			SRT transform);
 
-		// AABB‚©‚ç8’¸“_‚ğæ“¾
+		// AABBã‹ã‚‰8é ‚ç‚¹ã‚’å–å¾—
 		std::vector<Vector3> GetCorners(const BoundingBoxAABB& box);
 
-		// À•W•ÏŠ·‚µ‚½Œã‚ÌAABB‚ğ‹‚ß‚é
+		// åº§æ¨™å¤‰æ›ã—ãŸå¾Œã®AABBã‚’æ±‚ã‚ã‚‹
 		BoundingBoxAABB TransformAABB(
 			const BoundingBoxAABB& inAABB,
 			SRT transform);
 
-		// OBB‚ÆOBB‚Ì“–‚½‚è”»’è
+		// OBBã¨OBBã®å½“ãŸã‚Šåˆ¤å®š
 		bool CollisionOBB(
 			const BoundingBoxOBB& obbA,
 			const BoundingBoxOBB& obbB);
 
-		// BOUNDING CYLINDER‚ğì¬‚·‚é
+		// BOUNDING CYLINDERã‚’ä½œæˆã™ã‚‹
 		BoundingCylinder SetBoundingCylinder(
-			SRT transform,		// ‰~’Œ‚Ìp¨î•ñ
-			Cylinder cylinder);	// •`‰æ—p‚Ì‰~’Œî•ñ
+			SRT transform,		// å††æŸ±ã®å§¿å‹¢æƒ…å ±
+			Cylinder cylinder);	// æç”»ç”¨ã®å††æŸ±æƒ…å ±
 
-		// ‰~’Œ“¯m‚Ì“–‚½‚è”»’è	
+		// å††æŸ±åŒå£«ã®å½“ãŸã‚Šåˆ¤å®š	
 		bool CollisionCylinder(
 			const BoundingCylinder& Cylinder1,
 			const BoundingCylinder& Cylinder2);
 
-		// ü•ªã‚Éw’è‚µ‚½“_‚ª‘¶İ‚·‚é‚©‚Ç‚¤‚©‚ğƒ`ƒFƒbƒN‚·‚é
+		// ç·šåˆ†ä¸Šã«æŒ‡å®šã—ãŸç‚¹ãŒå­˜åœ¨ã™ã‚‹ã‹ã©ã†ã‹ã‚’ãƒã‚§ãƒƒã‚¯ã™ã‚‹
 		bool isPointOnSegment(
 			const Segment& seg,
 			const Vector3& point,
 			float epsilon = 1e-6f);
 
-		// ’¼ü“¯m‚ÌÅ’Z‹——£‚ğ‹‚ß‚é
+		// ç›´ç·šåŒå£«ã®æœ€çŸ­è·é›¢ã‚’æ±‚ã‚ã‚‹
 		float ClosestDistanceBetweenLines(
 			const Line& line1,
 			const Line& line2,
-			float& s, 			// line1 ƒpƒ‰ƒ[ƒ^i–³§ŒÀj
-			float& t,			// line2 ƒpƒ‰ƒ[ƒ^i–³§ŒÀj
-			Vector3& p1, 		// line1 Å‹ßÚ“_
-			Vector3& p2);		// line2 Å‹ßÚ“_
+			float& s, 			// line1 ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ï¼ˆç„¡åˆ¶é™ï¼‰
+			float& t,			// line2 ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ï¼ˆç„¡åˆ¶é™ï¼‰
+			Vector3& p1, 		// line1 æœ€è¿‘æ¥ç‚¹
+			Vector3& p2);		// line2 æœ€è¿‘æ¥ç‚¹
 
-		// ‰~’Œ“¯m‚Ì“–‚½‚è”»’è¸–§”Å
+		// å††æŸ±åŒå£«ã®å½“ãŸã‚Šåˆ¤å®šç²¾å¯†ç‰ˆ
 		bool PreciseCylinderCollision(
 			const BoundingCylinder& Cylinder1,
 			const BoundingCylinder& Cylinder2);
 
-		// ‰~’Œ“¯m‚Ì“–‚½‚è”»’è(‘¤–Ê)
+		// å††æŸ±åŒå£«ã®å½“ãŸã‚Šåˆ¤å®š(å´é¢)
 		bool CylinderSideIntersect(
 			const BoundingCylinder& cylinderSide,
 			const BoundingCylinder& other);
 
-		// ƒoƒEƒ“ƒfƒBƒ“ƒOƒJƒvƒZƒ‹‚ğì¬‚·‚é
+		// ãƒã‚¦ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ã‚«ãƒ—ã‚»ãƒ«ã‚’ä½œæˆã™ã‚‹
 		BoundingCapsule SetBoundingCapsule(
-			SRT transform,		// ƒJƒvƒZƒ‹‚Ìp¨î•ñ
-			float radius,		// ƒJƒvƒZƒ‹‚Ì”¼Œa
-			float height);		// ƒJƒvƒZƒ‹‚Ì‚‚³
+			SRT transform,		// ã‚«ãƒ—ã‚»ãƒ«ã®å§¿å‹¢æƒ…å ±
+			float radius,		// ã‚«ãƒ—ã‚»ãƒ«ã®åŠå¾„
+			float height);		// ã‚«ãƒ—ã‚»ãƒ«ã®é«˜ã•
 
-		// ƒoƒEƒ“ƒfƒBƒ“ƒOƒXƒtƒBƒA‚ğì¬‚·‚é add date 2025/06/28 by suzuki)
+		// ãƒã‚¦ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ã‚¹ãƒ•ã‚£ã‚¢ã‚’ä½œæˆã™ã‚‹ add date 2025/06/28 by suzuki)
 		BoundingSphere calcBSphere(
 			const std::vector<Vector3>& vertices,
 			SRT transform);
 
-		// ’¼ü‚Æ•½–Ê‚ÌŒğ·”»’è
+		// ç›´ç·šã¨å¹³é¢ã®äº¤å·®åˆ¤å®š
 		bool LinetoPlaneCross(
-			const Plane& plane,		//•½–Ê‚Ì•û’ö®
-			const Vector3& p0,		//’¼ü‚Ì‹N“_
-			const Vector3& wv,		//’¼ü‚Ì•ûŒüƒxƒNƒgƒ‹
-			float& t,				// Œğ“_ˆÊ’uî•ñ	
-			Vector3& ans);			//Œğ“_À•W
+			const Plane& plane,		//å¹³é¢ã®æ–¹ç¨‹å¼
+			const Vector3& p0,		//ç›´ç·šã®èµ·ç‚¹
+			const Vector3& wv,		//ç›´ç·šã®æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«
+			float& t,				// äº¤ç‚¹ä½ç½®æƒ…å ±	
+			Vector3& ans);			//äº¤ç‚¹åº§æ¨™
 
-		// OŠpŒ`‚Ì“à•”‚©‚Ç‚¤‚©‚ğ”»’è‚·‚é
+		// ä¸‰è§’å½¢ã®å†…éƒ¨ã‹ã©ã†ã‹ã‚’åˆ¤å®šã™ã‚‹
 		bool CheckInTriangle(
 			const Vector3& a,
 			const Vector3& b,

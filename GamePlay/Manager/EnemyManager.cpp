@@ -1,16 +1,16 @@
-#include "EnemyManager.h"
+ï»¿#include "EnemyManager.h"
 #include "../../Core/GameContext.h"
 #include "TurnManager.h"
 #include "../../Core/DebugLog.h"
 
 namespace {
-	const float ACT_INTERVAL = 0.5f; // “G‚Ìs“®‚Æs“®‚ÌŠÔ‚ÌƒCƒ“ƒ^[ƒoƒ‹‘Ò‹@ŠÔ
+	const float ACT_INTERVAL = 0.5f; // æ•µã®è¡Œå‹•ã¨è¡Œå‹•ã®é–“ã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«å¾…æ©Ÿæ™‚é–“
 }
 
 void EnemyManager::Update(uint64_t dt) {
 	float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 
-	// ƒtƒF[ƒY‚Ì‘ŠúI—¹”»’è
+	// ãƒ•ã‚§ãƒ¼ã‚ºã®æ—©æœŸçµ‚äº†åˆ¤å®š
 	if (m_state != EnemyPhaseState::IDLE && m_state != EnemyPhaseState::ALL_FINISHED)
 	{
 		if (m_enemies.empty())
@@ -29,7 +29,7 @@ void EnemyManager::Update(uint64_t dt) {
 		ResortAndRenumber();
 		m_currentActorIndex = 0;
 
-		// s“®‰Â”\‚È“G‚ğŒŸõ
+		// è¡Œå‹•å¯èƒ½ãªæ•µã‚’æ¤œç´¢
 		while (m_currentActorIndex < m_enemies.size()) {
 			auto* enemy = m_enemies[m_currentActorIndex];
 			if (enemy->GetHP() > 0 && !enemy->IsDeadFlying()) break;
@@ -53,7 +53,7 @@ void EnemyManager::Update(uint64_t dt) {
 			break;
 		}
 		Enemy* current = m_enemies[m_currentActorIndex];
-		// ƒAƒjƒ[ƒVƒ‡ƒ“Š®—¹A‚Ü‚½‚Í‹}‚È€–S‚É‚æ‚éƒtƒF[ƒYis‚ÌÕ’f‰ğœ
+		// ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å®Œäº†ã€ã¾ãŸã¯æ€¥ãªæ­»äº¡ã«ã‚ˆã‚‹ãƒ•ã‚§ãƒ¼ã‚ºé€²è¡Œã®é®æ–­è§£é™¤
 		if (current->IsDead() || current->IsDeadFlying() || current->IsIdle()) {
 			m_state = EnemyPhaseState::INTERVAL;
 			m_phaseTimer = 0.0f;
@@ -64,7 +64,7 @@ void EnemyManager::Update(uint64_t dt) {
 	case EnemyPhaseState::INTERVAL:
 		m_phaseTimer += deltaSeconds;
 
-		//s“®Œã‚Ì‘Ò‚¿ŠÔ
+		//è¡Œå‹•å¾Œã®å¾…ã¡æ™‚é–“
 		if (m_phaseTimer >= ACT_INTERVAL) {
 			m_currentActorIndex++;
 
@@ -88,10 +88,10 @@ void EnemyManager::Update(uint64_t dt) {
 }
 
 void EnemyManager::ClearAll() {
-	//“G”z—ñƒNƒŠƒA
+	//æ•µé…åˆ—ã‚¯ãƒªã‚¢
 	m_enemies.clear();
 
-	// ƒXƒe[ƒ^ƒX ƒŠƒZƒbƒg
+	// ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ ãƒªã‚»ãƒƒãƒˆ
 	m_state = EnemyPhaseState::IDLE;
 	m_currentActorIndex = 0;
 	m_phaseTimer = 0.0f;
@@ -136,7 +136,7 @@ void EnemyManager::ResortAndRenumber() {
 bool EnemyManager::AreAllEnemiesDead() const {
 	for (const auto& enemy_ptr : m_enemies) {
 		if (enemy_ptr->GetHP() > 0) {
-			return false; // ­‚È‚­‚Æ‚à1‘Ì‚Ì“G‚ª¶‘¶‚µ‚Ä‚¢‚é
+			return false; // å°‘ãªãã¨ã‚‚1ä½“ã®æ•µãŒç”Ÿå­˜ã—ã¦ã„ã‚‹
 		}
 	}
 	return true; 
@@ -144,7 +144,7 @@ bool EnemyManager::AreAllEnemiesDead() const {
 
 bool EnemyManager::IsAnyEnemyDying() const {
 	for (const auto* enemy : m_enemies) {
-		// €–S”òãÄ’†‚Ì“G‚ª‚¢‚é‚©ƒ`ƒFƒbƒN
+		// æ­»äº¡é£›ç¿”ä¸­ã®æ•µãŒã„ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
 		if (enemy && enemy->GetHP() > 0 && enemy->IsDeadFlying()) {
 			return true;
 		}
@@ -154,7 +154,7 @@ bool EnemyManager::IsAnyEnemyDying() const {
 
 bool EnemyManager::IsAnyEnemyAnimating() const {
 	for (const auto* enemy : m_enemies) {
-		// ƒAƒNƒeƒBƒu‚ÅƒAƒCƒhƒ‹ó‘Ô‚Å‚È‚¢“G‚ª‚¢‚é‚©ƒ`ƒFƒbƒN
+		// ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã§ã‚¢ã‚¤ãƒ‰ãƒ«çŠ¶æ…‹ã§ãªã„æ•µãŒã„ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
 		if (enemy->GetHP() > 0 && !enemy->IsIdle()) {
 			return true;
 		}

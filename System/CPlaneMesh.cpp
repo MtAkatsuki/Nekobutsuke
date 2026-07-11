@@ -1,4 +1,4 @@
-#include    "commontypes.h"
+ï»¿#include    "commontypes.h"
 #include	"CPlaneMesh.h"
 #include	<iostream>
 
@@ -10,30 +10,30 @@ void CPlaneMesh::Init(
 	bool xzflag,
 	bool cwflag) 
 {
-	// ƒTƒCƒYƒZƒbƒgi•‚Æ‚‚³jiXY•½–Êj
+	// ã‚µã‚¤ã‚ºã‚»ãƒƒãƒˆï¼ˆå¹…ã¨é«˜ã•ï¼‰ï¼ˆXYå¹³é¢ï¼‰
 	m_width = width;
 	m_height = height;
 
-	// •ªŠ„”
+	// åˆ†å‰²æ•°
 	m_divY = divy;
 	m_divX = divx;
 
-	// –@üƒxƒNƒgƒ‹
+	// æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«
 	m_normal = normal;
 
-	// ’¸“_ƒJƒ‰[
+	// é ‚ç‚¹ã‚«ãƒ©ãƒ¼
 	m_color = color;
 
 	if (xzflag) {
-		// ’¸“_ƒf[ƒ^¶¬
+		// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ç”Ÿæˆ
 		CreateVertexXZ();
 	}
 	else {
-		// ’¸“_ƒf[ƒ^¶¬
+		// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ç”Ÿæˆ
 		CreateVertex();
 	}
 
-	// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^¶¬
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ç”Ÿæˆ
 	if (cwflag) {
 		CreateIndexCW();
 	}
@@ -43,7 +43,7 @@ void CPlaneMesh::Init(
 }
 
 void CPlaneMesh::CreateVertex() {
-	// ’¸“_ƒf[ƒ^ƒNƒŠƒA
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚¯ãƒªã‚¢
 	m_vertices.clear();
 
 	for (unsigned int y = 0; y <= m_divY; y++) {
@@ -51,30 +51,30 @@ void CPlaneMesh::CreateVertex() {
 
 		for (unsigned int x = 0; x <= m_divX; x++) {
 
-			// ’¸“_À•WƒZƒbƒg
+			// é ‚ç‚¹åº§æ¨™ã‚»ãƒƒãƒˆ
 			vtx.Position.x = -m_width / 2.0f + x * m_width / m_divX;
 			vtx.Position.y = -m_height / 2.0f + y * m_height / m_divY;
 			vtx.Position.z = 0.0f;
 
-			// –@üƒxƒNƒgƒ‹ƒZƒbƒg
-			vtx.Normal = m_normal;				// –@ü‚ğƒZƒbƒg
+			// æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚»ãƒƒãƒˆ
+			vtx.Normal = m_normal;				// æ³•ç·šã‚’ã‚»ãƒƒãƒˆ
 
-			vtx.Diffuse = m_color;				// ƒJƒ‰[’lƒZƒbƒg
+			vtx.Diffuse = m_color;				// ã‚«ãƒ©ãƒ¼å€¤ã‚»ãƒƒãƒˆ
 
-			// ŒJ‚è•Ô‚µ‚É‘Î‰iƒeƒNƒXƒ`ƒƒ‚Ìj
+			// ç¹°ã‚Šè¿”ã—ã«å¯¾å¿œï¼ˆãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ï¼‰
 			float texu = 1.0f * m_divX;
 			float texv = 1.0f * m_divY;
 			vtx.TexCoord.x = (texu * x / m_divX);
-//			vtx.TexCoord.y = (texv * y / m_divY);	// ƒeƒNƒXƒ`ƒƒã‰º‚³‚©‚³‚ÜƒoƒO‚ğC³
+//			vtx.TexCoord.y = (texv * y / m_divY);	// ãƒ†ã‚¯ã‚¹ãƒãƒ£ä¸Šä¸‹ã•ã‹ã•ã¾ãƒã‚°ã‚’ä¿®æ­£
 			vtx.TexCoord.y = texv-(texv * y / m_divY);
 
-			m_vertices.emplace_back(vtx);		// ’¸“_ƒf[ƒ^ƒZƒbƒg
+			m_vertices.emplace_back(vtx);		// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚»ãƒƒãƒˆ
 		}
 	}
 }
 
 void CPlaneMesh::CreateVertexXZ() {
-	// ’¸“_ƒf[ƒ^ƒNƒŠƒA
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚¯ãƒªã‚¢
 	m_vertices.clear();
 
 	for (unsigned int y = 0; y <= m_divY; y++) {
@@ -82,43 +82,43 @@ void CPlaneMesh::CreateVertexXZ() {
 
 		for (unsigned int x = 0; x <= m_divX; x++) {
 
-			// ’¸“_À•WƒZƒbƒg
+			// é ‚ç‚¹åº§æ¨™ã‚»ãƒƒãƒˆ
 			vtx.Position.x = -m_width / 2.0f + x * m_width / m_divX;
 			vtx.Position.y = 0.0f;
 			vtx.Position.z = -m_height / 2.0f + y * m_height / m_divY;
 
-			// –@üƒxƒNƒgƒ‹ƒZƒbƒg
-			vtx.Normal = m_normal;				// –@ü‚ğƒZƒbƒg
+			// æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚»ãƒƒãƒˆ
+			vtx.Normal = m_normal;				// æ³•ç·šã‚’ã‚»ãƒƒãƒˆ
 
-			vtx.Diffuse = m_color;					// ƒJƒ‰[’lƒZƒbƒg
+			vtx.Diffuse = m_color;					// ã‚«ãƒ©ãƒ¼å€¤ã‚»ãƒƒãƒˆ
 
-			// ŒJ‚è•Ô‚µ‚É‘Î‰iƒeƒNƒXƒ`ƒƒ‚Ìj
+			// ç¹°ã‚Šè¿”ã—ã«å¯¾å¿œï¼ˆãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ï¼‰
 			float texu = 1.0f * m_divX;
 			float texv = 1.0f * m_divY;
 			vtx.TexCoord.x = (texu * x / m_divX);
 			vtx.TexCoord.y = (texv * y / m_divY);
 
-			m_vertices.emplace_back(vtx);		// ’¸“_ƒf[ƒ^ƒZƒbƒg
+			m_vertices.emplace_back(vtx);		// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚»ãƒƒãƒˆ
 		}
 	}
 }
 
 void CPlaneMesh::CreateIndexCW() {
-	// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^ƒNƒŠƒA
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚¯ãƒªã‚¢
 	m_indices.clear();
 
-	// ƒCƒ“ƒfƒbƒNƒX¶¬
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ç”Ÿæˆ
 	for (unsigned int y = 0; y < m_divY; y++) {
 		for (unsigned int x = 0; x < m_divX; x++) {
-			int count = (m_divX + 1) * y + x;		// ¶‰ºÀ•W‚ÌƒCƒ“ƒfƒbƒNƒX
+			int count = (m_divX + 1) * y + x;		// å·¦ä¸‹åº§æ¨™ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 
-			// ‰º”¼•ª
+			// ä¸‹åŠåˆ†
 			{
 				FACE face{};
 
-				face.idx[0] = count;						// ¶‰º
-				face.idx[1] = count + 1 + (m_divX + 1);		// ‰Eã
-				face.idx[2] = count + 1;					// ‰E
+				face.idx[0] = count;						// å·¦ä¸‹
+				face.idx[1] = count + 1 + (m_divX + 1);		// å³ä¸Š
+				face.idx[2] = count + 1;					// å³
 
 				m_indices.emplace_back(face.idx[0]);
 				m_indices.emplace_back(face.idx[1]);
@@ -126,12 +126,12 @@ void CPlaneMesh::CreateIndexCW() {
 
 			}
 
-			// ã”¼•ª
+			// ä¸ŠåŠåˆ†
 			{
 				FACE face{};
-				face.idx[0] = count;						// ¶‰º
-				face.idx[1] = count + (m_divX + 1);			// ã
-				face.idx[2] = count + (m_divX + 1) + 1;		// ‰Eã
+				face.idx[0] = count;						// å·¦ä¸‹
+				face.idx[1] = count + (m_divX + 1);			// ä¸Š
+				face.idx[2] = count + (m_divX + 1) + 1;		// å³ä¸Š
 
 				m_indices.emplace_back(face.idx[0]);
 				m_indices.emplace_back(face.idx[1]);
@@ -143,21 +143,21 @@ void CPlaneMesh::CreateIndexCW() {
 }
 
 void CPlaneMesh::CreateIndexCCW() {
-	// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^ƒNƒŠƒA
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚¯ãƒªã‚¢
 	m_indices.clear();
 
-	// ƒCƒ“ƒfƒbƒNƒX¶¬
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ç”Ÿæˆ
 	for (unsigned int y = 0; y < m_divY; y++) {
 		for (unsigned int x = 0; x < m_divX; x++) {
-			int count = (m_divX + 1) * y + x;		// ¶‰ºÀ•W‚ÌƒCƒ“ƒfƒbƒNƒX
+			int count = (m_divX + 1) * y + x;		// å·¦ä¸‹åº§æ¨™ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 
-			// ‰º”¼•ª
+			// ä¸‹åŠåˆ†
 			{
 				FACE face{};
 
-				face.idx[0] = count;						// ¶‰º
-				face.idx[1] = count + 1 + (m_divX + 1);		// ‰Eã
-				face.idx[2] = count + 1;					// ‰E
+				face.idx[0] = count;						// å·¦ä¸‹
+				face.idx[1] = count + 1 + (m_divX + 1);		// å³ä¸Š
+				face.idx[2] = count + 1;					// å³
 
 				m_indices.emplace_back(face.idx[0]);
 				m_indices.emplace_back(face.idx[2]);
@@ -165,12 +165,12 @@ void CPlaneMesh::CreateIndexCCW() {
 
 			}
 
-			// ã”¼•ª
+			// ä¸ŠåŠåˆ†
 			{
 				FACE face{};
-				face.idx[0] = count;						// ¶‰º
-				face.idx[1] = count + (m_divX + 1);			// ã
-				face.idx[2] = count + (m_divX + 1) + 1;		// ‰Eã
+				face.idx[0] = count;						// å·¦ä¸‹
+				face.idx[1] = count + (m_divX + 1);			// ä¸Š
+				face.idx[2] = count + (m_divX + 1) + 1;		// å³ä¸Š
 
 				m_indices.emplace_back(face.idx[0]);
 				m_indices.emplace_back(face.idx[2]);
@@ -181,12 +181,12 @@ void CPlaneMesh::CreateIndexCCW() {
 	}
 }
 
-// •
+// å¹…
 float CPlaneMesh::GetWidth() {
 	return m_width;
 }
 
-// ‚‚³
+// é«˜ã•
 float CPlaneMesh::GetHeight() {
 	return m_height;
 }
@@ -199,7 +199,7 @@ int CPlaneMesh::GetDivY() {
 	return m_divY;
 }
 
-// w’è‚µ‚½3ŠpŒ`”Ô†‚ÌOŠpŒ`ƒCƒ“ƒfƒbƒNƒX‚ğæ“¾
+// æŒ‡å®šã—ãŸ3è§’å½¢ç•ªå·ã®ä¸‰è§’å½¢ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’å–å¾—
 CPlaneMesh::FACE CPlaneMesh::GetTriangle(int triangleno) {
 
 	FACE face;
@@ -210,34 +210,34 @@ CPlaneMesh::FACE CPlaneMesh::GetTriangle(int triangleno) {
 
 }
 
-// ‰½”Ô–Ú‚ÌlŠpŒ`‚©‚ğŒ©‚Â‚¯‚é
+// ä½•ç•ªç›®ã®å››è§’å½¢ã‹ã‚’è¦‹ã¤ã‘ã‚‹
 int CPlaneMesh::GetSquareNo(DirectX::SimpleMath::Vector3 pos)
 {
-	// °ƒƒbƒVƒ…‚ÍXZ•½–Ê‚ğƒx[ƒX‚Åì¬‚µ‚Ä‚¢‚é
+	// åºŠãƒ¡ãƒƒã‚·ãƒ¥ã¯XZå¹³é¢ã‚’ãƒ™ãƒ¼ã‚¹ã§ä½œæˆã—ã¦ã„ã‚‹
 	double x = pos.x;
 	double y = pos.z;
 
-	// •½–Ê‚Ì•
+	// å¹³é¢ã®å¹…
 	double planewidth = m_width;
 
-	// •½–Ê‚Ì‚‚³
+	// å¹³é¢ã®é«˜ã•
 	double planeheight = m_height;
 
-	// ƒ}ƒbƒvƒ`ƒbƒvƒTƒCƒYiâ‘Î’l‚ÅŒvZj
+	// ãƒãƒƒãƒ—ãƒãƒƒãƒ—ã‚µã‚¤ã‚ºï¼ˆçµ¶å¯¾å€¤ã§è¨ˆç®—ï¼‰
 	double mapchipwidth = fabs(planewidth / m_divX);
 	double mapchipheight = fabs(planeheight / m_divY);
 
-	// ¶‰ºŒ´“_‚Ì‘Š‘ÎÀ•W‚É•ÏŠ·
+	// å·¦ä¸‹åŸç‚¹ã®ç›¸å¯¾åº§æ¨™ã«å¤‰æ›
 	double relativex = x + (planewidth / 2.0);
 	double relativey = y + (planeheight / 2.0);
 
-	// ¶‚©‚ç‰½”Ô–Ú‚©H
+	// å·¦ã‹ã‚‰ä½•ç•ªç›®ã‹ï¼Ÿ
 	unsigned int mapchipx = static_cast<unsigned int>(relativex / mapchipwidth);
 
-	// ‰º‚©‚ç‰½”Ô–Ú‚©H
+	// ä¸‹ã‹ã‚‰ä½•ç•ªç›®ã‹ï¼Ÿ
 	unsigned int mapchipy = static_cast<unsigned int>(relativey / mapchipheight);
 
-	// ¶‰º‚ğ‚O”Ô–Ú‚Æ‚µ‚½ê‡‚Ì‡”Ô‚ğŒvZ
+	// å·¦ä¸‹ã‚’ï¼ç•ªç›®ã¨ã—ãŸå ´åˆã®é †ç•ªã‚’è¨ˆç®—
 	int squareno;
 	squareno = mapchipy * m_divX + mapchipx;
 

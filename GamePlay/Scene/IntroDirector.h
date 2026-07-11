@@ -1,12 +1,12 @@
-#pragma once
+ï»¿#pragma once
 
 // =========================================================
 // IntroDirector
 //
-// “±“üƒVƒlƒ}ƒeƒBƒbƒN‚Ìis§Œä‚ğ’S“–‚·‚éƒNƒ‰ƒXB
-// ‰‰o‚Ì—¬‚ê‚Ì‚İ‚ğŠÇ—‚µAƒQ[ƒ€ƒƒWƒbƒN‚Í•Û‚µ‚È‚¢B
-// ˆË‘¶æ‚Í‚·‚×‚Ä GameContext Œo—R‚Åæ“¾‚µA
-// TurnCounter ‚Ì‚İƒV[ƒ“Š—LƒIƒuƒWƒFƒNƒg‚Ì‚½‚ßƒRƒ“ƒXƒgƒ‰ƒNƒ^‚Åó‚¯æ‚éB
+// å°å…¥ã‚·ãƒãƒãƒ†ã‚£ãƒƒã‚¯ã®é€²è¡Œåˆ¶å¾¡ã‚’æ‹…å½“ã™ã‚‹ã‚¯ãƒ©ã‚¹ã€‚
+// æ¼”å‡ºã®æµã‚Œã®ã¿ã‚’ç®¡ç†ã—ã€ã‚²ãƒ¼ãƒ ãƒ­ã‚¸ãƒƒã‚¯ã¯ä¿æŒã—ãªã„ã€‚
+// ä¾å­˜å…ˆã¯ã™ã¹ã¦ GameContext çµŒç”±ã§å–å¾—ã—ã€
+// TurnCounter ã®ã¿ã‚·ãƒ¼ãƒ³æ‰€æœ‰ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ãŸã‚ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã§å—ã‘å–ã‚‹ã€‚
 // =========================================================
 class GameContext;
 class TurnCounter;
@@ -17,11 +17,11 @@ public:
         : m_context(context), m_turnCounter(turnCounter) {
     }
 
-    // ‰‰oŠJnF“ü—Í‚ğƒƒbƒN‚µAƒ^[ƒ“ƒJƒEƒ“ƒ^[‰‰o‚ÌŠ®—¹‘Ò‚¿‚Ö‘JˆÚ
+    // æ¼”å‡ºé–‹å§‹ï¼šå…¥åŠ›ã‚’ãƒ­ãƒƒã‚¯ã—ã€ã‚¿ãƒ¼ãƒ³ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼æ¼”å‡ºã®å®Œäº†å¾…ã¡ã¸é·ç§»
     void Start();
 
-    // –ˆƒtƒŒ[ƒ€XVB
-    // allyTalked = ƒV[ƒ“‘¤‚Å–¡•û‚ÌƒZƒŠƒt‰‰o‚ªŠJnÏ‚İ‚©
+    // æ¯ãƒ•ãƒ¬ãƒ¼ãƒ æ›´æ–°ã€‚
+    // allyTalked = ã‚·ãƒ¼ãƒ³å´ã§å‘³æ–¹ã®ã‚»ãƒªãƒ•æ¼”å‡ºãŒé–‹å§‹æ¸ˆã¿ã‹
     void Update(float deltaSeconds, bool allyTalked);
 
     bool IsIdle()     const { return m_state == State::Idle; }
@@ -29,20 +29,20 @@ public:
 
 private:
     enum class State {
-        Idle,                // ‘Ò‹@
-        TurnCounterFlying,   // ƒ^[ƒ“ƒJƒEƒ“ƒ^[UI‚Ì‰‰o’†
-        CameraToAlly,         // ƒJƒƒ‰‚ğ–¡•ûiƒlƒYƒ~j‚ÖˆÚ“®
-        WaitingAllyDialogue,  // –¡•û‚ÌƒZƒŠƒt‰‰oŠ®—¹‘Ò‚¿
-        CameraToBase,         // ‘S‘Ì˜ëáÕiBaseViewj‚Ö–ß‚é
-        CameraToPlayer,       // ƒvƒŒƒCƒ„[‚Ö–ß‚é
-        Finished              // “±“ü‰‰oŠ®—¹
+        Idle,                // å¾…æ©Ÿ
+        TurnCounterFlying,   // ã‚¿ãƒ¼ãƒ³ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼UIã®æ¼”å‡ºä¸­
+        CameraToAlly,         // ã‚«ãƒ¡ãƒ©ã‚’å‘³æ–¹ï¼ˆãƒã‚ºãƒŸï¼‰ã¸ç§»å‹•
+        WaitingAllyDialogue,  // å‘³æ–¹ã®ã‚»ãƒªãƒ•æ¼”å‡ºå®Œäº†å¾…ã¡
+        CameraToBase,         // å…¨ä½“ä¿¯ç°ï¼ˆBaseViewï¼‰ã¸æˆ»ã‚‹
+        CameraToPlayer,       // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¸æˆ»ã‚‹
+        Finished              // å°å…¥æ¼”å‡ºå®Œäº†
     };
 
-    // ƒJƒƒ‰‚ª–Ú•W’‹“_‚Ö“’B‚µ‚½‚©iLerpû‘©”»’èj
+    // ã‚«ãƒ¡ãƒ©ãŒç›®æ¨™æ³¨è¦–ç‚¹ã¸åˆ°é”ã—ãŸã‹ï¼ˆLerpåæŸåˆ¤å®šï¼‰
     bool HasCameraArrived() const;
 
     GameContext* m_context = nullptr;      
     TurnCounter* m_turnCounter = nullptr;  
     State m_state = State::Idle;
-    float m_hoverTimer = 0.0f;             // ˜ëáÕ•\¦‚Ì‘Ò‹@ŠÔ
+    float m_hoverTimer = 0.0f;             // ä¿¯ç°è¡¨ç¤ºã®å¾…æ©Ÿæ™‚é–“
 };

@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 #include <cstdint>
 #include <memory>
 #include "../Actor/Base/Gameobject.h"
 
 class GameContext;
-// ƒV[ƒ“ƒCƒ“ƒ^ƒtƒF[ƒX
+// ã‚·ãƒ¼ãƒ³ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹
 class IScene {
 public:
 	IScene() = default;

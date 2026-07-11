@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
@@ -13,7 +13,7 @@
 #pragma warning(pop)
 
 // =========================================================
-// ÉOÉçÅ[ÉoÉãê›íË (Global Configurations)
+// „Ç∞„É≠„Éº„Éê„É´Ë®≠ÂÆö (Global Configurations)
 // =========================================================
 constexpr uint32_t SCREEN_WIDTH = 1280;
 constexpr uint32_t SCREEN_HEIGHT = 720;

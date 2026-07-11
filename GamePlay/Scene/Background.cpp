@@ -1,16 +1,16 @@
-#include "Background.h"
+ï»¿#include "Background.h"
 #include "../../Core/Application.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../System/commontypes.h" // for pi
 #include <cmath>
 
 namespace {
-	// --- ”wŒi•`‰æ—pE’è” ---
-	constexpr float BG_SIZE = 2500.0f; // Î‚ß‰ñ“]‚à‰æ–Ê‚ğ•¢‚¢s‚­‚¹‚é—]—T‚ğ‚½‚¹‚½ƒTƒCƒY
-	constexpr float UV_OVERFLOW_LIMIT = 100.0f;  // UVÀ•W‚ÌƒI[ƒo[ƒtƒ[–h~è‡’l
-	constexpr float BG_Z_POSITION = 0.5f;    // ”wŒi‚Ì[“xiÅ‰œj
+	// --- èƒŒæ™¯æç”»ç”¨ãƒ»å®šæ•° ---
+	constexpr float BG_SIZE = 2500.0f; // æ–œã‚å›è»¢æ™‚ã‚‚ç”»é¢ã‚’è¦†ã„å°½ãã›ã‚‹ä½™è£•ã‚’æŒãŸã›ãŸã‚µã‚¤ã‚º
+	constexpr float UV_OVERFLOW_LIMIT = 100.0f;  // UVåº§æ¨™ã®ã‚ªãƒ¼ãƒãƒ¼ãƒ•ãƒ­ãƒ¼é˜²æ­¢é–¾å€¤
+	constexpr float BG_Z_POSITION = 0.5f;    // èƒŒæ™¯ã®æ·±åº¦ï¼ˆæœ€å¥¥ï¼‰
 
-	constexpr float ROTATION_RAD = -PI / 4.0f;   // -45“x‚ÌÎ‚ß”z’u
+	constexpr float ROTATION_RAD = -PI / 4.0f;   // -45åº¦ã®æ–œã‚é…ç½®
 }
 
 void Background::Init(const std::string& texturePath) {
@@ -22,23 +22,23 @@ void Background::Update(uint64_t dt) {
 
     float deltaSeconds = static_cast<float>(dt) / 1000.0f;
 
-    // ƒXƒNƒ[ƒ‹ƒIƒtƒZƒbƒg‚Ì‰ÁZ‚ÆƒI[ƒo[ƒtƒ[–hŒä
+    // ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ã‚ªãƒ•ã‚»ãƒƒãƒˆã®åŠ ç®—ã¨ã‚ªãƒ¼ãƒãƒ¼ãƒ•ãƒ­ãƒ¼é˜²å¾¡
     m_scrollOffset += m_scrollSpeed * deltaSeconds;
     if (m_scrollOffset > UV_OVERFLOW_LIMIT) {
         m_scrollOffset -= UV_OVERFLOW_LIMIT;
     }
 
-    // --- UVÀ•W‚ÌŒvZ‚Æ“K—p ---
+    // --- UVåº§æ¨™ã®è¨ˆç®—ã¨é©ç”¨ ---
     float u_start = 0.0f;
     float v_start = m_scrollOffset;
     float u_end = TILE_REPEAT;
     float v_end = m_scrollOffset + TILE_REPEAT;
 
     Vector2 uv[4] = {
-        Vector2(u_start, v_start), // ¶ã
-        Vector2(u_end,   v_start), // ‰Eã
-        Vector2(u_start, v_end),   // ¶‰º
-        Vector2(u_end,   v_end)    // ‰E‰º
+        Vector2(u_start, v_start), // å·¦ä¸Š
+        Vector2(u_end,   v_start), // å³ä¸Š
+        Vector2(u_start, v_end),   // å·¦ä¸‹
+        Vector2(u_end,   v_end)    // å³ä¸‹
     };
 
     m_sprite->ModifyUV(uv);

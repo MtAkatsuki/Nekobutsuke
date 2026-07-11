@@ -1,26 +1,26 @@
-#include    "commontypes.h"
+ï»¿#include    "commontypes.h"
 #include	"CStaticMesh.h"
 #include	"AssimpPerse.h"
 #include <iostream>
 void CStaticMesh::Load(std::string filename, std::string texturedirectory)
 {
-	std::vector<GM31::GE::myAssimp::SUBSET> subsets{};					// ƒTƒuƒZƒbƒgî•ñ
-	std::vector<std::vector<GM31::GE::myAssimp::VERTEX>> vertices{};	// ’¸“_ƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	std::vector<std::vector<unsigned int>> indices{};					// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	std::vector<GM31::GE::myAssimp::MATERIAL> materials{};				// ƒ}ƒeƒŠƒAƒ‹
-	std::vector<std::unique_ptr<CTexture>> embededtextures{};			// “à‘ ƒeƒNƒXƒ`ƒƒŒQ
+	std::vector<GM31::GE::myAssimp::SUBSET> subsets{};					// ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±
+	std::vector<std::vector<GM31::GE::myAssimp::VERTEX>> vertices{};	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+	std::vector<std::vector<unsigned int>> indices{};					// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+	std::vector<GM31::GE::myAssimp::MATERIAL> materials{};				// ãƒãƒ†ãƒªã‚¢ãƒ«
+	std::vector<std::unique_ptr<CTexture>> embededtextures{};			// å†…è”µãƒ†ã‚¯ã‚¹ãƒãƒ£ç¾¤
 
-	// assimp‚ğg—p‚µ‚Äƒ‚ƒfƒ‹ƒf[ƒ^‚ğæ“¾
+	// assimpã‚’ä½¿ç”¨ã—ã¦ãƒ¢ãƒ‡ãƒ«ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—
 	GM31::GE::myAssimp::GetModelData(filename, texturedirectory);
 
-	subsets = GM31::GE::myAssimp::GetSubsets();							// ƒTƒuƒZƒbƒgî•ñæ“¾
-	vertices = GM31::GE::myAssimp::GetVertices();						// ’¸“_ƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	indices = GM31::GE::myAssimp::GetIndices();							// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^iƒƒbƒVƒ…’PˆÊj
-	materials = GM31::GE::myAssimp::GetMaterials();						// ƒ}ƒeƒŠƒAƒ‹î•ñæ“¾
+	subsets = GM31::GE::myAssimp::GetSubsets();							// ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±å–å¾—
+	vertices = GM31::GE::myAssimp::GetVertices();						// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+	indices = GM31::GE::myAssimp::GetIndices();							// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥å˜ä½ï¼‰
+	materials = GM31::GE::myAssimp::GetMaterials();						// ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±å–å¾—
 
-	m_diffusetextures = GM31::GE::myAssimp::GetDiffuseTextures();		// ‚„‚‰‚†‚†‚•‚“‚…ƒeƒNƒXƒ`ƒƒî•ñæ“¾	
+	m_diffusetextures = GM31::GE::myAssimp::GetDiffuseTextures();		// ï½„ï½‰ï½†ï½†ï½•ï½“ï½…ãƒ†ã‚¯ã‚¹ãƒãƒ£æƒ…å ±å–å¾—	
 
-	// ’¸“_ƒf[ƒ^ì¬
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ä½œæˆ
 	int meshidx = 0;
 
 	for (const auto& mv : vertices)
@@ -52,7 +52,7 @@ void CStaticMesh::Load(std::string filename, std::string texturedirectory)
 		}
 	}
 
-	// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^ì¬
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ä½œæˆ
 	for (const auto& mi : indices)
 	{
 		for (auto& index : mi)
@@ -61,7 +61,7 @@ void CStaticMesh::Load(std::string filename, std::string texturedirectory)
 		}
 	}
 
-	// ƒTƒuƒZƒbƒgƒf[ƒ^ì¬
+	// ã‚µãƒ–ã‚»ãƒƒãƒˆãƒ‡ãƒ¼ã‚¿ä½œæˆ
 	for (const auto& sub : subsets)
 	{
 		SUBSET subset{};
@@ -70,11 +70,11 @@ void CStaticMesh::Load(std::string filename, std::string texturedirectory)
 		subset.IndexBase = sub.IndexBase;
 		subset.IndexNum = sub.IndexNum;
 		subset.MtrlName = sub.mtrlname;
-		subset.MaterialIdx = sub.materialindex;					//	ƒ}ƒeƒŠƒAƒ‹”z—ñ‚ÌƒCƒ“ƒfƒbƒNƒX
+		subset.MaterialIdx = sub.materialindex;					//	ãƒãƒ†ãƒªã‚¢ãƒ«é…åˆ—ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 		m_subsets.emplace_back(subset);
 	}
 
-	// ƒ}ƒeƒŠƒAƒ‹ƒf[ƒ^ì¬(•\¦‚Ì‚½‚ß‚Ì)
+	// ãƒãƒ†ãƒªã‚¢ãƒ«ãƒ‡ãƒ¼ã‚¿ä½œæˆ(è¡¨ç¤ºã®ãŸã‚ã®)
 	for (const auto& m : materials)
 	{
 		MATERIAL material{};
@@ -108,7 +108,7 @@ void CStaticMesh::Load(std::string filename, std::string texturedirectory)
 	//		if (m_subsets[i].MaterialIdx >= (int)m_materials.size()) msg += "  <<< OOB!";
 	//		msg += "\n";
 	//	}
-	//	if (filename.find("Mouse") != std::string::npos)   // Mouse‚¾‚¯
+	//	if (filename.find("Mouse") != std::string::npos)   // Mouseã ã‘
 	//		MessageBoxA(NULL, msg.c_str(), "MESH DEBUG", MB_OK);
 	//}
 }

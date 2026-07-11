@@ -1,4 +1,4 @@
-#include	<iostream>
+ï»¿#include	<iostream>
 #include	<array>
 
 #include	"CommonTypes.h"
@@ -8,9 +8,9 @@
 #include	"CMaterial.h"
 #include    "CShader.h"
 
-// •`‰æ‚Ìˆ×‚Ìî•ñiƒƒbƒVƒ…‚ÉŠÖ‚í‚éî•ñj
-static CIndexBuffer				g_IndexBuffer;				// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@
-static CVertexBuffer<VERTEX_3D>	g_VertexBuffer;				// ’¸“_ƒoƒbƒtƒ@
+// æç”»ã®ç‚ºã®æƒ…å ±ï¼ˆãƒ¡ãƒƒã‚·ãƒ¥ã«é–¢ã‚ã‚‹æƒ…å ±ï¼‰
+static CIndexBuffer				g_IndexBuffer;				// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡
+static CVertexBuffer<VERTEX_3D>	g_VertexBuffer;				// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 
 static std::vector<VERTEX_3D>		g_v;
 
@@ -37,15 +37,15 @@ void TriangleDrawerInit()
 	g_v[1].TexCoord = Vector2(0, 0);
 	g_v[2].TexCoord = Vector2(0, 0);
 
-	// ’¸“_ƒoƒbƒtƒ@¶¬
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	g_VertexBuffer.Create(g_v);
 
-	// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@¶¬
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	std::vector<uint32_t> indices = {0,1,2};
 	g_IndexBuffer.Create(indices);
 
 	MATERIAL mtrl;
-	// ƒ}ƒeƒŠƒAƒ‹¶¬
+	// ãƒãƒ†ãƒªã‚¢ãƒ«ç”Ÿæˆ
 	mtrl.Ambient = Color(0, 0, 0, 0);
 	mtrl.Diffuse = Color(1, 1, 1, 1);
 	mtrl.Emission = Color(0, 0, 0, 0);
@@ -55,11 +55,11 @@ void TriangleDrawerInit()
 
 	g_material.Create(mtrl);
 
-	// ƒVƒF[ƒ_[‚Ì‰Šú‰»
+	// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã®åˆæœŸåŒ–
 	g_shader.Create(
-		"shader/unlitTextureVS.hlsl",			// ’¸“_ƒVƒF[ƒ_[
-		"shader/unlitTexturePS.hlsl",			// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[
-		"shader/GeometryShader.hlsl"			// ƒWƒIƒƒgƒŠƒVƒF[ƒ_
+		"shader/unlitTextureVS.hlsl",			// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
+		"shader/unlitTexturePS.hlsl",			// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
+		"shader/GeometryShader.hlsl"			// ã‚¸ã‚ªãƒ¡ãƒˆãƒªã‚·ã‚§ãƒ¼ãƒ€
 	);
 
 }
@@ -72,7 +72,7 @@ void TriangleDrawerDraw(
 	g_v[1].Position = verices[1];
 	g_v[2].Position = verices[2];
 
-	// ’¸“_ƒoƒbƒtƒ@‚ğXV
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’æ›´æ–°
 	g_VertexBuffer.Modify(g_v);
 
 	g_material.SetDiffuse(col);
@@ -87,20 +87,20 @@ void TriangleDrawerDraw(
 	Matrix4x4 mtx = Matrix4x4::Identity;
 	Renderer::SetWorldMatrix(&mtx);
 
-	// •`‰æ‚Ìˆ—
+	// æç”»ã®å‡¦ç†
 	ID3D11DeviceContext* devicecontext;
 	devicecontext = Renderer::GetDeviceContext();
 
-	// ƒgƒ|ƒƒW[‚ğƒZƒbƒgi‹ŒƒvƒŠƒ~ƒeƒBƒuƒ^ƒCƒvj
+	// ãƒˆãƒãƒ­ã‚¸ãƒ¼ã‚’ã‚»ãƒƒãƒˆï¼ˆæ—§ãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–ã‚¿ã‚¤ãƒ—ï¼‰
 	devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
 
 //	devicecontext->DrawIndexed(
-//		3,							// •`‰æ‚·‚éƒCƒ“ƒfƒbƒNƒX”
-//		0,							// Å‰‚ÌƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ÌˆÊ’u
+//		3,							// æç”»ã™ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+//		0,							// æœ€åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½ç½®
 //		0);
 
 	devicecontext->Draw(
-		3,							// •`‰æ‚·‚éƒCƒ“ƒfƒbƒNƒX”
-		0);							// Å‰‚ÌƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ÌˆÊ’u
+		3,							// æç”»ã™ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+		0);							// æœ€åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½ç½®
 
 }

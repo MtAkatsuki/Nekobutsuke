@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include	<vector>
 #include	<wrl/client.h>
@@ -17,29 +17,29 @@ class CIndexBuffer : NonCopyable {
 public:
 	void Create(const std::vector<unsigned int>& indices) {
 
-		// ƒfƒoƒCƒXŽæ“¾
+		// ãƒ‡ãƒã‚¤ã‚¹å–å¾—
 		ID3D11Device* device = nullptr;
 
 		device = Renderer::GetDevice();
 
 		assert(device);
 
-		// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@ì¬
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ä½œæˆ
 		bool sts = CreateIndexBuffer(
-			device,										// ƒfƒoƒCƒX
-			(unsigned int)(indices.size()),				// ƒCƒ“ƒfƒbƒNƒX”
-			(void*)indices.data(),						// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^æ“ªƒAƒhƒŒƒX
-			&m_IndexBuffer);							// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@
+			device,										// ãƒ‡ãƒã‚¤ã‚¹
+			(unsigned int)(indices.size()),				// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+			(void*)indices.data(),						// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+			&m_IndexBuffer);							// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡
 
 		assert(sts == true);
 	}
 
 	void SetGPU() {
-		// ƒfƒoƒCƒXƒRƒ“ƒeƒLƒXƒgŽæ“¾
+		// ãƒ‡ãƒã‚¤ã‚¹ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆå–å¾—
 		ID3D11DeviceContext* devicecontext = nullptr;
 		devicecontext = Renderer::GetDeviceContext();
 
-		// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ðƒZƒbƒg
+		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ã‚»ãƒƒãƒˆ
 		devicecontext->IASetIndexBuffer(m_IndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 	}

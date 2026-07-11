@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <memory>
 #include <unordered_map>
 #include <string>
@@ -9,8 +9,8 @@
 class GameContext;
 
 // =========================================================
-// SceneManager ƒNƒ‰ƒX (Singleton)
-// ƒQ[ƒ€ƒV[ƒ“‚Ìƒ‰ƒCƒtƒTƒCƒNƒ‹ŠÇ—‚ÆA‘JˆÚiƒgƒ‰ƒ“ƒWƒVƒ‡ƒ“jƒAƒjƒ[ƒVƒ‡ƒ“‚ğ§Œä‚·‚éB
+// SceneManager ã‚¯ãƒ©ã‚¹ (Singleton)
+// ã‚²ãƒ¼ãƒ ã‚·ãƒ¼ãƒ³ã®ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«ç®¡ç†ã¨ã€é·ç§»ï¼ˆãƒˆãƒ©ãƒ³ã‚¸ã‚·ãƒ§ãƒ³ï¼‰ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã‚’åˆ¶å¾¡ã™ã‚‹ã€‚
 // =========================================================
 class SceneManager : NonCopyable {
 public:
@@ -20,7 +20,7 @@ public:
     }
 
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
     // ---------------------------------------------------------
     void Init();
     void Dispose();
@@ -28,9 +28,9 @@ public:
     void Draw(uint64_t deltatime);
 
     // ---------------------------------------------------------
-    // ƒV[ƒ“‘JˆÚ§Œä (Flow)
+    // ã‚·ãƒ¼ãƒ³é·ç§»åˆ¶å¾¡ (Flow)
     // ---------------------------------------------------------
-    // transition‚Énullptr‚ğ“n‚µ‚½ê‡‚Í‘¦Ø‚è‘Ö‚¦‚ğs‚¤
+    // transitionã«nullptrã‚’æ¸¡ã—ãŸå ´åˆã¯å³æ™‚åˆ‡ã‚Šæ›¿ãˆã‚’è¡Œã†
     void SetCurrentScene(const std::string& sceneName, std::unique_ptr<SceneTransition> transition = nullptr);
 
     GameContext* GetContext() const { return m_context.get(); }
@@ -38,9 +38,9 @@ public:
 private:
     SceneManager();
     ~SceneManager();
-    //ƒRƒ“ƒXƒgƒ‰ƒNƒ^‚ÌƒRƒs[‚Í‹Ö~ASceneManager scene2(scene1)‚æ‚¤‚È‚â‚è•û‚Í‹Ö~‚³‚ê‚Ä‚¢‚é
+    //ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã®ã‚³ãƒ”ãƒ¼ã¯ç¦æ­¢ã€SceneManager scene2(scene1)ã‚ˆã†ãªã‚„ã‚Šæ–¹ã¯ç¦æ­¢ã•ã‚Œã¦ã„ã‚‹
     SceneManager(const SceneManager&) = delete;
-    //scene1 = scene2‚İ‚½‚¢‚È‚â‚è•û‚ÅASceneManager ƒIƒuƒWƒFƒNƒg“¯m‚Ì‘ã“ü‚ğ‹Ö~‚·‚é
+    //scene1 = scene2ã¿ãŸã„ãªã‚„ã‚Šæ–¹ã§ã€SceneManager ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆåŒå£«ã®ä»£å…¥ã‚’ç¦æ­¢ã™ã‚‹
     SceneManager& operator=(const SceneManager&) = delete;
 
     void InternalChangeScene(const std::string& sceneName);
@@ -50,11 +50,11 @@ private:
     std::unordered_map<std::string, std::unique_ptr<IScene>> m_scenes{};
     std::string m_currentSceneName{};
 
-    // --- ƒV[ƒ“‘JˆÚƒAƒjƒ[ƒVƒ‡ƒ“§Œä ---
+    // --- ã‚·ãƒ¼ãƒ³é·ç§»ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³åˆ¶å¾¡ ---
     std::unique_ptr<SceneTransition> m_transition = nullptr;
     std::string m_targetSceneName{};
 
-    // ‘JˆÚó‘Ô‚Ìƒtƒ‰ƒOiqŒêj
-    bool m_hasSwapped = false;      // — ‘¤‚Å‚ÌƒV[ƒ“ƒCƒ“ƒXƒ^ƒ“ƒX‚ÌØ‚è‘Ö‚¦‚ªŠ®—¹‚µ‚½‚©
-    bool m_isTransitioning = false; // Œ»İƒgƒ‰ƒ“ƒWƒVƒ‡ƒ“‰‰o‚ÌÀs’†‚©
+    // é·ç§»çŠ¶æ…‹ã®ãƒ•ãƒ©ã‚°ï¼ˆè¿°èªï¼‰
+    bool m_hasSwapped = false;      // è£å´ã§ã®ã‚·ãƒ¼ãƒ³ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã®åˆ‡ã‚Šæ›¿ãˆãŒå®Œäº†ã—ãŸã‹
+    bool m_isTransitioning = false; // ç¾åœ¨ãƒˆãƒ©ãƒ³ã‚¸ã‚·ãƒ§ãƒ³æ¼”å‡ºã®å®Ÿè¡Œä¸­ã‹
 };

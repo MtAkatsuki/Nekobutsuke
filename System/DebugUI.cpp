@@ -1,4 +1,4 @@
-#include "DebugUI.h"
+ï»¿#include "DebugUI.h"
 
 std::vector<std::function<void(void)>> DebugUI::m_debugfunction;
 bool DebugUI::s_isVisible = false;
@@ -29,50 +29,50 @@ void DebugUI::DisposeUI() {
     ImGui::DestroyContext();
 }
 
-// ƒfƒoƒbƒO•\¦ŠÖ”‚Ì“o˜^
+// ãƒ‡ãƒãƒƒã‚°è¡¨ç¤ºé–¢æ•°ã®ç™»éŒ²
 void DebugUI::RedistDebugFunction(std::function<void(void)> f) {
     m_debugfunction.push_back(std::move(f));
 }
 
 //void DebugUI::Render() {
-//    // ImGui‚ÌV‚µ‚¢ƒtƒŒ[ƒ€‚ğŠJn
+//    // ImGuiã®æ–°ã—ã„ãƒ•ãƒ¬ãƒ¼ãƒ ã‚’é–‹å§‹
 //    //ImGui_ImplDX11_NewFrame();
 //    //ImGui_ImplWin32_NewFrame();
 //    //ImGui::NewFrame();
 //
-//    // ƒEƒBƒ“ƒhƒE‚ÆƒfƒoƒbƒOî•ñ‚Ì•`‰æ
+//    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã¨ãƒ‡ãƒãƒƒã‚°æƒ…å ±ã®æç”»
 //    ImGui::Begin("Debug Information");
 //    ImGuiIO& io = ImGui::GetIO();
 //    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 //
 //    ImGui::End();
 //
-//    // ƒfƒoƒbƒOŠÖ”‚ÌÀs
+//    // ãƒ‡ãƒãƒƒã‚°é–¢æ•°ã®å®Ÿè¡Œ
 //    for (auto& f : m_debugfunction)
 //    {
 //        f();
 //    }
 //
-//    // ƒtƒŒ[ƒ€‚ÌƒŒƒ“ƒ_ƒŠƒ“ƒO‚ğŠ®—¹
+//    // ãƒ•ãƒ¬ãƒ¼ãƒ ã®ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã‚’å®Œäº†
 //    ImGui::Render();
 //    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 //}
 
 void DebugUI::BeginFrame() {
-    // ImGui‚ÌV‚µ‚¢ƒtƒŒ[ƒ€‚ğŠJn
+    // ImGuiã®æ–°ã—ã„ãƒ•ãƒ¬ãƒ¼ãƒ ã‚’é–‹å§‹
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 }
 
 void DebugUI::Draw() {
-    // ƒEƒBƒ“ƒhƒE‚ÆƒfƒoƒbƒOî•ñ‚Ì•`‰æ
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã¨ãƒ‡ãƒãƒƒã‚°æƒ…å ±ã®æç”»
     ImGui::Begin("Debug Information");
     ImGuiIO& io = ImGui::GetIO();
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
     ImGui::End();
 
-    // ƒfƒoƒbƒOŠÖ”‚ÌÀs 
+    // ãƒ‡ãƒãƒƒã‚°é–¢æ•°ã®å®Ÿè¡Œ 
     for (auto& f : m_debugfunction)
     {
         f();
@@ -80,7 +80,7 @@ void DebugUI::Draw() {
 }
 
 void DebugUI::EndFrame() {
-    // ƒtƒŒ[ƒ€‚ÌƒŒƒ“ƒ_ƒŠƒ“ƒO‚ğŠ®—¹
+    // ãƒ•ãƒ¬ãƒ¼ãƒ ã®ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã‚’å®Œäº†
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }

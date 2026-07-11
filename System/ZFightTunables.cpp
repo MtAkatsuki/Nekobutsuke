@@ -1,9 +1,9 @@
-namespace ZFight {
-	float RangePanel = 0.04f;   // —\E”ÍˆÍ•\¦ƒpƒlƒ‹
-	float Arrow = 0.09f;        // UŒ‚EˆÚ“®ƒvƒŒƒrƒ…[–îˆó
-	float PathLine = 0.07f;     // ˆÚ“®Œo˜Hƒ‰ƒCƒ“
-	float Ghost = 0.035f;       // ˆÚ“®ƒvƒŒƒrƒ…[c‘œ
-	float EnemyArrow = 0.15f;   // “Gs“®•\¦–îˆóioverlayj
-	float Blob = 0.054f;         // ‘«Œ³ƒVƒƒƒhƒEiBlobj
-	float Trap = 0.3f;          // ƒgƒ‰ƒbƒv•‚ã—Êi”CˆÓj
+ï»¿namespace ZFight {
+	float RangePanel = 0.04f;   // äºˆå‘Šãƒ»ç¯„å›²è¡¨ç¤ºãƒ‘ãƒãƒ«
+	float Arrow = 0.09f;        // æ”»æ’ƒãƒ»ç§»å‹•ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼çŸ¢å°
+	float PathLine = 0.07f;     // ç§»å‹•çµŒè·¯ãƒ©ã‚¤ãƒ³
+	float Ghost = 0.035f;       // ç§»å‹•ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼æ®‹åƒ
+	float EnemyArrow = 0.15f;   // æ•µè¡Œå‹•è¡¨ç¤ºçŸ¢å°ï¼ˆoverlayï¼‰
+	float Blob = 0.054f;         // è¶³å…ƒã‚·ãƒ£ãƒ‰ã‚¦ï¼ˆBlobï¼‰
+	float Trap = 0.3f;          // ãƒˆãƒ©ãƒƒãƒ—æµ®ä¸Šé‡ï¼ˆä»»æ„ï¼‰
 }

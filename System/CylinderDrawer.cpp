@@ -1,4 +1,4 @@
-#include	<iostream>
+ï»¿#include	<iostream>
 
 #include	"CommonTypes.h"
 #include	"CMeshRenderer.h"
@@ -18,15 +18,15 @@ void CylinderDrawerDraw(float radius, float hieght, Color col, float posx, float
 
 void CylinderDrawerInit()
 {
-	g_mesh.Init(50,			// •ªŠ„”
-		1,					// ”¼Œa
-		1,					// ‚‚³
+	g_mesh.Init(50,			// åˆ†å‰²æ•°
+		1,					// åŠå¾„
+		1,					// é«˜ã•
 		Color(1,1,1,1));
 
 	g_renderer.Init(g_mesh);
 
 	MATERIAL mtrl;
-	// ƒ}ƒeƒŠƒAƒ‹¶¬
+	// ãƒãƒ†ãƒªã‚¢ãƒ«ç”Ÿæˆ
 	mtrl.Ambient = Color(0, 0, 0, 0);
 	mtrl.Diffuse = Color(1, 1, 0, 1);
 	mtrl.Emission = Color(0, 0, 0, 0);
@@ -36,10 +36,10 @@ void CylinderDrawerInit()
 
 	g_material.Create(mtrl);
 
-	// ƒVƒF[ƒ_[‚Ì‰Šú‰»
+	// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã®åˆæœŸåŒ–
 	g_shader.Create(
-		"shader/unlitTextureVS.hlsl",				// ’¸“_ƒVƒF[ƒ_[
-		"shader/unlitTexturePS.hlsl");			// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[
+		"shader/unlitTextureVS.hlsl",				// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
+		"shader/unlitTexturePS.hlsl");			// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
 
 }
 

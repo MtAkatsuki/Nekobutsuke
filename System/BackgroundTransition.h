@@ -1,40 +1,40 @@
-#pragma once
+ï»¿#pragma once
 #include "../System/scenemanager.h"
 #include "SceneTransition.h"
 #include "../GamePlay/Scene/Background.h"
 #include <memory>
 
 // =========================================================
-// BackgroundTransition ƒNƒ‰ƒX
-// ƒV[ƒ“‘JˆÚ‚ÉAê—p‚Ì”wŒi‰æ‘œiÂƒXƒgƒ‰ƒCƒv“™j‚ğƒtƒF[ƒhƒCƒ“‚³‚¹A
-// ƒXƒNƒ[ƒ‹‘¬“x‚ğ™X‚ÉŒ¸‘¬iƒC[ƒYƒAƒEƒgj‚³‚¹‚È‚ª‚ç‰æ–Ê‚ğ•¢‚¤ƒgƒ‰ƒ“ƒWƒVƒ‡ƒ“‰‰oB
+// BackgroundTransition ã‚¯ãƒ©ã‚¹
+// ã‚·ãƒ¼ãƒ³é·ç§»æ™‚ã«ã€å°‚ç”¨ã®èƒŒæ™¯ç”»åƒï¼ˆé’ã‚¹ãƒˆãƒ©ã‚¤ãƒ—ç­‰ï¼‰ã‚’ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ã•ã›ã€
+// ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«é€Ÿåº¦ã‚’å¾ã€…ã«æ¸›é€Ÿï¼ˆã‚¤ãƒ¼ã‚ºã‚¢ã‚¦ãƒˆï¼‰ã•ã›ãªãŒã‚‰ç”»é¢ã‚’è¦†ã†ãƒˆãƒ©ãƒ³ã‚¸ã‚·ãƒ§ãƒ³æ¼”å‡ºã€‚
 // =========================================================
 class BackgroundTransition : public SceneTransition {
 private:
-    // --- ‘JˆÚ‚Ìisó‘Ô (State Machine) ---
+    // --- é·ç§»ã®é€²è¡ŒçŠ¶æ…‹ (State Machine) ---
     enum class Phase {
-        Idle,       // ‘Ò‹@’† / I—¹ó‘Ô
-        FadeInBg,   // ”wŒi‚ğƒtƒF[ƒhƒCƒ“‚µ‚Ä‰æ–Ê‚ğ•¢‚¤
-        Scrolling,  // ƒXƒNƒ[ƒ‹‘¬“x‚ğŒ¸‘¬‚³‚¹‚È‚ª‚ç‰‰o‚ğŒ©‚¹‚é
-        WaitSwap,   // Š®‘S‚É•¢‚¢s‚­‚µA— ‘¤‚Å‚ÌƒV[ƒ“Ø‚è‘Ö‚¦(Swap)Š®—¹‚ğ‘Ò‚Â
-        FadeOutBg   // VƒV[ƒ“‚Ìƒ[ƒhŒãA”wŒi‚ğƒtƒF[ƒhƒAƒEƒg‚µ‚ÄŠ®—¹
+        Idle,       // å¾…æ©Ÿä¸­ / çµ‚äº†çŠ¶æ…‹
+        FadeInBg,   // èƒŒæ™¯ã‚’ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ã—ã¦ç”»é¢ã‚’è¦†ã†
+        Scrolling,  // ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«é€Ÿåº¦ã‚’æ¸›é€Ÿã•ã›ãªãŒã‚‰æ¼”å‡ºã‚’è¦‹ã›ã‚‹
+        WaitSwap,   // å®Œå…¨ã«è¦†ã„å°½ãã—ã€è£å´ã§ã®ã‚·ãƒ¼ãƒ³åˆ‡ã‚Šæ›¿ãˆ(Swap)å®Œäº†ã‚’å¾…ã¤
+        FadeOutBg   // æ–°ã‚·ãƒ¼ãƒ³ã®ãƒ­ãƒ¼ãƒ‰å¾Œã€èƒŒæ™¯ã‚’ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆã—ã¦å®Œäº†
     };
 
 public:
-    // fadeDurationMs: ƒtƒF[ƒhƒCƒ“EƒAƒEƒg‚É‚©‚¯‚éŠÔiƒ~ƒŠ•bj
-    // scrollDurationMs: ƒXƒNƒ[ƒ‹‚ª’â~‚·‚é‚Ü‚Å‚ÌŒ¸‘¬ŠÔiƒ~ƒŠ•bj
+    // fadeDurationMs: ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ãƒ»ã‚¢ã‚¦ãƒˆã«ã‹ã‘ã‚‹æ™‚é–“ï¼ˆãƒŸãƒªç§’ï¼‰
+    // scrollDurationMs: ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ãŒåœæ­¢ã™ã‚‹ã¾ã§ã®æ¸›é€Ÿæ™‚é–“ï¼ˆãƒŸãƒªç§’ï¼‰
     explicit BackgroundTransition(float fadeDurationMs, float scrollDurationMs = 500.0f);
     ~BackgroundTransition() override = default;
 
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹EXV (Lifecycle & Update)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«ãƒ»æ›´æ–° (Lifecycle & Update)
     // ---------------------------------------------------------
     void start() override;
     void update(uint64_t deltaTime) override;
     void draw() override;
 
     // ---------------------------------------------------------
-    // ƒtƒ[§Œä (Flow)
+    // ãƒ•ãƒ­ãƒ¼åˆ¶å¾¡ (Flow)
     // ---------------------------------------------------------
     bool isFinished() const override { return m_phase == Phase::Idle; }
     bool canSwap() const override { return m_phase == Phase::WaitSwap; }
@@ -44,9 +44,9 @@ private:
     std::unique_ptr<Background> m_bg;
     Phase m_phase = Phase::Idle;
 
-    // --- ƒAƒjƒ[ƒVƒ‡ƒ“ŒvZ—pƒpƒ‰ƒ[ƒ^ ---
+    // --- ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³è¨ˆç®—ç”¨ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ ---
     float m_alpha = 0.0f;
     float m_fadeDurationMs;
     float m_scrollDurationMs;
-    float m_elapsedMs = 0.0f; // ¸“xŒvZ‚ÆƒLƒƒƒXƒgÈ—ª‚Ì‚½‚ßfloat‚Å“ˆêŠÇ—
+    float m_elapsedMs = 0.0f; // ç²¾åº¦è¨ˆç®—ã¨ã‚­ãƒ£ã‚¹ãƒˆçœç•¥ã®ãŸã‚floatã§çµ±ä¸€ç®¡ç†
 };

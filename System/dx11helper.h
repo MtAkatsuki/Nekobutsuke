@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include	<d3dcompiler.h>
 #include	<locale.h>
 #include	<d3d11.h>
@@ -21,50 +21,50 @@ HRESULT CompileShaderFromFile(
 bool CreateConstantBuffer(
 	ID3D11Device* device,
 	unsigned int bytesize,
-	ID3D11Buffer** pConstantBuffer			// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@
+	ID3D11Buffer** pConstantBuffer			// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡
 	);
 
 bool CreateConstantBufferWrite(
-	ID3D11Device* device,					// ƒfƒoƒCƒXƒIƒuƒWƒFƒNƒg
-	unsigned int bytesize,					// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@ƒTƒCƒY
-	ID3D11Buffer** pConstantBuffer			// ƒRƒ“ƒXƒ^ƒ“ƒgƒoƒbƒtƒ@
+	ID3D11Device* device,					// ãƒ‡ãƒã‚¤ã‚¹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
+	unsigned int bytesize,					// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚º
+	ID3D11Buffer** pConstantBuffer			// ã‚³ãƒ³ã‚¹ã‚¿ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡
 );
 
 bool CreateIndexBuffer(
 	ID3D11Device* device,
-	unsigned int indexnum,					// ’¸“_”
-	void* indexdata,						// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
+	unsigned int indexnum,					// é ‚ç‚¹æ•°
+	void* indexdata,						// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
 	ID3D11Buffer** pIndexBuffer);
 
 bool CreateVertexBuffer(
 	ID3D11Device* device,
-	unsigned int stride,				// ‚P’¸“_“–‚½‚èƒoƒCƒg”
-	unsigned int vertexnum,				// ’¸“_”
-	void* vertexdata,					// ’¸“_ƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
-	ID3D11Buffer** pVertexBuffer		// ’¸“_ƒoƒbƒtƒ@
+	unsigned int stride,				// ï¼‘é ‚ç‚¹å½“ãŸã‚Šãƒã‚¤ãƒˆæ•°
+	unsigned int vertexnum,				// é ‚ç‚¹æ•°
+	void* vertexdata,					// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+	ID3D11Buffer** pVertexBuffer		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 	);
 
 bool CreateVertexBufferWrite(
 	ID3D11Device* device,
-	unsigned int stride,				// ‚P’¸“_“–‚½‚èƒoƒCƒg”
-	unsigned int vertexnum,				// ’¸“_”
-	void* vertexdata,					// ’¸“_ƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
-	ID3D11Buffer** pVertexBuffer		// ’¸“_ƒoƒbƒtƒ@
+	unsigned int stride,				// ï¼‘é ‚ç‚¹å½“ãŸã‚Šãƒã‚¤ãƒˆæ•°
+	unsigned int vertexnum,				// é ‚ç‚¹æ•°
+	void* vertexdata,					// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+	ID3D11Buffer** pVertexBuffer		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 );
 
 bool CreateVertexBufferUAV(
 	ID3D11Device* device,
-	unsigned int stride,				// ‚P’¸“_“–‚½‚èƒoƒCƒg”
-	unsigned int vertexnum,				// ’¸“_”
-	void* vertexdata,					// ’¸“_ƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
-	ID3D11Buffer** pVertexBuffer		// ’¸“_ƒoƒbƒtƒ@
+	unsigned int stride,				// ï¼‘é ‚ç‚¹å½“ãŸã‚Šãƒã‚¤ãƒˆæ•°
+	unsigned int vertexnum,				// é ‚ç‚¹æ•°
+	void* vertexdata,					// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+	ID3D11Buffer** pVertexBuffer		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 	);
 
 bool CreateStructuredBuffer(
 	ID3D11Device* device,
-	unsigned int stride,				// ƒXƒgƒ‰ƒCƒhƒoƒCƒg”
-	unsigned int num,					// ŒÂ”
-	void* data,							// ƒf[ƒ^Ši”[ƒƒ‚ƒŠæ“ªƒAƒhƒŒƒX
+	unsigned int stride,				// ã‚¹ãƒˆãƒ©ã‚¤ãƒ‰ãƒã‚¤ãƒˆæ•°
+	unsigned int num,					// å€‹æ•°
+	void* data,							// ãƒ‡ãƒ¼ã‚¿æ ¼ç´ãƒ¡ãƒ¢ãƒªå…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
 	ID3D11Buffer** pStructuredBuffer	// StructuredBuffer
 	);
 
@@ -74,7 +74,7 @@ ID3D11Buffer* CreateAndCopyToBuffer(
 	ID3D11Buffer* pBuffer	// RWStructuredBuffer
 	);
 
-bool CreateShaderResourceView(			// ƒoƒbƒtƒ@‚©‚çƒVƒF[ƒ_[ƒŠƒ\[ƒXƒrƒ…[‚ğì¬‚·‚é	
+bool CreateShaderResourceView(			// ãƒãƒƒãƒ•ã‚¡ã‹ã‚‰ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ãƒªã‚½ãƒ¼ã‚¹ãƒ“ãƒ¥ãƒ¼ã‚’ä½œæˆã™ã‚‹	
 	ID3D11Device* device,
 	ID3D11Buffer* pBuffer,				// Buffer
 	ID3D11ShaderResourceView** ppSRV);
@@ -84,7 +84,7 @@ bool CreateUnOrderAccessView(
 	ID3D11Buffer* pBuffer,				// Buffer
 	ID3D11UnorderedAccessView** ppUAV);
 
-bool CreateVertexShader(ID3D11Device* device,		// ’¸“_ƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ğ¶¬A“¯‚É’¸“_ƒŒƒCƒAƒEƒg‚à¶¬
+bool CreateVertexShader(ID3D11Device* device,		// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆã€åŒæ™‚ã«é ‚ç‚¹ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆã‚‚ç”Ÿæˆ
 	const char* szFileName,
 	LPCSTR szEntryPoint,
 	LPCSTR szShaderModel,
@@ -94,7 +94,7 @@ bool CreateVertexShader(ID3D11Device* device,		// ’¸“_ƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ğ¶
 	ID3D11InputLayout**  ppVertexLayout);
 
 
-bool CreatePixelShader(ID3D11Device* device,		// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ğ¶¬
+bool CreatePixelShader(ID3D11Device* device,		// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆ
 	const char* szFileName,
 	LPCSTR szEntryPoint,
 	LPCSTR szShaderModel,
@@ -104,6 +104,6 @@ bool CreateGeometryShader(ID3D11Device* device,
 	const char* szFileName,
 	LPCSTR szEntryPoint,
 	LPCSTR szShaderModel,
-	ID3D11GeometryShader** ppGeometryShader);		// ƒWƒIƒƒgƒŠƒVƒF[ƒ_[ƒIƒuƒWƒFƒNƒg‚ğ¶¬
+	ID3D11GeometryShader** ppGeometryShader);		// ã‚¸ã‚ªãƒ¡ãƒˆãƒªã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆ
 
 std::string ExtractFileName(std::string fullpath, char split);

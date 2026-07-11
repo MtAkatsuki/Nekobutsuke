@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include	"Library/Assimp/include/assimp/Importer.hpp"
 #include	"Library/Assimp/include/assimp/scene.h"
 #include	"Library/Assimp/include/assimp/postprocess.h"
@@ -10,59 +10,59 @@ namespace GM31 {namespace GE {namespace {}
 namespace myAssimp
 {
 	struct VERTEX {
-		std::string meshname;				// ƒƒbƒVƒ…–¼
-		aiVector3D	pos;					// ˆÊ’u
-		aiVector3D	normal;					// –@ü
-		aiColor4D	color;					// ’¸“_ƒJƒ‰[	
-		aiVector3D	texcoord;				// ƒeƒNƒXƒ`ƒƒÀ•W	
-		int			materialindex;			// ƒ}ƒeƒŠƒAƒ‹ƒCƒ“ƒfƒbƒNƒX
-		std::string mtrlname;				// ƒ}ƒeƒŠƒAƒ‹–¼
+		std::string meshname;				// ãƒ¡ãƒƒã‚·ãƒ¥å
+		aiVector3D	pos;					// ä½ç½®
+		aiVector3D	normal;					// æ³•ç·š
+		aiColor4D	color;					// é ‚ç‚¹ã‚«ãƒ©ãƒ¼	
+		aiVector3D	texcoord;				// ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™	
+		int			materialindex;			// ãƒãƒ†ãƒªã‚¢ãƒ«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+		std::string mtrlname;				// ãƒãƒ†ãƒªã‚¢ãƒ«å
 
-		int			BoneIndex[4];			// ƒ{[ƒ“ƒCƒ“ƒfƒbƒNƒX
-		float		BoneWeight[4];			// ƒ{[ƒ“ƒEƒFƒCƒg
-		std::string	BoneName[4];			// ƒ{[ƒ“–¼
-		int			bonecnt = 0;			// ƒ{[ƒ“”
+		int			BoneIndex[4];			// ãƒœãƒ¼ãƒ³ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+		float		BoneWeight[4];			// ãƒœãƒ¼ãƒ³ã‚¦ã‚§ã‚¤ãƒˆ
+		std::string	BoneName[4];			// ãƒœãƒ¼ãƒ³å
+		int			bonecnt = 0;			// ãƒœãƒ¼ãƒ³æ•°
 	};
 
 	struct SUBSET {
-		std::string meshname;				// ƒƒbƒVƒ…–¼
-		int materialindex;					// ƒ}ƒeƒŠƒAƒ‹ƒCƒ“ƒfƒbƒNƒX
-		unsigned int VertexBase;			// ’¸“_ƒoƒbƒtƒ@‚Ìƒx[ƒX
-		unsigned int VertexNum;				// ’¸“_”
-		unsigned int IndexBase;				// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚Ìƒx[ƒX
-		unsigned int IndexNum;				// ƒCƒ“ƒfƒbƒNƒX”
-		std::string	 mtrlname;				// ƒ}ƒeƒŠƒAƒ‹–¼
+		std::string meshname;				// ãƒ¡ãƒƒã‚·ãƒ¥å
+		int materialindex;					// ãƒãƒ†ãƒªã‚¢ãƒ«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+		unsigned int VertexBase;			// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®ãƒ™ãƒ¼ã‚¹
+		unsigned int VertexNum;				// é ‚ç‚¹æ•°
+		unsigned int IndexBase;				// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ãƒ™ãƒ¼ã‚¹
+		unsigned int IndexNum;				// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+		std::string	 mtrlname;				// ãƒãƒ†ãƒªã‚¢ãƒ«å
 	};
 
 	struct MATERIAL {
-		std::string mtrlname;					// ƒ}ƒeƒŠƒAƒ‹–¼
-		aiColor4D	Ambient;					// ƒAƒ“ƒrƒGƒ“ƒg
-		aiColor4D	Diffuse;					// ƒfƒBƒtƒ…[ƒY
-		aiColor4D	Specular;					// ƒXƒyƒLƒ…ƒ‰
-		aiColor4D	Emission;					// ƒGƒ~ƒbƒVƒ‡ƒ“
-		float		Shiness;					// ƒVƒƒƒCƒlƒX
-		std::string diffusetexturename;			// ƒfƒBƒtƒ…[ƒYƒeƒNƒXƒ`ƒƒ–¼
+		std::string mtrlname;					// ãƒãƒ†ãƒªã‚¢ãƒ«å
+		aiColor4D	Ambient;					// ã‚¢ãƒ³ãƒ“ã‚¨ãƒ³ãƒˆ
+		aiColor4D	Diffuse;					// ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚º
+		aiColor4D	Specular;					// ã‚¹ãƒšã‚­ãƒ¥ãƒ©
+		aiColor4D	Emission;					// ã‚¨ãƒŸãƒƒã‚·ãƒ§ãƒ³
+		float		Shiness;					// ã‚·ãƒ£ã‚¤ãƒã‚¹
+		std::string diffusetexturename;			// ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºãƒ†ã‚¯ã‚¹ãƒãƒ£å
 	};
 
-	// ƒEƒFƒCƒgî•ñ
+	// ã‚¦ã‚§ã‚¤ãƒˆæƒ…å ±
 	struct WEIGHT {
-		std::string bonename;						// ƒ{[ƒ“–¼
-		std::string meshname;						// ƒƒbƒVƒ…–¼
-		float weight;								// ƒEƒFƒCƒg’l
-		int	vertexindex;							// ’¸“_ƒCƒ“ƒfƒbƒNƒX
+		std::string bonename;						// ãƒœãƒ¼ãƒ³å
+		std::string meshname;						// ãƒ¡ãƒƒã‚·ãƒ¥å
+		float weight;								// ã‚¦ã‚§ã‚¤ãƒˆå€¤
+		int	vertexindex;							// é ‚ç‚¹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 	};
 
-	//ƒ{[ƒ“\‘¢‘Ì
+	//ãƒœãƒ¼ãƒ³æ§‹é€ ä½“
 	struct BONE
 	{
-		std::string bonename;						// ƒ{[ƒ“–¼
-		std::string meshname;						// ƒƒbƒVƒ…–¼
-		std::string armaturename;					// ƒA[ƒ}ƒ`ƒ…ƒA–¼
-		aiMatrix4x4 Matrix{};						// eqŠÖŒW‚ğl—¶‚µ‚½s—ñ
-		aiMatrix4x4 AnimationMatrix{};				// ©•ª‚Ì–‚¾‚¯‚ğl‚¦‚½s—ñ
-		aiMatrix4x4 OffsetMatrix{};					// ƒ{[ƒ“ƒIƒtƒZƒbƒgs—ñ
-		int			idx;							// ”z—ñ‚Ì‰½”Ô–Ú‚©			
-		std::vector<WEIGHT> weights;				// ‚±‚Ìƒ{[ƒ“‚ª‰e‹¿‚ğ—^‚¦‚é’¸“_ƒCƒ“ƒfƒbƒNƒXEƒEƒFƒCƒg’l
+		std::string bonename;						// ãƒœãƒ¼ãƒ³å
+		std::string meshname;						// ãƒ¡ãƒƒã‚·ãƒ¥å
+		std::string armaturename;					// ã‚¢ãƒ¼ãƒãƒãƒ¥ã‚¢å
+		aiMatrix4x4 Matrix{};						// è¦ªå­é–¢ä¿‚ã‚’è€ƒæ…®ã—ãŸè¡Œåˆ—
+		aiMatrix4x4 AnimationMatrix{};				// è‡ªåˆ†ã®äº‹ã ã‘ã‚’è€ƒãˆãŸè¡Œåˆ—
+		aiMatrix4x4 OffsetMatrix{};					// ãƒœãƒ¼ãƒ³ã‚ªãƒ•ã‚»ãƒƒãƒˆè¡Œåˆ—
+		int			idx;							// é…åˆ—ã®ä½•ç•ªç›®ã‹			
+		std::vector<WEIGHT> weights;				// ã“ã®ãƒœãƒ¼ãƒ³ãŒå½±éŸ¿ã‚’ä¸ãˆã‚‹é ‚ç‚¹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ»ã‚¦ã‚§ã‚¤ãƒˆå€¤
 	};
 
 	void GetModelData(std::string filename, std::string texturedirectory);

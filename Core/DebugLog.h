@@ -1,10 +1,10 @@
-#pragma once
+﻿#pragma once
 
 // =========================================================
-// �f�o�b�O���O facility
-//  DBG_TRACE : Debug �r���h�̂ݏo�́i�i���E�g���[�X�j�BRelease �ł͏���
-//  DBG_ERROR : �S�r���h�ŏo�́i�v���I�G���[�E�x���j
-// �� .cpp ����̂� include ���邱�Ɓi�w�b�_�ɓ����� iostream ���`�d����j
+// デバッグログ facility
+//  DBG_TRACE : Debug ビルドのみ出力（進捗・トレース）。Release では消滅
+//  DBG_ERROR : 全ビルドで出力（致命的エラー・警告）
+// ※ .cpp からのみ include すること（ヘッダに入れると iostream が伝播する）
 // =========================================================
 #include <iostream>
 

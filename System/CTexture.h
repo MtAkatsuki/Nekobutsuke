@@ -1,21 +1,21 @@
-#pragma once
+ï»¿#pragma once
 
 #include	<d3d11.h>
 #include	<string>
-#include	<wrl/client.h>							// ComPtr‚Ì’è‹`‚ğŠÜ‚Şƒwƒbƒ_ƒtƒ@ƒCƒ‹
+#include	<wrl/client.h>							// ComPtrã®å®šç¾©ã‚’å«ã‚€ãƒ˜ãƒƒãƒ€ãƒ•ã‚¡ã‚¤ãƒ«
 #include	<filesystem>
 #include	"NonCopyable.h"
 
 using Microsoft::WRL::ComPtr;
 
-// ƒeƒNƒXƒ`ƒƒ‚ğˆµ‚¤ƒNƒ‰ƒX
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æ‰±ã†ã‚¯ãƒ©ã‚¹
 class CTexture : NonCopyable
 {
-	std::string m_texname{};						// ƒtƒ@ƒCƒ‹–¼
-	ComPtr<ID3D11ShaderResourceView> m_srv{};		// ƒVƒF[ƒ_[ƒŠƒ\[ƒXƒrƒ…[
+	std::string m_texname{};						// ãƒ•ã‚¡ã‚¤ãƒ«å
+	ComPtr<ID3D11ShaderResourceView> m_srv{};		// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ãƒªã‚½ãƒ¼ã‚¹ãƒ“ãƒ¥ãƒ¼
 
-	int m_width{};									// •
-	int m_height{};									// ‚‚³
+	int m_width{};									// å¹…
+	int m_height{};									// é«˜ã•
 	int m_bpp{};										// BPP
 public:
 	bool Load(const std::string& filename, bool isUI);

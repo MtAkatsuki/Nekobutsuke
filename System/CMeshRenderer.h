@@ -1,13 +1,13 @@
-#pragma once
+ï»¿#pragma once
 #include	"CVertexBuffer.h"
 #include	"CIndexBuffer.h"
 #include	"CMesh.h"
 
 class CMeshRenderer {
 protected:
-	CVertexBuffer<VERTEX_3D>	m_VertexBuffer;		// ’¸“_ƒoƒbƒtƒ@
-	CIndexBuffer				m_IndexBuffer;		// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@
-	int							m_IndexNum = 0;		// ƒCƒ“ƒfƒbƒNƒX”
+	CVertexBuffer<VERTEX_3D>	m_VertexBuffer;		// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
+	CIndexBuffer				m_IndexBuffer;		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡
+	int							m_IndexNum = 0;		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
 public:
 	virtual ~CMeshRenderer(){}
 
@@ -18,66 +18,66 @@ public:
 		m_IndexNum = static_cast<int>(mesh.GetIndices().size());
 	}
 
-	// •`‰æ‘Oˆ—
+	// æç”»å‰å‡¦ç†
 	virtual void BeforeDraw(D3D_PRIMITIVE_TOPOLOGY primtype)
 	{
 		ID3D11DeviceContext* devicecontext;
 
 		devicecontext = Renderer::GetDeviceContext();
 
-		// ƒgƒ|ƒƒW[‚ğƒZƒbƒgi‹ŒƒvƒŠƒ~ƒeƒBƒuƒ^ƒCƒvj
+		// ãƒˆãƒãƒ­ã‚¸ãƒ¼ã‚’ã‚»ãƒƒãƒˆï¼ˆæ—§ãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–ã‚¿ã‚¤ãƒ—ï¼‰
 		devicecontext->IASetPrimitiveTopology(primtype);
 
-		m_VertexBuffer.SetGPU();			// ’¸“_ƒoƒbƒtƒ@‚ğƒZƒbƒg
-		m_IndexBuffer.SetGPU();				// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ğƒZƒbƒg
+		m_VertexBuffer.SetGPU();			// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ã‚»ãƒƒãƒˆ
+		m_IndexBuffer.SetGPU();				// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ã‚»ãƒƒãƒˆ
 	}
 
-	// •`‰æ‘Oˆ—
+	// æç”»å‰å‡¦ç†
 	virtual void BeforeDraw()
 	{
 		ID3D11DeviceContext* devicecontext;
 
 		devicecontext = Renderer::GetDeviceContext();
 
-		// ƒgƒ|ƒƒW[‚ğƒZƒbƒgi‹ŒƒvƒŠƒ~ƒeƒBƒuƒ^ƒCƒvj
+		// ãƒˆãƒãƒ­ã‚¸ãƒ¼ã‚’ã‚»ãƒƒãƒˆï¼ˆæ—§ãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–ã‚¿ã‚¤ãƒ—ï¼‰
 		devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		m_VertexBuffer.SetGPU();			// ’¸“_ƒoƒbƒtƒ@‚ğƒZƒbƒg
-		m_IndexBuffer.SetGPU();				// ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ğƒZƒbƒg
+		m_VertexBuffer.SetGPU();			// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ã‚»ãƒƒãƒˆ
+		m_IndexBuffer.SetGPU();				// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã‚’ã‚»ãƒƒãƒˆ
 	}
 
-	// ƒTƒuƒZƒbƒg•`‰æ
+	// ã‚µãƒ–ã‚»ãƒƒãƒˆæç”»
 	virtual void DrawSubset(unsigned int indexnum,unsigned int baseindex,unsigned int basevertexindex ) 
 	{
 		Renderer::GetDeviceContext()->DrawIndexed(
-			indexnum,								// •`‰æ‚·‚éƒCƒ“ƒfƒbƒNƒX”i–Ê”~‚Rj
-			baseindex,								// Å‰‚ÌƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ÌˆÊ’u
-			basevertexindex);						// ’¸“_ƒoƒbƒtƒ@‚ÌÅ‰‚©‚çg‚¤
+			indexnum,								// æç”»ã™ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°ï¼ˆé¢æ•°Ã—ï¼“ï¼‰
+			baseindex,								// æœ€åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½ç½®
+			basevertexindex);						// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®æœ€åˆã‹ã‚‰ä½¿ã†
 	}
 
-	// •`‰æ
+	// æç”»
 	virtual void Draw() 
 	{
-		BeforeDraw();								// •`‰æ‘Oˆ—
+		BeforeDraw();								// æç”»å‰å‡¦ç†
 
 		Renderer::GetDeviceContext()->DrawIndexed(
-			m_IndexNum,								// •`‰æ‚·‚éƒCƒ“ƒfƒbƒNƒX”i–Ê”~‚Rj
-			0,										// Å‰‚ÌƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ÌˆÊ’u
-			0);										// ’¸“_ƒoƒbƒtƒ@‚ÌÅ‰‚©‚çg‚¤
+			m_IndexNum,								// æç”»ã™ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°ï¼ˆé¢æ•°Ã—ï¼“ï¼‰
+			0,										// æœ€åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½ç½®
+			0);										// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®æœ€åˆã‹ã‚‰ä½¿ã†
 	}
 
-	// •`‰æ
+	// æç”»
 	virtual void Draw(D3D_PRIMITIVE_TOPOLOGY primtype)
 	{
-		BeforeDraw(primtype);								// •`‰æ‘Oˆ—
+		BeforeDraw(primtype);								// æç”»å‰å‡¦ç†
 
 		Renderer::GetDeviceContext()->DrawIndexed(
-			m_IndexNum * 2,								// •`‰æ‚·‚éƒCƒ“ƒfƒbƒNƒX”i–Ê”~‚Rj
-			0,										// Å‰‚ÌƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚ÌˆÊ’u
-			0);										// ’¸“_ƒoƒbƒtƒ@‚ÌÅ‰‚©‚çg‚¤
+			m_IndexNum * 2,								// æç”»ã™ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°ï¼ˆé¢æ•°Ã—ï¼“ï¼‰
+			0,										// æœ€åˆã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½ç½®
+			0);										// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®æœ€åˆã‹ã‚‰ä½¿ã†
 	}
 
-	// ’¸“_ƒoƒbƒtƒ@‚ğXV
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚’æ›´æ–°
 	void Modify(const std::vector<VERTEX_3D>& vertices)
 	{
 		m_VertexBuffer.Modify(vertices);

@@ -1,6 +1,6 @@
-#include	"CLineMesh.h"
+ï»¿#include	"CLineMesh.h"
 
-// ‰Šú‰»
+// åˆæœŸåŒ–
 void CLineMesh::Init(
 	Vector3 p1,
 	Vector3 direction,

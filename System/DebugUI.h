@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <d3d11.h>
 #include <vector>
@@ -14,7 +14,7 @@ public:
 
     static void Init(ID3D11Device* device, ID3D11DeviceContext* context);
 
-    // ƒfƒoƒbƒO•\¦ŠÖ”‚Ì“o˜^
+    // ãƒ‡ãƒãƒƒã‚°è¡¨ç¤ºé–¢æ•°ã®ç™»éŒ²
     static void RedistDebugFunction(std::function<void(void)> f);
     static void ClearDebugFunction();
     //static void Render();

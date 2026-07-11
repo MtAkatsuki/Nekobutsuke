@@ -1,4 +1,4 @@
-#include "GameResultJudge.h"
+ï»¿#include "GameResultJudge.h"
 
 #include "../../Core/GameContext.h"
 #include "../../Core/DebugLog.h"
@@ -10,23 +10,23 @@
 #include "../../Actor/Character/Ally.h"
 
 namespace {
-	const float GAMEOVER_WAIT_DURATION = 1.0f;           // ”s–k‰‰oŒãAƒV[ƒ“‘JˆÚ‚Ü‚Å‚Ì‘Ò‹@ŽžŠÔ
-	const float GAMECLEAR_WAIT_DURATION = 1.0f;          // // Ÿ—˜Šm’èŒã‚Ì‘Ò‹@ŽžŠÔ
-	constexpr float FADE_IN_OUT_DURATION = 1000.0f;      // ƒtƒF[ƒhƒCƒ“EƒAƒEƒg‚Ì‡ŒvŽžŠÔimsj
-	constexpr float BackgroundTransitionTime = 4000.0f;  // ”wŒi‘JˆÚ‚ÌƒXƒNƒ[ƒ‹ŽžŠÔimsj
+	const float GAMEOVER_WAIT_DURATION = 1.0f;           // æ•—åŒ—æ¼”å‡ºå¾Œã€ã‚·ãƒ¼ãƒ³é·ç§»ã¾ã§ã®å¾…æ©Ÿæ™‚é–“
+	const float GAMECLEAR_WAIT_DURATION = 1.0f;          // // å‹åˆ©ç¢ºå®šå¾Œã®å¾…æ©Ÿæ™‚é–“
+	constexpr float FADE_IN_OUT_DURATION = 1000.0f;      // ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ãƒ»ã‚¢ã‚¦ãƒˆã®åˆè¨ˆæ™‚é–“ï¼ˆmsï¼‰
+	constexpr float BackgroundTransitionTime = 4000.0f;  // èƒŒæ™¯é·ç§»ã®ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«æ™‚é–“ï¼ˆmsï¼‰
 }
 
 void GameResultJudge::Update(float deltaSeconds) {
 	if (m_isSceneChanging) return;
 
-	// ”s–kˆ—‚ð—DæB”s–kƒtƒ[’†‚ÍŸ—˜”»’è‚ðs‚í‚È‚¢
+	// æ•—åŒ—å‡¦ç†ã‚’å„ªå…ˆã€‚æ•—åŒ—ãƒ•ãƒ­ãƒ¼ä¸­ã¯å‹åˆ©åˆ¤å®šã‚’è¡Œã‚ãªã„
 	if (ProcessGameOverFlow(deltaSeconds)) return;
 
 	ProcessGameClearFlow(deltaSeconds);
 }
 
 bool GameResultJudge::IsGameOverCondition() const {
-	// ”s–kðŒ‡@F–¡•û‚ªŽ€–Si’Eo’†E’EoŠ®—¹Žž‚Í‘ÎÛŠOj
+	// æ•—åŒ—æ¡ä»¶â‘ ï¼šå‘³æ–¹ãŒæ­»äº¡ï¼ˆè„±å‡ºä¸­ãƒ»è„±å‡ºå®Œäº†æ™‚ã¯å¯¾è±¡å¤–ï¼‰
 	bool isAllyDead = false;
 	if (m_context && m_context->GetAlly()) {
 		bool hpDepleted = (m_context->GetAlly()->GetHP() <= 0);
@@ -34,7 +34,7 @@ bool GameResultJudge::IsGameOverCondition() const {
 		isAllyDead = (hpDepleted && !isSafe);
 	}
 
-	// ”s–kðŒ‡AFƒvƒŒƒCƒ„[‚ÌŽ€–S
+	// æ•—åŒ—æ¡ä»¶â‘¡ï¼šãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®æ­»äº¡
 	Player* player = m_context ? m_context->GetPlayer() : nullptr;
 	bool isPlayerDead = (player && player->GetHP() <= 0);
 
@@ -46,7 +46,7 @@ bool GameResultJudge::ProcessGameOverFlow(float deltaSeconds) {
 		return false;
 	}
 
-	// ‰‰ñ‚Ì‚Ý‘Ò‹@ƒ^ƒCƒ}[‚ðŠJŽn‚µA”s–k‰‰o‚Ì•\Ž¦ŽžŠÔ‚ðŠm•Û
+	// åˆå›žã®ã¿å¾…æ©Ÿã‚¿ã‚¤ãƒžãƒ¼ã‚’é–‹å§‹ã—ã€æ•—åŒ—æ¼”å‡ºã®è¡¨ç¤ºæ™‚é–“ã‚’ç¢ºä¿
 	if (!m_isGameOverProcessing) {
 		m_isGameOverProcessing = true;
 		m_gameOverTimer = 0.0f;
@@ -55,7 +55,7 @@ bool GameResultJudge::ProcessGameOverFlow(float deltaSeconds) {
 
 	m_gameOverTimer += deltaSeconds;
 
-	// KillCamI—¹Œã‚ÉƒV[ƒ“‘JˆÚi‰‰oŠ®—¹‚ð—Dæj
+	// KillCamçµ‚äº†å¾Œã«ã‚·ãƒ¼ãƒ³é·ç§»ï¼ˆæ¼”å‡ºå®Œäº†ã‚’å„ªå…ˆï¼‰
 	bool cineFinished = !m_context || !m_context->GetCamera() || !m_context->GetCamera()->IsCinematic();
 	if (m_gameOverTimer >= GAMEOVER_WAIT_DURATION && cineFinished) {
 		m_isSceneChanging = true;
@@ -69,11 +69,11 @@ bool GameResultJudge::ProcessGameOverFlow(float deltaSeconds) {
 }
 
 bool GameResultJudge::IsGameClearCondition() const {
-	// Ÿ—˜ƒ‹[ƒgAF”Õ–Ê‚Ì“G‚ð‚·‚×‚Ä”rœ‚µ‚½
+	// å‹åˆ©ãƒ«ãƒ¼ãƒˆAï¼šç›¤é¢ã®æ•µã‚’ã™ã¹ã¦æŽ’é™¤ã—ãŸ
 	bool isEnemyAnnihilated = (m_context && m_context->GetEnemyManager() &&
 		m_context->GetEnemyManager()->AreAllEnemiesDead());
 
-	// Ÿ—˜ƒ‹[ƒgBFŽw’èƒ^[ƒ“‚ð—½‚¬‚«‚èAƒvƒŒƒCƒ„[‚ª’Eo’n“_‚É“ž’BiŸ—˜ƒAƒjƒ‚ªŠ®—¹j‚µ‚½
+	// å‹åˆ©ãƒ«ãƒ¼ãƒˆBï¼šæŒ‡å®šã‚¿ãƒ¼ãƒ³ã‚’å‡ŒãŽãã‚Šã€ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒè„±å‡ºåœ°ç‚¹ã«åˆ°é”ï¼ˆå‹åˆ©ã‚¢ãƒ‹ãƒ¡ãŒå®Œäº†ï¼‰ã—ãŸ
 	Player* player = m_context ? m_context->GetPlayer() : nullptr;
 	bool isSurvivalEscaped = (player && player->IsCelebrationDone());
 
@@ -81,9 +81,9 @@ bool GameResultJudge::IsGameClearCondition() const {
 }
 
 bool GameResultJudge::IsFieldBusyForClear() const {
-	// Ÿ—˜ðŒ‚ð–ž‚½‚µ‚Ä‚¢‚Ä‚àuÅŒã‚ÌUŒ‚v‚âu“G‚ÌÁ–Åv‚ª‰æ–Êã‚ÅŠ®—¹‚·‚é‚Ü‚Å‚Í‘JˆÚ‚³‚¹‚È‚¢
+	// å‹åˆ©æ¡ä»¶ã‚’æº€ãŸã—ã¦ã„ã¦ã‚‚ã€Œæœ€å¾Œã®æ”»æ’ƒã€ã‚„ã€Œæ•µã®æ¶ˆæ»…ã€ãŒç”»é¢ä¸Šã§å®Œäº†ã™ã‚‹ã¾ã§ã¯é·ç§»ã•ã›ãªã„
 
-	// 1. ƒvƒŒƒCƒ„[‚ªƒAƒNƒVƒ‡ƒ“iˆÚ“®EUŒ‚j‚ðÁ‰»‚µ‚Ä‚¢‚é‚©
+	// 1. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒã‚¢ã‚¯ã‚·ãƒ§ãƒ³ï¼ˆç§»å‹•ãƒ»æ”»æ’ƒï¼‰ã‚’æ¶ˆåŒ–ã—ã¦ã„ã‚‹ã‹
 	Player* player = m_context ? m_context->GetPlayer() : nullptr;
 	if (player) {
 		PlayerState pState = player->GetState();
@@ -92,7 +92,7 @@ bool GameResultJudge::IsFieldBusyForClear() const {
 		}
 	}
 
-	// 2. “G‚ÌÁ–ÅƒAƒjƒ[ƒVƒ‡ƒ“‚È‚Ç‚ªŽc‚Á‚Ä‚¢‚È‚¢‚©
+	// 2. æ•µã®æ¶ˆæ»…ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãªã©ãŒæ®‹ã£ã¦ã„ãªã„ã‹
 	if (m_context && m_context->GetEnemyManager()) {
 		if (m_context->GetEnemyManager()->IsAnyEnemyDying() ||
 			m_context->GetEnemyManager()->IsAnyEnemyAnimating()) {
@@ -113,7 +113,7 @@ void GameResultJudge::ProcessGameClearFlow(float deltaSeconds) {
 		return;
 	}
 
-	// ‚·‚×‚Ä‚ÌƒAƒjƒ[ƒVƒ‡ƒ“‚ªI‚í‚Á‚½ŒãAƒNƒŠƒA‚Ì—]‰CiƒEƒFƒCƒgjƒJƒEƒ“ƒg‚ðŠJŽn
+	// ã™ã¹ã¦ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãŒçµ‚ã‚ã£ãŸå¾Œã€ã‚¯ãƒªã‚¢ã®ä½™éŸ»ï¼ˆã‚¦ã‚§ã‚¤ãƒˆï¼‰ã‚«ã‚¦ãƒ³ãƒˆã‚’é–‹å§‹
 	m_gameClearTimer += deltaSeconds;
 
 	if (m_gameClearTimer >= GAMECLEAR_WAIT_DURATION && !m_isSceneChanging) {

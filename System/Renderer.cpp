@@ -1,9 +1,9 @@
-/**
+ï»¿/**
  * @file Renderer.cpp
- * @brief DirectX ‚ğ—p‚¢‚½ƒŒƒ“ƒ_ƒŠƒ“ƒOˆ—‚ğÀ‘•‚·‚é Renderer ƒNƒ‰ƒX‚Ì’è‹`iÀ‘••”jB
+ * @brief DirectX ã‚’ç”¨ã„ãŸãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°å‡¦ç†ã‚’å®Ÿè£…ã™ã‚‹ Renderer ã‚¯ãƒ©ã‚¹ã®å®šç¾©ï¼ˆå®Ÿè£…éƒ¨ï¼‰ã€‚
  *
- * ‚±‚Ìƒtƒ@ƒCƒ‹‚Å‚ÍADirect3D ƒfƒoƒCƒXAƒXƒƒbƒvƒ`ƒF[ƒ“AƒŒƒ“ƒ_[ƒ^[ƒQƒbƒgA’è”ƒoƒbƒtƒ@‚È‚Ç‚Ì
- * ‰Šú‰»‚Æ‰ğ•úA•`‰æ‚ÌŠJnEI—¹ˆ—AŠeíƒŒƒ“ƒ_ƒŠƒ“ƒOó‘Ôi[“xAƒuƒŒƒ“ƒhAƒ}ƒgƒŠƒbƒNƒX‚È‚Çj‚Ìİ’è‚ğs‚¢‚Ü‚·B
+ * ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã§ã¯ã€Direct3D ãƒ‡ãƒã‚¤ã‚¹ã€ã‚¹ãƒ¯ãƒƒãƒ—ãƒã‚§ãƒ¼ãƒ³ã€ãƒ¬ãƒ³ãƒ€ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã€å®šæ•°ãƒãƒƒãƒ•ã‚¡ãªã©ã®
+ * åˆæœŸåŒ–ã¨è§£æ”¾ã€æç”»ã®é–‹å§‹ãƒ»çµ‚äº†å‡¦ç†ã€å„ç¨®ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°çŠ¶æ…‹ï¼ˆæ·±åº¦ã€ãƒ–ãƒ¬ãƒ³ãƒ‰ã€ãƒãƒˆãƒªãƒƒã‚¯ã‚¹ãªã©ï¼‰ã®è¨­å®šã‚’è¡Œã„ã¾ã™ã€‚
  */
 
 #include <stdexcept>
@@ -13,13 +13,13 @@
 #include "CVertexBuffer.h"
 
 //------------------------------------------------------------------------------
-// ƒXƒ^ƒeƒBƒbƒNƒƒ“ƒo•Ï”‚Ì‰Šú‰»
+// ã‚¹ã‚¿ãƒ†ã‚£ãƒƒã‚¯ãƒ¡ãƒ³ãƒå¤‰æ•°ã®åˆæœŸåŒ–
 //------------------------------------------------------------------------------
 
 namespace {
     CShader                  g_downsampleShader;
     CShader                  g_vignetteShader;
-    CVertexBuffer<VERTEX_3D> g_fsQuadVB;   // ‘S‰æ–ÊƒNƒAƒbƒh
+    CVertexBuffer<VERTEX_3D> g_fsQuadVB;   // å…¨ç”»é¢ã‚¯ã‚¢ãƒƒãƒ‰
 }
 
 D3D_FEATURE_LEVEL       Renderer::m_FeatureLevel = D3D_FEATURE_LEVEL_11_0;
@@ -61,15 +61,15 @@ POSTFX Renderer::m_PostFX;
 LIGHT Renderer::m_Light;
 
 //------------------------------------------------------------------------------
-// Renderer ƒNƒ‰ƒX‚ÌŠeŠÖ”‚ÌÀ‘•
+// Renderer ã‚¯ãƒ©ã‚¹ã®å„é–¢æ•°ã®å®Ÿè£…
 //------------------------------------------------------------------------------
 
 /**
- * @brief Renderer ‚Ì‰Šú‰»ˆ—‚ğs‚¢‚Ü‚·B
+ * @brief Renderer ã®åˆæœŸåŒ–å‡¦ç†ã‚’è¡Œã„ã¾ã™ã€‚
  *
- * Direct3D ƒfƒoƒCƒX‚ÆƒXƒƒbƒvƒ`ƒF[ƒ“‚Ìì¬AƒŒƒ“ƒ_[ƒ^[ƒQƒbƒgƒrƒ…[AƒfƒvƒXƒXƒeƒ“ƒVƒ‹ƒrƒ…[A
- * ƒrƒ…[ƒ|[ƒgAƒ‰ƒXƒ^ƒ‰ƒCƒUAƒuƒŒƒ“ƒhƒXƒe[ƒgA[“xƒXƒeƒ“ƒVƒ‹ƒXƒe[ƒgAƒTƒ“ƒvƒ‰[ƒXƒe[ƒgA
- * ’è”ƒoƒbƒtƒ@‚Ì¶¬A‰Šúƒ‰ƒCƒg‚¨‚æ‚Ñƒ}ƒeƒŠƒAƒ‹‚Ìİ’è‚È‚Ç‚ğÀ{‚µ‚Ü‚·B
+ * Direct3D ãƒ‡ãƒã‚¤ã‚¹ã¨ã‚¹ãƒ¯ãƒƒãƒ—ãƒã‚§ãƒ¼ãƒ³ã®ä½œæˆã€ãƒ¬ãƒ³ãƒ€ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆãƒ“ãƒ¥ãƒ¼ã€ãƒ‡ãƒ—ã‚¹ã‚¹ãƒ†ãƒ³ã‚·ãƒ«ãƒ“ãƒ¥ãƒ¼ã€
+ * ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆã€ãƒ©ã‚¹ã‚¿ãƒ©ã‚¤ã‚¶ã€ãƒ–ãƒ¬ãƒ³ãƒ‰ã‚¹ãƒ†ãƒ¼ãƒˆã€æ·±åº¦ã‚¹ãƒ†ãƒ³ã‚·ãƒ«ã‚¹ãƒ†ãƒ¼ãƒˆã€ã‚µãƒ³ãƒ—ãƒ©ãƒ¼ã‚¹ãƒ†ãƒ¼ãƒˆã€
+ * å®šæ•°ãƒãƒƒãƒ•ã‚¡ã®ç”Ÿæˆã€åˆæœŸãƒ©ã‚¤ãƒˆãŠã‚ˆã³ãƒãƒ†ãƒªã‚¢ãƒ«ã®è¨­å®šãªã©ã‚’å®Ÿæ–½ã—ã¾ã™ã€‚
  */
 void Renderer::Init()
 {
@@ -141,7 +141,7 @@ void Renderer::Init()
     m_DeviceContext->RSSetViewports(1, &viewport);
 
 
-    // --- ƒ‰ƒXƒ^ƒ‰ƒCƒUƒXƒe[ƒgİ’è ---
+    // --- ãƒ©ã‚¹ã‚¿ãƒ©ã‚¤ã‚¶ã‚¹ãƒ†ãƒ¼ãƒˆè¨­å®š ---
     D3D11_RASTERIZER_DESC rasterizerDesc{};
     rasterizerDesc.FillMode = D3D11_FILL_SOLID;
     rasterizerDesc.CullMode = D3D11_CULL_NONE;
@@ -152,7 +152,7 @@ void Renderer::Init()
     m_Device->CreateRasterizerState(&rasterizerDesc, rs.GetAddressOf());
     m_DeviceContext->RSSetState(rs.Get());
 
-    // --- ƒuƒŒƒ“ƒhƒXƒe[ƒg‚Ì¶¬ ---
+    // --- ãƒ–ãƒ¬ãƒ³ãƒ‰ã‚¹ãƒ†ãƒ¼ãƒˆã®ç”Ÿæˆ ---
     D3D11_BLEND_DESC BlendDesc{};
     BlendDesc.AlphaToCoverageEnable = FALSE;
     BlendDesc.IndependentBlendEnable = TRUE;
@@ -178,7 +178,7 @@ void Renderer::Init()
 
     SetBlendState(BS_ALPHABLEND);
 
-    // --- [“xƒXƒeƒ“ƒVƒ‹ƒXƒe[ƒg‚Ìİ’è ---
+    // --- æ·±åº¦ã‚¹ãƒ†ãƒ³ã‚·ãƒ«ã‚¹ãƒ†ãƒ¼ãƒˆã®è¨­å®š ---
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc{};
     depthStencilDesc.DepthEnable = TRUE;
     depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -193,7 +193,7 @@ void Renderer::Init()
 
     m_DeviceContext->OMSetDepthStencilState(m_DepthStateEnable.Get(), 0);
 
-    // --- ƒTƒ“ƒvƒ‰[ƒXƒe[ƒgİ’è ---
+    // --- ã‚µãƒ³ãƒ—ãƒ©ãƒ¼ã‚¹ãƒ†ãƒ¼ãƒˆè¨­å®š ---
     D3D11_SAMPLER_DESC samplerDesc{};
     samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
     samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -206,17 +206,17 @@ void Renderer::Init()
     samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
     samplerDesc.MipLODBias = 0.0f;
 
-    // 1. 3DŠÂ‹«ê—p‚ÌˆÙ•û«ƒTƒ“ƒvƒ‰[iAnisotropic Samplerj‚ğì¬
+    // 1. 3Dç’°å¢ƒå°‚ç”¨ã®ç•°æ–¹æ€§ã‚µãƒ³ãƒ—ãƒ©ãƒ¼ï¼ˆAnisotropic Samplerï¼‰ã‚’ä½œæˆ
     m_Device->CreateSamplerState(&samplerDesc, m_SamplerStateAniso.GetAddressOf());
 
     samplerDesc.MipLODBias = -1.5f;
     samplerDesc.MaxLOD = 2.0f;
     m_Device->CreateSamplerState(&samplerDesc, m_SamplerStatePoint.GetAddressOf());
 
-    // ƒfƒtƒHƒ‹ƒg‚Å3DƒV[ƒ“—p‚ÌƒTƒ“ƒvƒ‰[‚ğƒoƒCƒ“ƒh
+    // ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§3Dã‚·ãƒ¼ãƒ³ç”¨ã®ã‚µãƒ³ãƒ—ãƒ©ãƒ¼ã‚’ãƒã‚¤ãƒ³ãƒ‰
     m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateAniso.GetAddressOf());
 
-    // --- ’è”ƒoƒbƒtƒ@¶¬ ---
+    // --- å®šæ•°ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ ---
     D3D11_BUFFER_DESC bufferDesc{};
     bufferDesc.ByteWidth = sizeof(Matrix4x4);
     bufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -240,7 +240,7 @@ void Renderer::Init()
     bufferDesc.ByteWidth = sizeof(LIGHT);
     m_Device->CreateBuffer(&bufferDesc, nullptr, m_LightBuffer.GetAddressOf());
 
-    // --- ƒ‰ƒCƒg‰Šú‰» ---
+    // --- ãƒ©ã‚¤ãƒˆåˆæœŸåŒ– ---
     LIGHT light{};
     light.Enable = true;
     light.Direction = Vector4(-0.701f, -0.710f, 0.067f, 0.0f);
@@ -250,30 +250,30 @@ void Renderer::Init()
     SetLight(light);
 
 
-	// --- Toonƒpƒ‰ƒ[ƒ^‰Šú‰» ---
+	// --- Toonãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿åˆæœŸåŒ– ---
     bufferDesc.ByteWidth = sizeof(TOONPARAM);
     m_Device->CreateBuffer(&bufferDesc, nullptr, m_ToonBuffer.GetAddressOf());
 
     TOONPARAM toon{};
 
-    toon.ShadowColor = Color(0.235f, 0.098f, 0.015f, 1.0f); // Groundi‰º•ûŒüjF‚â‚â’gFŒn
+    toon.ShadowColor = Color(0.235f, 0.098f, 0.015f, 1.0f); // Groundï¼ˆä¸‹æ–¹å‘ï¼‰ï¼šã‚„ã‚„æš–è‰²ç³»
     toon.RimColor = Color(1.0f, 1.0f, 1.0f, 1.0f);    // a = RimStrength
     toon.OutlineColor = Color(0.0f, 0.0f, 0.0f, 0.0003f);   // a = OutlineWidth
-    toon.ToonParams = Vector4(0.5f, 0.8f, 0.01f, 4.0f); // è‡’l0 / è‡’l1 / ƒ\ƒtƒg‹«ŠE / RimPower
-    toon.SkyColor = Color(0.674f, 0.741f, 0.835f, 1.0f); // Skyiã•ûŒüjF‚â‚âŠ¦FŒn
+    toon.ToonParams = Vector4(0.5f, 0.8f, 0.01f, 4.0f); // é–¾å€¤0 / é–¾å€¤1 / ã‚½ãƒ•ãƒˆå¢ƒç•Œ / RimPower
+    toon.SkyColor = Color(0.674f, 0.741f, 0.835f, 1.0f); // Skyï¼ˆä¸Šæ–¹å‘ï¼‰ï¼šã‚„ã‚„å¯’è‰²ç³»
 
     SetToonParam(toon);
 
     m_DeviceContext->VSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
     m_DeviceContext->PSSetConstantBuffers(7, 1, m_ToonBuffer.GetAddressOf());
 
-    // --- PostFX‰Šú‰» ---
+    // --- PostFXåˆæœŸåŒ– ---
     bufferDesc.ByteWidth = sizeof(POSTFX);
     m_Device->CreateBuffer(&bufferDesc, nullptr, m_PostFXBuffer.GetAddressOf());
     POSTFX pf{ 1.44f, {} };
     SetPostFX(pf);
 
-    // --- ƒ}ƒeƒŠƒAƒ‹‰Šú‰» ---
+    // --- ãƒãƒ†ãƒªã‚¢ãƒ«åˆæœŸåŒ– ---
     MATERIAL material{};
     material.Diffuse = Color(1.0f, 1.0f, 1.0f, 1.0f);
     material.Ambient = Color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -285,13 +285,13 @@ void Renderer::Init()
     m_DeviceContext->VSSetConstantBuffers(4, 1, m_LightBuffer.GetAddressOf());
     m_DeviceContext->PSSetConstantBuffers(4, 1, m_LightBuffer.GetAddressOf());
 
-    // --- UIê—pƒTƒ“ƒvƒ‰[ ---
+    // --- UIå°‚ç”¨ã‚µãƒ³ãƒ—ãƒ©ãƒ¼ ---
     D3D11_SAMPLER_DESC uiSamplerDesc{};
-    uiSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; // ƒŠƒjƒAƒtƒBƒ‹ƒ^ƒŠƒ“ƒO‚ğg—p‚µAUIŠg‘åk¬‚ÌŠŠ‚ç‚©‚³‚Æ‘N–¾‚³‚ğ—¼—§
-    uiSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;  // ƒGƒbƒW‚Ìˆì‚êi‚É‚¶‚İj‚ğ–h~‚·‚é‚½‚ßAUI‚Å‚Í’ÊíClamp‚ğg—p
+    uiSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR; // ãƒªãƒ‹ã‚¢ãƒ•ã‚£ãƒ«ã‚¿ãƒªãƒ³ã‚°ã‚’ä½¿ç”¨ã—ã€UIæ‹¡å¤§ç¸®å°æ™‚ã®æ»‘ã‚‰ã‹ã•ã¨é®®æ˜ã•ã‚’ä¸¡ç«‹
+    uiSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;  // ã‚¨ãƒƒã‚¸ã®æº¢ã‚Œï¼ˆã«ã˜ã¿ï¼‰ã‚’é˜²æ­¢ã™ã‚‹ãŸã‚ã€UIã§ã¯é€šå¸¸Clampã‚’ä½¿ç”¨
     uiSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
     uiSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-    uiSamplerDesc.MipLODBias = 0.0f;                       // ƒoƒCƒAƒXİ’è‚ÍˆêØ‹Ö~
+    uiSamplerDesc.MipLODBias = 0.0f;                       // ãƒã‚¤ã‚¢ã‚¹è¨­å®šã¯ä¸€åˆ‡ç¦æ­¢
     uiSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
     m_Device->CreateSamplerState(&uiSamplerDesc, m_SamplerStateUI.GetAddressOf());
@@ -299,7 +299,7 @@ void Renderer::Init()
     UINT sw = Application::GetWidth() * SSAA_SCALE;
     UINT sh = Application::GetHeight() * SSAA_SCALE;
 
-    // ƒIƒtƒXƒNƒŠ[ƒ“ƒJƒ‰[iRTV + SRVj
+    // ã‚ªãƒ•ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ã‚«ãƒ©ãƒ¼ï¼ˆRTV + SRVï¼‰
     D3D11_TEXTURE2D_DESC sc{};
     sc.Width = sw; sc.Height = sh; sc.MipLevels = 1; sc.ArraySize = 1;
     sc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; sc.SampleDesc.Count = 1;
@@ -309,7 +309,7 @@ void Renderer::Init()
     m_Device->CreateRenderTargetView(m_SceneColorTex.Get(), nullptr, m_SceneRTV.GetAddressOf());
     m_Device->CreateShaderResourceView(m_SceneColorTex.Get(), nullptr, m_SceneSRV.GetAddressOf());
 
-    // ƒIƒtƒXƒNƒŠ[ƒ“[“xi2x, ”ñMSj
+    // ã‚ªãƒ•ã‚¹ã‚¯ãƒªãƒ¼ãƒ³æ·±åº¦ï¼ˆ2x, éMSï¼‰
     D3D11_TEXTURE2D_DESC sd{};
     sd.Width = sw; sd.Height = sh; sd.MipLevels = 1; sd.ArraySize = 1;
     sd.Format = DXGI_FORMAT_D32_FLOAT; sd.SampleDesc.Count = 1;
@@ -319,12 +319,12 @@ void Renderer::Init()
     sdsv.Format = DXGI_FORMAT_D32_FLOAT; sdsv.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
     m_Device->CreateDepthStencilView(m_SceneDepthTex.Get(), &sdsv, m_SceneDSV.GetAddressOf());
 
-    // ‘S‰æ–ÊƒNƒAƒbƒhiƒgƒ‰ƒCƒAƒ“ƒOƒ‹ƒXƒgƒŠƒbƒv—p‚É4’¸“_ANDC’¼Úw’èj
+    // å…¨ç”»é¢ã‚¯ã‚¢ãƒƒãƒ‰ï¼ˆãƒˆãƒ©ã‚¤ã‚¢ãƒ³ã‚°ãƒ«ã‚¹ãƒˆãƒªãƒƒãƒ—ç”¨ã«4é ‚ç‚¹ã€NDCç›´æ¥æŒ‡å®šï¼‰
     std::vector<VERTEX_3D> quad(4);
-    quad[0].Position = Vector3(-1.0f, -1.0f, 0.0f); quad[0].TexCoord = Vector2(0.0f, 1.0f); // ¶‰º
-    quad[1].Position = Vector3(-1.0f, 1.0f, 0.0f); quad[1].TexCoord = Vector2(0.0f, 0.0f); // ¶ã
-    quad[2].Position = Vector3(1.0f, -1.0f, 0.0f); quad[2].TexCoord = Vector2(1.0f, 1.0f); // ‰E‰º
-    quad[3].Position = Vector3(1.0f, 1.0f, 0.0f); quad[3].TexCoord = Vector2(1.0f, 0.0f); // ‰Eã
+    quad[0].Position = Vector3(-1.0f, -1.0f, 0.0f); quad[0].TexCoord = Vector2(0.0f, 1.0f); // å·¦ä¸‹
+    quad[1].Position = Vector3(-1.0f, 1.0f, 0.0f); quad[1].TexCoord = Vector2(0.0f, 0.0f); // å·¦ä¸Š
+    quad[2].Position = Vector3(1.0f, -1.0f, 0.0f); quad[2].TexCoord = Vector2(1.0f, 1.0f); // å³ä¸‹
+    quad[3].Position = Vector3(1.0f, 1.0f, 0.0f); quad[3].TexCoord = Vector2(1.0f, 0.0f); // å³ä¸Š
     g_fsQuadVB.Create(quad);
 
     g_downsampleShader.Create("shader/FullScreenVS.hlsl", "shader/FullScreenPS.hlsl");
@@ -333,11 +333,11 @@ void Renderer::Init()
 }
 
 /**
- * @brief g—p‚µ‚Ä‚¢‚½ƒŠƒ\[ƒX‚ğ‘S‚Ä‰ğ•ú‚µ‚Ü‚·B
+ * @brief ä½¿ç”¨ã—ã¦ã„ãŸãƒªã‚½ãƒ¼ã‚¹ã‚’å…¨ã¦è§£æ”¾ã—ã¾ã™ã€‚
  *
  * @details
- * Direct3D‚ÌƒŠƒ\[ƒX‚Í–¾¦“I‚É‰ğ•ú‚µ‚È‚¢‚Æƒƒ‚ƒŠƒŠ[ƒN‚ª”­¶‚·‚é‚½‚ßA
- * ComPtr::Reset()‚ÅˆÀ‘S‚ÉƒŠƒ\[ƒX‚ğŠJ•ú‚µ‚Ä‚¢‚Ü‚·B
+ * Direct3Dã®ãƒªã‚½ãƒ¼ã‚¹ã¯æ˜ç¤ºçš„ã«è§£æ”¾ã—ãªã„ã¨ãƒ¡ãƒ¢ãƒªãƒªãƒ¼ã‚¯ãŒç™ºç”Ÿã™ã‚‹ãŸã‚ã€
+ * ComPtr::Reset()ã§å®‰å…¨ã«ãƒªã‚½ãƒ¼ã‚¹ã‚’é–‹æ”¾ã—ã¦ã„ã¾ã™ã€‚
  */
 void Renderer::Uninit()
 {
@@ -367,13 +367,13 @@ void Renderer::Uninit()
 }
 
 /**
- * @brief 1ƒtƒŒ[ƒ€‚Ì•`‰æ‚ğŠJn‚µ‚Ü‚·B
+ * @brief 1ãƒ•ãƒ¬ãƒ¼ãƒ ã®æç”»ã‚’é–‹å§‹ã—ã¾ã™ã€‚
  *
  * @details
- * - ‰æ–Ê‚ğw’èFiÂFj‚ÅƒNƒŠƒA
- * - [“xƒoƒbƒtƒ@‚à‰Šú‰»
+ * - ç”»é¢ã‚’æŒ‡å®šè‰²ï¼ˆé’è‰²ï¼‰ã§ã‚¯ãƒªã‚¢
+ * - æ·±åº¦ãƒãƒƒãƒ•ã‚¡ã‚‚åˆæœŸåŒ–
  *
- * –ˆƒtƒŒ[ƒ€•K‚¸ŒÄ‚Ño‚µ‚ÄA‘O‚ÌƒtƒŒ[ƒ€‚Ìc‘œ‚ğÁ‚µ‚Ü‚·B
+ * æ¯ãƒ•ãƒ¬ãƒ¼ãƒ å¿…ãšå‘¼ã³å‡ºã—ã¦ã€å‰ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã®æ®‹åƒã‚’æ¶ˆã—ã¾ã™ã€‚
  */
 void Renderer::Begin() {
     float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -390,10 +390,10 @@ void Renderer::Begin() {
 }
 
 /**
- * @brief •`‰æ‚ğI—¹‚µ‚ÄA‰æ–Ê‚É•\¦‚µ‚Ü‚·B
+ * @brief æç”»ã‚’çµ‚äº†ã—ã¦ã€ç”»é¢ã«è¡¨ç¤ºã—ã¾ã™ã€‚
  *
  * @details
- * Present‚ÅƒoƒbƒNƒoƒbƒtƒ@‚Æƒtƒƒ“ƒgƒoƒbƒtƒ@‚ğ“ü‚ê‘Ö‚¦‚Ü‚·B
+ * Presentã§ãƒãƒƒã‚¯ãƒãƒƒãƒ•ã‚¡ã¨ãƒ•ãƒ­ãƒ³ãƒˆãƒãƒƒãƒ•ã‚¡ã‚’å…¥ã‚Œæ›¿ãˆã¾ã™ã€‚
  */
 //void Renderer::End()
 //{
@@ -401,7 +401,7 @@ void Renderer::Begin() {
 //}
 
 void Renderer::ResolveToBackbuffer() {
-    // 1x ƒoƒbƒNƒoƒbƒtƒ@‚Öi[“x‚È‚µj
+    // 1x ãƒãƒƒã‚¯ãƒãƒƒãƒ•ã‚¡ã¸ï¼ˆæ·±åº¦ãªã—ï¼‰
     m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), nullptr);
     D3D11_VIEWPORT vp{};
     vp.Width = (float)Application::GetWidth();
@@ -409,17 +409,17 @@ void Renderer::ResolveToBackbuffer() {
     vp.MaxDepth = 1.0f;
     m_DeviceContext->RSSetViewports(1, &vp);
 
-    // ‘S‰æ–ÊOŠpŒ`‚Åƒ_ƒEƒ“ƒTƒ“ƒvƒ‹iüŒ`ƒTƒ“ƒvƒ‰=2x2•½‹Ïj
-    g_downsampleShader.SetGPU();                  // VS/PS + VERTEX_3D“ü—ÍƒŒƒCƒAƒEƒg‚ğbind
-    g_fsQuadVB.SetGPU();                          // ƒNƒAƒbƒhVB‚ğbind
+    // å…¨ç”»é¢ä¸‰è§’å½¢ã§ãƒ€ã‚¦ãƒ³ã‚µãƒ³ãƒ—ãƒ«ï¼ˆç·šå½¢ã‚µãƒ³ãƒ—ãƒ©=2x2å¹³å‡ï¼‰
+    g_downsampleShader.SetGPU();                  // VS/PS + VERTEX_3Då…¥åŠ›ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆã‚’bind
+    g_fsQuadVB.SetGPU();                          // ã‚¯ã‚¢ãƒƒãƒ‰VBã‚’bind
     Renderer::DisableCulling(false);
     SetDepthEnable(false);
     m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
     m_DeviceContext->PSSetShaderResources(0, 1, m_SceneSRV.GetAddressOf());
     m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateAniso.GetAddressOf()); // linear
-    m_DeviceContext->Draw(4, 0);                  // strip = 2OŠpŒ` = ‘S‰æ–Ê
+    m_DeviceContext->Draw(4, 0);                  // strip = 2ä¸‰è§’å½¢ = å…¨ç”»é¢
 
-    // ŸƒtƒŒ[ƒ€‚ÅRTV‚É–ß‚éˆ×SRV‚ğŠO‚·
+    // æ¬¡ãƒ•ãƒ¬ãƒ¼ãƒ ã§RTVã«æˆ»ã‚‹ç‚ºSRVã‚’å¤–ã™
     ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
     m_DeviceContext->PSSetShaderResources(0, 1, nullSRV);
 }
@@ -429,10 +429,10 @@ void Renderer::Present() {
 }
 
 /**
- * @brief [“xƒeƒXƒgiZƒoƒbƒtƒ@j‚Ì—LŒø/–³Œø‚ğØ‚è‘Ö‚¦‚Ü‚·B
- * @param Enable true‚È‚ç—LŒøAfalse‚È‚ç–³Œø
+ * @brief æ·±åº¦ãƒ†ã‚¹ãƒˆï¼ˆZãƒãƒƒãƒ•ã‚¡ï¼‰ã®æœ‰åŠ¹/ç„¡åŠ¹ã‚’åˆ‡ã‚Šæ›¿ãˆã¾ã™ã€‚
+ * @param Enable trueãªã‚‰æœ‰åŠ¹ã€falseãªã‚‰ç„¡åŠ¹
  * @details
- * [“xƒeƒXƒg‚ÍA‰œ‚É‚ ‚é‚à‚Ì‚ğ³‚µ‚­è‘O‚Ì‚à‚Ì‚Ì— ‚É•`‰æ‚·‚é‚½‚ß‚Ì‹@”\‚Å‚·B
+ * æ·±åº¦ãƒ†ã‚¹ãƒˆã¯ã€å¥¥ã«ã‚ã‚‹ã‚‚ã®ã‚’æ­£ã—ãæ‰‹å‰ã®ã‚‚ã®ã®è£ã«æç”»ã™ã‚‹ãŸã‚ã®æ©Ÿèƒ½ã§ã™ã€‚
  */
 void Renderer::SetDepthEnable(bool Enable)
 {
@@ -441,10 +441,10 @@ void Renderer::SetDepthEnable(bool Enable)
 }
 
 /**
- * @brief Alpha To Coveragei”¼“§–¾•\Œ»—pj‚ÌON/OFF‚ğØ‚è‘Ö‚¦‚Ü‚·B
- * @param Enable true‚È‚çATC—LŒøAfalse‚È‚ç–³Œø
+ * @brief Alpha To Coverageï¼ˆåŠé€æ˜è¡¨ç¾ç”¨ï¼‰ã®ON/OFFã‚’åˆ‡ã‚Šæ›¿ãˆã¾ã™ã€‚
+ * @param Enable trueãªã‚‰ATCæœ‰åŠ¹ã€falseãªã‚‰ç„¡åŠ¹
  * @details
- * ƒ}ƒ‹ƒ`ƒTƒ“ƒvƒŠƒ“ƒO{ƒAƒ‹ƒtƒ@ƒuƒŒƒ“ƒh‚Ì‚“x‚È‡¬‚ğs‚¤‹@”\‚Å‚·B
+ * ãƒãƒ«ãƒã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ï¼‹ã‚¢ãƒ«ãƒ•ã‚¡ãƒ–ãƒ¬ãƒ³ãƒ‰ã®é«˜åº¦ãªåˆæˆã‚’è¡Œã†æ©Ÿèƒ½ã§ã™ã€‚
  */
 void Renderer::SetATCEnable(bool Enable)
 {
@@ -455,10 +455,10 @@ void Renderer::SetATCEnable(bool Enable)
 }
 
 /**
- * @brief 2D•`‰æ—p‚ÉA’Pƒ‚Èƒ[ƒ‹ƒhEƒrƒ…[EƒvƒƒWƒFƒNƒVƒ‡ƒ“s—ñ‚ğƒZƒbƒg‚µ‚Ü‚·B
+ * @brief 2Dæç”»ç”¨ã«ã€å˜ç´”ãªãƒ¯ãƒ¼ãƒ«ãƒ‰ãƒ»ãƒ“ãƒ¥ãƒ¼ãƒ»ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ã‚·ãƒ§ãƒ³è¡Œåˆ—ã‚’ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
  *
  * @details
- * ‰æ–Ê¶ã‚ğŒ´“_‚Æ‚·‚é2D’¼Œğ“Š‰es—ñ‚ğ¶¬‚µAŠes—ñƒoƒbƒtƒ@‚Éİ’è‚µ‚Ü‚·B
+ * ç”»é¢å·¦ä¸Šã‚’åŸç‚¹ã¨ã™ã‚‹2Dç›´äº¤æŠ•å½±è¡Œåˆ—ã‚’ç”Ÿæˆã—ã€å„è¡Œåˆ—ãƒãƒƒãƒ•ã‚¡ã«è¨­å®šã—ã¾ã™ã€‚
  */
 void Renderer::SetWorldViewProjection2D()
 {
@@ -480,8 +480,8 @@ void Renderer::SetWorldViewProjection2D()
 }
 
 /**
- * @brief ”CˆÓ‚Ìƒ[ƒ‹ƒhs—ñ‚ğƒVƒF[ƒ_[‚ÉƒZƒbƒg‚µ‚Ü‚·B
- * @param WorldMatrix ƒ[ƒ‹ƒhs—ñ‚Ö‚Ìƒ|ƒCƒ“ƒ^
+ * @brief ä»»æ„ã®ãƒ¯ãƒ¼ãƒ«ãƒ‰è¡Œåˆ—ã‚’ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã«ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ * @param WorldMatrix ãƒ¯ãƒ¼ãƒ«ãƒ‰è¡Œåˆ—ã¸ã®ãƒã‚¤ãƒ³ã‚¿
  */
 void Renderer::SetWorldMatrix(Matrix4x4* WorldMatrix)
 {
@@ -490,8 +490,8 @@ void Renderer::SetWorldMatrix(Matrix4x4* WorldMatrix)
 }
 
 /**
- * @brief ”CˆÓ‚Ìƒrƒ…[s—ñ‚ğƒVƒF[ƒ_[‚ÉƒZƒbƒg‚µ‚Ü‚·B
- * @param ViewMatrix ƒrƒ…[s—ñ‚Ö‚Ìƒ|ƒCƒ“ƒ^
+ * @brief ä»»æ„ã®ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ã‚’ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã«ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ * @param ViewMatrix ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ã¸ã®ãƒã‚¤ãƒ³ã‚¿
  */
 void Renderer::SetViewMatrix(Matrix4x4* ViewMatrix)
 {
@@ -500,8 +500,8 @@ void Renderer::SetViewMatrix(Matrix4x4* ViewMatrix)
 }
 
 /**
- * @brief ”CˆÓ‚ÌƒvƒƒWƒFƒNƒVƒ‡ƒ“s—ñ‚ğƒVƒF[ƒ_[‚ÉƒZƒbƒg‚µ‚Ü‚·B
- * @param ProjectionMatrix Ë‰es—ñ‚Ö‚Ìƒ|ƒCƒ“ƒ^
+ * @brief ä»»æ„ã®ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ã‚·ãƒ§ãƒ³è¡Œåˆ—ã‚’ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã«ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ * @param ProjectionMatrix å°„å½±è¡Œåˆ—ã¸ã®ãƒã‚¤ãƒ³ã‚¿
  */
 void Renderer::SetProjectionMatrix(Matrix4x4* ProjectionMatrix)
 {
@@ -510,8 +510,8 @@ void Renderer::SetProjectionMatrix(Matrix4x4* ProjectionMatrix)
 }
 
 /**
- * @brief ƒ}ƒeƒŠƒAƒ‹i•\–ÊŞ¿jî•ñ‚ğƒZƒbƒg‚µ‚Ü‚·B
- * @param Material ƒ}ƒeƒŠƒAƒ‹î•ñ
+ * @brief ãƒãƒ†ãƒªã‚¢ãƒ«ï¼ˆè¡¨é¢æè³ªï¼‰æƒ…å ±ã‚’ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ * @param Material ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±
  */
 void Renderer::SetMaterial(MATERIAL Material)
 {
@@ -519,8 +519,8 @@ void Renderer::SetMaterial(MATERIAL Material)
 }
 
 /**
- * @brief ƒ‰ƒCƒgiŒõŒ¹jî•ñ‚ğƒZƒbƒg‚µ‚Ü‚·B
- * @param Light ƒ‰ƒCƒgî•ñ
+ * @brief ãƒ©ã‚¤ãƒˆï¼ˆå…‰æºï¼‰æƒ…å ±ã‚’ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ * @param Light ãƒ©ã‚¤ãƒˆæƒ…å ±
  */
 void Renderer::SetLight(LIGHT Light)
 {
@@ -531,8 +531,8 @@ void Renderer::SetLight(LIGHT Light)
 }
 
 /**
- * @brief ƒ‰ƒCƒgiŒõŒ¹jî•ñ‚ğæ“¾‚µ‚Ü‚·
- * @param Light ƒ‰ƒCƒgî•ñ
+ * @brief ãƒ©ã‚¤ãƒˆï¼ˆå…‰æºï¼‰æƒ…å ±ã‚’å–å¾—ã—ã¾ã™
+ * @param Light ãƒ©ã‚¤ãƒˆæƒ…å ±
  */
 LIGHT Renderer::GetLight()
 {
@@ -549,7 +549,7 @@ void Renderer::SetCullFront()
 {
     D3D11_RASTERIZER_DESC rd{};
     rd.FillMode = D3D11_FILL_SOLID;
-    rd.CullMode = D3D11_CULL_FRONT;   //”w–Êü‚¾‚¯•`‰æ
+    rd.CullMode = D3D11_CULL_FRONT;   //èƒŒé¢ç·šã ã‘æç”»
     rd.FrontCounterClockwise = FALSE;
     rd.DepthClipEnable = TRUE;
     rd.MultisampleEnable = TRUE;
@@ -559,8 +559,8 @@ void Renderer::SetCullFront()
 }
 
 /**
- * @brief w’è‚µ‚½ƒuƒŒƒ“ƒhƒXƒe[ƒg‚ğƒZƒbƒg‚µ‚Ü‚·B
- * @param nBlendState g—p‚·‚éƒuƒŒƒ“ƒhƒXƒe[ƒg‚Ìí—Ş
+ * @brief æŒ‡å®šã—ãŸãƒ–ãƒ¬ãƒ³ãƒ‰ã‚¹ãƒ†ãƒ¼ãƒˆã‚’ã‚»ãƒƒãƒˆã—ã¾ã™ã€‚
+ * @param nBlendState ä½¿ç”¨ã™ã‚‹ãƒ–ãƒ¬ãƒ³ãƒ‰ã‚¹ãƒ†ãƒ¼ãƒˆã®ç¨®é¡
  */
 void Renderer::SetBlendState(int nBlendState)
 {
@@ -571,8 +571,8 @@ void Renderer::SetBlendState(int nBlendState)
 }
 
 /**
- * @brief –Ê‚ÌœŠOiƒJƒŠƒ“ƒOj‚ğ–³Œø‚Ü‚½‚Í—LŒø‚É‚µ‚Ü‚·B
- * @param cullflag true‚ÅƒJƒŠƒ“ƒOONi’ÊíjAfalse‚ÅƒJƒŠƒ“ƒOOFFi—¼–Ê•`‰æj
+ * @brief é¢ã®é™¤å¤–ï¼ˆã‚«ãƒªãƒ³ã‚°ï¼‰ã‚’ç„¡åŠ¹ã¾ãŸã¯æœ‰åŠ¹ã«ã—ã¾ã™ã€‚
+ * @param cullflag trueã§ã‚«ãƒªãƒ³ã‚°ONï¼ˆé€šå¸¸ï¼‰ã€falseã§ã‚«ãƒªãƒ³ã‚°OFFï¼ˆä¸¡é¢æç”»ï¼‰
  */
 void Renderer::DisableCulling(bool cullflag)
 {
@@ -597,8 +597,8 @@ void Renderer::DisableCulling(bool cullflag)
 
 
 /**
- * @brief ƒ‰ƒXƒ^ƒ‰ƒCƒUƒXƒe[ƒg‚ÌƒtƒBƒ‹ƒ‚[ƒhi“h‚è‚Â‚Ô‚µ/ƒƒCƒ„[ƒtƒŒ[ƒ€j‚ğİ’è‚µ‚Ü‚·B
- * @param FillMode D3D11_FILL_SOLID ‚Ü‚½‚Í D3D11_FILL_WIREFRAME
+ * @brief ãƒ©ã‚¹ã‚¿ãƒ©ã‚¤ã‚¶ã‚¹ãƒ†ãƒ¼ãƒˆã®ãƒ•ã‚£ãƒ«ãƒ¢ãƒ¼ãƒ‰ï¼ˆå¡—ã‚Šã¤ã¶ã—/ãƒ¯ã‚¤ãƒ¤ãƒ¼ãƒ•ãƒ¬ãƒ¼ãƒ ï¼‰ã‚’è¨­å®šã—ã¾ã™ã€‚
+ * @param FillMode D3D11_FILL_SOLID ã¾ãŸã¯ D3D11_FILL_WIREFRAME
  */
 void Renderer::SetFillMode(D3D11_FILL_MODE FillMode)
 {
@@ -616,8 +616,8 @@ void Renderer::SetFillMode(D3D11_FILL_MODE FillMode)
 void Renderer::SetDepthReadOnly()
 {
     D3D11_DEPTH_STENCIL_DESC d{};
-    d.DepthEnable = TRUE;                           // [“xƒeƒXƒgONF•ÇE‰Æ‹ï‚É‚æ‚éÕ•Á‚ÍˆÛ
-    d.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // š [“x‘‚«‚İOFFFBlob“¯m‚ÌŠ±Â‚ğ–h~
+    d.DepthEnable = TRUE;                           // æ·±åº¦ãƒ†ã‚¹ãƒˆONï¼šå£ãƒ»å®¶å…·ã«ã‚ˆã‚‹é®è”½ã¯ç¶­æŒ
+    d.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // â˜… æ·±åº¦æ›¸ãè¾¼ã¿OFFï¼šBlobåŒå£«ã®å¹²æ¸‰ã‚’é˜²æ­¢
     d.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
     ComPtr<ID3D11DepthStencilState> s;
     m_Device->CreateDepthStencilState(&d, s.GetAddressOf());
@@ -625,20 +625,20 @@ void Renderer::SetDepthReadOnly()
 }
 
 /**
- * @brief [“xƒeƒXƒg‚ğí‚ÉƒpƒX‚³‚¹‚éİ’è‚É•ÏX‚µ‚Ü‚·B
+ * @brief æ·±åº¦ãƒ†ã‚¹ãƒˆã‚’å¸¸ã«ãƒ‘ã‚¹ã•ã›ã‚‹è¨­å®šã«å¤‰æ›´ã—ã¾ã™ã€‚
  *
  * @details
- * - [“xƒeƒXƒg‚Í—LŒøiDepthEnable = TRUEj
- * - ‚½‚¾‚µAí‚Éu•`‰æOKviDepthFunc = D3D11_COMPARISON_ALWAYSj
- * - [“xƒoƒbƒtƒ@‚É‚à‘‚«‚ŞiDepthWriteMask = ALLj
+ * - æ·±åº¦ãƒ†ã‚¹ãƒˆã¯æœ‰åŠ¹ï¼ˆDepthEnable = TRUEï¼‰
+ * - ãŸã ã—ã€å¸¸ã«ã€Œæç”»OKã€ï¼ˆDepthFunc = D3D11_COMPARISON_ALWAYSï¼‰
+ * - æ·±åº¦ãƒãƒƒãƒ•ã‚¡ã«ã‚‚æ›¸ãè¾¼ã‚€ï¼ˆDepthWriteMask = ALLï¼‰
  */
 void Renderer::SetDepthAllwaysWrite()
 {
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc{};
     depthStencilDesc.DepthEnable = TRUE;
-    depthStencilDesc.DepthFunc = D3D11_COMPARISON_ALWAYS; // í‚É[“xƒeƒXƒg¬Œ÷
+    depthStencilDesc.DepthFunc = D3D11_COMPARISON_ALWAYS; // å¸¸ã«æ·±åº¦ãƒ†ã‚¹ãƒˆæˆåŠŸ
     depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-    depthStencilDesc.StencilEnable = FALSE; // ƒXƒeƒ“ƒVƒ‹ƒeƒXƒg‚Í–³Œø
+    depthStencilDesc.StencilEnable = FALSE; // ã‚¹ãƒ†ãƒ³ã‚·ãƒ«ãƒ†ã‚¹ãƒˆã¯ç„¡åŠ¹
 
     ComPtr<ID3D11DepthStencilState> pDepthStencilState;
     HRESULT hr = m_Device->CreateDepthStencilState(&depthStencilDesc, pDepthStencilState.GetAddressOf());
@@ -650,22 +650,22 @@ void Renderer::SetDepthAllwaysWrite()
 
 void Renderer::SetPixelArtMode(bool isPixelArt) {
     if (isPixelArt) {
-        // ƒ|ƒCƒ“ƒgƒTƒ“ƒvƒ‰[‚ğƒoƒCƒ“ƒh‚µAƒhƒbƒg‚Ì¿Š´‚ğˆÛ‚·‚é
+        // ãƒã‚¤ãƒ³ãƒˆã‚µãƒ³ãƒ—ãƒ©ãƒ¼ã‚’ãƒã‚¤ãƒ³ãƒ‰ã—ã€ãƒ‰ãƒƒãƒˆã®è³ªæ„Ÿã‚’ç¶­æŒã™ã‚‹
         m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStatePoint.GetAddressOf());
     }
     else {
-        // ˆÙ•û«ƒTƒ“ƒvƒ‰[‚ğƒoƒCƒ“ƒh‚µA3DƒeƒNƒXƒ`ƒƒ‚ğŠŠ‚ç‚©‚É‚·‚é
+        // ç•°æ–¹æ€§ã‚µãƒ³ãƒ—ãƒ©ãƒ¼ã‚’ãƒã‚¤ãƒ³ãƒ‰ã—ã€3Dãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æ»‘ã‚‰ã‹ã«ã™ã‚‹
         m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateAniso.GetAddressOf());
     }
 }
 
 void Renderer::SetUISamplerMode(bool isUi) {
     if (isUi) {
-        // UIƒTƒ“ƒvƒ‰[‚ğƒoƒCƒ“ƒh
+        // UIã‚µãƒ³ãƒ—ãƒ©ãƒ¼ã‚’ãƒã‚¤ãƒ³ãƒ‰
         m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateUI.GetAddressOf());
     }
     else {
-        // ˆÙ•û«ƒTƒ“ƒvƒ‰[‚ğƒoƒCƒ“ƒh‚µA3DƒeƒNƒXƒ`ƒƒ‚ğŠŠ‚ç‚©‚É‚·‚é
+        // ç•°æ–¹æ€§ã‚µãƒ³ãƒ—ãƒ©ãƒ¼ã‚’ãƒã‚¤ãƒ³ãƒ‰ã—ã€3Dãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æ»‘ã‚‰ã‹ã«ã™ã‚‹
         m_DeviceContext->PSSetSamplers(0, 1, m_SamplerStateAniso.GetAddressOf());
     }
 }

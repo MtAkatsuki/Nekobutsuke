@@ -33,10 +33,20 @@ namespace {
 	// 死亡飛出
 	const float DEATH_GRAVITY = 50.0f;
 	const float DEATH_FLY_FORCE = 30.0f;
+	const float DEATH_FLY_DIR_XZ = 1.8f;     // 飛出方向の水平成分の倍率
+	const float DEATH_FLY_DIR_Y = 0.6f;      // 飛出方向の上向き成分
+	const float DEATH_SPIN_MAX = 10.0f;      // 飛出時のランダム回転速度の上限（rad/s）
+	const float DEATH_FALL_KILL_Y = -20.0f;  // この高さまで落下したら消滅処理を行う
 
 	// ノックバック（スライディング）演出パラメータ
 	const float SLIDE_ARC_HEIGHT = 1.0f;   // ノックバック曲線の頂点高さ（落下時の弧の高さ）
 	const float SLIDE_TUMBLE_TURNS = 0.0f;  // 転がる回転の回数（1.0 = 360度1回転）
+
+	// 押し出しプレビュー矢印の表示パラメータ
+	const float PUSH_ARROW_POS_RATIO = 0.2f;                            // 現在地→対象地間の矢印配置比率
+	const Vector3 PUSH_ARROW_SCALE = Vector3(1.0f, 1.0f, 1.5f);         // 矢印の表示スケール（進行方向に伸ばす）
+	const Color PUSH_ARROW_WARN_COLOR = Color(1.0f, 1.0f, 0.0f, 0.7f);  // 衝突予測時：黄色
+	const Color PUSH_ARROW_SAFE_COLOR = Color(0.6f, 0.6f, 0.6f, 0.9f);  // 安全移動時：灰色
 }
 
 Unit::Unit(GameContext* context) : GameObject(context) {
@@ -417,7 +427,7 @@ void Unit::DrawPushPreview(Direction pushDir) {
 	Vector3 targetPos = map->GetWorldPosition(targetX, targetZ);
 
 	// 描画位置を現在地と対象地の間に設定
-	Vector3 arrowPos = myPos + (targetPos - myPos) * 0.2f;
+	Vector3 arrowPos = myPos + (targetPos - myPos) * PUSH_ARROW_POS_RATIO;
 	arrowPos.y += ZFight::Arrow;
 
 	float rotY = 0.0f;
@@ -426,12 +436,12 @@ void Unit::DrawPushPreview(Direction pushDir) {
 	else if (offset.z == 1)  rotY = -PI / 2.0f;
 	else if (offset.z == -1) rotY = PI / 2.0f;
 
-	Matrix4x4 world = Matrix4x4::CreateScale(Vector3(1.0f, 1.0f, 1.5f))
+	Matrix4x4 world = Matrix4x4::CreateScale(PUSH_ARROW_SCALE)
 		* Matrix4x4::CreateRotationY(rotY)
 		* Matrix4x4::CreateTranslation(arrowPos);
 
 	// 衝突が予測される場合は黄色、安全に移動できる場合は灰色で視覚的フィードバックを提供する
-	Color arrowColor = isBlocked ? Color(1.0f, 1.0f, 0.0f, 0.7f) : Color(0.6f, 0.6f, 0.6f, 0.9f);
+	Color arrowColor = isBlocked ? PUSH_ARROW_WARN_COLOR : PUSH_ARROW_SAFE_COLOR;
 
 	Renderer::SetWorldMatrix(&world);
 	Renderer::DisableCulling(false);
@@ -459,13 +469,13 @@ void Unit::StartDeathFly() {
 	if (diff.LengthSquared() > 0.001f) diff.Normalize();
 	else diff = Vector3(0, 0, 1);
 
-	Vector3 flyDir = Vector3(diff.x * 1.8f, 0.6f, diff.z * 1.8f);
+	Vector3 flyDir = Vector3(diff.x * DEATH_FLY_DIR_XZ, DEATH_FLY_DIR_Y, diff.z * DEATH_FLY_DIR_XZ);
 	m_deathVelocity = flyDir * DEATH_FLY_FORCE;
 	auto& rng = RandomEngine::tls();
 	m_deathSpin = Vector3(
-		static_cast<float>(rng.uniformReal(0.0, 10.0)),
-		static_cast<float>(rng.uniformReal(0.0, 10.0)),
-		static_cast<float>(rng.uniformReal(0.0, 10.0)));
+		static_cast<float>(rng.uniformReal(0.0, DEATH_SPIN_MAX)),
+		static_cast<float>(rng.uniformReal(0.0, DEATH_SPIN_MAX)),
+		static_cast<float>(rng.uniformReal(0.0, DEATH_SPIN_MAX)));
 }
 
 void Unit::UpdateDeathFly(float delta) {
@@ -484,7 +494,7 @@ void Unit::UpdateDeathFly(float delta) {
 	m_srt.pos += m_deathVelocity * delta;
 	m_srt.rot += m_deathSpin * delta; 
 
-	if (m_srt.pos.y < -20.0f) OnDeathFlyComplete();
+	if (m_srt.pos.y < DEATH_FALL_KILL_Y) OnDeathFlyComplete();
 	UpdateWorldMatrix();
 }
 

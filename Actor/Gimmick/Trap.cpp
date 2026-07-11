@@ -1,4 +1,4 @@
-#include "Trap.h"
+ï»¿#include "Trap.h"
 #include "../../System/Meshmanager.h"
 #include "../../System/ZFightTunables.h"
 #include "../Base/Unit.h"
@@ -6,9 +6,9 @@
 #include "../../GamePlay/Manager/MapManager.h"
 
 namespace {
-    // ‰‰oEƒoƒ‰ƒ“ƒX—p’è”
-    const float TRAP_INITIAL_SCALE = 0.5f;  // ƒgƒ‰ƒbƒv‚ÌŠî€ƒXƒP[ƒ‹
-    const float ANIM_DURATION = 0.5f;       // Á¸ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌÄ¶ŠÔi•bj
+    // æ¼”å‡ºãƒ»ãƒãƒ©ãƒ³ã‚¹ç”¨å®šæ•°
+    const float TRAP_INITIAL_SCALE = 0.5f;  // ãƒˆãƒ©ãƒƒãƒ—ã®åŸºæº–ã‚¹ã‚±ãƒ¼ãƒ«
+    const float ANIM_DURATION = 0.5f;       // æ¶ˆå¤±ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®å†ç”Ÿæ™‚é–“ï¼ˆç§’ï¼‰
 }
 
 void Trap::Init(MapModelType type, Vector3 position) {
@@ -25,7 +25,7 @@ void Trap::Init(MapModelType type, Vector3 position) {
     m_srt.pos = position;
     m_srt.pos.y += ZFight::Trap;
 
-    // ƒAƒjƒ[ƒVƒ‡ƒ“ŒvZ—p‚ÌŠî€ƒXƒP[ƒ‹‚Æ“§–¾“x‚ğ•Û‘¶
+    // ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³è¨ˆç®—ç”¨ã®åŸºæº–ã‚¹ã‚±ãƒ¼ãƒ«ã¨é€æ˜åº¦ã‚’ä¿å­˜
     m_initialScale = m_srt.scale;
     m_currentAlpha = 1.0f;
 
@@ -33,29 +33,29 @@ void Trap::Init(MapModelType type, Vector3 position) {
 }
 
 void Trap::Update(uint64_t dt) {
-    // Á¸ƒAƒjƒ[ƒVƒ‡ƒ“’†‚Å‚È‚¯‚ê‚ÎŒvZ‚ğƒXƒLƒbƒv
+    // æ¶ˆå¤±ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ä¸­ã§ãªã‘ã‚Œã°è¨ˆç®—ã‚’ã‚¹ã‚­ãƒƒãƒ—
     if (!m_isDisappearing) return;
 
     float deltaSeconds = static_cast<float>(dt) / 1000.0f;
     m_animTimer += deltaSeconds;
 
-    // is“x‚Ì³‹K‰» (0.0 ` 1.0)
+    // é€²è¡Œåº¦ã®æ­£è¦åŒ– (0.0 ï½ 1.0)
     float t = m_animTimer / ANIM_DURATION;
 
     if (t >= 1.0f) {
         t = 1.0f;
         m_isDisappearing = false;
 
-        // Š®‘S‚ÉÁ¸‚³‚¹‚é
+        // å®Œå…¨ã«æ¶ˆå¤±ã•ã›ã‚‹
         m_srt.scale = Vector3(0, 0, 0);
         m_currentAlpha = 0.0f;
     }
     else {
-        // yƒƒWƒbƒNÓ–±zFUpdate“à‚Å‚Íu”Šw“I‚ÈŒvZv‚Ì‚İ‚ğs‚¤
-        // ƒXƒP[ƒ‹‚ğ™X‚É¬‚³‚­‚·‚é (1.0 -> 0.0)
+        // ã€ãƒ­ã‚¸ãƒƒã‚¯è²¬å‹™ã€‘ï¼šUpdateå†…ã§ã¯ã€Œæ•°å­¦çš„ãªè¨ˆç®—ã€ã®ã¿ã‚’è¡Œã†
+        // ã‚¹ã‚±ãƒ¼ãƒ«ã‚’å¾ã€…ã«å°ã•ãã™ã‚‹ (1.0 -> 0.0)
         m_srt.scale = m_initialScale * (1.0f - t);
 
-        // “§–¾“xiAlphaj‚ğƒtƒF[ƒhƒAƒEƒg‚³‚¹‚é (1.0 -> 0.0)
+        // é€æ˜åº¦ï¼ˆAlphaï¼‰ã‚’ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆã•ã›ã‚‹ (1.0 -> 0.0)
         m_currentAlpha = 1.0f - t;
     }
 
@@ -63,7 +63,7 @@ void Trap::Update(uint64_t dt) {
 }
 
 void Trap::OnDraw(uint64_t delta) {
-    // Š®‘S‚Ék¬‚³‚ê‚Ä‚¢‚éiÁ¸Ï‚İjê‡‚Í•`‰æ‚ğƒXƒLƒbƒv‚µAGPU•‰‰×‚ğŒyŒ¸‚·‚é
+    // å®Œå…¨ã«ç¸®å°ã•ã‚Œã¦ã„ã‚‹ï¼ˆæ¶ˆå¤±æ¸ˆã¿ï¼‰å ´åˆã¯æç”»ã‚’ã‚¹ã‚­ãƒƒãƒ—ã—ã€GPUè² è·ã‚’è»½æ¸›ã™ã‚‹
     if (m_srt.scale.x <= 0.001f || !m_renderer) return;
 
     auto shader = MeshManager::getShader<CShader>("toonshader");
@@ -75,7 +75,7 @@ void Trap::OnDraw(uint64_t delta) {
     Renderer::SetDepthEnable(true);
     Renderer::SetWorldMatrix(&m_WorldMatrix);
 
-    // y•`‰æÓ–±zFUpdate‚ÅŒvZ‚³‚ê‚½ m_currentAlpha ‚ğƒ}ƒeƒŠƒAƒ‹‚É“K—p‚·‚é‚¾‚¯
+    // ã€æç”»è²¬å‹™ã€‘ï¼šUpdateã§è¨ˆç®—ã•ã‚ŒãŸ m_currentAlpha ã‚’ãƒãƒ†ãƒªã‚¢ãƒ«ã«é©ç”¨ã™ã‚‹ã ã‘
     if (auto* mat = m_renderer->GetMaterial(0)) {
         MATERIAL m = mat->GetData();
         m.TextureEnable = TRUE;
@@ -90,15 +90,15 @@ void Trap::OnDraw(uint64_t delta) {
 }
 
 void Trap::OnEnter(Unit* unit) {
-    // d•¡”­“®‚Ì–h~
+    // é‡è¤‡ç™ºå‹•ã®é˜²æ­¢
     if (m_hasActivated) return;
 
     if (unit) {
         DBG_ERROR("[Trap] TRAP ACTIVATED! Unit took damage.");
-        // ƒ†ƒjƒbƒg‚Éƒgƒ‰ƒbƒvƒ_ƒ[ƒW‚ğ“K—piUŒ‚Ò=nullptrj
+        // ãƒ¦ãƒ‹ãƒƒãƒˆã«ãƒˆãƒ©ãƒƒãƒ—ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’é©ç”¨ï¼ˆæ”»æ’ƒè€…=nullptrï¼‰
         unit->TakeDamage(m_trapDamage, nullptr);
 
-        // ”­“®ó‘Ô‚ğŠm’è‚µAÁ¸‰‰o‚ÖˆÚs
+        // ç™ºå‹•çŠ¶æ…‹ã‚’ç¢ºå®šã—ã€æ¶ˆå¤±æ¼”å‡ºã¸ç§»è¡Œ
         m_hasActivated = true;
         m_isDisappearing = true;
         m_animTimer = 0.0f;

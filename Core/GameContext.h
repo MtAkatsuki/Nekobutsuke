@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <memory>
 #include "../EnumClass/TurnState.h"
@@ -15,10 +15,10 @@ class Camera;
 class EffectManager;
 
 // =========================================================
-// GameContext ƒNƒ‰ƒX
-// ƒQ[ƒ€ƒvƒŒƒC’†‚Ìå—v‚ÈƒVƒXƒeƒ€Eƒ}ƒl[ƒWƒƒ[ŒQ‚Ö‚ÌQÆ‚ğ•Û‚·‚é
-// ˆË‘¶«‚Ì’“üiDependency InjectionjƒRƒ“ƒeƒi‚Æ‚µ‚Ä‹@”\‚µA
-// ƒIƒuƒWƒFƒNƒgŠÔ‚Ì’¼Ú“I‚ÈŒ‹‡iƒXƒpƒQƒbƒeƒBƒR[ƒhj‚ğ–h~‚·‚é
+// GameContext ã‚¯ãƒ©ã‚¹
+// ã‚²ãƒ¼ãƒ ãƒ—ãƒ¬ã‚¤ä¸­ã®ä¸»è¦ãªã‚·ã‚¹ãƒ†ãƒ ãƒ»ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼ç¾¤ã¸ã®å‚ç…§ã‚’ä¿æŒã™ã‚‹
+// ä¾å­˜æ€§ã®æ³¨å…¥ï¼ˆDependency Injectionï¼‰ã‚³ãƒ³ãƒ†ãƒŠã¨ã—ã¦æ©Ÿèƒ½ã—ã€
+// ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆé–“ã®ç›´æ¥çš„ãªçµåˆï¼ˆã‚¹ãƒ‘ã‚²ãƒƒãƒ†ã‚£ã‚³ãƒ¼ãƒ‰ï¼‰ã‚’é˜²æ­¢ã™ã‚‹
 // =========================================================
 class GameContext {
 public:
@@ -28,7 +28,7 @@ public:
 	void Init();
 
 	// ---------------------------------------------------------
-	// ƒRƒAƒVƒXƒeƒ€ƒ}ƒl[ƒWƒƒ[‚Ö‚ÌƒAƒNƒZƒX (Core Managers)
+	// ã‚³ã‚¢ã‚·ã‚¹ãƒ†ãƒ ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼ã¸ã®ã‚¢ã‚¯ã‚»ã‚¹ (Core Managers)
 	// ---------------------------------------------------------
 	MapManager* GetMapManager();
 	TurnManager* GetTurnManager();
@@ -36,7 +36,7 @@ public:
 	Camera* GetCamera();
 
 	// ---------------------------------------------------------
-	// ƒGƒtƒFƒNƒgEUIƒ}ƒl[ƒWƒƒ[‚Ö‚ÌƒAƒNƒZƒX (Presentation Managers)
+	// ã‚¨ãƒ•ã‚§ã‚¯ãƒˆãƒ»UIãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼ã¸ã®ã‚¢ã‚¯ã‚»ã‚¹ (Presentation Managers)
 	// ---------------------------------------------------------
 	EffectManager* GetEffectManager();
 	DamageNumberManager* GetDamageManager();
@@ -44,7 +44,7 @@ public:
 	DialogueUI* GetDialogueUI();
 
 	// ---------------------------------------------------------
-	// ƒRƒAƒGƒ“ƒeƒBƒeƒB‚Ö‚ÌƒAƒNƒZƒX (Core Entities)
+	// ã‚³ã‚¢ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã¸ã®ã‚¢ã‚¯ã‚»ã‚¹ (Core Entities)
 	// ---------------------------------------------------------
 	Player* GetPlayer();
 	void SetPlayer(Player* player);
@@ -53,13 +53,13 @@ public:
 	void SetAlly(Ally* ally);
 
 	// ---------------------------------------------------------
-	// ƒXƒe[ƒgƒVƒ‡[ƒgƒJƒbƒg (State Shortcuts)
+	// ã‚¹ãƒ†ãƒ¼ãƒˆã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆ (State Shortcuts)
 	// ---------------------------------------------------------
 	TurnState GetCurrentTurnState() const;
 
 private:
 	// =========================================================
-	// ƒƒ“ƒo[•Ï” (Managers & Entity Pointers)
+	// ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•° (Managers & Entity Pointers)
 	// =========================================================
 	std::unique_ptr<MapManager> m_mapManager;
 	std::unique_ptr<TurnManager> m_turnManager;
@@ -70,7 +70,7 @@ private:
 	std::unique_ptr<DialogueUI> m_dialogueUI;
 	std::unique_ptr<EffectManager> m_effectManager;
 
-	// ƒ‰ƒCƒtƒTƒCƒNƒ‹‚ğScene“™‚ÉˆÏ÷‚µ‚Ä‚¢‚éÀ‘Ì‚Ö‚ÌãQÆiRaw Pointersj
+	// ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«ã‚’Sceneç­‰ã«å§”è­²ã—ã¦ã„ã‚‹å®Ÿä½“ã¸ã®å¼±å‚ç…§ï¼ˆRaw Pointersï¼‰
 	Player* m_player = nullptr;
 	Ally* m_ally = nullptr;
 };

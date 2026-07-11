@@ -1,4 +1,4 @@
-#include "IntroDirector.h"
+ï»¿#include "IntroDirector.h"
 
 #include "../../System/Camera.h"
 #include "../../Core/GameContext.h"
@@ -9,15 +9,15 @@
 #include "../../Actor/Character/Ally.h"
 
 namespace {
-    const float CAMERA_ARRIVAL_TOLERANCE = 0.2f;  // ƒJƒƒ‰“ž’B”»’è‚Ì‹–—eŒë·
-    const float CAMERA_HOVER_DURATION = 0.5f;  // BaseView“ž’BŒã‚Ì‘Ò‹@ŽžŠÔ
+    const float CAMERA_ARRIVAL_TOLERANCE = 0.2f;  // ã‚«ãƒ¡ãƒ©åˆ°é”åˆ¤å®šã®è¨±å®¹èª¤å·®
+    const float CAMERA_HOVER_DURATION = 0.5f;  // BaseViewåˆ°é”å¾Œã®å¾…æ©Ÿæ™‚é–“
 }
 
 void IntroDirector::Start() {
-    if (m_state != State::Idle) return;   // “ñdŠJŽnƒK[ƒh
+    if (m_state != State::Idle) return;   // äºŒé‡é–‹å§‹ã‚¬ãƒ¼ãƒ‰
     m_state = State::TurnCounterFlying;
 
-    // ‰‰o’†‚ÌŒë‘€ì‚ð–h‚®‚½‚ß“ü—Í‚ðƒƒbƒN
+    // æ¼”å‡ºä¸­ã®èª¤æ“ä½œã‚’é˜²ããŸã‚å…¥åŠ›ã‚’ãƒ­ãƒƒã‚¯
     if (m_context && m_context->GetUIManager()) {
         m_context->GetUIManager()->SetEventBlock(true);
     }
@@ -37,13 +37,13 @@ void IntroDirector::Update(float deltaSeconds, bool allyTalked) {
 
     Camera* camera = m_context ? m_context->GetCamera() : nullptr;
 
-    // ƒVƒ“ƒvƒ‹‚Èó‘Ô‘JˆÚ‚Å“±“ü‰‰o‚ð§Œä
+    // ã‚·ãƒ³ãƒ—ãƒ«ãªçŠ¶æ…‹é·ç§»ã§å°Žå…¥æ¼”å‡ºã‚’åˆ¶å¾¡
     if (m_state == State::TurnCounterFlying) {
         if (m_turnCounter && !m_turnCounter->IsAnimating()) {
             m_state = State::CameraToAlly;
             Ally* ally = m_context ? m_context->GetAlly() : nullptr;
             if (ally && camera) {
-                // –¡•û‚ÖŽ‹“_‚ðˆÚ“®
+                // å‘³æ–¹ã¸è¦–ç‚¹ã‚’ç§»å‹•
                 camera->ChangeState(CameraState::TargetFocus, ally->getSRT().pos);
             }
         }
@@ -54,7 +54,7 @@ void IntroDirector::Update(float deltaSeconds, bool allyTalked) {
         }
     }
     else if (m_state == State::WaitingAllyDialogue) {
-        // ƒZƒŠƒt‰‰o‚ÌŠ®—¹Œã‚ÉƒJƒƒ‰‚ðBaseView‚Ö–ß‚·
+        // ã‚»ãƒªãƒ•æ¼”å‡ºã®å®Œäº†å¾Œã«ã‚«ãƒ¡ãƒ©ã‚’BaseViewã¸æˆ»ã™
         DialogueUI* dialogue = m_context ? m_context->GetDialogueUI() : nullptr;
         if (allyTalked && dialogue && !dialogue->IsShowing()) {
             m_state = State::CameraToBase;
@@ -65,7 +65,7 @@ void IntroDirector::Update(float deltaSeconds, bool allyTalked) {
         }
     }
 
-    // === BaseView‚ÖˆÚ“®‚µAˆê’èŽžŠÔ‘Ò‹@ ===
+    // === BaseViewã¸ç§»å‹•ã—ã€ä¸€å®šæ™‚é–“å¾…æ©Ÿ ===
     else if (m_state == State::CameraToBase) {
         if (HasCameraArrived()) {
             m_hoverTimer += deltaSeconds;
@@ -75,7 +75,7 @@ void IntroDirector::Update(float deltaSeconds, bool allyTalked) {
                 m_state = State::CameraToPlayer;
                 Player* player = m_context ? m_context->GetPlayer() : nullptr;
                 if (player && camera) {
-                    // ƒvƒŒƒCƒ„[’Ç]ƒJƒƒ‰‚Ö•œ‹A
+                    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼è¿½å¾“ã‚«ãƒ¡ãƒ©ã¸å¾©å¸°
                     camera->ChangeState(CameraState::Tracking, player->getSRT().pos);
                 }
             }
@@ -84,7 +84,7 @@ void IntroDirector::Update(float deltaSeconds, bool allyTalked) {
     else if (m_state == State::CameraToPlayer) {
         if (HasCameraArrived()) {
             m_state = State::Finished;
-            // “±“ü‰‰o‚ªŠ®—¹B“ü—Í‚ð—LŒø‰»‚µAs“®UI‚ð•\Ž¦
+            // å°Žå…¥æ¼”å‡ºãŒå®Œäº†ã€‚å…¥åŠ›ã‚’æœ‰åŠ¹åŒ–ã—ã€è¡Œå‹•UIã‚’è¡¨ç¤º
             if (m_context && m_context->GetUIManager()) {
                 m_context->GetUIManager()->SetEventBlock(false);
             }

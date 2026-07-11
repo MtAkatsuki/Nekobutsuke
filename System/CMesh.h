@@ -1,21 +1,21 @@
-#pragma once
+ï»¿#pragma once
 #include	<vector>
 #include	"renderer.h"
 
 class CMesh {
 protected:
-	std::vector<VERTEX_3D>	m_vertices;		// ’¸“_À•WŒQ
-	std::vector<uint32_t>	m_indices;		// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^ŒQ
+	std::vector<VERTEX_3D>	m_vertices;		// é ‚ç‚¹åº§æ¨™ç¾¤
+	std::vector<uint32_t>	m_indices;		// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ç¾¤
 public:
 	virtual ~CMesh() {
 
 	}
-	// ’¸“_ƒf[ƒ^æ“¾
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿å–å¾—
 	const std::vector<VERTEX_3D>& GetVertices() const{
 		return m_vertices;
 	}
 
-	// ƒCƒ“ƒfƒbƒNƒXƒf[ƒ^æ“¾
+	// ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿å–å¾—
 	const std::vector<unsigned int>& GetIndices() const {
 		return m_indices;
 	}

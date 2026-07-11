@@ -1,4 +1,4 @@
-#include    "CommonTypes.h"
+ï»¿#include    "CommonTypes.h"
 #include	<iostream>
 
 #include	"transform.h"
@@ -15,20 +15,20 @@ static CShader g_shader;
 void BoxDrawerInit()
 {
 	g_mesh.Init(
-		1,					// •
-		1,					// ‚‚³
-		1,					// ‰œs
+		1,					// å¹…
+		1,					// é«˜ã•
+		1,					// å¥¥è¡Œ
 		Color(1,1,1,1));
 
 	g_renderer.Init(g_mesh);
 
-	// ƒVƒF[ƒ_[‚Ì‰Šú‰»
+	// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã®åˆæœŸåŒ–
 	g_shader.Create(
-		"shader/unlitTextureVS.hlsl",				// ’¸“_ƒVƒF[ƒ_[
-		"shader/unlitTexturePS.hlsl");			// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[
+		"shader/unlitTextureVS.hlsl",				// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
+		"shader/unlitTexturePS.hlsl");			// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
 
 	MATERIAL mtrl;
-	// ƒ}ƒeƒŠƒAƒ‹¶¬
+	// ãƒãƒ†ãƒªã‚¢ãƒ«ç”Ÿæˆ
 	mtrl.Ambient = Color(0, 0, 0, 0);
 	mtrl.Diffuse = Color(1, 1, 0, 1);
 	mtrl.Emission = Color(0, 0, 0, 0);

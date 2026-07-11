@@ -1,36 +1,36 @@
-#pragma once
+ï»¿#pragma once
 
 #include "../Base/MapObject.h"
 #include "../../System/CStaticMesh.h"
 
 // =========================================================
-// Prop ƒNƒ‰ƒX
-// ‰Æ‹ï‚âáŠQ•¨‚È‚Ç‚ÌŠÂ‹«ƒ‚ƒfƒ‹B
-// ƒvƒŒƒCƒ„[‚â“G‚ª— ‘¤‚É‰B‚ê‚½ÛA‹”F«‚ğŠm•Û‚·‚é‚½‚ß‚Ì”¼“§–¾‰»iOcclusionj‹@”\‚ğ‚ÂB
+// Prop ã‚¯ãƒ©ã‚¹
+// å®¶å…·ã‚„éšœå®³ç‰©ãªã©ã®ç’°å¢ƒãƒ¢ãƒ‡ãƒ«ã€‚
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚„æ•µãŒè£å´ã«éš ã‚ŒãŸéš›ã€è¦–èªæ€§ã‚’ç¢ºä¿ã™ã‚‹ãŸã‚ã®åŠé€æ˜åŒ–ï¼ˆOcclusionï¼‰æ©Ÿèƒ½ã‚’æŒã¤ã€‚
 // =========================================================
 class Prop : public MapObject {
 public:
 	using MapObject::MapObject;
 
 	// ---------------------------------------------------------
-	// ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+	// ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
 	// ---------------------------------------------------------
 	void Init(MapModelType type, Vector3 position) override;
 	void Update(uint64_t delta) override;
 
 	// ---------------------------------------------------------
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒO (Rendering)
+	// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚° (Rendering)
 	// ---------------------------------------------------------
 	void OnDraw(uint64_t delta) override;
 
-	// ‰Æ‹ï‚Ìè—LƒTƒCƒY‚ğæ“¾iMapManager‚Å‚Ìƒ^ƒCƒ‹–„‚ß—§‚Ä—pj
+	// å®¶å…·ã®å æœ‰ã‚µã‚¤ã‚ºã‚’å–å¾—ï¼ˆMapManagerã§ã®ã‚¿ã‚¤ãƒ«åŸ‹ã‚ç«‹ã¦ç”¨ï¼‰
 	
-	// outW: X²•ûŒü‚Ìè—Lƒ}ƒX”, outD: Z²•ûŒü‚Ìè—Lƒ}ƒX”
+	// outW: Xè»¸æ–¹å‘ã®å æœ‰ãƒã‚¹æ•°, outD: Zè»¸æ–¹å‘ã®å æœ‰ãƒã‚¹æ•°
 	static void GetDimensions(MapModelType type, int& outW, int& outD);
 
 private:
-	int m_sizeX = 1; // è—L‚·‚é•iX²j
-	int m_sizeZ = 1; // è—L‚·‚é‰œs‚«iZ²j
+	int m_sizeX = 1; // å æœ‰ã™ã‚‹å¹…ï¼ˆXè»¸ï¼‰
+	int m_sizeZ = 1; // å æœ‰ã™ã‚‹å¥¥è¡Œãï¼ˆZè»¸ï¼‰
 private:
 	void DrawPropShadow();
 };

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include	<string>
 #include	<vector>
@@ -29,9 +29,9 @@ public:
 
 private:
 
-	std::vector<MATERIAL> m_materials;					// ƒ}ƒeƒŠƒAƒ‹î•ñ
-	std::vector<std::string> m_diffusetexturenames;		// ƒfƒBƒtƒ…[ƒYƒeƒNƒXƒ`ƒƒ–¼
-	std::vector<SUBSET> m_subsets;						// ƒTƒuƒZƒbƒgî•ñ
+	std::vector<MATERIAL> m_materials;					// ãƒãƒ†ãƒªã‚¢ãƒ«æƒ…å ±
+	std::vector<std::string> m_diffusetexturenames;		// ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºãƒ†ã‚¯ã‚¹ãƒãƒ£å
+	std::vector<SUBSET> m_subsets;						// ã‚µãƒ–ã‚»ãƒƒãƒˆæƒ…å ±
 
-	std::vector<std::unique_ptr<CTexture>>	m_diffusetextures;	// ƒfƒBƒtƒ…[ƒYƒeƒNƒXƒ`ƒƒŒQ
+	std::vector<std::unique_ptr<CTexture>>	m_diffusetextures;	// ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºãƒ†ã‚¯ã‚¹ãƒãƒ£ç¾¤
 };

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include	<wrl/client.h>
 #include	<string>
 
@@ -12,9 +12,9 @@ public:
 	void Create(std::string vs, std::string ps, std::string gs = "");
 	void SetGPU();
 private:
-	ComPtr<ID3D11VertexShader> m_pVertexShader;		// ’¸“_ƒVƒF[ƒ_[
-	ComPtr<ID3D11PixelShader>  m_pPixelShader;		// ƒsƒNƒZƒ‹ƒVƒF[ƒ_[
-	ComPtr<ID3D11InputLayout>  m_pVertexLayout;		// ’¸“_ƒŒƒCƒAƒEƒg
-	ComPtr<ID3D11GeometryShader> m_pGeometryShader;	// ƒWƒIƒƒgƒŠƒVƒF[ƒ_[
+	ComPtr<ID3D11VertexShader> m_pVertexShader;		// é ‚ç‚¹ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
+	ComPtr<ID3D11PixelShader>  m_pPixelShader;		// ãƒ”ã‚¯ã‚»ãƒ«ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
+	ComPtr<ID3D11InputLayout>  m_pVertexLayout;		// é ‚ç‚¹ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆ
+	ComPtr<ID3D11GeometryShader> m_pGeometryShader;	// ã‚¸ã‚ªãƒ¡ãƒˆãƒªã‚·ã‚§ãƒ¼ãƒ€ãƒ¼
 };
 

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <memory>
 #include <unordered_map>
 #include <string>
@@ -17,30 +17,30 @@ class MeshManager : NonCopyable{
 public:
 	template<class T>
 	static bool RegisterMesh(std::string key, std::unique_ptr<T> meshdata){
-		// ‘¶İ‚µ‚Ä‚éê‡‚Í‰½‚à‚µ‚È‚¢
+		// å­˜åœ¨ã—ã¦ã‚‹å ´åˆã¯ä½•ã‚‚ã—ãªã„
 		if (m_meshcontainer.contains(key)) return false;
 
-		// ‘¶İ‚µ‚Ä‚¢‚È‚¯‚ê‚Î“o˜^
+		// å­˜åœ¨ã—ã¦ã„ãªã‘ã‚Œã°ç™»éŒ²
 		m_meshcontainer[key] = std::move(meshdata);
 		return true;
 	}
 
 	template<class T>
 	static bool RegisterMeshRenderer(std::string key, std::unique_ptr<T> data) {
-		// ‘¶İ‚µ‚Ä‚éê‡‚Í‰½‚à‚µ‚È‚¢
+		// å­˜åœ¨ã—ã¦ã‚‹å ´åˆã¯ä½•ã‚‚ã—ãªã„
 		if (m_renderercontainer.contains(key)) return false;
 
-		// ‘¶İ‚µ‚Ä‚¢‚È‚¯‚ê‚Î“o˜^
+		// å­˜åœ¨ã—ã¦ã„ãªã‘ã‚Œã°ç™»éŒ²
 		m_renderercontainer[key] = std::move(data);
 		return true;
 	}
 
 	template<class T>
 	static bool RegisterShader(std::string key, std::unique_ptr<T> data) {
-		// ‘¶İ‚µ‚Ä‚éê‡‚Í‰½‚à‚µ‚È‚¢
+		// å­˜åœ¨ã—ã¦ã‚‹å ´åˆã¯ä½•ã‚‚ã—ãªã„
 		if (m_shadercontainer.contains(key)) return false;
 
-		// ‘¶İ‚µ‚Ä‚¢‚È‚¯‚ê‚Î“o˜^
+		// å­˜åœ¨ã—ã¦ã„ãªã‘ã‚Œã°ç™»éŒ²
 		m_shadercontainer[key] = std::move(data);
 		return true;
 	}
@@ -58,7 +58,7 @@ public:
 		return static_cast<T*>(m_renderercontainer[key].get());
 	}
 
-	// “o˜^Ï‚İ”»’èB
+	// ç™»éŒ²æ¸ˆã¿åˆ¤å®šã€‚
 	static bool ContainsRenderer(const std::string& key) {
 		return m_renderercontainer.contains(key);
 	}

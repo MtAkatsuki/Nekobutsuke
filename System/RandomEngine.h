@@ -1,4 +1,4 @@
-// RandomEngine.h
+ï»¿// RandomEngine.h
 #pragma once
 #include <algorithm>
 #include <array>
@@ -14,75 +14,75 @@
 
 /**
  * @file   RandomEngine.h
- * @brief  —”ƒ†[ƒeƒBƒŠƒeƒBFŒˆ’è˜_/ƒGƒ“ƒgƒƒs[‰Šú‰»EƒTƒuƒXƒgƒŠ[ƒ€E•ª•zEƒVƒƒƒbƒtƒ‹“™‚ğ’ñ‹Ÿ‚·‚éƒwƒbƒ_ƒIƒ“ƒŠ[ƒNƒ‰ƒX
+ * @brief  ä¹±æ•°ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ï¼šæ±ºå®šè«–/ã‚¨ãƒ³ãƒˆãƒ­ãƒ”ãƒ¼åˆæœŸåŒ–ãƒ»ã‚µãƒ–ã‚¹ãƒˆãƒªãƒ¼ãƒ ãƒ»åˆ†å¸ƒãƒ»ã‚·ãƒ£ãƒƒãƒ•ãƒ«ç­‰ã‚’æä¾›ã™ã‚‹ãƒ˜ãƒƒãƒ€ã‚ªãƒ³ãƒªãƒ¼ã‚¯ãƒ©ã‚¹
  * @author 
  * @version 1.0
  *
  * @details
- * - —”ƒGƒ“ƒWƒ“‚É std::mt19937_64iƒƒ‹ƒZƒ“ƒkƒcƒCƒXƒ^[64j‚ğÌ—p
- * - ^‚ÌƒGƒ“ƒgƒƒs[istd::random_devicej{“™‚©‚çˆÀ‘S‚É‰Šú‰»
- * - ŒÅ’èƒV[ƒh‚Å‚ÌŒˆ’è˜_“I‚ÈÄŒ»‚à‰Â”\
- * - –¼‘O•t‚«ƒTƒuƒXƒgƒŠ[ƒ€i"enemyAI" ‚â "loot" ‚È‚Çj‚ğŠÈ’P‚É•ª—£
- * - Šeí•ª•zFˆê—l(®”/À”)Aƒxƒ‹ƒk[ƒCA³‹KA—£Uid‚İ•t‚«ƒCƒ“ƒfƒbƒNƒXj
- * - ƒ†[ƒeƒBƒŠƒeƒBFƒVƒƒƒbƒtƒ‹AƒTƒ“ƒvƒŠƒ“ƒOA‘I‘ğ(choice)
- * - ƒXƒŒƒbƒhƒ[ƒJƒ‹‚ÌƒfƒtƒHƒ‹ƒgƒGƒ“ƒWƒ“‚ğ’ñ‹Ÿi•À—ñ‘Î‰j
+ * - ä¹±æ•°ã‚¨ãƒ³ã‚¸ãƒ³ã« std::mt19937_64ï¼ˆãƒ¡ãƒ«ã‚»ãƒ³ãƒŒãƒ„ã‚¤ã‚¹ã‚¿ãƒ¼64ï¼‰ã‚’æ¡ç”¨
+ * - çœŸã®ã‚¨ãƒ³ãƒˆãƒ­ãƒ”ãƒ¼ï¼ˆstd::random_deviceï¼‰ï¼‹æ™‚åˆ»ç­‰ã‹ã‚‰å®‰å…¨ã«åˆæœŸåŒ–
+ * - å›ºå®šã‚·ãƒ¼ãƒ‰ã§ã®æ±ºå®šè«–çš„ãªå†ç¾ã‚‚å¯èƒ½
+ * - åå‰ä»˜ãã‚µãƒ–ã‚¹ãƒˆãƒªãƒ¼ãƒ ï¼ˆ"enemyAI" ã‚„ "loot" ãªã©ï¼‰ã‚’ç°¡å˜ã«åˆ†é›¢
+ * - å„ç¨®åˆ†å¸ƒï¼šä¸€æ§˜(æ•´æ•°/å®Ÿæ•°)ã€ãƒ™ãƒ«ãƒŒãƒ¼ã‚¤ã€æ­£è¦ã€é›¢æ•£ï¼ˆé‡ã¿ä»˜ãã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ï¼‰
+ * - ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ï¼šã‚·ãƒ£ãƒƒãƒ•ãƒ«ã€ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ã€é¸æŠ(choice)
+ * - ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ­ãƒ¼ã‚«ãƒ«ã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã‚¨ãƒ³ã‚¸ãƒ³ã‚’æä¾›ï¼ˆä¸¦åˆ—å¯¾å¿œï¼‰
  *
- * g—p—á:
- *   auto& rng = RandomEngine::tls();                 // ƒXƒŒƒbƒhƒ[ƒJƒ‹ RNG
+ * ä½¿ç”¨ä¾‹:
+ *   auto& rng = RandomEngine::tls();                 // ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ­ãƒ¼ã‚«ãƒ« RNG
  *   int x = rng.uniformInt(1, 6);                    // 1..6
  *   double y = rng.uniformReal(0.0, 1.0);            // [0,1)
  *   bool b = rng.bernoulli(0.25);                    // 25%
  *   double n = rng.normal(0.0, 1.0);                 // N(0,1)
- *   size_t i = rng.weightedIndex({0.1, 0.2, 0.7});   // 0/1/2 ‚ğd‚İ‚É‰‚¶‚Ä‘I‚Ô
- *   auto lootRng = rng.stream("loot");               // –¼‘O‚Å“Æ—§ƒXƒgƒŠ[ƒ€
- *   std::vector<int> a{1,2,3,4,5}; rng.shuffle(a);   // ƒVƒƒƒbƒtƒ‹
+ *   size_t i = rng.weightedIndex({0.1, 0.2, 0.7});   // 0/1/2 ã‚’é‡ã¿ã«å¿œã˜ã¦é¸ã¶
+ *   auto lootRng = rng.stream("loot");               // åå‰ã§ç‹¬ç«‹ã‚¹ãƒˆãƒªãƒ¼ãƒ 
+ *   std::vector<int> a{1,2,3,4,5}; rng.shuffle(a);   // ã‚·ãƒ£ãƒƒãƒ•ãƒ«
  */
 
 class RandomEngine {
 public:
     using engine_type = std::mt19937_64;
 
-    /// @brief ƒGƒ“ƒgƒƒs[‚©‚ç‰Šú‰»
+    /// @brief ã‚¨ãƒ³ãƒˆãƒ­ãƒ”ãƒ¼ã‹ã‚‰åˆæœŸåŒ–
     RandomEngine() { reseedFromEntropy(); }
 
-    /// @brief ŒÅ’èƒV[ƒh‚ÅŒˆ’è˜_“I‚É‰Šú‰»
+    /// @brief å›ºå®šã‚·ãƒ¼ãƒ‰ã§æ±ºå®šè«–çš„ã«åˆæœŸåŒ–
     explicit RandomEngine(uint64_t seed) { reseed(seed); }
 
-    /// @brief Œ»İ‚Ì‘ã•\ƒV[ƒh’liƒƒO/ÄŒ»‚Ìƒƒ‚—pj
+    /// @brief ç¾åœ¨ã®ä»£è¡¨ã‚·ãƒ¼ãƒ‰å€¤ï¼ˆãƒ­ã‚°/å†ç¾ã®ãƒ¡ãƒ¢ç”¨ï¼‰
     [[nodiscard]] uint64_t seedValue() const noexcept { return seed_value_; }
 
-    /// @brief ŒÅ’èƒV[ƒh‚ÉƒŠƒV[ƒhiŒˆ’è˜_j
+    /// @brief å›ºå®šã‚·ãƒ¼ãƒ‰ã«ãƒªã‚·ãƒ¼ãƒ‰ï¼ˆæ±ºå®šè«–ï¼‰
     void reseed(uint64_t seed) {
         seed_value_ = seed;
         eng_.seed(seed_value_);
     }
 
-    /// @brief ^‚ÌƒGƒ“ƒgƒƒs[‚©‚çƒŠƒV[ƒhi”ñŒˆ’è˜_j
+    /// @brief çœŸã®ã‚¨ãƒ³ãƒˆãƒ­ãƒ”ãƒ¼ã‹ã‚‰ãƒªã‚·ãƒ¼ãƒ‰ï¼ˆéæ±ºå®šè«–ï¼‰
     void reseedFromEntropy() {
-        auto [mix, representative] = makeSeedSeqFromEntropy(); // © ”z—ñ‚ğó‚¯æ‚é
+        auto [mix, representative] = makeSeedSeqFromEntropy(); // â† é…åˆ—ã‚’å—ã‘å–ã‚‹
         seed_value_ = representative;
-        std::seed_seq seq(mix.begin(), mix.end());             // © ‚±‚±‚Å‘g‚İ—§‚Ä
+        std::seed_seq seq(mix.begin(), mix.end());             // â† ã“ã“ã§çµ„ã¿ç«‹ã¦
         eng_.seed(seq);
     }
 
-    /// @brief ¶‚Ì64bit—”i•K—v‚È‚çj
+    /// @brief ç”Ÿã®64bitä¹±æ•°ï¼ˆå¿…è¦ãªã‚‰ï¼‰
     uint64_t u64() { return eng_(); }
 
-    /// @brief [0,1) ‚Ìˆê—lÀ”i”{¸“xj
+    /// @brief [0,1) ã®ä¸€æ§˜å®Ÿæ•°ï¼ˆå€ç²¾åº¦ï¼‰
     double uniform01() {
-        // 53bit¸“x‚Å [0,1) ‚ğ¶¬
+        // 53bitç²¾åº¦ã§ [0,1) ã‚’ç”Ÿæˆ
         return std::generate_canonical<double, 53>(eng_);
     }
 
-    /// @brief (0,1) ‚Ìˆê—lÀ”i’[“_œŠOj
+    /// @brief (0,1) ã®ä¸€æ§˜å®Ÿæ•°ï¼ˆç«¯ç‚¹é™¤å¤–ï¼‰
     double uniform01Open() {
-        // 0 ‚Æ 1 ‚ğ”ğ‚¯‚éH•v
+        // 0 ã¨ 1 ã‚’é¿ã‘ã‚‹å·¥å¤«
         double x;
         do { x = uniform01(); } while (x == 0.0 || x == 1.0);
         return x;
     }
 
-    /// @brief [lo, hi] ‚Ìˆê—l®”i—¼’[ŠÜ‚Şj
+    /// @brief [lo, hi] ã®ä¸€æ§˜æ•´æ•°ï¼ˆä¸¡ç«¯å«ã‚€ï¼‰
     template <class Int>
     Int uniformInt(Int lo, Int hi) {
         static_assert(std::is_integral_v<Int>, "uniformInt requires integral type");
@@ -90,25 +90,25 @@ public:
         return dist(eng_);
     }
 
-    /// @brief [lo, hi) ‚Ìˆê—lÀ”i”¼ŠJ‹æŠÔj
+    /// @brief [lo, hi) ã®ä¸€æ§˜å®Ÿæ•°ï¼ˆåŠé–‹åŒºé–“ï¼‰
     double uniformReal(double lo, double hi) {
         std::uniform_real_distribution<double> dist(lo, std::nextafter(hi, std::numeric_limits<double>::lowest()));
         return dist(eng_);
     }
 
-    /// @brief p ‚ÌŠm—¦‚Å trueiƒxƒ‹ƒk[ƒCj
+    /// @brief p ã®ç¢ºç‡ã§ trueï¼ˆãƒ™ãƒ«ãƒŒãƒ¼ã‚¤ï¼‰
     bool bernoulli(double p) {
         std::bernoulli_distribution dist(p);
         return dist(eng_);
     }
 
-    /// @brief ³‹K•ª•z N(mean, stddev^2)
+    /// @brief æ­£è¦åˆ†å¸ƒ N(mean, stddev^2)
     double normal(double mean = 0.0, double stddev = 1.0) {
         std::normal_distribution<double> dist(mean, stddev);
         return dist(eng_);
     }
 
-    /// @brief d‚İ”z—ñi”ñ•‰j‚©‚çƒCƒ“ƒfƒbƒNƒX‚ğ1‚Â•Ô‚·i—£U•ª•zj
+    /// @brief é‡ã¿é…åˆ—ï¼ˆéè² ï¼‰ã‹ã‚‰ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’1ã¤è¿”ã™ï¼ˆé›¢æ•£åˆ†å¸ƒï¼‰
     size_t weightedIndex(std::span<const double> weights) {
         std::discrete_distribution<size_t> dist(weights.begin(), weights.end());
         return dist(eng_);
@@ -117,7 +117,7 @@ public:
         return weightedIndex(std::span<const double>(weights.data(), weights.size()));
     }
 
-    /// @brief ”ÍˆÍ‚ğƒVƒƒƒbƒtƒ‹iƒRƒ“ƒeƒi^ƒCƒeƒŒ[ƒ^—¼‘Î‰j
+    /// @brief ç¯„å›²ã‚’ã‚·ãƒ£ãƒƒãƒ•ãƒ«ï¼ˆã‚³ãƒ³ãƒ†ãƒŠï¼ã‚¤ãƒ†ãƒ¬ãƒ¼ã‚¿ä¸¡å¯¾å¿œï¼‰
     template <class It>
     void shuffle(It first, It last) {
         std::shuffle(first, last, eng_);
@@ -125,33 +125,33 @@ public:
     template <class Container>
     void shuffle(Container& c) { shuffle(c.begin(), c.end()); }
 
-    /// @brief ”ÍˆÍ‚©‚ç n ŒÂ‚ğ–³ìˆ×’Šoi”ñ”j‰ój
+    /// @brief ç¯„å›²ã‹ã‚‰ n å€‹ã‚’ç„¡ä½œç‚ºæŠ½å‡ºï¼ˆéç ´å£Šï¼‰
     template <class It, class OutIt>
     void sample(It first, It last, OutIt out, size_t n) {
         std::sample(first, last, out, n, eng_);
     }
 
-    /// @brief ƒRƒ“ƒeƒi‚©‚çƒ‰ƒ“ƒ_ƒ€‚É1—v‘f‚ğ•Ô‚·i—v‘f”>0‘O’ñj
+    /// @brief ã‚³ãƒ³ãƒ†ãƒŠã‹ã‚‰ãƒ©ãƒ³ãƒ€ãƒ ã«1è¦ç´ ã‚’è¿”ã™ï¼ˆè¦ç´ æ•°>0å‰æï¼‰
     template <class Container>
     decltype(auto) choice(const Container& c) {
         size_t idx = uniformInt<size_t>(0, c.size() - 1);
         return c[idx];
     }
 
-    /// @brief –¼‘O‚©‚ç“Æ—§ƒXƒgƒŠ[ƒ€‚ğ¶¬i“¯‚¶ seedValue + “¯‚¶–¼‘O ¨ “¯‚¶Œn—ñj
+    /// @brief åå‰ã‹ã‚‰ç‹¬ç«‹ã‚¹ãƒˆãƒªãƒ¼ãƒ ã‚’ç”Ÿæˆï¼ˆåŒã˜ seedValue + åŒã˜åå‰ â†’ åŒã˜ç³»åˆ—ï¼‰
     RandomEngine stream(std::string_view tag) const {
         uint64_t tagHash = fnv1a64(tag);
         uint64_t subSeed = splitmix64(seed_value_ ^ tagHash);
         return RandomEngine(subSeed);
     }
 
-    /// @brief ƒXƒŒƒbƒhƒ[ƒJƒ‹‚ÈŠù’èƒGƒ“ƒWƒ“i‰Šú‰»‚ÍƒGƒ“ƒgƒƒs[j
+    /// @brief ã‚¹ãƒ¬ãƒƒãƒ‰ãƒ­ãƒ¼ã‚«ãƒ«ãªæ—¢å®šã‚¨ãƒ³ã‚¸ãƒ³ï¼ˆåˆæœŸåŒ–ã¯ã‚¨ãƒ³ãƒˆãƒ­ãƒ”ãƒ¼ï¼‰
     static RandomEngine& tls() {
         thread_local RandomEngine s_tls;
         return s_tls;
     }
 
-    /// @brief Šî‘bƒGƒ“ƒWƒ“‚Ö‚ÌƒAƒNƒZƒXi‚“x‚È—p“rj
+    /// @brief åŸºç¤ã‚¨ãƒ³ã‚¸ãƒ³ã¸ã®ã‚¢ã‚¯ã‚»ã‚¹ï¼ˆé«˜åº¦ãªç”¨é€”ï¼‰
     engine_type& engine() noexcept { return eng_; }
     const engine_type& engine() const noexcept { return eng_; }
 
@@ -159,7 +159,7 @@ private:
     engine_type eng_{};
     uint64_t    seed_value_{ 0 };
 
-    // ---- ’áƒŒƒxƒ‹ƒ†[ƒeƒBƒŠƒeƒB ----
+    // ---- ä½ãƒ¬ãƒ™ãƒ«ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ ----
 
     static uint64_t splitmix64(uint64_t x) {
         x += 0x9E3779B97F4A7C15ull;
@@ -177,8 +177,8 @@ private:
         return h;
     }
 
-    // std::random_device ‚ªÀ‘•ˆË‘¶‚Åã‚¢ŠÂ‹«‚Å‚àˆÀ‘S‘¤‚ÉŠñ‚¹‚é‚½‚ßA
-    // rd() •¡”’l + /ƒAƒhƒŒƒX—R—ˆƒrƒbƒg‚ğ seed_seq ‚É¬‚º‚é
+    // std::random_device ãŒå®Ÿè£…ä¾å­˜ã§å¼±ã„ç’°å¢ƒã§ã‚‚å®‰å…¨å´ã«å¯„ã›ã‚‹ãŸã‚ã€
+    // rd() è¤‡æ•°å€¤ + æ™‚åˆ»/ã‚¢ãƒ‰ãƒ¬ã‚¹ç”±æ¥ãƒ“ãƒƒãƒˆã‚’ seed_seq ã«æ··ãœã‚‹
     static std::pair<std::array<uint32_t, 16 + 4>, uint64_t> makeSeedSeqFromEntropy() {
         std::random_device rd;
         constexpr size_t kWords = 16;
@@ -207,6 +207,6 @@ private:
         mix[kWords + 2] = static_cast<uint32_t>(now);
         mix[kWords + 3] = static_cast<uint32_t>(now >> 32);
 
-        return { mix, representative };  // © seed_seq ‚ğ•Ô‚³‚È‚¢
+        return { mix, representative };  // â† seed_seq ã‚’è¿”ã•ãªã„
     }
 };

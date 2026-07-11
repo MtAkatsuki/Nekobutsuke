@@ -1,4 +1,4 @@
-#include "../../Core/main.h"
+ï»¿#include "../../Core/main.h"
 #include "titlescene.h"
 #include "../../System/CDirectInput.h"
 #include "../../System/scenemanager.h"
@@ -8,11 +8,11 @@
 #include "../../System/BackgroundTransition.h"
 
 namespace {
-    // --- ’è”’è‹` ---
+    // --- å®šæ•°å®šç¾© ---
     constexpr float FADE_OUT_DURATION = 1000.0f;
-    constexpr float INPUT_LOCK_DURATION = 1.0f; // ‘JˆÚ’¼Œã‚ÌŒë‘€ì–h~(1•b)
-    constexpr float FADE_IN_OUT_DURATION = 1000.0f;// ƒtƒF[ƒhƒCƒ“EƒAƒEƒg‚Ì‡ŒvŠÔimsj
-    constexpr float BackgroundTransitionTime = 4000.0f;// ”wŒi‘JˆÚ‚ÌƒXƒNƒ[ƒ‹ŠÔimsj
+    constexpr float INPUT_LOCK_DURATION = 1.0f; // é·ç§»ç›´å¾Œã®èª¤æ“ä½œé˜²æ­¢(1ç§’)
+    constexpr float FADE_IN_OUT_DURATION = 1000.0f;// ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ãƒ»ã‚¢ã‚¦ãƒˆã®åˆè¨ˆæ™‚é–“ï¼ˆmsï¼‰
+    constexpr float BackgroundTransitionTime = 4000.0f;// èƒŒæ™¯é·ç§»ã®ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«æ™‚é–“ï¼ˆmsï¼‰
 }
 
 void GameOverScene::Init() {

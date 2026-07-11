@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -15,8 +15,8 @@ enum class EnemyPhaseState {
 };
 
 // =========================================================
-// EnemyManager ƒNƒ‰ƒX
-// “GƒtƒF[ƒY‚É‚¨‚¯‚éAI‚Ìs“®‡˜‚Æó‘Ô‘JˆÚ‚ğŠÇ—‚·‚é
+// EnemyManager ã‚¯ãƒ©ã‚¹
+// æ•µãƒ•ã‚§ãƒ¼ã‚ºã«ãŠã‘ã‚‹AIã®è¡Œå‹•é †åºã¨çŠ¶æ…‹é·ç§»ã‚’ç®¡ç†ã™ã‚‹
 // =========================================================
 class EnemyManager {
 public:
@@ -24,26 +24,26 @@ public:
 	~EnemyManager() = default;
 
 	// ---------------------------------------------------------
-	// ƒ‰ƒCƒtƒTƒCƒNƒ‹‚Æ‰Šú‰» (Lifecycle & Initialization)
+	// ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«ã¨åˆæœŸåŒ– (Lifecycle & Initialization)
 	// ---------------------------------------------------------
 	void Init(GameContext* context) { m_context = context; }
 	void Update(uint64_t dt);
 	void ClearAll();
 
 	// ---------------------------------------------------------
-	// ƒGƒ“ƒeƒBƒeƒBŠÇ— (Entity Management)
+	// ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ç®¡ç† (Entity Management)
 	// ---------------------------------------------------------
 	void RegisterEnemy(Enemy* enemy);
 	void RemoveEnemy(Enemy* enemy);
 	const std::vector<Enemy*>& GetAllEnemies() const { return m_enemies; }
 
 	// ---------------------------------------------------------
-	// ƒtƒF[ƒY§Œä (Phase Control)
+	// ãƒ•ã‚§ãƒ¼ã‚ºåˆ¶å¾¡ (Phase Control)
 	// ---------------------------------------------------------
 	void StartEnemyPhase();
 
 	// ---------------------------------------------------------
-	// ó‘ÔƒNƒGƒŠ (State Queries)
+	// çŠ¶æ…‹ã‚¯ã‚¨ãƒª (State Queries)
 	// ---------------------------------------------------------
 	bool IsFinished() const { return m_state == EnemyPhaseState::ALL_FINISHED; }
 	bool AreAllEnemiesDead() const;                             
@@ -53,12 +53,12 @@ public:
 
 private:
 	// ---------------------------------------------------------
-	// “à•”ƒTƒuƒ‹[ƒ`ƒ“ (Internal Sub-routines)
+	// å†…éƒ¨ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ (Internal Sub-routines)
 	// ---------------------------------------------------------
 	void ResortAndRenumber();
 
 	// =========================================================
-	// ƒƒ“ƒo[•Ï” (Member Variables)
+	// ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•° (Member Variables)
 	// =========================================================
 	GameContext* m_context = nullptr;
 	std::vector<Enemy*> m_enemies;

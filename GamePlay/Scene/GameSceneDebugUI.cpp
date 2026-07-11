@@ -1,5 +1,5 @@
-#include "GameSceneDebugUI.h"
-#include "GameScene.h"                              // friend ƒAƒNƒZƒX‚ÉŠ®‘SŒ^‚ª•K—v
+ï»¿#include "GameSceneDebugUI.h"
+#include "GameScene.h"                              // friend ã‚¢ã‚¯ã‚»ã‚¹ã«å®Œå…¨åž‹ãŒå¿…è¦
 
 #include "../../System/Renderer.h"
 #include "../../System/Camera.h"
@@ -23,7 +23,7 @@
 void GameSceneDebugUI::DrawCameraTuningWindow() {
     if (!m_enabled) return;
 
-    // --- “Ç‚ÝŽæ‚èê—p‚ÌŠÇ—Šíƒ|ƒCƒ“ƒ^‚ð“¯–¼‚Å•Ê–¼‰»i–{‘Ì‚ðŒ´Œ^‚Ç‚¨‚è‚É•Û‚Â‚½‚ßj ---
+    // --- èª­ã¿å–ã‚Šå°‚ç”¨ã®ç®¡ç†å™¨ãƒã‚¤ãƒ³ã‚¿ã‚’åŒåã§åˆ¥ååŒ–ï¼ˆæœ¬ä½“ã‚’åŽŸåž‹ã©ãŠã‚Šã«ä¿ã¤ãŸã‚ï¼‰ ---
     GameContext* m_context = m_scene.m_context;
     Camera* m_camera = m_scene.m_camera;
     Player* m_player = m_scene.m_player;
@@ -37,7 +37,7 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
 
         ImGui::Checkbox("Action UI", &m_scene.m_showActionUI);
 
-        // ƒAƒEƒgƒ‰ƒCƒ“
+        // ã‚¢ã‚¦ãƒˆãƒ©ã‚¤ãƒ³
         static bool outlineOn = true;
         static float savedW = tp.OutlineColor.w;
         if (ImGui::Checkbox("Outline", &outlineOn)) {
@@ -46,7 +46,7 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
             changed = true;
         }
 
-        // ”¼‹…ŒõiOFFŽžFSky ‚ð Ground ‚É‡‚í‚¹A’PF ambient ‚Ö‘Þ‰»j
+        // åŠçƒå…‰ï¼ˆOFFæ™‚ï¼šSky ã‚’ Ground ã«åˆã‚ã›ã€å˜è‰² ambient ã¸é€€åŒ–ï¼‰
         static bool hemiOn = true;
         static Color savedSky = tp.SkyColor;
         if (ImGui::Checkbox("Hemisphere", &hemiOn)) {
@@ -55,7 +55,7 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
             changed = true;
         }
 
-        // •½sŒõ‚É‚æ‚éƒgƒD[ƒ“ŠK’²iOFFŽžFè‡’l‚ð1ˆÈã‚ÖˆÚ“®‚µ band ‚ðí‚É0‚É‚µ‚ÄŠÂ‹«Œõ‚Ì‚Ý•\Ž¦j
+        // å¹³è¡Œå…‰ã«ã‚ˆã‚‹ãƒˆã‚¥ãƒ¼ãƒ³éšŽèª¿ï¼ˆOFFæ™‚ï¼šé–¾å€¤ã‚’1ä»¥ä¸Šã¸ç§»å‹•ã— band ã‚’å¸¸ã«0ã«ã—ã¦ç’°å¢ƒå…‰ã®ã¿è¡¨ç¤ºï¼‰
         static bool lightOn = true;
         static Vector4 savedTP = tp.ToonParams;
         if (ImGui::Checkbox("Directional Light", &lightOn)) {
@@ -89,31 +89,31 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
         if (ch) Renderer::SetPostFX(p);
     }
 
-    // 1. Œ»ÝƒvƒŒƒCƒ„[ƒ^[ƒ“i‘€ìƒtƒF[ƒYj‚©‚ðƒ`ƒFƒbƒN
+    // 1. ç¾åœ¨ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¿ãƒ¼ãƒ³ï¼ˆæ“ä½œãƒ•ã‚§ãƒ¼ã‚ºï¼‰ã‹ã‚’ãƒã‚§ãƒƒã‚¯
     bool isPlayerPhase = false;
     if (m_context && m_context->GetTurnManager()) {
         isPlayerPhase = (m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase);
     }
 
-    // ƒvƒŒƒCƒ„[ƒ^[ƒ“‚Å‚È‚¢ê‡‚ÍAÔŽš‚ÌŒx‚ð•\Ž¦‚µ‚Ä‘€ì‚ðƒƒbƒN
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¿ãƒ¼ãƒ³ã§ãªã„å ´åˆã¯ã€èµ¤å­—ã®è­¦å‘Šã‚’è¡¨ç¤ºã—ã¦æ“ä½œã‚’ãƒ­ãƒƒã‚¯
     if (!isPlayerPhase) {
         ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Tuning only available in Player Phase.");
         ImGui::End();
         return;
     }
 
-    // 2. ƒvƒŒƒCƒ„[ƒ^[ƒ“’†FŽÀÛ‚ÌƒJƒƒ‰ƒpƒ‰ƒ[ƒ^‚ð“Ç‚ÝŽæ‚Á‚ÄƒoƒCƒ“ƒh
+    // 2. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¿ãƒ¼ãƒ³ä¸­ï¼šå®Ÿéš›ã®ã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’èª­ã¿å–ã£ã¦ãƒã‚¤ãƒ³ãƒ‰
     ImGui::Text("Action Camera Parameters");
     ImGui::Separator();
 
     bool changed = false;
 
-    // Camera ƒNƒ‰ƒX‚ÌƒOƒ[ƒoƒ‹ inline •Ï”‚É’¼ÚƒoƒCƒ“ƒh
+    // Camera ã‚¯ãƒ©ã‚¹ã®ã‚°ãƒ­ãƒ¼ãƒãƒ« inline å¤‰æ•°ã«ç›´æŽ¥ãƒã‚¤ãƒ³ãƒ‰
     if (ImGui::SliderFloat("Zoom Radius", &Camera::ZOOM_RADIUS, 10.0f, 50.0f, "%.1f")) changed = true;
     if (ImGui::SliderFloat("Azimuth", &Camera::BASE_AZIMUTH, -3.14159f, 3.14159f, "%.4f")) changed = true;
     if (ImGui::SliderFloat("Elevation", &Camera::BASE_ELEVATION, -1.5f, 1.5f, "%.4f")) changed = true;
 
-    // 3. ƒpƒ‰ƒ[ƒ^•ÏXŽžAV‚µ‚¢’l‚ðƒJƒƒ‰‚Ìy–Ú•W’l (Target)z‚ÖÝ’è
+    // 3. ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿å¤‰æ›´æ™‚ã€æ–°ã—ã„å€¤ã‚’ã‚«ãƒ¡ãƒ©ã®ã€ç›®æ¨™å€¤ (Target)ã€‘ã¸è¨­å®š
     if (changed && m_camera) {
         m_camera->SetTargetRadius(Camera::ZOOM_RADIUS);
         m_camera->UpdateTargetAzimuth();
@@ -134,11 +134,11 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
 
     ImGui::Separator();
 
-    // ‹«ŠEiƒoƒEƒ“ƒfƒBƒ“ƒOƒ{ƒbƒNƒXj‚ÌƒpƒfƒBƒ“ƒOÝ’è
+    // å¢ƒç•Œï¼ˆãƒã‚¦ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãƒœãƒƒã‚¯ã‚¹ï¼‰ã®ãƒ‘ãƒ‡ã‚£ãƒ³ã‚°è¨­å®š
     if (ImGui::SliderFloat("Bound Padding", &Camera::BOUND_PADDING, -10.0f, 10.0f, "%.1f")) {
         m_scene.RecalculateCameraBounds();
     }
-    // === ƒfƒoƒbƒO—pFƒ‰ƒCƒeƒBƒ“ƒO’²® ===
+    // === ãƒ‡ãƒãƒƒã‚°ç”¨ï¼šãƒ©ã‚¤ãƒ†ã‚£ãƒ³ã‚°èª¿æ•´ ===
     if (ImGui::CollapsingHeader("Light / Toon")) {
         LIGHT lt = Renderer::GetLight();
         float dir[3] = { lt.Direction.x, lt.Direction.y, lt.Direction.z };
@@ -169,7 +169,7 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
         if (ch) Renderer::SetToonParam(tp);
     }
 
-    // === ƒfƒoƒbƒO—pFŸ—˜ƒAƒjƒ[ƒVƒ‡ƒ“‚ÆuWINvƒeƒLƒXƒg‚Ì‹­§”­‰Î ===
+    // === ãƒ‡ãƒãƒƒã‚°ç”¨ï¼šå‹åˆ©ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã¨ã€ŒWINã€ãƒ†ã‚­ã‚¹ãƒˆã®å¼·åˆ¶ç™ºç« ===
     ImGui::Text("Debug Actions");
     if (ImGui::Button("Test Win Animation & Text", ImVec2(-1, 30))) {
         if (m_player) {
@@ -180,7 +180,7 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
         }
     }
 
-    // === ƒfƒoƒbƒO—pF’EooŒ»‚ÆŽwŽ¦‰æ‘œ‚Ì‹­§”­‰Î ===
+    // === ãƒ‡ãƒãƒƒã‚°ç”¨ï¼šè„±å‡ºå‡ºç¾ã¨æŒ‡ç¤ºç”»åƒã®å¼·åˆ¶ç™ºç« ===
     ImGui::Text("Debug Escape");
     if (ImGui::Button("Test Escape Model & Text", ImVec2(-1, 30))) {
         m_scene.m_shouldShowDebugEscape = !m_scene.m_shouldShowDebugEscape;
@@ -206,12 +206,12 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
         }
     }
     ImGui::Spacing();
-    // Ý’è‚ðƒ[ƒJƒ‹‚Ì INI ƒtƒ@ƒCƒ‹‚ÖˆêŠ‡•Û‘¶
+    // è¨­å®šã‚’ãƒ­ãƒ¼ã‚«ãƒ«ã® INI ãƒ•ã‚¡ã‚¤ãƒ«ã¸ä¸€æ‹¬ä¿å­˜
     if (ImGui::Button("Save Config to Local", ImVec2(-1, 30))) {
         Camera::SaveConfig();
     }
 
-    // ===== ƒAƒ^ƒbƒNƒJƒƒ‰ =====
+    // ===== ã‚¢ã‚¿ãƒƒã‚¯ã‚«ãƒ¡ãƒ© =====
     ImGui::Spacing();
     if (ImGui::CollapsingHeader("Attack Cam")) {
         ImGui::SliderFloat("AttackZoom Radius", &Camera::ATTACKZOOM_RADIUS, 5.0f, 40.0f, "%.1f");
@@ -223,7 +223,7 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
         }
     }
 
-    // ===== ƒLƒ‹ƒJƒƒ‰ =====
+    // ===== ã‚­ãƒ«ã‚«ãƒ¡ãƒ© =====
     ImGui::Spacing();
     if (ImGui::CollapsingHeader("Kill Cam")) {
         ImGui::SliderFloat("KillCam Radius", &Camera::KILLCAM_RADIUS, 5.0f, 40.0f, "%.1f");
@@ -249,7 +249,7 @@ Enemy* GameSceneDebugUI::SpawnDebugEnemyInFront(int hp) {
 
     if (!m_player || !m_context || !m_MapManager) return nullptr;
 
-    // ‘O‰ñƒeƒXƒg‚ÅŽc‚Á‚½ƒfƒoƒbƒO“G‚ð‘|œ‚µAƒXƒ^ƒbƒN‚ð–h‚®
+    // å‰å›žãƒ†ã‚¹ãƒˆã§æ®‹ã£ãŸãƒ‡ãƒãƒƒã‚°æ•µã‚’æŽƒé™¤ã—ã€ã‚¹ã‚¿ãƒƒã‚¯ã‚’é˜²ã
     if (m_debugEnemy) {
         if (m_context->GetEnemyManager())
             m_context->GetEnemyManager()->RemoveEnemy(m_debugEnemy);

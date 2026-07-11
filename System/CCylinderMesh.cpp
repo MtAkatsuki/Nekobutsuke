@@ -1,15 +1,15 @@
-#include	<iostream>
+ï»¿#include	<iostream>
 #include	"CCylinderMesh.h"
 
 /**
- * @brief ‰~’ŒƒƒbƒVƒ…‚Ì‰Šú‰»ˆ—
+ * @brief å††æŸ±ãƒ¡ãƒƒã‚·ãƒ¥ã®åˆæœŸåŒ–å‡¦ç†
  *
- * w’è‚³‚ê‚½•ªŠ„”E”¼ŒaE‚‚³EF‚ÉŠî‚Ã‚¢‚Ä‰~’Œ‚Ì’¸“_‚ÆƒCƒ“ƒfƒbƒNƒX‚ğ¶¬‚µ‚Ü‚·B
+ * æŒ‡å®šã•ã‚ŒãŸåˆ†å‰²æ•°ãƒ»åŠå¾„ãƒ»é«˜ã•ãƒ»è‰²ã«åŸºã¥ã„ã¦å††æŸ±ã®é ‚ç‚¹ã¨ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’ç”Ÿæˆã—ã¾ã™ã€‚
  *
- * @param divx ‰~ü•ûŒü‚Ì•ªŠ„”
- * @param radius ‰~’Œ‚Ì”¼Œa
- * @param height ‰~’Œ‚Ì‚‚³
- * @param color ’¸“_ƒJƒ‰[
+ * @param divx å††å‘¨æ–¹å‘ã®åˆ†å‰²æ•°
+ * @param radius å††æŸ±ã®åŠå¾„
+ * @param height å††æŸ±ã®é«˜ã•
+ * @param color é ‚ç‚¹ã‚«ãƒ©ãƒ¼
  */
 void CCylinderMesh::Init(
 	int		divx,
@@ -17,37 +17,37 @@ void CCylinderMesh::Init(
 	float	height,
 	Color color)
 {
-	// ƒTƒCƒYƒZƒbƒgi•‚Æ‚‚³jiXY•½–Êj
+	// ã‚µã‚¤ã‚ºã‚»ãƒƒãƒˆï¼ˆå¹…ã¨é«˜ã•ï¼‰ï¼ˆXYå¹³é¢ï¼‰
 	m_height = height;
-	m_width = 2.0f * PI * radius;		// ’¼Œa~‰~ü—¦
+	m_width = 2.0f * PI * radius;		// ç›´å¾„Ã—å††å‘¨ç‡
 	m_radius = radius;
 
-	// •ªŠ„”
+	// åˆ†å‰²æ•°
 	m_division_x = divx;
 
-	// ’¸“_ƒJƒ‰[
+	// é ‚ç‚¹ã‚«ãƒ©ãƒ¼
 	m_color = color;
 
-	// ’¸“_ƒf[ƒ^¶¬
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ç”Ÿæˆ
 	CreateVertex();
 }
 
 /**
- * @brief ‰~’ŒƒƒbƒVƒ…‚Ì’¸“_‚ÆƒCƒ“ƒfƒbƒNƒXƒf[ƒ^‚ğ¶¬‚·‚é
+ * @brief å††æŸ±ãƒ¡ãƒƒã‚·ãƒ¥ã®é ‚ç‚¹ã¨ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’ç”Ÿæˆã™ã‚‹
  *
- * ‘¤–ÊAã–ÊA’ê–Ê‚ğ\¬‚·‚é‚·‚×‚Ä‚Ì’¸“_EƒCƒ“ƒfƒbƒNƒX‚ğŒvZ‚µ `m_vertices` ‚¨‚æ‚Ñ `m_indices` ‚ÉŠi”[‚µ‚Ü‚·B
+ * å´é¢ã€ä¸Šé¢ã€åº•é¢ã‚’æ§‹æˆã™ã‚‹ã™ã¹ã¦ã®é ‚ç‚¹ãƒ»ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’è¨ˆç®—ã— `m_vertices` ãŠã‚ˆã³ `m_indices` ã«æ ¼ç´ã—ã¾ã™ã€‚
  */
 void CCylinderMesh::CreateVertex() {
 
-	// ’¸“_ƒf[ƒ^ƒNƒŠƒA
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚¯ãƒªã‚¢
 	m_vertices.clear();
 
-	// ’ê–Ê‚Ì‰~üã‚Ì’¸“_ƒf[ƒ^‚ğì¬
-	float azimuth = 0.0f;			// •ûˆÊŠp
+	// åº•é¢ã®å††å‘¨ä¸Šã®é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ã‚’ä½œæˆ
+	float azimuth = 0.0f;			// æ–¹ä½è§’
 
-	// ‘¤–Ê‚Ì’¸“_ƒf[ƒ^i’ê–Êj
+	// å´é¢ã®é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆåº•é¢ï¼‰
 	for (unsigned int i = 0; i <= m_division_x; i++) {
-		azimuth = (2 * PI * (float)i) / (float)m_division_x;	// •ûˆÊŠp‚ğƒZƒbƒg
+		azimuth = (2 * PI * (float)i) / (float)m_division_x;	// æ–¹ä½è§’ã‚’ã‚»ãƒƒãƒˆ
 		VERTEX_3D	v{};
 
 		v.Position.x = m_radius * cosf(azimuth);
@@ -55,42 +55,42 @@ void CCylinderMesh::CreateVertex() {
 		v.Position.z = m_radius * sinf(azimuth);
 
 		v.Normal = v.Position;
-		v.Normal.Normalize();			// –@üƒxƒNƒgƒ‹‚ğ³‹K‰»	
+		v.Normal.Normalize();			// æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’æ­£è¦åŒ–	
 		v.Diffuse = m_color;
 
 		m_vertices.emplace_back(v);
 	}
 
-	// ‘¤–Ê‚Ì’¸“_ƒf[ƒ^iã–Êj
+	// å´é¢ã®é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿ï¼ˆä¸Šé¢ï¼‰
 	for (unsigned int i = 0; i <= m_division_x; i++) {
-		azimuth = (2 * PI * (float)i) / (float)m_division_x;	// •ûˆÊŠp‚ğƒZƒbƒg
+		azimuth = (2 * PI * (float)i) / (float)m_division_x;	// æ–¹ä½è§’ã‚’ã‚»ãƒƒãƒˆ
 		VERTEX_3D	v{};
 
 		v.Position.x = m_radius * cosf(azimuth);
 		v.Position.y = m_height;
 		v.Position.z = m_radius * sinf(azimuth);
 
-		v.Normal = Vector3(0.0f, 1.0f, 0.0f);	// –@ü‚Íã•ûŒü
+		v.Normal = Vector3(0.0f, 1.0f, 0.0f);	// æ³•ç·šã¯ä¸Šæ–¹å‘
 		v.Diffuse = m_color;
 
 		m_vertices.emplace_back(v);
 	}
 
-	// ‘¤–ÊiOŠpŒ`ƒXƒgƒŠƒbƒvjƒCƒ“ƒfƒbƒNƒXi‰º’ij
+	// å´é¢ï¼ˆä¸‰è§’å½¢ã‚¹ãƒˆãƒªãƒƒãƒ—ï¼‰ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ï¼ˆä¸‹æ®µï¼‰
 	for (unsigned int i = 0; i < m_division_x; i++) {
 		m_indices.push_back(i);
 		m_indices.push_back(i + m_division_x + 2);
 		m_indices.push_back(i + 1);
 	}
 
-	// ‘¤–ÊiOŠpŒ`ƒXƒgƒŠƒbƒvjƒCƒ“ƒfƒbƒNƒXiã’ij
+	// å´é¢ï¼ˆä¸‰è§’å½¢ã‚¹ãƒˆãƒªãƒƒãƒ—ï¼‰ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ï¼ˆä¸Šæ®µï¼‰
 	for (unsigned int i = 0; i < m_division_x; i++) {
 		m_indices.push_back(i);
 		m_indices.push_back(i + m_division_x + 1);
 		m_indices.push_back(i + m_division_x + 2);
 	}
 
-	// ’ê–Ê’†S‚Ì’¸“_‚ğ’Ç‰Á
+	// åº•é¢ä¸­å¿ƒã®é ‚ç‚¹ã‚’è¿½åŠ 
 	{
 		VERTEX_3D v{};
 		v.Position = Vector3(0.0f, 0.0f, 0.0f);
@@ -99,17 +99,17 @@ void CCylinderMesh::CreateVertex() {
 		m_vertices.emplace_back(v);
 	}
 
-	// ’ê–Ê‚Ì’†SƒCƒ“ƒfƒbƒNƒX
+	// åº•é¢ã®ä¸­å¿ƒã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 	unsigned int bottomcenteridx = static_cast<unsigned int>(m_vertices.size() - 1);
 
-	// ’ê–Ê‚ÌOŠpŒ`ƒCƒ“ƒfƒbƒNƒX
+	// åº•é¢ã®ä¸‰è§’å½¢ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 	for (unsigned int i = 0; i < m_division_x; i++) {
 		m_indices.push_back(bottomcenteridx);
 		m_indices.push_back(i);
 		m_indices.push_back(i + 1);
 	}
 
-	// ã–Ê’†S‚Ì’¸“_‚ğ’Ç‰Á
+	// ä¸Šé¢ä¸­å¿ƒã®é ‚ç‚¹ã‚’è¿½åŠ 
 	{
 		VERTEX_3D v{};
 		v.Position = Vector3(0.0f, m_height, 0.0f);
@@ -118,10 +118,10 @@ void CCylinderMesh::CreateVertex() {
 		m_vertices.emplace_back(v);
 	}
 
-	// ã–Ê‚Ì’†SƒCƒ“ƒfƒbƒNƒX
+	// ä¸Šé¢ã®ä¸­å¿ƒã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 	int topcenteridx = static_cast<int>(m_vertices.size() - 1);
 
-	// ã–Ê‚ÌOŠpŒ`ƒCƒ“ƒfƒbƒNƒX
+	// ä¸Šé¢ã®ä¸‰è§’å½¢ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 	for (unsigned int i = 0; i < m_division_x; i++) {
 		m_indices.push_back(topcenteridx);
 		m_indices.push_back(i + m_division_x + 2);

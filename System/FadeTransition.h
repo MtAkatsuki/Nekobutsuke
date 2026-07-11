@@ -1,19 +1,19 @@
-#pragma once
+ï»¿#pragma once
 #include "Scenemanager.h"
 #include "SceneTransition.h"
 
-//FdaeTransition‚Í‰æ–Ê‚Ì–¾ˆÃ‚¾‚¯ŠÇ—‚·‚é
+//FdaeTransitionã¯ç”»é¢ã®æ˜æš—ã ã‘ç®¡ç†ã™ã‚‹
 
 /**
- * @brief ƒtƒF[ƒh‰‰o‚É‚æ‚éƒV[ƒ“‘JˆÚ‚ğs‚¤ƒNƒ‰ƒX
+ * @brief ãƒ•ã‚§ãƒ¼ãƒ‰æ¼”å‡ºã«ã‚ˆã‚‹ã‚·ãƒ¼ãƒ³é·ç§»ã‚’è¡Œã†ã‚¯ãƒ©ã‚¹
  *
- * ƒ‚[ƒh‚É‰‚¶‚ÄAƒtƒF[ƒhƒCƒ“‚Ì‚İ^ƒtƒF[ƒhƒAƒEƒg‚Ì‚İ^‚»‚Ì—¼•û‚Ì‰‰o‚ª‰Â”\B
- * ƒV[ƒ“Ø‚è‘Ö‚¦‚É•‚¢‹éŒ`‚ğg‚Á‚Ä‰æ–Ê‚Ì–¾ˆÃ‚ğ’²®‚·‚éB
+ * ãƒ¢ãƒ¼ãƒ‰ã«å¿œã˜ã¦ã€ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ã®ã¿ï¼ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆã®ã¿ï¼ãã®ä¸¡æ–¹ã®æ¼”å‡ºãŒå¯èƒ½ã€‚
+ * ã‚·ãƒ¼ãƒ³åˆ‡ã‚Šæ›¿ãˆæ™‚ã«é»’ã„çŸ©å½¢ã‚’ä½¿ã£ã¦ç”»é¢ã®æ˜æš—ã‚’èª¿æ•´ã™ã‚‹ã€‚
  */
 class FadeTransition : public SceneTransition {
 public:
     /**
-    * @brief ƒtƒF[ƒh‰‰o‚Ìƒ‚[ƒh
+    * @brief ãƒ•ã‚§ãƒ¼ãƒ‰æ¼”å‡ºã®ãƒ¢ãƒ¼ãƒ‰
      */
     enum class Mode { FadeInOnly, FadeOutOnly,FadeInOut };
 
@@ -24,49 +24,49 @@ private:
     Mode m_mode;
 
     /**
-    * @brief Œ»İ‚ÌƒtƒF[ƒhƒtƒF[ƒY
+    * @brief ç¾åœ¨ã®ãƒ•ã‚§ãƒ¼ãƒ‰ãƒ•ã‚§ãƒ¼ã‚º
     */
     enum class Phase {
         Idle,
         FadeOut,
-        Wait,//SceneManager‚ÌƒV[ƒ“‘JˆÚ‚ğ‘Ò‚Â
+        Wait,//SceneManagerã®ã‚·ãƒ¼ãƒ³é·ç§»ã‚’å¾…ã¤
         FadeIn
     } m_phase = Phase::Idle;
 
 public:
     /**
-    * @brief ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+    * @brief ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
      *
-    * @param durationMs ƒtƒF[ƒhŠÔiƒ~ƒŠ•bj
-    * @param mode ƒtƒF[ƒhƒ‚[ƒhiƒfƒtƒHƒ‹ƒg‚Í FadeInOutj
+    * @param durationMs ãƒ•ã‚§ãƒ¼ãƒ‰æ™‚é–“ï¼ˆãƒŸãƒªç§’ï¼‰
+    * @param mode ãƒ•ã‚§ãƒ¼ãƒ‰ãƒ¢ãƒ¼ãƒ‰ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¯ FadeInOutï¼‰
     */
     explicit FadeTransition(float durationMs, Mode mode = Mode::FadeInOut)
         : m_duration(durationMs), m_mode(mode) {}
 
     /**
-     * @brief ƒtƒF[ƒh‰‰o‚ÌŠJnˆ—
+     * @brief ãƒ•ã‚§ãƒ¼ãƒ‰æ¼”å‡ºã®é–‹å§‹å‡¦ç†
     *
-    * @param nextSceneName ‘JˆÚæ‚ÌƒV[ƒ“–¼
+    * @param nextSceneName é·ç§»å…ˆã®ã‚·ãƒ¼ãƒ³å
     */
     void start() override;
 
     /**
-     * @brief ƒtƒF[ƒh‰‰o‚ÌXVˆ—
+     * @brief ãƒ•ã‚§ãƒ¼ãƒ‰æ¼”å‡ºã®æ›´æ–°å‡¦ç†
     *
-    * @param deltaTime ‘OƒtƒŒ[ƒ€‚©‚ç‚ÌŒo‰ßŠÔiƒ}ƒCƒNƒ•bj
+    * @param deltaTime å‰ãƒ•ãƒ¬ãƒ¼ãƒ ã‹ã‚‰ã®çµŒéæ™‚é–“ï¼ˆãƒã‚¤ã‚¯ãƒ­ç§’ï¼‰
     */
     void update(uint64_t deltaTime) override;
 
     /**
-    * @brief •ƒtƒF[ƒh‹éŒ`‚Ì•`‰æˆ—
+    * @brief é»’ãƒ•ã‚§ãƒ¼ãƒ‰çŸ©å½¢ã®æç”»å‡¦ç†
     */
     void draw() override;
 
     /**
-     * @brief ƒtƒF[ƒh‰‰o‚ÌŠ®—¹”»’è
+     * @brief ãƒ•ã‚§ãƒ¼ãƒ‰æ¼”å‡ºã®å®Œäº†åˆ¤å®š
     *
-    * @return true ƒtƒF[ƒh‰‰o‚ªI—¹‚µ‚Ä‚¢‚é
-    * @return false ‰‰o’†
+    * @return true ãƒ•ã‚§ãƒ¼ãƒ‰æ¼”å‡ºãŒçµ‚äº†ã—ã¦ã„ã‚‹
+    * @return false æ¼”å‡ºä¸­
     */
     bool isFinished() const override;
 

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "../../System/IScene.h"
 #include "../../System/CSprite.h"
@@ -7,8 +7,8 @@
 #include <memory>
 
 // =========================================================
-// GameOverScene ƒNƒ‰ƒX
-// ƒvƒŒƒCƒ„[”s–k‚ÌƒQ[ƒ€ƒI[ƒo[‰æ–Ê‚ÆAƒ^ƒCƒgƒ‹‚Ö‚Ì‘JˆÚ‚ğŠÇ—B
+// GameOverScene ã‚¯ãƒ©ã‚¹
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼æ•—åŒ—æ™‚ã®ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼ç”»é¢ã¨ã€ã‚¿ã‚¤ãƒˆãƒ«ã¸ã®é·ç§»ã‚’ç®¡ç†ã€‚
 // =========================================================
 class GameOverScene : public IScene {
 public:
@@ -17,14 +17,14 @@ public:
     GameOverScene& operator=(const GameOverScene&) = delete;
 
     // ---------------------------------------------------------
-    // ƒ‰ƒCƒtƒTƒCƒNƒ‹ (Lifecycle)
+    // ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ« (Lifecycle)
     // ---------------------------------------------------------
     void Init() override;
     void dispose() override;
     void update(uint64_t deltatime) override;
 
     // ---------------------------------------------------------
-    // ƒŒƒ“ƒ_ƒŠƒ“ƒO (Rendering)
+    // ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚° (Rendering)
     // ---------------------------------------------------------
     void draw(uint64_t deltatime) override;
 
@@ -32,7 +32,7 @@ private:
     std::unique_ptr<SceneTransition> m_transition;
     std::unique_ptr<CSprite> m_image;
 
-    // --- ó‘ÔŠÇ— ---
-    // Œë‘€ì‚É‚æ‚é‘¦ƒXƒLƒbƒv‚ğ–h~‚·‚é‚½‚ß‚Ìƒ^ƒCƒ}[
+    // --- çŠ¶æ…‹ç®¡ç† ---
+    // èª¤æ“ä½œã«ã‚ˆã‚‹å³æ™‚ã‚¹ã‚­ãƒƒãƒ—ã‚’é˜²æ­¢ã™ã‚‹ãŸã‚ã®ã‚¿ã‚¤ãƒãƒ¼
     float m_inputDelayTimer = 0.0f;
 };

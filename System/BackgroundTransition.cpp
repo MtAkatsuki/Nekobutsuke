@@ -1,9 +1,9 @@
-#include "BackgroundTransition.h"
+ï»¿#include "BackgroundTransition.h"
 #include <algorithm> // for std::max
 
 namespace {
-    // --- ‰‰o—p’è”’è‹` ---
-    constexpr float MAX_SCROLL_SPEED = 0.2f; // ƒXƒNƒ[ƒ‹ŠJŽnŽž‚Ì‰Šú‘¬“x
+    // --- æ¼”å‡ºç”¨å®šæ•°å®šç¾© ---
+    constexpr float MAX_SCROLL_SPEED = 0.2f; // ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«é–‹å§‹æ™‚ã®åˆæœŸé€Ÿåº¦
     const char* TRANSITION_BG_PATH = "Assets/texture/bg_stripe_blue.png";
 }
 
@@ -41,13 +41,13 @@ void BackgroundTransition::update(uint64_t deltaTime) {
     case Phase::Scrolling: {
         m_alpha = 1.0f;
 
-        // is“x (0.0f ~ 1.0f)
+        // é€²è¡Œåº¦ (0.0f ~ 1.0f)
         float progress = m_elapsedMs / m_scrollDurationMs;
 
-        // ™X‚ÉŒ¸‘¬‚·‚éƒC[ƒYƒAƒEƒgiEase-OutjŒvŽZ
+        // å¾ã€…ã«æ¸›é€Ÿã™ã‚‹ã‚¤ãƒ¼ã‚ºã‚¢ã‚¦ãƒˆï¼ˆEase-Outï¼‰è¨ˆç®—
         float currentSpeed = MAX_SCROLL_SPEED * (1.0f - progress);
 
-        // ‘¬“x‚ªƒ}ƒCƒiƒX‚É‚È‚ç‚È‚¢‚æ‚¤ˆÀ‘S‚ÉƒNƒ‰ƒ“ƒv
+        // é€Ÿåº¦ãŒãƒžã‚¤ãƒŠã‚¹ã«ãªã‚‰ãªã„ã‚ˆã†å®‰å…¨ã«ã‚¯ãƒ©ãƒ³ãƒ—
         m_bg->SetScrollSpeed(std::max(0.0f, currentSpeed));
 
         if (m_elapsedMs >= m_scrollDurationMs) {
@@ -59,7 +59,7 @@ void BackgroundTransition::update(uint64_t deltaTime) {
 
     case Phase::WaitSwap: {
         m_alpha = 1.0f;
-        // ”õl: SceneManager ‚©‚ç onSceneSwapped() ‚ªŒÄ‚Î‚ê‚é‚Ü‚Å‚±‚Ìó‘Ô‚ðˆÛŽ‚·‚é
+        // å‚™è€ƒ: SceneManager ã‹ã‚‰ onSceneSwapped() ãŒå‘¼ã°ã‚Œã‚‹ã¾ã§ã“ã®çŠ¶æ…‹ã‚’ç¶­æŒã™ã‚‹
         break;
     }
 
@@ -67,7 +67,7 @@ void BackgroundTransition::update(uint64_t deltaTime) {
         m_alpha = 1.0f - (m_elapsedMs / m_fadeDurationMs);
         if (m_elapsedMs >= m_fadeDurationMs) {
             m_alpha = 0.0f;
-            m_phase = Phase::Idle; // ‘JˆÚŠ®—¹
+            m_phase = Phase::Idle; // é·ç§»å®Œäº†
         }
         break;
     }
@@ -79,13 +79,13 @@ void BackgroundTransition::update(uint64_t deltaTime) {
 }
 
 void BackgroundTransition::onSceneSwapped() {
-    // SceneManager‘¤‚ÅV‚µ‚¢ƒV[ƒ“‚Ì Init ‚ªŠ®—¹‚µ‚½ƒ^ƒCƒ~ƒ“ƒO‚ÅŒÄ‚Î‚ê‚é
+    // SceneManagerå´ã§æ–°ã—ã„ã‚·ãƒ¼ãƒ³ã® Init ãŒå®Œäº†ã—ãŸã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§å‘¼ã°ã‚Œã‚‹
     m_phase = Phase::FadeOutBg;
     m_elapsedMs = 0.0f;
 }
 
 void BackgroundTransition::draw() {
-    // ‘Ò‹@’†iIdlejˆÈŠOA‚©‚Â”wŒi‚ª‘¶Ý‚·‚éê‡‚Ì‚Ý•`‰æƒRƒ}ƒ“ƒh‚ð”­s
+    // å¾…æ©Ÿä¸­ï¼ˆIdleï¼‰ä»¥å¤–ã€ã‹ã¤èƒŒæ™¯ãŒå­˜åœ¨ã™ã‚‹å ´åˆã®ã¿æç”»ã‚³ãƒžãƒ³ãƒ‰ã‚’ç™ºè¡Œ
     if (m_phase != Phase::Idle && m_bg) {
         m_bg->SetAlpha(m_alpha);
         m_bg->Draw();

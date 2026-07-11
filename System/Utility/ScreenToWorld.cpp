@@ -1,20 +1,20 @@
-#include "ScreenToWorld.h"
+ï»¿#include "ScreenToWorld.h"
 #include "../../Core/Application.h"
 
 Vector3 ScreenToWorld::GetNDC() const {
-	// ‰æ–ÊƒTƒCƒY‚ÉŠî‚Ã‚«ƒrƒ…[ƒ|[ƒgs—ñ‚ğ\’z
+	// ç”»é¢ã‚µã‚¤ã‚ºã«åŸºã¥ããƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆè¡Œåˆ—ã‚’æ§‹ç¯‰
 	Matrix4x4 mtxViewport = Matrix4x4::Identity;
 	float halfWidth = Application::GetWidth() / 2.0f;
 	float halfHeight = Application::GetHeight() / 2.0f;
 
 	mtxViewport._11 = halfWidth;
-	mtxViewport._22 = -halfHeight; // Y²”½“]
+	mtxViewport._22 = -halfHeight; // Yè»¸åè»¢
 	mtxViewport._41 = halfWidth;
 	mtxViewport._42 = halfHeight;
 
 	Vector3 screenPos(static_cast<float>(m_mouseX), static_cast<float>(m_mouseY), 0.0f);
 
-	// ƒrƒ…[ƒ|[ƒgs—ñ‚Ì‹ts—ñ‚ğ—p‚¢‚ÄAƒXƒNƒŠ[ƒ“À•W‚©‚çNDCi[-1, 1]‹óŠÔj‚Ö‹t•ÏŠ·
+	// ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆè¡Œåˆ—ã®é€†è¡Œåˆ—ã‚’ç”¨ã„ã¦ã€ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ã‹ã‚‰NDCï¼ˆ[-1, 1]ç©ºé–“ï¼‰ã¸é€†å¤‰æ›
 	Matrix4x4 invViewport = mtxViewport.Invert();
 	return screenPos.Transform(screenPos, invViewport);
 }
@@ -23,12 +23,12 @@ Vector3 ScreenToWorld::GetViewCoordinate(float depth, const Matrix4x4& projmtx) 
 	Vector3 ndcPos = GetNDC();
 	ndcPos.z = depth;
 
-	// ƒvƒƒWƒFƒNƒVƒ‡ƒ“s—ñ‚Ì‹ts—ñ‚ğ‹‚ßANDC‚©‚çƒrƒ…[‹óŠÔ‚Ö‹t•ÏŠ·
+	// ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ã‚·ãƒ§ãƒ³è¡Œåˆ—ã®é€†è¡Œåˆ—ã‚’æ±‚ã‚ã€NDCã‹ã‚‰ãƒ“ãƒ¥ãƒ¼ç©ºé–“ã¸é€†å¤‰æ›
 	Matrix4x4 invProj = projmtx.Invert();
 	Vector3 viewPos = ndcPos.Transform(ndcPos, invProj);
 
-	// ‹t“§‹œZiInverse Perspective Divisionj
-	// W¬•ª‚ğŒvZ‚µA‚»‚ê‚ÅŠ„‚é‚±‚Æ‚Å“¯ŸÀ•WŒn‚©‚çƒfƒJƒ‹ƒgÀ•WŒn‚É–ß‚·
+	// é€†é€è¦–é™¤ç®—ï¼ˆInverse Perspective Divisionï¼‰
+	// Wæˆåˆ†ã‚’è¨ˆç®—ã—ã€ãã‚Œã§å‰²ã‚‹ã“ã¨ã§åŒæ¬¡åº§æ¨™ç³»ã‹ã‚‰ãƒ‡ã‚«ãƒ«ãƒˆåº§æ¨™ç³»ã«æˆ»ã™
 	float w = (ndcPos.x * invProj._14) +
 		(ndcPos.y * invProj._24) +
 		(ndcPos.z * invProj._34) +
@@ -44,11 +44,11 @@ Vector3 ScreenToWorld::GetViewCoordinate(float depth, const Matrix4x4& projmtx) 
 Vector3 ScreenToWorld::GetWorldCoordinate(float depth, const Matrix4x4& projmtx, const Matrix4x4& viewmtx) const {
 	Vector3 clipPos = GetViewCoordinate(depth, projmtx);
 
-	// ƒrƒ…[s—ñ‚Ì‹ts—ñ‚ğ‹‚ßAƒrƒ…[‹óŠÔ‚©‚çƒ[ƒ‹ƒh‹óŠÔ‚Ö‹t•ÏŠ·
+	// ãƒ“ãƒ¥ãƒ¼è¡Œåˆ—ã®é€†è¡Œåˆ—ã‚’æ±‚ã‚ã€ãƒ“ãƒ¥ãƒ¼ç©ºé–“ã‹ã‚‰ãƒ¯ãƒ¼ãƒ«ãƒ‰ç©ºé–“ã¸é€†å¤‰æ›
 	Matrix4x4 invView = viewmtx.Invert();
 	Vector3 worldPos = clipPos.Transform(clipPos, invView);
 
-	// “¯ŸœZ
+	// åŒæ¬¡é™¤ç®—
 	float w = (worldPos.x * invView._14) +
 		(worldPos.y * invView._24) +
 		(worldPos.z * invView._34) +
