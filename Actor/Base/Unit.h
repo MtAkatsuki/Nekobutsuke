@@ -9,7 +9,6 @@
 #include "../../Types/TurnState.h"
 #include "../../UI/Component/HPBar.h"
 #include "../../System/MeshManager.h"
-#include "../../Types/Team.h"
 #include "../../GamePlay/Manager/TurnManager.h"
 
 class MapManager;
@@ -43,7 +42,6 @@ public:
 	int GetUnitGridX() const { return m_gridX; }
 	int GetUnitGridZ() const { return m_gridZ; }
 	Direction GetFacing() const { return m_facing; }
-	virtual Team GetTeam() const { return m_team; }
 
 	void SetGridPosition(int x, int z) { m_gridX = x; m_gridZ = z; }
 	virtual void ResetMovePoints() { m_currentMovePoints = m_maxMovePoints; }
@@ -109,6 +107,19 @@ protected:
 	void DrawOutline();
 	void DrawBlobShadow();
 
+	class MapManager* GetMap() const {
+		return m_context ? m_context->GetMapManager() : nullptr;
+	}
+
+	class TurnManager* GetTurnManager() const {
+		return m_context ? m_context->GetTurnManager() : nullptr;
+	}
+
+	class EffectManager* GetEffectManager() const {
+		return m_context ? m_context->GetEffectManager() : nullptr;
+	}
+
+
 protected:
 	// =========================================================
 	// メンバー変数 (Member Variables)
@@ -128,7 +139,6 @@ protected:
 	std::unique_ptr<HPBar> m_hpBar;
 
 	// --- コアステータス ---
-	Team m_team;
 	int m_maxHP = 5;
 	int m_currentHP = 5;
 	int m_gridX = 0;

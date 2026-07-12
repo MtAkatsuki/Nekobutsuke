@@ -91,8 +91,6 @@ void Player::Init() {
 	m_maxHP = INITIAL_HP;
 	m_currentHP = m_maxHP;
 
-	m_team = Team::Player;
-
 	UpdateWorldMatrix();
 }
 
@@ -142,7 +140,7 @@ void Player::Update(float deltaSeconds) {
 	case PlayerState::MOVE_SELECT:
 		HandleMoveInput(deltaSeconds);
 		if (m_state != PlayerState::MOVE_SELECT) break;
-		m_srt.pos = m_context->GetMapManager()->GetWorldPosition(m_previewGridX, m_previewGridZ);
+		m_srt.pos = GetMap()->GetWorldPosition(m_previewGridX, m_previewGridZ);
 		UpdateWorldMatrix();
 		// 移動予想位置に基づいて、プレイヤーの受けダメージ予測を計算
 		CalculateMovePreviewDamage();
@@ -156,7 +154,7 @@ void Player::Update(float deltaSeconds) {
 		if (UpdatePathMovement(deltaSeconds)) {
 			m_hasMoved = true;
 			// 現在位置のタイルのイベント（トラップ等）を発火させる
-			Tile* finalTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+			Tile* finalTile = GetMap()->GetTile(m_gridX, m_gridZ);
 			if (finalTile && finalTile->structure) {
 				// プレイヤーがオブジェクトを踏んだ（進入した）際のイベントを実行
 				finalTile->structure->OnEnter(this);
@@ -167,11 +165,11 @@ void Player::Update(float deltaSeconds) {
 
 	case PlayerState::ATTACK_DIR_SELECT:
 		HandleAttackDirInput(deltaSeconds);
-		m_srt.pos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
+		m_srt.pos = GetMap()->GetWorldPosition(m_gridX, m_gridZ);
 		// プレイヤーのダメージ予測を計算し、ターゲットのユニットへ設定
 		{
 			DirOffset offset = DirOffset::From(m_attackDir);
-			Tile* targetTile = m_context->GetMapManager()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
+			Tile* targetTile = GetMap()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
 			if (targetTile && targetTile->occupant && targetTile->occupant != this) {
 				bool isPush = (m_selectedAttackType == AttackType::Push);
 				int finalDmg = targetTile->occupant->CalculateExpectedDamage(m_playerDamage, isPush, m_attackDir);
@@ -208,7 +206,7 @@ void Player::Update(float deltaSeconds) {
 				m_slideEndPos = Vector3(0, 0, 0);
 				// 押し出された先のタイルにギミック（罠など）があるかチェック
 				if (m_currentHP > 0) {
-					Tile* t = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+					Tile* t = GetMap()->GetTile(m_gridX, m_gridZ);
 					if (t && t->structure) t->structure->OnEnter(this);
 				}
 				if (canControl && m_currentHP > 0) SwitchToMenuMain();
@@ -284,7 +282,7 @@ void Player::EndTurn() {
 	canControl = false;
 	m_state = PlayerState::WAITING;
 	m_context->GetUIManager()->CloseMenu();
-	m_context->GetTurnManager()->RequestEndTurn();
+	GetTurnManager()->RequestEndTurn();
 }
 
 void Player::TakeDamage(int damage, Unit* attacker) {
@@ -296,8 +294,8 @@ void Player::TakeDamage(int damage, Unit* attacker) {
 
 void Player::Die() {
 	m_state = PlayerState::DEAD_FLYING;
-	if (m_context && m_context->GetMapManager()) {
-		Tile* myTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+	if (m_context && GetMap()) {
+		Tile* myTile = GetMap()->GetTile(m_gridX, m_gridZ);
 		if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
 	}
 	StartDeathFly();
@@ -364,7 +362,7 @@ void Player::SwitchToMenuMain() {
 	int dz[] = { 1, -1, 0, 0 };
 	for (int i = 0; i < 4; ++i) {
 		for (int r = 1; r <= ATTACK_RANGE; ++r) {
-			Tile* t = m_context->GetMapManager()->GetTile(m_gridX + dx[i] * r, m_gridZ + dz[i] * r);
+			Tile* t = GetMap()->GetTile(m_gridX + dx[i] * r, m_gridZ + dz[i] * r);
 			// マスに誰かが存在し、かつそれが自分自身でない場合のみ、押し出し（Push）操作を許可する
 			if (t && t->occupant) {
 				Unit* targetUnit = dynamic_cast<Unit*>(t->occupant);
@@ -382,7 +380,7 @@ void Player::SwitchToMenuMain() {
 	m_context->GetUIManager()->OpenMainMenu();
 
 	// プレーヤー位置の誤差修正
-	m_srt.pos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
+	m_srt.pos = GetMap()->GetWorldPosition(m_gridX, m_gridZ);
 	UpdateWorldMatrix();
 }
 
@@ -401,7 +399,7 @@ void Player::SwitchToMoveSelect() {
 	m_previewGridX = m_gridX;
 	m_previewGridZ = m_gridZ;
 
-	m_moveRangeTiles = m_context->GetMapManager()->GetReachableTiles(m_gridX, m_gridZ, m_currentMovePoints);
+	m_moveRangeTiles = GetMap()->GetReachableTiles(m_gridX, m_gridZ, m_currentMovePoints);
 	m_currentPath.clear();
 }
 
@@ -433,13 +431,13 @@ void Player::ExecuteMove() {
 	m_gridX = m_previewGridX;
 	m_gridZ = m_previewGridZ;
 
-	Tile* oldTile = m_context->GetMapManager()->GetTile(m_startGridX, m_startGridZ);
+	Tile* oldTile = GetMap()->GetTile(m_startGridX, m_startGridZ);
 	if (oldTile) oldTile->occupant = nullptr;
-	Tile* newTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+	Tile* newTile = GetMap()->GetTile(m_gridX, m_gridZ);
 	if (newTile) newTile->occupant = this;
 
 	// プレイヤーの位置を予想ポイントからスタートポイントにリセット
-	m_srt.pos = m_context->GetMapManager()->GetWorldPosition(m_startGridX, m_startGridZ);
+	m_srt.pos = GetMap()->GetWorldPosition(m_startGridX, m_startGridZ);
 	m_pathAnimIndex = 1; // １から始まる、０はスタート位置
 
 	m_state = PlayerState::ANIM_MOVE;
@@ -449,8 +447,8 @@ void Player::ExecuteAttack() {
 	DirOffset offset = DirOffset::From(m_attackDir);
 	int targetX = m_gridX + offset.x;
 	int targetZ = m_gridZ + offset.z;
-	Tile* targetTile = m_context->GetMapManager()->GetTile(targetX, targetZ);
-	Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(targetX, targetZ);
+	Tile* targetTile = GetMap()->GetTile(targetX, targetZ);
+	Vector3 targetPos = GetMap()->GetWorldPosition(targetX, targetZ);
 
 	m_attackIsLethal = false;
 	if (targetTile && targetTile->occupant && targetTile->occupant != this) {
@@ -480,8 +478,8 @@ void Player::PerformAttackStrike() {
 	int targetX = m_gridX + offset.x;
 	int targetZ = m_gridZ + offset.z;
 
-	Tile* targetTile = m_context->GetMapManager()->GetTile(targetX, targetZ);
-	Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(targetX, targetZ);
+	Tile* targetTile = GetMap()->GetTile(targetX, targetZ);
+	Vector3 targetPos = GetMap()->GetWorldPosition(targetX, targetZ);
 	StartAttackAnimation(targetPos);
 
 	if (targetTile && targetTile->occupant && targetTile->occupant != this) {
@@ -549,16 +547,16 @@ void Player::HandleMoveInput(float dt) {
 				m_previewGridZ = nextZ;
 				m_inputCooldown = UI_INPUT_COOLDOWN;
 				// ルートの更新：startからpreviewまで
-				std::vector<Tile*> path = m_context->GetMapManager()->FindPaths(m_startGridX, m_startGridZ, m_previewGridX, m_previewGridZ, true);
+				std::vector<Tile*> path = GetMap()->FindPaths(m_startGridX, m_startGridZ, m_previewGridX, m_previewGridZ, true);
 				m_currentPath.clear();
 
 				// 最初にスタートタイルを追加
-				Tile* startTile = m_context->GetMapManager()->GetTile(m_startGridX, m_startGridZ);
+				Tile* startTile = GetMap()->GetTile(m_startGridX, m_startGridZ);
 				if (startTile) m_currentPath.push_back(startTile);
 				// 次に経由タイルを追加
 				m_currentPath.insert(m_currentPath.end(), path.begin(), path.end());
 				// 最後に目的地タイルを追加
-				Tile* destTile = m_context->GetMapManager()->GetTile(m_previewGridX, m_previewGridZ);
+				Tile* destTile = GetMap()->GetTile(m_previewGridX, m_previewGridZ);
 				if (destTile) {
 					m_currentPath.push_back(destTile);
 				}
@@ -566,7 +564,7 @@ void Player::HandleMoveInput(float dt) {
 				SetFacingFromVector(Vector3((float)move.x, 0, (float)move.z));
 
 				// 【カーソル移動】：カメラの目標注視点をカーソルのプレビュー位置に更新
-				Vector3 previewPos = m_context->GetMapManager()->GetWorldPosition(m_previewGridX, m_previewGridZ);
+				Vector3 previewPos = GetMap()->GetWorldPosition(m_previewGridX, m_previewGridZ);
 				m_context->GetCamera()->UpdateTrackingTarget(previewPos);
 			}
 		}
@@ -616,7 +614,7 @@ bool Player::UpdatePathMovement(float dt) {
 	if (m_currentPath.empty()) return true; //パスは空なら終了
 
 	Tile* targetTile = m_currentPath[m_pathAnimIndex];
-	Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(targetTile->gridX, targetTile->gridZ);
+	Vector3 targetPos = GetMap()->GetWorldPosition(targetTile->gridX, targetTile->gridZ);
 
 	Vector3 diff = targetPos - m_srt.pos;
 	if (diff.LengthSquared() > 0.001f) {
@@ -647,7 +645,7 @@ bool Player::UpdatePathMovement(float dt) {
 
 void Player::CalculateMovePreviewDamage() {
 	int expectedDamage = 0;
-	MapManager* map = m_context->GetMapManager();
+	MapManager* map = GetMap();
 
 	// 1. 予測：移動先が未発動の罠を踏んでしまうか
 	if (Trap* trap = Trap::GetArmedTrap(map->GetTile(m_previewGridX, m_previewGridZ))) {
@@ -683,7 +681,7 @@ void Player::UpdateCelebration(float dt) {
 	//fabsfを使って、サイン波の上下動を正の値に変換し、ジャンプの高さを調整
 	float yOffset = fabsf(currentSin) * JUMP_HEIGHT;
 
-	Vector3 basePos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
+	Vector3 basePos = GetMap()->GetWorldPosition(m_gridX, m_gridZ);
 	m_srt.pos.y = basePos.y + yOffset;
 
 	// 着地の判定 (sin値が正から負に変わる瞬間を一回のジャンプ完了とみなす)

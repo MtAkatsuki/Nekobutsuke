@@ -48,7 +48,6 @@ void Ally::Init()
     //初期ステータスを設置
     m_maxHP = INITIAL_HP;
     m_currentHP = m_maxHP;
-    m_team = Team::Ally;
     m_maxMovePoints = 0;// 味方は自立移動しない
     m_currentMovePoints = m_maxMovePoints;
     m_srt.scale = Vector3(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
@@ -73,8 +72,8 @@ void Ally::Update(float deltaSeconds) {
             m_escapeState = EscapeState::Done; // 全に消失
 
             // 占有していたタイルを解放
-            if (m_context && m_context->GetMapManager()) {
-                Tile* t = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+            if (m_context && GetMap()) {
+                Tile* t = GetMap()->GetTile(m_gridX, m_gridZ);
                 if (t && t->occupant == this) t->occupant = nullptr;
             }
             //  吹き出しUIを閉じる
@@ -96,7 +95,7 @@ void Ally::Update(float deltaSeconds) {
                 m_slideEndPos = Vector3(0, 0, 0);
 
                 // 押し出された先のタイルにギミック（罠など）があるかチェック
-                Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+                Tile* currentTile = GetMap()->GetTile(m_gridX, m_gridZ);
                 if (currentTile && currentTile->structure) {
                     DBG_TRACE("[Ally] Knocked into an event/trap!");
                     currentTile->structure->OnEnter(this);
@@ -156,8 +155,8 @@ void Ally::TakeDamage(int damage, Unit* attacker) {
     Unit::TakeDamage(damage, attacker);
     if (m_currentHP <= 0 && !m_isEscaping && !m_isDeadFlying) {
         m_isDeadFlying = true;
-        if (m_context && m_context->GetMapManager()) {
-            Tile* myTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+        if (m_context && GetMap()) {
+            Tile* myTile = GetMap()->GetTile(m_gridX, m_gridZ);
             if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
         }
         StartDeathFly();
@@ -225,10 +224,10 @@ void Ally::UpdateDiggingAnimation(float dt) {
     // 振り下ろした瞬間のインパクト判定
     if (angle > DIG_HIT_ANGLE && !m_hasTriggeredEffect) {
         AudioManager::GetInstance().PlaySE("DigSE", DIG_SE_VOLUME);
-        if (m_context->GetEffectManager()) {
+        if (GetEffectManager()) {
             Vector3 footPos = m_srt.pos;
             footPos.x -= RUBBLE_OFFSET_X;
-            m_context->GetEffectManager()->SpawnRubble(footPos, RUBBLE_SPAWN_COUNT);
+            GetEffectManager()->SpawnRubble(footPos, RUBBLE_SPAWN_COUNT);
         }
         m_hasTriggeredEffect = true;
         ++m_digCount;

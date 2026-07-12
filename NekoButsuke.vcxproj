@@ -117,7 +117,6 @@
     <ClInclude Include="Types\DialogueType.h" />
     <ClInclude Include="Types\MapModelType.h" />
     <ClInclude Include="Types\PlayerState.h" />
-    <ClInclude Include="Types\Team.h" />
     <ClInclude Include="Types\TurnState.h" />
     <ClInclude Include="GamePlay\Manager\EffectManager.h" />
     <ClInclude Include="GamePlay\Manager\EnemyManager.h" />

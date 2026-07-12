@@ -64,7 +64,6 @@ void Enemy::Init() {
 	m_currentMovePoints = m_maxMovePoints;
 	m_maxHP = INITIAL_HP;
 	m_currentHP = m_maxHP;
-	m_team = Team::Enemy;
 	m_state = EnemyState::IDLE;
 	m_isDead = false;
 
@@ -114,7 +113,7 @@ void Enemy::Update(float deltaSeconds) {
 
 	// 敵のダメージ予測を計算し、ターゲットのユニットへ設定
 	if (m_isCharging && !m_isDead && m_state != EnemyState::DEAD_FLYING) {
-		Tile* lockedTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
+		Tile* lockedTile = GetMap()->GetTile(m_lockedGridX, m_lockedGridZ);
 		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
 			int finalDmg = lockedTile->occupant->CalculateExpectedDamage(m_enemyDamage, true, m_facing);
 			lockedTile->occupant->SetPreviewDamage(finalDmg);
@@ -131,7 +130,7 @@ void Enemy::Update(float deltaSeconds) {
 		m_attackTimer += deltaSeconds;
 		if (m_attackTimer > ATTACK_DELAY) {
 			auto impactCallback = [this]() {
-				Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
+				Tile* targetTile = GetMap()->GetTile(m_lockedGridX, m_lockedGridZ);
 				if (targetTile != nullptr && targetTile->occupant != nullptr && targetTile->occupant != this) {
 					// 移動後に参照が失われないよう、事前に対象オブジェクトのポインターを保存
 					Unit* victim = targetTile->occupant;
@@ -144,7 +143,7 @@ void Enemy::Update(float deltaSeconds) {
 				}
 				else {//miss
 					if (m_context->GetDamageManager()) {
-						Vector3 missPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+						Vector3 missPos = GetMap()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
 						missPos.y += MISS_NUM_Y_OFFSET;
 						m_context->GetDamageManager()->SpawnDamage(missPos, 0);
 					}
@@ -171,7 +170,7 @@ void Enemy::Update(float deltaSeconds) {
 				else {
 					m_state = EnemyState::IDLE;
 					// 生存している場合のみ、タイルのイベント（罠など）を発生させる
-					Tile* currentTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+					Tile* currentTile = GetMap()->GetTile(m_gridX, m_gridZ);
 					if (currentTile && currentTile->structure) {
 						currentTile->structure->OnEnter(this);
 					}
@@ -214,8 +213,8 @@ void Enemy::SetInitialFacingToPlayer() {
 	Player* target = m_context->GetPlayer();
 	if (target)
 	{
-		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
-		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(target->GetUnitGridX(), target->GetUnitGridZ());
+		Vector3 myPos = GetMap()->GetWorldPosition(m_gridX, m_gridZ);
+		Vector3 targetPos = GetMap()->GetWorldPosition(target->GetUnitGridX(), target->GetUnitGridZ());
 
 		// ベクトル：自分 -> ターゲット (targetPos - myPos = 前進方向)
 		Vector3 diff = targetPos - myPos;
@@ -310,13 +309,13 @@ void Enemy::ExecuteAI() {
 
 	//プレイヤーの距離計算
 	if (player && player->GetHP() > 0) {
-		distToPlayer = m_context->GetMapManager()->CalculateDistance(
+		distToPlayer = GetMap()->CalculateDistance(
 			this->m_gridX, this->m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
 	}
 
 	//味方の距離計算
 	if (ally && ally->GetHP() > 0) {
-		distToAlly = m_context->GetMapManager()->CalculateDistance(
+		distToAlly = GetMap()->CalculateDistance(
 			this->m_gridX, this->m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
 	}
 
@@ -328,7 +327,7 @@ void Enemy::ExecuteAI() {
 		return;
 	}
 
-	int dist = m_context->GetMapManager()->CalculateDistance(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ());
+	int dist = GetMap()->CalculateDistance(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ());
 	//攻撃範囲の設定
 
 
@@ -336,7 +335,7 @@ void Enemy::ExecuteAI() {
 		StartCharge(target);
 	}
 	else {
-		MapManager* map = m_context->GetMapManager();
+		MapManager* map = GetMap();
 		int tx = target->GetUnitGridX(), tz = target->GetUnitGridZ();
 
 		// targetをgoalとして扱う：FindPathsはtarget隣接マスで停止する（意図した仕様）
@@ -371,13 +370,13 @@ void Enemy::EnemyStartMoveTo(std::vector<Tile*> path) {
 		OnMoveFinished();
 		return;
 	}
-	Tile* oldTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+	Tile* oldTile = GetMap()->GetTile(m_gridX, m_gridZ);
 	if (oldTile && oldTile->occupant == this) oldTile->occupant = nullptr;
 
 	m_currentPath = std::move(path);
 	m_pathIndex = 0;
 	m_state = EnemyState::MOVING;
-	m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
+	m_targetWorldPos = GetMap()->GetWorldPosition(*m_currentPath[m_pathIndex]);
 }
 
 void Enemy::UpdateMove(float deltaSeconds) {
@@ -390,7 +389,7 @@ void Enemy::UpdateMove(float deltaSeconds) {
 		this->SetPosition(m_targetWorldPos);
 		++m_pathIndex;
 		if (m_pathIndex >= m_currentPath.size()) OnMoveFinished();
-		else m_targetWorldPos = m_context->GetMapManager()->GetWorldPosition(*m_currentPath[m_pathIndex]);
+		else m_targetWorldPos = GetMap()->GetWorldPosition(*m_currentPath[m_pathIndex]);
 	}
 	else {
 		float moveStep = m_moveSpeed * deltaSeconds;
@@ -425,12 +424,12 @@ void Enemy::OnMoveFinished() {
 
 	// チェック Playerは範囲内か
 	if (player && player->GetHP() > 0) {
-		int d = m_context->GetMapManager()->CalculateDistance(m_gridX, m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
+		int d = GetMap()->CalculateDistance(m_gridX, m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
 		if (d <= ATTACK_RANGE) targetInRange = player;
 	}
 	// チェック Ally は範囲内か(優先でAllyロック)
 	if (ally && ally->GetHP() > 0) {
-		int d = m_context->GetMapManager()->CalculateDistance(m_gridX, m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
+		int d = GetMap()->CalculateDistance(m_gridX, m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
 		if (d <= ATTACK_RANGE) targetInRange = ally;
 	}
 
@@ -448,8 +447,8 @@ void Enemy::StartCharge(Unit* target) {
 		// 前の段階で残っていた反転（フリップ）状態を強制的に中断し、SetFacing が確実に適用されるようにする
 		m_isTurning = false;
 		//向きの再設定
-		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
-		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+		Vector3 myPos = GetMap()->GetWorldPosition(m_gridX, m_gridZ);
+		Vector3 targetPos = GetMap()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
 		SetFacingFromVector(targetPos - myPos);
 	}
 
@@ -473,8 +472,8 @@ void Enemy::Die() {
 	m_isCharging = false;
 	m_pendingCharge = false;
 
-	if (m_context && m_context->GetMapManager()) {
-		Tile* myTile = m_context->GetMapManager()->GetTile(m_gridX, m_gridZ);
+	if (m_context && GetMap()) {
+		Tile* myTile = GetMap()->GetTile(m_gridX, m_gridZ);
 		if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
 	}
 
@@ -506,16 +505,16 @@ void Enemy::OnDrawFloorUI(float /*deltaSeconds*/) {
 	if (m_currentHP <= 0) return;
 
 	// --- 移動中かつ移動範囲データが存在する場合、薄い緑色で描画 ---
-	if (m_state == EnemyState::MOVING && m_context && m_context->GetMapManager() && !m_moveRangeTiles.empty()) {
-		m_context->GetMapManager()->DrawColoredTiles(m_moveRangeTiles, MOVE_RANGE_COLOR);
+	if (m_state == EnemyState::MOVING && m_context && GetMap() && !m_moveRangeTiles.empty()) {
+		GetMap()->DrawColoredTiles(m_moveRangeTiles, MOVE_RANGE_COLOR);
 	}
 
 	// 敵がチャージ中の場合、ターゲットとなる床を赤くハイライトする
-	if (m_isCharging && m_context && m_context->GetMapManager()) {
-		Tile* targetTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
+	if (m_isCharging && m_context && GetMap()) {
+		Tile* targetTile = GetMap()->GetTile(m_lockedGridX, m_lockedGridZ);
 		if (targetTile) {
 			std::vector<Tile*> dangerTiles = { targetTile };
-			m_context->GetMapManager()->DrawColoredTiles(dangerTiles, DANGER_TILE_COLOR);
+			GetMap()->DrawColoredTiles(dangerTiles, DANGER_TILE_COLOR);
 		}
 	}
 }
@@ -524,11 +523,11 @@ void Enemy::OnDrawOverlay(float /*deltaSeconds*/) {
 	if (m_currentHP <= 0) return;
 
 	// 敵の攻撃意図（赤い矢印）を最前面に描画
-	if (m_isCharging && m_attackArrowRenderer && m_context && m_context->GetMapManager()) {
+	if (m_isCharging && m_attackArrowRenderer && m_context && GetMap()) {
 		if (m_enemyShader) m_enemyShader->SetGPU();
 
-		Vector3 myPos = m_context->GetMapManager()->GetWorldPosition(m_gridX, m_gridZ);
-		Vector3 targetPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+		Vector3 myPos = GetMap()->GetWorldPosition(m_gridX, m_gridZ);
+		Vector3 targetPos = GetMap()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
 		Vector3 arrowPos = myPos + (targetPos - myPos) * ATTACK_ARROW_POS_RATIO;
 		arrowPos.y += ZFight::EnemyArrow; // Overlayレイヤー内での浮かせ具合を調整
 
@@ -556,7 +555,7 @@ void Enemy::OnDrawOverlay(float /*deltaSeconds*/) {
 		// ターゲットのタイルに誰かが存在し、かつそれが自分自身でない場合、
 		
 		// そのユニットがどこへ押し出されるかのプレビューを継続的に表示する
-		Tile* lockedTile = m_context->GetMapManager()->GetTile(m_lockedGridX, m_lockedGridZ);
+		Tile* lockedTile = GetMap()->GetTile(m_lockedGridX, m_lockedGridZ);
 		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
 			lockedTile->occupant->DrawPushPreview(m_facing);
 		}
@@ -565,7 +564,7 @@ void Enemy::OnDrawOverlay(float /*deltaSeconds*/) {
 
 void Enemy::ReleaseChargeAttack() {
 	m_state = EnemyState::ATTACKING;
-	Vector3 targetGridPos = m_context->GetMapManager()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+	Vector3 targetGridPos = GetMap()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
 	StartAttackAnimation(targetGridPos);
 	m_attackTimer = 0.0f;
 	m_isCharging = false;

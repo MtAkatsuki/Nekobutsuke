@@ -50,8 +50,8 @@ namespace {
 }
 
 Unit::Unit(GameContext* context) : GameObject(context) {
-	if (m_context && m_context->GetTurnManager()) {
-		m_turnConnection = m_context->GetTurnManager()->RegisterObserver(
+	if (m_context && GetTurnManager()) {
+		m_turnConnection = GetTurnManager()->RegisterObserver(
 			[this](TurnState state) { this->OnTurnChanged(state); }
 		);
 	}
@@ -92,14 +92,14 @@ void Unit::TakeDamage(int damage, Unit* attacker) {
 	// 視覚的重複の回避：複数回ダメージを受けた際、エフェクトや数字が
 	
 	// 完全に重なって見えなくなるのを防ぐため、ランダムなオフセットを加える
-	if (m_context && m_context->GetEffectManager()) {
+	if (m_context && GetEffectManager()) {
 		auto& rng = RandomEngine::tls();
 		Vector3 hitPos = m_srt.pos;
 		hitPos.y += HIT_EFFECT_Y_OFFSET;
 		hitPos.x += static_cast<float>(rng.uniformReal(-0.5, 0.5)) * HIT_POS_RANDOM_SPREAD;
 		hitPos.z += static_cast<float>(rng.uniformReal(-0.5, 0.5)) * HIT_POS_RANDOM_SPREAD;
 
-		m_context->GetEffectManager()->SpawnHitEffect(hitPos);
+		GetEffectManager()->SpawnHitEffect(hitPos);
 	}
 
 	if (m_context && m_context->GetDamageManager()) {
@@ -141,16 +141,16 @@ int Unit::CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir
 	int expectedDamage = baseDamage;
 
 	// 押し出し攻撃の場合、移動先の状況によって追加の連鎖ダメージを予測する
-	if (isPush && m_context && m_context->GetMapManager()) {
+	if (isPush && m_context && GetMap()) {
 		expectedDamage += SimulatePushChainDamage(
-			m_context->GetMapManager(), m_gridX, m_gridZ, pushDir, m_onPushDamage);
+			GetMap(), m_gridX, m_gridZ, pushDir, m_onPushDamage);
 	}
 	return expectedDamage;
 }
 
 bool Unit::IsValidMoveTarget(int targetX, int targetZ) {
-	if (m_context->GetMapManager() == nullptr) return false;
-	return m_context->GetMapManager()->IsWalkable(targetX, targetZ);
+	if (GetMap() == nullptr) return false;
+	return GetMap()->IsWalkable(targetX, targetZ);
 }
 
 void Unit::OnPushed(Direction pushDir, Unit* attacker) {
@@ -160,7 +160,7 @@ void Unit::OnPushed(Direction pushDir, Unit* attacker) {
 	int targetX = m_gridX + offset.x;
 	int targetZ = m_gridZ + offset.z;
 
-	MapManager* map = m_context->GetMapManager();
+	MapManager* map = GetMap();
 	bool isBlocked = !(map->IsWalkable(targetX, targetZ));
 	Tile* targetTile = map->GetTile(targetX, targetZ);
 
@@ -412,9 +412,9 @@ void Unit::DrawUI() {
 
 void Unit::DrawPushPreview(Direction pushDir) {
 	if (!m_pushArrowMesh) m_pushArrowMesh = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_push_mesh");
-	if (!m_pushArrowMesh || !m_context || !m_context->GetMapManager()) return;
+	if (!m_pushArrowMesh || !m_context || !GetMap()) return;
 
-	MapManager* map = m_context->GetMapManager();
+	MapManager* map = GetMap();
 	DirOffset offset = DirOffset::From(pushDir);
 
 	int targetX = m_gridX + offset.x;
@@ -456,10 +456,10 @@ void Unit::DrawPushPreview(Direction pushDir) {
 	}
 	Renderer::DisableCulling(true);
 
-	if (isBlocked && m_context->GetEffectManager()) {
+	if (isBlocked && GetEffectManager()) {
 		Vector3 effectPos = targetPos;
 		effectPos.y += HIT_EFFECT_Y_OFFSET;
-		m_context->GetEffectManager()->DrawStaticHitPreview(effectPos);
+		GetEffectManager()->DrawStaticHitPreview(effectPos);
 	}
 }
 

@@ -3,8 +3,7 @@
 #include <stdexcept>
 #include "../../System/transform.h"
 #include "../../System/renderer.h"
-
-class GameContext;
+#include "../../Core/GameContext.h"
 class MapObject;
 
 // =========================================================
