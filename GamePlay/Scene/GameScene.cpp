@@ -2,6 +2,9 @@
 #include "GameSceneDebugUI.h"
 #include "IntroDirector.h"
 #include "GameResultJudge.h"
+#include "../../Actor/Character/Enemy.h"
+#include "../../Actor/Character/Player.h"
+#include "../../Actor/Character/Ally.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../System/CDirectInput.h"
 #include "../../System/DebugUI.h"
@@ -13,6 +16,8 @@
 #include "../../System/ZFightTunables.h"
 #include "../../System/Audio/AudioManager.h"
 #include "../../System/ModelRegistry.h"
+#include "../../System/CShader.h"
+#include "../../System/CSprite.h"
 #include "../../Core/GameContext.h"
 #include "../../Core/DebugLog.h"
 #include "../../GamePlay/Manager/MapManager.h"
@@ -22,6 +27,10 @@
 #include "../../UI/System/GameUIManager.h"
 #include "../../UI/System/DamageNumberManager.h"
 #include "../../UI/Component/DialogueUI.h"
+#include "Background.h"
+#include "../../UI/Component/TurnCutin.h"
+#include "../../UI/Component/TurnCounter.h"
+#include "../../UI/Component/TutorialUI.h"
 #include <stdio.h> // for sprintf_s
 #include <cfloat>  // for FLT_MAX
 

@@ -14,6 +14,7 @@
 #include	"../Character/Enemy.h"
 #include	"../Gimmick/Trap.h"
 #include	"../../Core/DebugLog.h"
+#include "../../Actor/Character/Ally.h"
 #include	<cmath>
 
 namespace {

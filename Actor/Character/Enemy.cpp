@@ -9,6 +9,8 @@
 #include "../../UI/System/DamageNumberManager.h"
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../GamePlay/Manager/EnemyManager.h"
+#include "../../Actor/Character/Player.h"
+#include "../../Actor/Character/Ally.h"
 
 
 namespace {

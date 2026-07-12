@@ -3,15 +3,7 @@
 #include <memory>
 #include "../../System/IScene.h"
 #include "../../System/SceneClassFactory.h"
-#include "../../System/RandomEngine.h"
-#include "../../Actor/Character/Enemy.h"
-#include "../../Actor/Character/Player.h"
-#include "../../Actor/Character/Ally.h"
-#include "../../UI/Component/TurnCutin.h"
-#include "../../UI/Component/TurnCounter.h"
-#include "../../UI/Component/TutorialUI.h"
 #include "../../GamePlay/Manager/TurnManager.h"
-#include "Background.h"
 
 class GameContext;
 class Camera;
@@ -22,6 +14,15 @@ class DialogueUI;
 class GameSceneDebugUI;
 class IntroDirector;
 class GameResultJudge;
+class Enemy;
+class Player;
+class Ally;
+class Background;
+class TurnCutin;
+class TurnCounter;
+class TutorialUI;
+class CSprite;
+class CShader;
 
 // =========================================================
 // GameScene クラス
