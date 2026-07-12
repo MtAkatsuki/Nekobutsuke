@@ -13,13 +13,57 @@ public:
 	// ターン状態の変更通知を受け取るためのコールバック型
 	using TurnCallBack = std::function<void(TurnState)>;
 	using ObserverId = size_t;
+
+	class ScopedConnection {
+	public:
+		ScopedConnection() {}
+		ScopedConnection(TurnManager* mgr, ObserverId id) {
+			m_mgr = mgr;
+			m_id = id;
+		}
+
+		// コピーを禁止：1つのハンドルが1つのリソースのみを管理し、二重解除を防止
+		ScopedConnection(const ScopedConnection&) = delete;
+		ScopedConnection& operator=(const ScopedConnection&) = delete;
+
+		// ムーブセマンティクスに対応：std::exchange を利用して所有権を安全に移譲
+		ScopedConnection(ScopedConnection&& other) noexcept
+			: m_mgr(std::exchange(other.m_mgr, nullptr)),
+			m_id(std::exchange(other.m_id, 0)) {
+		}
+
+		ScopedConnection& operator=(ScopedConnection&& other) noexcept {
+			if (this != &other) {
+				Disconnect(); // 上書き前に現在保持している接続を解除
+				m_mgr = std::exchange(other.m_mgr, nullptr);
+				m_id = std::exchange(other.m_id, 0);
+			}
+			return *this;
+		}
+
+		// コア処理：オブジェクト破棄時に自動で接続を解除
+		~ScopedConnection() { Disconnect(); }
+
+		void Disconnect() {
+			if (m_mgr && m_id != 0) {
+				m_mgr->UnregisterObserver(m_id);
+				m_mgr = nullptr;
+				m_id = 0;
+			}
+		}
+
+	private:
+		TurnManager* m_mgr = nullptr;
+		ObserverId m_id = 0;
+	};
+
 	// ---------------------------------------------------------
 	// オブザーバー管理 (Observer Management)
 	// ---------------------------------------------------------
-	// 戻り値の ObserverId を保存し、購読者の破棄時に UnregisterObserver で解除する
-	ObserverId RegisterObserver(TurnCallBack callback) {
+
+	[[nodiscard]] ScopedConnection RegisterObserver(TurnCallBack callback) {
 		m_callbacksList.push_back({ ++m_nextObserverId, std::move(callback) });
-		return m_nextObserverId;
+		return ScopedConnection(this, m_nextObserverId);
 	}
 
 	// ※ NotifyObservers の走査中に呼んではならない。

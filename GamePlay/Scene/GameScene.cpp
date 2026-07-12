@@ -343,7 +343,7 @@ void GameScene::SetupUserInterface() {
 	m_turnCutin->Init();
 
 	// ターン進行とカメラ演出のデカップリング（分離設計）
-	m_context->GetTurnManager()->RegisterObserver([this](TurnState state) {
+	m_sceneTurnConnection = m_context->GetTurnManager()->RegisterObserver([this](TurnState state) {
 		if (state == TurnState::PlayerPhase) {
 			if (m_turnCounter) m_turnCounter->Hide();
 			m_turnCutin->PlayCutinAnimation("Player Phase");

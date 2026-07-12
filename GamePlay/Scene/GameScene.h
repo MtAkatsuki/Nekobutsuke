@@ -10,6 +10,7 @@
 #include "../../UI/Component/TurnCutin.h"
 #include "../../UI/Component/TurnCounter.h"
 #include "../../UI/Component/TutorialUI.h"
+#include "../../GamePlay/Manager/TurnManager.h"
 #include "Background.h"
 
 class GameContext;
@@ -136,6 +137,7 @@ private:
 	GameUIManager* m_gameUIManager = nullptr;
 	DamageNumberManager* m_damageNumberManager = nullptr;
 	CShader* m_tileShader = nullptr;
+	TurnManager::ScopedConnection m_sceneTurnConnection;
 
 	// --- ゲームエンティティ ---
 	std::vector<std::unique_ptr<GameObject>> m_gameObjectList;

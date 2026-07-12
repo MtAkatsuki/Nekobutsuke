@@ -10,9 +10,9 @@
 #include "../../UI/Component/HPBar.h"
 #include "../../System/MeshManager.h"
 #include "../../Types/Team.h"
+#include "../../GamePlay/Manager/TurnManager.h"
 
 class MapManager;
-class TurnManager;
 struct Tile;
 class CStaticMeshRenderer;
 class CShader;
@@ -166,5 +166,5 @@ protected:
 
 
 	// TurnManager への購読ID（デストラクタで自動解除）
-	size_t m_turnObserverId = 0;
+	TurnManager::ScopedConnection m_turnConnection;
 };
