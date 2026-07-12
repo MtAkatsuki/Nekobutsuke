@@ -197,7 +197,7 @@ void Ally::OnPushed(Direction pushDir, Unit* attacker) {
 void Ally::TriggerEscape() {
     if (m_isEscaping) return;
     m_isEscaping = true;
-    m_currentHP = 0; // 無敵化
+    SetInvincible(true);// 無敵化
 
     // 採掘を強制開始
     m_isDigging = true;

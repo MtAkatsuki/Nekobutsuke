@@ -229,12 +229,12 @@ void GameUIManager::TriggerSelectAnim(int index) {
     }
 }
 
-void GameUIManager::ShowGuideUI(const Vector3& targetPos, bool arrows, bool enter, bool esc) {
+void GameUIManager::ShowGuideUI(const Vector3& targetPos, GuideOptions options) {
     m_isGuideActive = true;
     m_guideTargetPos = targetPos;
-    m_showArrows = arrows;
-    m_showEnter = enter;
-    m_showEsc = esc;
+    m_showArrows = options.showArrows;
+    m_showEnter = options.showEnter;
+    m_showEsc = options.showEsc;
     m_guideTimer = 0.0f;
 }
 

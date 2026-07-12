@@ -14,7 +14,9 @@ namespace {
 
 void Trap::Init(MapModelType type, Vector3 position) {
     MapObject::Init(type, position);
-    GetDimensions(type, m_sizeX, m_sizeZ);
+    auto [w, d] = GetModelSize(type);
+    m_sizeX = w;
+    m_sizeZ = d;
 
     m_renderer = MeshManager::GetRenderer<CStaticMeshRenderer>("trap_mesh");
     if (!m_renderer) {
@@ -107,14 +109,6 @@ void Trap::OnEnter(Unit* unit) {
         m_isDisappearing = true;
         m_animTimer = 0.0f;
     }
-}
-
-
-void Trap::GetDimensions(MapModelType type, int& outW, int& outD)
-{
-    const PropDef* def = FindPropDef(type);
-    outW = def ? def->sizeX : 1;
-    outD = def ? def->sizeZ : 1;
 }
 
 Trap* Trap::GetArmedTrap(const Tile* tile) {

@@ -170,7 +170,7 @@ void Player::Update(float deltaSeconds) {
 		{
 			DirOffset offset = DirOffset::From(m_attackDir);
 			Tile* targetTile = GetMap()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
-			if (targetTile && targetTile->occupant && targetTile->occupant != this) {
+			if (targetTile && this->CanTarget(targetTile->occupant)) {
 				bool isPush = (m_selectedAttackType == AttackType::Push);
 				int finalDmg = targetTile->occupant->CalculateExpectedDamage(m_playerDamage, isPush, m_attackDir);
 				targetTile->occupant->SetPreviewDamage(finalDmg);
@@ -366,7 +366,7 @@ void Player::SwitchToMenuMain() {
 			// マスに誰かが存在し、かつそれが自分自身でない場合のみ、押し出し（Push）操作を許可する
 			if (t && t->occupant) {
 				Unit* targetUnit = dynamic_cast<Unit*>(t->occupant);
-				if (targetUnit && targetUnit != this) {
+				if (targetUnit && this->CanTarget(targetUnit)) {
 					m_canAttack = true;
 					break; // 対象が見つかった時点で、この方向のチェックを完了
 				}
@@ -389,12 +389,11 @@ void Player::SwitchToMoveSelect() {
 	m_context->GetUIManager()->CloseMenu();
 
 	// 移動モード：矢印+ Enter + Esc
-	m_context->GetUIManager()->ShowGuideUI(
-		m_srt.pos,  // 矢印を表示する位置
-		true,       // Show Arrows
-		true,       // Show Enter
-		true        // Show Esc
-	);
+	m_context->GetUIManager()->ShowGuideUI(m_srt.pos, {
+		.showArrows = true,
+		.showEnter = true,
+		.showEsc = true
+		});
 
 	m_previewGridX = m_gridX;
 	m_previewGridZ = m_gridZ;
@@ -410,12 +409,11 @@ void Player::SwitchToAttackDirSelect(AttackType type) {
 
 	m_attackDir = m_facing;
 	// 攻撃方向選択状態：矢印+ Enter + Esc
-	m_context->GetUIManager()->ShowGuideUI(
-		m_srt.pos,
-		true,       // Show Arrows
-		true,       // Show Enter
-		true        // Show Esc
-	);
+	m_context->GetUIManager()->ShowGuideUI(m_srt.pos, {
+		.showArrows = true,
+		.showEnter = true,
+		.showEsc = true
+		});
 	// 【戦闘カメラ演出】：攻撃方向の選択時、カメラを攻撃方向へ少し前進（オフセット）させる
 	if (m_context && m_context->GetCamera()) {
 		DirOffset offset = DirOffset::From(m_attackDir);
@@ -451,7 +449,7 @@ void Player::ExecuteAttack() {
 	Vector3 targetPos = GetMap()->GetWorldPosition(targetX, targetZ);
 
 	m_attackIsLethal = false;
-	if (targetTile && targetTile->occupant && targetTile->occupant != this) {
+	if (targetTile && this->CanTarget(targetTile->occupant)) {
 		Unit* victim = targetTile->occupant;
 		bool isPush = (m_selectedAttackType == AttackType::Push);
 		int dmg = victim->CalculateExpectedDamage(m_playerDamage, isPush, m_attackDir);
@@ -482,7 +480,7 @@ void Player::PerformAttackStrike() {
 	Vector3 targetPos = GetMap()->GetWorldPosition(targetX, targetZ);
 	StartAttackAnimation(targetPos);
 
-	if (targetTile && targetTile->occupant && targetTile->occupant != this) {
+	if (targetTile && this->CanTarget(targetTile->occupant)) {
 		Unit* victim = targetTile->occupant;
 		if (m_selectedAttackType == AttackType::Push) {
 			victim->OnPushed(m_attackDir, this);

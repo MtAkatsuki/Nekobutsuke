@@ -131,7 +131,7 @@ void Enemy::Update(float deltaSeconds) {
 		if (m_attackTimer > ATTACK_DELAY) {
 			auto impactCallback = [this]() {
 				Tile* targetTile = GetMap()->GetTile(m_lockedGridX, m_lockedGridZ);
-				if (targetTile != nullptr && targetTile->occupant != nullptr && targetTile->occupant != this) {
+				if (targetTile != nullptr && this->CanTarget(targetTile->occupant)) {
 					// 移動後に参照が失われないよう、事前に対象オブジェクトのポインターを保存
 					Unit* victim = targetTile->occupant;
 
@@ -308,13 +308,13 @@ void Enemy::ExecuteAI() {
 	int distToAlly = DIST_UNREACHABLE;
 
 	//プレイヤーの距離計算
-	if (player && player->GetHP() > 0) {
+	if (this->CanTarget(player) && !player->IsInvincible()) {
 		distToPlayer = GetMap()->CalculateDistance(
 			this->m_gridX, this->m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
 	}
 
 	//味方の距離計算
-	if (ally && ally->GetHP() > 0) {
+	if (this->CanTarget(ally) && !ally->IsInvincible()) {
 		distToAlly = GetMap()->CalculateDistance(
 			this->m_gridX, this->m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
 	}
@@ -423,12 +423,12 @@ void Enemy::OnMoveFinished() {
 	Unit* targetInRange = nullptr;
 
 	// チェック Playerは範囲内か
-	if (player && player->GetHP() > 0) {
+	if (this->CanTarget(player) > 0 && !player->IsInvincible()) {
 		int d = GetMap()->CalculateDistance(m_gridX, m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
 		if (d <= ATTACK_RANGE) targetInRange = player;
 	}
 	// チェック Ally は範囲内か(優先でAllyロック)
-	if (ally && ally->GetHP() > 0) {
+	if (this->CanTarget(ally) && !ally->IsInvincible()) {
 		int d = GetMap()->CalculateDistance(m_gridX, m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
 		if (d <= ATTACK_RANGE) targetInRange = ally;
 	}
@@ -556,7 +556,7 @@ void Enemy::OnDrawOverlay(float /*deltaSeconds*/) {
 		
 		// そのユニットがどこへ押し出されるかのプレビューを継続的に表示する
 		Tile* lockedTile = GetMap()->GetTile(m_lockedGridX, m_lockedGridZ);
-		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
+		if (lockedTile && this->CanTarget(lockedTile->occupant)) {
 			lockedTile->occupant->DrawPushPreview(m_facing);
 		}
 	}

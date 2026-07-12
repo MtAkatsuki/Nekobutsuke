@@ -85,6 +85,7 @@ void Unit::OnTurnChanged(TurnState state) {}
 // ---------------------------------------------------------
 
 void Unit::TakeDamage(int damage, Unit* attacker) {
+	if (m_isInvincible) return;
 	if (damage < 0) return;
 	m_currentHP = std::max(0, m_currentHP - damage);
 	if (attacker) m_hitSourcePos = attacker->GetSRT().pos;

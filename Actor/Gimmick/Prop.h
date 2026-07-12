@@ -27,8 +27,6 @@ public:
 
 	// 家具の占有サイズを取得（MapManagerでのタイル埋め立て用）
 	
-	// outW: X軸方向の占有マス数, outD: Z軸方向の占有マス数
-	static void GetDimensions(MapModelType type, int& outW, int& outD);
 
 private:
 	int m_sizeX = 1; // 占有する幅（X軸）

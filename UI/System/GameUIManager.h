@@ -28,6 +28,12 @@ struct TutorialArrow {
 	bool isVertical;      // 縦揺れか横揺れか
 };
 
+struct GuideOptions {
+	bool showArrows = true; 
+	bool showEnter = true;
+	bool showEsc = true;
+};
+
 // =========================================================
 // GameUIManager クラス
 // プレイヤーの操作メニュー（移動・攻撃）や、WASD・Enter等の操作ガイドUIを統合管理する
@@ -61,7 +67,7 @@ public:
 	// ガイドUI制御 (Guide UI Control)
 	// ---------------------------------------------------------
 	// targetPos: アニメーションの中心座標
-	void ShowGuideUI(const Vector3& targetPos, bool arrows = true, bool enter = true, bool esc = true);
+	void ShowGuideUI(const Vector3& pos, GuideOptions options = {});
 	void HideGuideUI();
 	void SetCameraRotateVisible(bool visible) { m_showCameraRotate = visible; }
 

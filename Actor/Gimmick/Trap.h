@@ -30,7 +30,6 @@ public:
 	// ---------------------------------------------------------
 	void OnEnter(Unit* unit) override;
 
-	static void GetDimensions(MapModelType type, int& outW, int& outD);
 	// タイル上に「未発動の罠」があればそれを返す（なければ nullptr）
 	static Trap* GetArmedTrap(const Tile* tile);
 	bool IsActivated() const { return m_hasActivated; }

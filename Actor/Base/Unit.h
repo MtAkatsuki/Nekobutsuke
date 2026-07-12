@@ -67,6 +67,17 @@ public:
 	virtual void SetPreviewDamage(int dmg) { m_previewDamage = dmg; }
 	void DebugSetHP(int hp) { m_currentHP = hp; }
 	bool IsValidMoveTarget(int targetX, int targetZ);
+	// 無敵状態のゲッター・セッター
+	bool IsInvincible() const { return m_isInvincible; }
+	void SetInvincible(bool value) { m_isInvincible = value; }
+
+	bool CanTarget(const Unit* other) const {
+		if (other == nullptr) return false;
+		if (other == this) return false;
+		if (other->IsDead()) return false;
+		if (other->IsInvincible()) return false; 
+		return true;
+	}
 
 	// ---------------------------------------------------------
 	// アニメーション制御 (Animation System)
@@ -153,6 +164,8 @@ protected:
 
 	Vector3 m_targetRot = { 0.0f, 0.0f, 0.0f };
 	Vector3 m_targetWorldPos;
+
+	bool m_isInvincible = false;
 
 	// --- アニメーション制御データ ---
 	Vector3 m_animStartPos;

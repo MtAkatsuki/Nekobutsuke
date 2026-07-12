@@ -32,6 +32,11 @@ struct PropDef {
 	bool         walkable;   // ’Ês‰Â”Û
 };
 
+struct GridSize {
+	int w;
+	int d;
+};
+
 inline constexpr PropDef PROP_DEFS[] = {
 	// type                          csvToken       meshName            W  D  walkable
 	{ MapModelType::WALL,            "W",           "prop_plane_mesh",  1, 1, false },
@@ -57,4 +62,12 @@ inline const PropDef* FindPropDefByToken(const std::string& token) {
 		if (token == def.csvToken) return &def;
 	}
 	return nullptr;
+}
+
+inline GridSize GetModelSize(MapModelType type) {
+	const PropDef* def = FindPropDef(type);
+	if (def) {
+		return { def->sizeX, def->sizeZ };
+	}
+	return { 1, 1 };
 }

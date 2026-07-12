@@ -17,8 +17,10 @@ namespace {
 
 void Prop::Init(MapModelType type, Vector3 position) {
     // 1. 基本初期化とサイズの取得
-    MapObject::Init(type, position);
-    GetDimensions(type, m_sizeX, m_sizeZ);
+    MapObject::Init(type, position); auto size = GetModelSize(type);
+    auto [w, d] = GetModelSize(type);
+    m_sizeX = w;
+    m_sizeZ = d;
 
     // 2. 物件タイプに応じたメッシュ名の解決（プロップ定義テーブル参照）
     const PropDef* def = FindPropDef(type);
@@ -88,12 +90,6 @@ void Prop::OnDraw(float /*deltaSeconds*/) {
 
     m_renderer->Draw();
     Renderer::SetBlendState(BS_NONE);
-}
-
-void Prop::GetDimensions(MapModelType type, int& outW, int& outD) {
-    const PropDef* def = FindPropDef(type);
-    outW = def ? def->sizeX : 1;
-    outD = def ? def->sizeZ : 1;
 }
 
 void Prop::DrawPropShadow() {
