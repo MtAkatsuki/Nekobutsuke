@@ -301,6 +301,12 @@
     <ClCompile Include="Actor\Character\PlayerController.cpp">
       <Filter>Actor\Character</Filter>
     </ClCompile>
+    <ClCompile Include="System\Utility\CSVParser.cpp">
+      <Filter>System\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="System\Utility\IniParser.cpp">
+      <Filter>System\Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h">
@@ -614,6 +620,12 @@
     </ClInclude>
     <ClInclude Include="Actor\Character\PlayerController.h">
       <Filter>Actor\Character</Filter>
+    </ClInclude>
+    <ClInclude Include="System\Utility\CSVParser.h">
+      <Filter>System\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="System\Utility\IniParser.h">
+      <Filter>System\Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

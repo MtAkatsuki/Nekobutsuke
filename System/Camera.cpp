@@ -1,7 +1,9 @@
 ﻿#include "CommonTypes.h"
 #include "Renderer.h"
 #include "Camera.h"
+#include "Utility/IniParser.h"
 #include "../Core/Application.h"
+#include "../Core/DebugLog.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -197,61 +199,39 @@ std::string Trim(const std::string& s) {
 
 void Camera::SaveConfig() {
 	// プロジェクトの .exe と同階層に nekobutsuke_camera.ini を生成
-	std::ofstream file(CONFIG_FILE_NAME);
-	if (file.is_open()) {
-		for (const auto& e : CONFIG_TABLE) {
-			file << e.key << "=" << *e.value << "\n";
-		}
-		file.close();
-		std::cerr << "[Camera] Config Saved to " << CONFIG_FILE_NAME << std::endl;
+	std::unordered_map<std::string, float> config;
+
+	// 1. 【核心】：利用表驱动自动组装数据字典
+	for (const auto& entry : CONFIG_TABLE) {
+		config[entry.key] = *(entry.value);
+	}
+
+	// 2. 委托底层写入
+	if (IniParser::SaveFloatMap(CONFIG_FILE_NAME, config)) {
+		DBG_TRACE("[Camera] Configuration saved to disk.");
+	}
+	else {
+		DBG_ERROR("[Camera] Failed to save configuration to disk.");
 	}
 }
 
 void Camera::LoadConfig() {
-	std::ifstream file(CONFIG_FILE_NAME);
-	if (!file.is_open()) {
-		std::cerr << "[Camera] Warning: Could not open config file." << std::endl;
+	auto config = IniParser::LoadAsFloatMap(CONFIG_FILE_NAME);
+
+	if (config.empty()) {
+		DBG_ERROR("[Camera] Config is empty or missing. Using hardcoded default parameters.");
 		return;
 	}
 
-	std::string line;
-	while (std::getline(file, line)) {
-		// 1. 先頭と末尾の空白を除去
-		line = Trim(line);
-
-		// 2. 空行、または # や ; で始まるコメント行をスキップ
-		if (line.empty() || line[0] == '#' || line[0] == ';') {
-			continue;
-		}
-
-		// 3. 等号（=）を検索
-		size_t delimiterPos = line.find('=');
-		if (delimiterPos != std::string::npos) {
-			// 分割し、さらに key と value をクレンジング（空白除去）
-			//substr(start, length) :
-			// key: インデックス 0 から開始し、等号（=）の直前までを切り出す。
-			// valueStr: 等号の次の位置から開始し、行末までをすべて切り出す。
-			std::string key = Trim(line.substr(0, delimiterPos));
-			std::string valueStr = Trim(line.substr(delimiterPos + 1));
-
-			try {
-				float value = std::stof(valueStr);
-				// 表を線形探索してキー一致の変数へ書き込む（14件なので十分速い）
-				for (const auto& e : CONFIG_TABLE) {
-					if (key == e.key) {
-						*e.value = value;
-						break;
-					}
-				}
-			}
-			catch (const std::exception& e) {
-				// 数値への変換に失敗した場合のみエラーを出力
-				std::cerr << "[Camera] Invalid value for " << key << ": " << valueStr << std::endl;
-			}
+	// テーブル駆動方式による設定値の自動反映
+	for (const auto& entry : CONFIG_TABLE) {
+		// INI 内に定義されたキーが存在する場合、対応する変数へ設定値を適用
+		if (config.find(entry.key) != config.end()) {
+			*(entry.value) = config[entry.key];
 		}
 	}
-	file.close();
-	std::cerr << "[Camera] Config Loaded Successfully." << std::endl;
+
+	DBG_TRACE("[Camera] Configuration loaded successfully via Table-Driven Method.");
 }
 
 void Camera::CaptureCineReturn() {

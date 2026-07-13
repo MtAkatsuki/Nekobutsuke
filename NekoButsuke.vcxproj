@@ -89,6 +89,8 @@
     <ClCompile Include="System\stb.cpp" />
     <ClCompile Include="System\TriangleDrawer.cpp" />
     <ClCompile Include="System\Utility.cpp" />
+    <ClCompile Include="System\Utility\CSVParser.cpp" />
+    <ClCompile Include="System\Utility\IniParser.cpp" />
     <ClCompile Include="System\Utility\ScreenToWorld.cpp" />
     <ClCompile Include="System\Utility\WorldToScreen.cpp" />
     <ClCompile Include="System\ZFightTunables.cpp" />
@@ -115,6 +117,8 @@
     <ClInclude Include="Core\Game.h" />
     <ClInclude Include="Core\GameContext.h" />
     <ClInclude Include="Core\main.h" />
+    <ClInclude Include="System\Utility\CSVParser.h" />
+    <ClInclude Include="System\Utility\IniParser.h" />
     <ClInclude Include="Types\AttackType.h" />
     <ClInclude Include="Types\DialogueType.h" />
     <ClInclude Include="Types\MapModelType.h" />

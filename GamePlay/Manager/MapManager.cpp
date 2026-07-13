@@ -10,6 +10,7 @@
 #include "../../Actor/Base/GameObject.h"
 #include "../../GamePlay/Scene/GameScene.h"
 #include "../../Actor/Base/MapObject.h"
+#include "../../System/Utility/CSVParser.h"
 #include "../../System/RandomEngine.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../System/MeshManager.h"
@@ -330,55 +331,6 @@ void MapManager::ClearOccupants()
 	}
 }
 
-// CSVデータのパース処理
-std::vector<std::vector<std::string>> MapManager::ParseCSV(const std::string& filePath) {
-	// 解析後のデータを格納する2次元ベクトル
-	std::vector<std::vector<std::string>> grid;
-
-	// ファイルストリームを開く
-	std::ifstream file(filePath);
-
-	// ファイルのオープンに失敗した場合のエラー処理
-	if (!file.is_open()) {
-		DBG_ERROR("[Error] Failed to open CSV: ");
-		return grid;
-	}
-
-	std::string line;
-	// ファイルの終端に達するまで、1行ずつ読み込みを繰り返す
-	// (file から 1行取り出し、変数 line に格納する)
-	while (std::getline(file, line)) {
-
-		// 現在処理している行のセルデータを格納するための、一時的な配列（1次元ベクトル）
-		std::vector<std::string> row;
-
-		// 読み込んだ 1行の文字列(line)を、ストリームとして扱うための変換
-		// これにより、文字列をファイルと同じように「流し込み」や「区切り読み」ができるようになる
-		std::stringstream ss(line);
-
-		// 分割された個々のセル（カンマ間のデータ）を一時的に保持する変数
-		std::string cell;
-
-		// カンマ（,）を区切り文字として各セルを抽出
-		while (std::getline(ss, cell, ',')) {
-			// --- セル内の不要な空白文字（スペース、タブ、改行等）を除去（トリミング） ---
-
-			// 先頭の空白を削除
-			// (スペース ' ', タブ '\t', 回車 '\r', 改行 '\n' 以外の文字を探す)
-			cell.erase(0, cell.find_first_not_of(" \t\r\n"));
-			// 末尾の空白を削除
-			cell.erase(cell.find_last_not_of(" \t\r\n") + 1);
-
-			// クリーニング済みのデータを現在の行に追加
-			row.push_back(cell);
-		}
-		// 完成した行をグリッドデータに追加
-		grid.push_back(row);
-	}
-
-	// 解析結果を返す
-	return grid;
-}
 
 // ---------------------------------------------------------
 
@@ -387,14 +339,16 @@ std::vector<std::vector<std::string>> MapManager::ParseCSV(const std::string& fi
 // ---------------------------------------------------------
 
 void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
-	std::cout << "[MapManager] Loading Level: " << csvPath << std::endl;
-
+	DBG_TRACE("[MapManager] Loading Level: " << csvPath);
 	// 1. 古いデータの破棄
 	ClearCurrentLevel();
 
-	// 2. CSVデータの解析
-	auto csvData = ParseCSV(csvPath);
-	if (csvData.empty()) return;
+	// 2. CSVの解析データを取得
+	auto csvData = CSVParser::ReadAsGrid(csvPath);
+	if (csvData.empty()) {
+		DBG_ERROR("[MapManager] Level data is empty! Aborting Map generation.");
+		return;
+	}
 
 	// 3. グリッド寸法の確立と初期化
 	SetupGridDimensions(csvData);
@@ -403,8 +357,7 @@ void MapManager::LoadLevel(const std::string& csvPath, GameContext* context) {
 	SpawnFloorLayer(context);
 	SpawnStaticStructures(csvData, context);
 	SpawnDynamicEntities(csvData, context);
-
-	std::cout << "[MapManager] Level Loaded Successfully." << std::endl;
+	DBG_TRACE("[MapManager] Level Loaded Successfully.");
 }
 
 void MapManager::ClearCurrentLevel() {
