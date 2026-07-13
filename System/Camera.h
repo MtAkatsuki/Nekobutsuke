@@ -182,6 +182,7 @@ public:
     static inline float KILLCAM_FOLLOW_MIN_Y = 0.0f; // Y方向の追従下限（地面より下は追従しない）
     static inline float CINE_RETURN_LERP_SPEED = 1.8f; // 演出終了後の復帰補間速度
     static inline float KILLCAM_WAIT_TIMEOUT = 2.0f; // KillLead が死亡飛翔開始を待機する最大時間（超過時は演出を終了）
+    static inline float KILLCAM_PAN_MAX_DIST = 2.0f; // 水平方向の追従上限（メートル、0 で水平追従なし）
 protected:
     void BeginKillSlow(); // KillSlow（見上げ＋ソフト追従）へ遷移
 protected:

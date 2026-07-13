@@ -158,10 +158,15 @@ void GameScene::RemoveDeadObjects()
 				m_context->SetPlayer(nullptr);
 				m_player = nullptr;
 			}
+			// KillCam の追従対象が破棄される場合は参照を無効化
+			if (obj.get() == static_cast<GameObject*>(m_killCamTrackTarget)) {
+				m_killCamTrackTarget = nullptr;
+			}
 			if (obj.get() == static_cast<GameObject*>(m_context->GetAlly())) {
 				m_context->SetAlly(nullptr);
 				m_ally = nullptr;
 			}
+
 		}
 	}
 
@@ -414,20 +419,28 @@ void GameScene::UpdateCoreTimers(float deltaSeconds)
 
 void GameScene::UpdateCameraFocus(float deltaSeconds)
 {
-	// UIカットイン等によって後続の更新がブロックされた場合でも、
-	
-	// 画面が静止してフリーズしたような印象を与えないよう、カメラ移動のみ最優先で継続させる
-	if (m_camera) {
-		// KillCam 中は死亡飛翔中の敵位置を毎フレーム渡す。
-		// Camera は対象へのポインタを保持せず、オブジェクト破棄後のダングリングポインタを防止。
-		if (m_camera->IsCinematic() && m_context && m_context->GetEnemyManager()) {
-			if (Enemy* dying = m_context->GetEnemyManager()->GetDyingEnemy()) {
-				m_camera->UpdateKillCamFollow(dying->GetSRT().pos);
-			}
+	if (!m_camera) return;
+
+	if (m_camera->IsCinematic()) {
+		// 追従対象は演出開始時に一度だけ取得し、演出中は変更しない。
+		// 複数の敵が連続で撃破されても、追従対象は切り替えない。
+		if (!m_killCamTargetAcquired && m_context && m_context->GetEnemyManager()) {
+			m_killCamTrackTarget = m_context->GetEnemyManager()->GetDyingEnemy();
+			if (m_killCamTrackTarget) m_killCamTargetAcquired = true;
 		}
-		m_camera->Update(deltaSeconds);
+		// 対象が破棄された場合は追従を停止し、現在の注視点を維持する。
+		// 演出終了後は通常のカメラ制御へ復帰。
+		if (m_killCamTrackTarget) {
+			m_camera->UpdateKillCamFollow(m_killCamTrackTarget->GetSRT().pos);
+		}
 	}
-	
+	else {
+		// 演出終了後に追従対象をリセット（次回演出で再取得）
+		m_killCamTrackTarget = nullptr;
+		m_killCamTargetAcquired = false;
+	}
+
+	m_camera->Update(deltaSeconds);
 }
 
 void GameScene::UpdateTurnIntroSequence(float deltaSeconds) {

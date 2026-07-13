@@ -179,6 +179,8 @@ private:
 	// --- 演出・デバッグ制御 ---
 	bool m_needsTurnCounterAnim = false;
 	bool m_shouldShowDebugEscape = false;
+	Enemy* m_killCamTrackTarget = nullptr;// KillCam の追従対象（演出中は固定）
+	bool m_killCamTargetAcquired = false; // 本演出で追従対象を取得済みか（再取得を行わない）
 
 	// --- 定数パラメータ ---
 	const float START_WAIT_TIME = 1.0f;

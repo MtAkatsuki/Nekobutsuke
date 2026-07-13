@@ -47,6 +47,7 @@ namespace {
 		{ "KILLCAM_FOLLOW_MAX_Y",   &Camera::KILLCAM_FOLLOW_MAX_Y },
 		{ "KILLCAM_FOLLOW_MIN_Y",   &Camera::KILLCAM_FOLLOW_MIN_Y },
 		{ "CINE_RETURN_LERP_SPEED", &Camera::CINE_RETURN_LERP_SPEED },
+		{ "KILLCAM_PAN_MAX_DIST",   &Camera::KILLCAM_PAN_MAX_DIST },
 	};
 
 	float UnwrapNear(float ref, float angle) {
@@ -317,12 +318,29 @@ void Camera::UpdateKillCamFollow(const Vector3& victimPos) {
 	// 2. Y方向の追従量を制限し、過度な見上げや地面方向への追従を防ぐ
 	offset.y = std::clamp(offset.y, KILLCAM_FOLLOW_MIN_Y, KILLCAM_FOLLOW_MAX_Y);
 
-	// 3. 追従率を適用し、注視点を更新
+	// 3. 水平方向（X/Z）の追従量を緩やかに制限する。
+	//    狭い FOV（15°）では大きなパン移動が前進しているように見えるため、
+	//    小さい移動量は比例的に追従し、移動量が大きくなるほど増加量を抑える。
+	//    KILLCAM_PAN_MAX_DIST を上限とし、0 の場合は従来どおり水平追従を行わない。
+	const float horizDist = sqrtf(offset.x * offset.x + offset.z * offset.z);
+	if (horizDist > 0.001f && KILLCAM_PAN_MAX_DIST > 0.01f) {
+		const float mapped = KILLCAM_PAN_MAX_DIST *
+			(1.0f - std::expf(-KILLCAM_FOLLOW_WEIGHT * horizDist / KILLCAM_PAN_MAX_DIST));
+		const float scale = mapped / horizDist;   // 方向を保ったまま長さのみを縮小
+		offset.x *= scale;
+		offset.z *= scale;
+	}
+	else {
+		offset.x = 0.0f;
+		offset.z = 0.0f;
+	}
+
+	// 4. 注視点を更新（Y方向は追従率を適用し、X/Z方向は制限後の値を使用）
 	m_targetLookAt = m_killCamAnchor
 		+ Vector3(0.0f, KILLCAM_PITCH_LIFT, 0.0f)
-		+ offset * KILLCAM_FOLLOW_WEIGHT;
+		+ Vector3(offset.x, offset.y * KILLCAM_FOLLOW_WEIGHT, offset.z);
 
-	// 4. 補間処理は Update() 側で実施
+	// 5. 補間処理は Update() 側で実施
 }
 
 void Camera::PlayAttackZoom(const Vector3& focusPos) {

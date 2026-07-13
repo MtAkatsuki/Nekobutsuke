@@ -239,7 +239,7 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
         ImGui::SliderFloat("Follow Min Y", &Camera::KILLCAM_FOLLOW_MIN_Y, -5.0f, 5.0f, "%.1f");
         ImGui::SliderFloat("Return Speed", &Camera::CINE_RETURN_LERP_SPEED, 0.5f, 8.0f, "%.1f");
         ImGui::SliderFloat("Lerp Speed", &Camera::CAMERA_LERP_SPEED, 0.5f, 12.0f, "%.1f");
-
+        ImGui::SliderFloat("Pan Max Dist", &Camera::KILLCAM_PAN_MAX_DIST, 0.0f, 6.0f, "%.1f");
         if (ImGui::Button("Test Kill Cam", ImVec2(-1, 30))) {
             SpawnDebugEnemyInFront(1);
             m_player->DebugForceAttack(m_player->GetFacing());
