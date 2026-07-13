@@ -183,20 +183,6 @@ void Camera::SetBounds(float minX, float maxX, float minZ, float maxZ) {
 	m_maxZ = maxZ;
 }
 
-std::string Trim(const std::string& s) {
-	// 補助関数：文字列の先頭と末尾から空白、タブ、改行などを取り除く
-	
-	// 1. 最初に出現する【空白以外】の文字の位置を検索
-	auto start = s.find_first_not_of(" \t\r\n");
-
-	// 2. 最後に出現する【空白以外】の文字の位置を検索
-	auto end = s.find_last_not_of(" \t\r\n");
-
-	// 3. 判定および切り出し
-	// 空白以外の文字が見つからない場合（文字列全体が空白か空の場合）は、空の文字列 "" を返す
-	return (start == std::string::npos) ? "" : s.substr(start, end - start + 1);
-}
-
 void Camera::SaveConfig() {
 	// プロジェクトの .exe と同階層に nekobutsuke_camera.ini を生成
 	std::unordered_map<std::string, float> config;

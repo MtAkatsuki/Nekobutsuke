@@ -295,9 +295,6 @@
     <ClCompile Include="GamePlay\Scene\GameResultJudge.cpp">
       <Filter>GamePlay\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="System\AssimpParse.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Actor\Character\PlayerController.cpp">
       <Filter>Actor\Character</Filter>
     </ClCompile>
@@ -306,6 +303,9 @@
     </ClCompile>
     <ClCompile Include="System\Utility\IniParser.cpp">
       <Filter>System\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="System\AssimpParse.cpp">
+      <Filter>System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

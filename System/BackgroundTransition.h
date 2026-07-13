@@ -23,7 +23,7 @@ private:
 public:
     // fadeDurationSeconds: フェードイン・アウトにかける時間（秒）
     // scrollDurationSeconds: スクロールが停止するまでの減速時間（秒）
-    explicit BackgroundTransition(float fadeDurationSeconds, float scrollDurationSeconds = 0.5f);
+    explicit BackgroundTransition(float fadeDurationSeconds = 1.0f, float scrollDurationSeconds = 4.0f);
     ~BackgroundTransition() override = default;
 
     // ---------------------------------------------------------

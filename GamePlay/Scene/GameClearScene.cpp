@@ -11,8 +11,6 @@
 namespace {
     // --- 定数定義  ---
     constexpr float INPUT_LOCK_DURATION = 1.0f; // 遷移直後の誤操作防止(1秒)
-    constexpr float FADE_IN_OUT_DURATION_SEC = 1.0f;// フェードイン・アウトの合計時間（秒）
-    constexpr float BACKGROUND_TRANSITION_TIME_SEC = 4.0f;// 背景遷移のスクロール時間（秒）
 }
 
 void GameClearScene::Init() {
@@ -44,7 +42,7 @@ void GameClearScene::Update(float deltaSeconds) {
     if (CDirectInput::GetInstance().IsAnyKeyTriggered()) {
         SceneManager::GetInstance().SetCurrentScene(
             "TitleScene",
-            std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION_SEC, BACKGROUND_TRANSITION_TIME_SEC)
+            std::make_unique<BackgroundTransition>()
         );
     }
 }
