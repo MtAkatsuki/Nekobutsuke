@@ -8,7 +8,7 @@ namespace {
     // --- 定数定義 ---
     constexpr float WORLD_OFFSET_Y = 1.5f; // 頭上に表示するためのY軸オフセット
     constexpr float CULLING_MARGIN = 50.0f;
-    constexpr float DEFAULT_TINT = 0.8f; // スプライトの標準乗算カラー
+    constexpr float DIALOGUE_SCALE = 0.8f; // スプライトのScale
 
     // --- 吹き出しスプライトのテクスチャ実寸（px） ---
     constexpr float HELP_TEX_W = 370.0f;
@@ -59,8 +59,8 @@ void DialogueUI::Draw() {
     Renderer::SetDepthEnable(false);
     Renderer::SetBlendState(BS_ALPHABLEND);
 
-    Vector3 colorTint(DEFAULT_TINT, DEFAULT_TINT, DEFAULT_TINT);
-    m_currentSprite->Draw(colorTint, Vector3(0, 0, 0), Vector3(screenPos.x, screenPos.y, 0));
+    Vector3 drawScale(DIALOGUE_SCALE, DIALOGUE_SCALE, DIALOGUE_SCALE);
+    m_currentSprite->Draw(drawScale, Vector3(0, 0, 0), Vector3(screenPos.x, screenPos.y, 0));
 
     Renderer::SetBlendState(BS_NONE);
     Renderer::SetDepthEnable(true);
