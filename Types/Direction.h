@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 enum class Direction{North,East,South,West};
 
 struct DirOffset

@@ -298,6 +298,9 @@
     <ClCompile Include="System\AssimpParse.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Actor\Character\PlayerController.cpp">
+      <Filter>Actor\Character</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h">
@@ -588,29 +591,29 @@
     <ClInclude Include="System\ModelRegistry.h">
       <Filter>System</Filter>
     </ClInclude>
-    <ClInclude Include="System\AssimpParse.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Types\Direction.h">
       <Filter>Types</Filter>
     </ClInclude>
     <ClInclude Include="Types\TurnState.h">
       <Filter>Types</Filter>
     </ClInclude>
-    <ClInclude Include="Types\Team.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Types\PlayerState.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Types</Filter>
     </ClInclude>
     <ClInclude Include="Types\AttackType.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Types</Filter>
     </ClInclude>
     <ClInclude Include="Types\DialogueType.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Types</Filter>
     </ClInclude>
     <ClInclude Include="Types\MapModelType.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>Types</Filter>
+    </ClInclude>
+    <ClInclude Include="System\AssimpParse.h">
+      <Filter>System</Filter>
+    </ClInclude>
+    <ClInclude Include="Actor\Character\PlayerController.h">
+      <Filter>Actor\Character</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

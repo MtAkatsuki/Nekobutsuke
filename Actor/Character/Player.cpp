@@ -1,6 +1,5 @@
 ﻿#include	"Player.h"	
 #include    "PlayerActionView.h"
-#include    "../../System/CDirectInput.h"
 #include	"../../System/MeshManager.h"
 #include	"../../GamePlay/Scene/GameScene.h"	
 #include	"../../Core/GameContext.h"
@@ -36,27 +35,6 @@ namespace {
 	// 攻撃方向選択時のカメラ注視オフセット（グリッド単位）
 	const float ATTACK_CAM_ENTER_OFFSET = 1.5f;  // 選択開始時の前進オフセット
 	const float ATTACK_CAM_AIM_OFFSET = 2.5f;    // 方向変更時の前進オフセット
-
-	// WASD / 矢印キーの方向入力を読む（スクリーン空間、上=+Z）。入力なしは {0,0}
-	DirOffset ReadDirectionalInput() {
-		auto& input = CDirectInput::GetInstance();
-		if (input.CheckKeyBuffer(DIK_W) || input.CheckKeyBuffer(DIK_UP))    return { 0,  1 };
-		if (input.CheckKeyBuffer(DIK_S) || input.CheckKeyBuffer(DIK_DOWN))  return { 0, -1 };
-		if (input.CheckKeyBuffer(DIK_A) || input.CheckKeyBuffer(DIK_LEFT))  return { -1, 0 };
-		if (input.CheckKeyBuffer(DIK_D) || input.CheckKeyBuffer(DIK_RIGHT)) return { 1,  0 };
-		return { 0, 0 };
-	}
-
-	// スクリーン空間の入力を、カメラの向きインデックス(0~3)に応じて
-	// ワールド格子方向へ回転する（DirOffset の回転代数を再利用）
-	DirOffset RotateInputByCamera(int camDir, DirOffset in) {
-		switch (camDir) {
-		case 1:  return in.MoveLeft();   // 正面右カメラ
-		case 2:  return in.MoveBack();   // 背面右カメラ
-		case 3:  return in.MoveRight();  // 背面左カメラ
-		default: return in;              // 正面左（基本カメラ）
-		}
-	}
 }
 
 //Spawnファクトリー
@@ -493,16 +471,16 @@ void Player::PerformAttackStrike() {
 
 void Player::HandleMenuInput() {
 	// 移動していない場合のみ、Jキーで移動選択に切り替え
-	if (!m_hasMoved && CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_J)) {
+	if (!m_hasMoved && m_currentCmd.menuMove) {
 		m_context->GetUIManager()->TriggerSelectAnim(0);
 		m_nextState = PlayerState::MOVE_SELECT;
 	}
 	// 攻撃可能な場合のみKキーの入力を受け付ける
-	else if (m_canAttack && CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_K)) {
+	else if (m_canAttack && m_currentCmd.menuAttack) {
 		m_context->GetUIManager()->TriggerSelectAnim(1);
 		m_nextState = PlayerState::ATTACK_DIR_SELECT;
 	}
-	else if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_L)) {
+	else if (m_currentCmd.menuEnd) {
 		m_context->GetUIManager()->TriggerSelectAnim(2);
 		m_nextState = PlayerState::WAITING;
 	}
@@ -510,7 +488,7 @@ void Player::HandleMenuInput() {
 
 void Player::HandleMoveInput(float dt) {
 	// ESC: プレーヤー位置をリセットしてメインメニューに戻る
-	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_ESCAPE)) {
+	if (m_currentCmd.cancel) {
 		m_context->GetUIManager()->HideGuideUI();
 		m_gridX = m_startGridX;
 		m_gridZ = m_startGridZ;
@@ -523,11 +501,8 @@ void Player::HandleMoveInput(float dt) {
 	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
 	else {
 		// スクリーン空間の入力を取得し、カメラの向きに応じてワールド格子方向へ変換
-		DirOffset in = ReadDirectionalInput();
-		if (in.x != 0 || in.z != 0) {
-			int camDir = (m_context && m_context->GetCamera())
-				? m_context->GetCamera()->GetNormalizedDirIndex() : 0;
-			DirOffset move = RotateInputByCamera(camDir, in);
+		DirOffset move = m_currentCmd.worldDir;
+		if (move.x != 0 || move.z != 0) {
 
 			int nextX = m_previewGridX + move.x;
 			int nextZ = m_previewGridZ + move.z;
@@ -569,32 +544,27 @@ void Player::HandleMoveInput(float dt) {
 		}
 	}
 
-	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_RETURN)) {
+	if (m_currentCmd.submit) {
 		m_context->GetUIManager()->HideGuideUI();
 		ExecuteMove();
 	}
 }
 
 void Player::HandleAttackDirInput(float dt) {
-	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_ESCAPE)) {
+	if (m_currentCmd.cancel) {
 		SwitchToMenuMain();
 		return;
 	}
 
 	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
 	else {
-		DirOffset in = ReadDirectionalInput();
-		if (in.x != 0 || in.z != 0) {
-			int camDir = (m_context && m_context->GetCamera())
-				? m_context->GetCamera()->GetNormalizedDirIndex() : 0;
-			DirOffset move = RotateInputByCamera(camDir, in);
-
-			// ワールド格子方向 → Direction 列挙（既存の FromVector を再利用）
+		DirOffset move = m_currentCmd.worldDir;
+		if (move.x != 0 || move.z != 0) {
+			// 変換済みのワールド方向から攻撃方向と向きを設定
 			m_attackDir = DirOffset::FromVector((float)move.x, (float)move.z);
-
-			// モデルの向きと戦術カメラのオフセットを攻撃方向に合わせて更新
 			DirOffset offset = DirOffset::From(m_attackDir);
 			SetFacingFromVector(Vector3((float)offset.x, 0, (float)offset.z));
+
 			if (m_context && m_context->GetCamera()) {
 				Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * ATTACK_CAM_AIM_OFFSET;
 				m_context->GetCamera()->UpdateTrackingTarget(targetPos);
@@ -602,7 +572,7 @@ void Player::HandleAttackDirInput(float dt) {
 		}
 	}
 
-	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_RETURN)) {
+	if (m_currentCmd.submit) {
 		m_context->GetUIManager()->HideGuideUI();
 		ExecuteAttack();
 	}

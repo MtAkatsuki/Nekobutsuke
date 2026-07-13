@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <memory>
+#include "PlayerController.h"
 #include "../Base/Unit.h"
 #include "../../System/CStaticMesh.h"
 #include "../../System/CStaticMeshRenderer.h"
@@ -48,6 +49,8 @@ public:
     virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
     virtual void SetPreviewDamage(int dmg) override;
     virtual void OnDeathFlyComplete() override;
+    // 外部からコマンドを注入し、入力処理とゲームロジックを分離
+    void SetCommand(const PlayerCommand& cmd) { m_currentCmd = cmd; }
 
     // ---------------------------------------------------------
 	// Debug / テスト用 (Debug / Testing)
@@ -98,6 +101,8 @@ private:
     PlayerState m_state = PlayerState::WAITING;
     PlayerState m_nextState = PlayerState::WAITING;
     bool canControl = false;
+    // 現在フレームの操作コマンドを保持
+    PlayerCommand m_currentCmd;
 
     // --- 移動・パス ---
     int m_startGridX = 0;

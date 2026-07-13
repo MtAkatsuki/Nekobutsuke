@@ -31,15 +31,7 @@ void GameOverScene::Update(float deltaSeconds) {
         return;
     }
 
-    bool hasAnyKeyPressed = false;
-    for (int i = 1; i < 256; ++i) {
-        if (CDirectInput::GetInstance().CheckKeyBufferTrigger(i)) {
-            hasAnyKeyPressed = true;
-            break;
-        }
-    }
-
-    if (hasAnyKeyPressed) {
+    if (CDirectInput::GetInstance().IsAnyKeyTriggered()) {
         SceneManager::GetInstance().SetCurrentScene(
             "TitleScene",
             std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION_SEC, BACKGROUND_TRANSITION_TIME_SEC)

@@ -345,6 +345,7 @@ void GameScene::SetupGameEntities() {
 	m_player = m_context->GetPlayer();
 	m_ally = m_context->GetAlly();
 	EnemyManager* em = m_context->GetEnemyManager();
+	m_playerController = std::make_unique<PlayerController>(m_context);
 }
 
 void GameScene::SetupUserInterface() {
@@ -537,6 +538,14 @@ void GameScene::ProcessEscapeEvent()
 
 void GameScene::UpdateGameObjects(float deltaSeconds)
 {
+	// プレイヤーが有効な間、最新の操作コマンドを渡す。
+	// コマンドの処理可否は Player のステートマシン側で制御する。
+	if (m_player && m_playerController) {
+		if (m_player->GetState() != PlayerState::DEAD_FLYING) {
+			m_player->SetCommand(m_playerController->PollInput());
+		}
+	}
+
 	for (const auto& obj : m_gameObjectList) {
 		obj->Update(deltaSeconds);
 	}

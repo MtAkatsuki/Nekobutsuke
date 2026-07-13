@@ -48,17 +48,7 @@ void TitleScene::Update(float deltaSeconds) {
     float sinValue = std::abs(std::sin(m_blinkTimer * BLINK_SPEED));
     m_currentHintAlpha = BLINK_MIN_ALPHA + (BLINK_RANGE * sinValue);
 
-    // --- 入力検知 (Any Key) ---
-    bool hasAnyKeyPressed = false;
-    // 主要なキーコード(1~255)を走査
-    for (int i = 1; i < 256; ++i) {
-        if (CDirectInput::GetInstance().CheckKeyBufferTrigger(i)) {
-            hasAnyKeyPressed = true;
-            break;
-        }
-    }
-
-    if (hasAnyKeyPressed) {
+    if (CDirectInput::GetInstance().IsAnyKeyTriggered()) {
         SceneManager::GetInstance().SetCurrentScene(
             "GameScene",
             std::make_unique<BackgroundTransition>(FADE_IN_OUT_DURATION_SEC, BACKGROUND_TRANSITION_TIME_SEC)

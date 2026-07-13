@@ -4,6 +4,7 @@
 #include "../../System/IScene.h"
 #include "../../System/SceneClassFactory.h"
 #include "../../GamePlay/Manager/TurnManager.h"
+#include "../../Actor/Character/PlayerController.h"
 
 class GameContext;
 class Camera;
@@ -145,6 +146,7 @@ private:
 	Player* m_player = nullptr;
 	Ally* m_ally = nullptr;
 	std::unique_ptr<Background> m_background;
+	std::unique_ptr<PlayerController> m_playerController;
 
 	// --- UIコンポーネント ---
 	DialogueUI* m_dialogueUI = nullptr;
