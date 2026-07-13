@@ -1,35 +1,35 @@
-#pragma once
+ï»¿#pragma once
 #include <string>
 
 // =========================================================
-// ƒ}ƒbƒvƒ‚ƒfƒ‹‚ÌŽí—Þ
+// ãƒžãƒƒãƒ—ãƒ¢ãƒ‡ãƒ«ã®ç¨®é¡ž
 // =========================================================
 enum class MapModelType {
-	FLOOR,            // °
-	WALL,             // •Ç
-	TRAP,             // ƒgƒ‰ƒbƒv
+	FLOOR,            // åºŠ
+	WALL,             // å£
+	TRAP,             // ãƒˆãƒ©ãƒƒãƒ—
 
-	// --- ‰Æ‹ïEƒvƒƒbƒv (’·•ûŒ`E‘åŒ^•¨Œ) ---
-	PROP_SOFA_YOKO,   // ƒ\ƒtƒ@i‰¡Œü‚« 3x1j
-	PROP_SOFA_TATE,   // ƒ\ƒtƒ@icŒü‚« 1x3j
-	PROP_BOOKSHELF,   // –{’Ii‰¡ 2x1j
-	PROP_CATTOWER,    // ƒLƒƒƒbƒgƒ^ƒ[i‰¡ 2x1j
-	PROP_TABLE        // ƒe[ƒuƒ‹i‰¡ 3x2j
+	// --- å®¶å…·ãƒ»ãƒ—ãƒ­ãƒƒãƒ— (é•·æ–¹å½¢ãƒ»å¤§åž‹ç‰©ä»¶) ---
+	PROP_SOFA_YOKO,   // ã‚½ãƒ•ã‚¡ï¼ˆæ¨ªå‘ã 3x1ï¼‰
+	PROP_SOFA_TATE,   // ã‚½ãƒ•ã‚¡ï¼ˆç¸¦å‘ã 1x3ï¼‰
+	PROP_BOOKSHELF,   // æœ¬æ£šï¼ˆæ¨ª 2x1ï¼‰
+	PROP_CATTOWER,    // ã‚­ãƒ£ãƒƒãƒˆã‚¿ãƒ¯ãƒ¼ï¼ˆæ¨ª 2x1ï¼‰
+	PROP_TABLE        // ãƒ†ãƒ¼ãƒ–ãƒ«ï¼ˆæ¨ª 3x2ï¼‰
 };
 
 // =========================================================
-// ƒvƒƒbƒv’è‹`ƒe[ƒuƒ‹
-// CSVƒg[ƒNƒ“EƒƒbƒVƒ…–¼Eè—LƒTƒCƒYE’Ês‰Â”Û‚ðˆêŒ³ŠÇ—‚·‚éB
-// V‚µ‚¢‰Æ‹ï‚Ì’Ç‰Á‚Í‚±‚±‚É1s + GameScene ‚Ìƒ‚ƒfƒ‹“o˜^‚É1s‚Ì‚ÝB
-// ¦ FLOOR ‚Í“ÁŽêˆµ‚¢iƒe[ƒuƒ‹ŠOA’Ês‰ÂE°ƒƒbƒVƒ…’¼Žw’èj
+// ãƒ—ãƒ­ãƒƒãƒ—å®šç¾©ãƒ†ãƒ¼ãƒ–ãƒ«
+// CSVãƒˆãƒ¼ã‚¯ãƒ³ãƒ»ãƒ¡ãƒƒã‚·ãƒ¥åãƒ»å æœ‰ã‚µã‚¤ã‚ºãƒ»é€šè¡Œå¯å¦ã‚’ä¸€å…ƒç®¡ç†ã™ã‚‹ã€‚
+// æ–°ã—ã„å®¶å…·ã®è¿½åŠ ã¯ã“ã“ã«1è¡Œ + GameScene ã®ãƒ¢ãƒ‡ãƒ«ç™»éŒ²ã«1è¡Œã®ã¿ã€‚
+// â€» FLOOR ã¯ç‰¹æ®Šæ‰±ã„ï¼ˆãƒ†ãƒ¼ãƒ–ãƒ«å¤–ã€é€šè¡Œå¯ãƒ»åºŠãƒ¡ãƒƒã‚·ãƒ¥ç›´æŒ‡å®šï¼‰
 // =========================================================
 struct PropDef {
 	MapModelType type;
-	const char* csvToken;   // ƒŒƒxƒ‹CSVã‚ÌŽ¯•ÊŽq
-	const char* meshName;   // MeshManager “o˜^–¼
-	int          sizeX;      // è—L•iXŽ²j
-	int          sizeZ;      // è—L‰œs‚«iZŽ²j
-	bool         walkable;   // ’Ês‰Â”Û
+	const char* csvToken;   // ãƒ¬ãƒ™ãƒ«CSVä¸Šã®è­˜åˆ¥å­
+	const char* meshName;   // MeshManager ç™»éŒ²å
+	int          sizeX;      // å æœ‰å¹…ï¼ˆXè»¸ï¼‰
+	int          sizeZ;      // å æœ‰å¥¥è¡Œãï¼ˆZè»¸ï¼‰
+	bool         walkable;   // é€šè¡Œå¯å¦
 };
 
 struct GridSize {
@@ -48,7 +48,7 @@ inline constexpr PropDef PROP_DEFS[] = {
 	{ MapModelType::PROP_TABLE,      "W_TABLE",     "table_mesh",       3, 2, false },
 };
 
-// ƒ^ƒCƒv‚©‚ç’è‹`‚ðŒŸõi–¢“o˜^ƒ^ƒCƒvFLOOR“™‚Í nullptrj
+// ã‚¿ã‚¤ãƒ—ã‹ã‚‰å®šç¾©ã‚’æ¤œç´¢ï¼ˆæœªç™»éŒ²ã‚¿ã‚¤ãƒ—ï¼FLOORç­‰ã¯ nullptrï¼‰
 inline const PropDef* FindPropDef(MapModelType type) {
 	for (const auto& def : PROP_DEFS) {
 		if (def.type == type) return &def;
@@ -56,7 +56,7 @@ inline const PropDef* FindPropDef(MapModelType type) {
 	return nullptr;
 }
 
-// CSVƒg[ƒNƒ“‚©‚ç’è‹`‚ðŒŸõi–¢’mƒg[ƒNƒ“‚Í nullptrj
+// CSVãƒˆãƒ¼ã‚¯ãƒ³ã‹ã‚‰å®šç¾©ã‚’æ¤œç´¢ï¼ˆæœªçŸ¥ãƒˆãƒ¼ã‚¯ãƒ³ã¯ nullptrï¼‰
 inline const PropDef* FindPropDefByToken(const std::string& token) {
 	for (const auto& def : PROP_DEFS) {
 		if (token == def.csvToken) return &def;

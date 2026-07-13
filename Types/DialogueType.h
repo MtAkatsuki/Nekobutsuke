@@ -1,7 +1,7 @@
-#pragma once
+﻿#pragma once
 
-// --- �_�C�A���O�̎�� ---
+// --- ダイアログの種類 ---
 enum class DialogueType {
-    Help,   // ���������߂�i�ʏ�̃t�F�[�Y�j
-    Escape  // �E�o�̎w���i�^�[���؂�E�E�o�J�n���j
+    Help,   // 助けを求める（通常のフェーズ）
+    Escape  // 脱出の指示（ターン切れ・脱出開始時）
 };

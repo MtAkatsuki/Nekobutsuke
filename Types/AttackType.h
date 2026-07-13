@@ -1,6 +1,6 @@
-#pragma once
+ï»¿#pragma once
 
-// UŒ‚‚Ìí—Ş
+// æ”»æ’ƒã®ç¨®é¡
 enum class AttackType {
     Normal,
     Push
