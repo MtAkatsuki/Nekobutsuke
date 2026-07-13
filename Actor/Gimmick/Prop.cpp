@@ -4,7 +4,7 @@
 
 void Prop::Init(MapModelType type, Vector3 position) {
     // 1. 基本初期化とサイズの取得
-    MapObject::Init(type, position); auto size = GetModelSize(type);
+    MapObject::Init(type, position); 
     auto [w, d] = GetModelSize(type);
     m_sizeX = w;
     m_sizeZ = d;

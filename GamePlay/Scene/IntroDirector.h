@@ -38,7 +38,7 @@ private:
         Finished              // 導入演出完了
     };
 
-    // カメラが目標注視点へ到達したか（Lerp収束判定）
+    // カメラが目標注視点へ到達したか（補間の到達判定）
     bool HasCameraArrived() const;
 
     GameContext* m_context = nullptr;      

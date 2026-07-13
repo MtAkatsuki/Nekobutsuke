@@ -7,8 +7,7 @@ class CShader;
 
 // =========================================================
 // Prop クラス
-// 家具や障害物などの環境モデル。
-// プレイヤーや敵が裏側に隠れた際、視認性を確保するための半透明化（Occlusion）機能を持つ。
+// 家具や障害物などの静的な環境モデル。複数マスを占有し、接地影（Blob）を落とす。
 // =========================================================
 class Prop : public MapObject {
 public:
@@ -17,16 +16,16 @@ public:
 	// ---------------------------------------------------------
 	// ライフサイクル (Lifecycle)
 	// ---------------------------------------------------------
+	// メッシュと占有サイズをプロップ定義テーブルから解決して配置する
 	void Init(MapModelType type, Vector3 position) override;
+	// 静的オブジェクトのため毎フレームの更新処理は持たない
 	void Update(float deltaSeconds) override;
 
 	// ---------------------------------------------------------
 	// レンダリング (Rendering)
 	// ---------------------------------------------------------
+	// 接地影を描いてから本体をトゥーン描画する
 	void OnDraw(float deltaSeconds) override;
-
-	// 家具の占有サイズを取得（MapManagerでのタイル埋め立て用）
-	
 
 private:
 	int m_sizeX = 1; // 占有する幅（X軸）
@@ -37,5 +36,6 @@ private:
 	CShader* m_blobShader = nullptr;
 	CStaticMeshRenderer* m_blobMesh = nullptr;
 private:
+	// 占有範囲に合わせた接地影（Blob）を描画する
 	void DrawPropShadow();
 };

@@ -35,6 +35,7 @@ public:
     // ---------------------------------------------------------
     // フロー制御 (Flow Control)
     // ---------------------------------------------------------
+    // 敵の行動を開始。蓄力中なら突進を解放し、そうでなければ AI を実行する
     void EnemyStartAction();
     virtual void OnTurnChanged(TurnState state) override;
     virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
@@ -50,6 +51,7 @@ public:
     int GetLockedGridX() const { return m_lockedGridX; }
     int GetLockedGridZ() const { return m_lockedGridZ; }
     int GetEnemyDamage() const { return m_enemyDamage; }
+    // 初期向きをプレイヤー方向へ設定する（斜めの場合は水平方向を優先）
     void SetInitialFacingToPlayer();
 
     void ResetCharge() {
@@ -75,14 +77,23 @@ private:
     // 内部AI・ロジック (Internal AI Logic)
     // ---------------------------------------------------------
     
+    // ターゲットを選定し、攻撃（チャージ開始）か接近移動かを判断する
     void ExecuteAI();
+    // 行動を終了し IDLE へ戻す
     void EnemyEndAction();
+    // 指定経路への移動を開始する
     void EnemyStartMoveTo(std::vector<Tile*> path);
+    // 移動アニメーションを 1 フレーム進める
     void UpdateMove(float deltaSeconds);
+    // 移動完了時の着地処理。攻撃範囲内ならチャージへ移行する
     void OnMoveFinished();
+    // ターゲットをロックオンし、突進前の蓄力（チャージ）に入る
     void StartCharge(Unit* target);
+    // 蓄力を解放し、突進攻撃を発動する
     void ReleaseChargeAttack();
+    // 死亡確定。チャージを解除し、吹き飛び演出とキルカメラへ移行する
     void Die();
+    // 吹き飛び中の更新（基底の死亡飛翔処理へ委譲）
     void DeathFlyingUpdate(float delta);
     virtual void OnDeathFlyComplete() override;
 
@@ -112,5 +123,5 @@ private:
     int m_lockedGridZ = -1;
     bool m_isCharging = false;
     bool m_pendingCharge = false;
-    Vector3 m_shakeOffset = Vector3(0, 0, 0); // 【追加】レンダリング分離用の揺れオフセット
+    Vector3 m_shakeOffset = Vector3(0, 0, 0); // 蓄力中の震え。m_srt.pos を汚さず描画時のみ加算する
 };

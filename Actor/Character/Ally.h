@@ -32,6 +32,7 @@ public:
     void OnTurnChanged(TurnState state) override;
     virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
 
+    // 脱出を開始。無敵化し、採掘 → フェードアウトの演出へ移行する
     void TriggerEscape();
     bool IsEscapeDone() const { return m_escapeState == EscapeState::Done; }
     bool IsEscaping() const {
@@ -43,6 +44,7 @@ protected:
 
 private:
     void Init();
+    // 採掘（ツルハシ振り）アニメーションを更新する
     void UpdateDiggingAnimation(float dt);
 
     // =========================================================

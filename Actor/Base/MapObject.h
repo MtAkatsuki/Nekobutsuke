@@ -19,6 +19,7 @@ public:
 	// ライフサイクル (Lifecycle)
 	// ---------------------------------------------------------
 	void Dispose() override {}
+	// タイプと座標で初期化し、通行可否をプロップ定義テーブルから設定する
 	virtual void Init(MapModelType type, Vector3 position);
 	virtual void Update(float deltaSeconds) override;
 	void OnDraw(float deltaSeconds) override;
@@ -52,7 +53,7 @@ protected:
 	bool m_isWalkable = true;
 
 	// --- 共通アルファ（透明度）管理 ---
-	// プロップの遮蔽時や、トラップの消失アニメーションで共有利用する
+	// トラップの消失アニメーションなど、フェード演出で共有利用する
 	float m_currentAlpha = 1.0f;
 	float m_targetAlpha = 1.0f;
 

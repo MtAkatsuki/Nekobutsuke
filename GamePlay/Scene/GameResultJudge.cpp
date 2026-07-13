@@ -11,7 +11,7 @@
 
 namespace {
 	const float GAMEOVER_WAIT_DURATION = 1.0f;           // 敗北演出後、シーン遷移までの待機時間
-	const float GAMECLEAR_WAIT_DURATION = 1.0f;          // // 勝利確定後の待機時間
+	const float GAMECLEAR_WAIT_DURATION = 1.0f;          // 勝利確定後の待機時間
 }
 
 void GameResultJudge::Update(float deltaSeconds) {

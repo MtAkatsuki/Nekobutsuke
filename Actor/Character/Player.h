@@ -45,6 +45,7 @@ public:
     // ---------------------------------------------------------
     // フローとイベント (Flow & Events)
     // ---------------------------------------------------------
+    // 勝利演出（ジャンプ）を開始する
     void StartCelebration();
     virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
     virtual void SetPreviewDamage(int dmg) override;
@@ -75,22 +76,34 @@ private:
     void LoadPlayerResources();
 
     // --- 状態遷移 (State Transitions) ---
+    // メインメニューへ遷移。移動・攻撃の可否を判定して UI を開く
     void SwitchToMenuMain();
+    // 移動選択へ遷移。到達可能マスを算出してガイド UI を表示する
     void SwitchToMoveSelect();
+    // 攻撃方向選択へ遷移。カメラを攻撃方向へ寄せる
     void SwitchToAttackDirSelect(AttackType type);
+    // 選択した経路に沿った移動アニメーションを開始する
     void ExecuteMove();
+    // ウィンドアップ後の実際の打撃。ダメージと押し出しを適用する
     void PerformAttackStrike();
+    // 攻撃開始。カメラ演出とウィンドアップに入る（打撃は PerformAttackStrike）
     void ExecuteAttack();
 
     // --- 入力ハンドラ (Input Handlers) ---
+    // メインメニューのキー入力を次状態への遷移要求に変換する
     void HandleMenuInput();
+    // 移動選択中の入力処理。カーソル移動・経路更新・確定を行う
     void HandleMoveInput(float dt);
+    // 攻撃方向選択中の入力処理。方向変更・カメラ追従・確定を行う
     void HandleAttackDirInput(float dt);
 
 
     // --- ユーティリティ (Utilities) ---
+    // 移動アニメーションを 1 フレーム進める（完了で true）
     bool UpdatePathMovement(float dt);
+    // 移動先で受ける罠・敵ロックオンの予測ダメージを算出する
     void CalculateMovePreviewDamage();
+    // 勝利ジャンプ演出を更新する
     void UpdateCelebration(float dt);
 
     // =========================================================

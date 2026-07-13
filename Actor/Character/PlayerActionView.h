@@ -9,6 +9,11 @@ class CStaticMeshRenderer;
 struct Tile;
 class Unit;
 
+// =========================================================
+// PlayerActionView クラス
+// プレイヤーの行動選択中に表示するプレビュー描画をまとめて担当する。
+// 移動範囲・経路矢印・出発地点のゴースト・攻撃警告などを扱う。
+// =========================================================
 class PlayerActionView {
 public:
     void Init(GameContext* context);

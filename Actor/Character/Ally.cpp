@@ -193,7 +193,6 @@ void Ally::OnPushed(Direction pushDir, Unit* attacker) {
     Unit::OnPushed(pushDir);
 }
 
-// 仲間が脱出する際の処理。敵からの攻撃を防止し、占有タイルを解放する。
 void Ally::TriggerEscape() {
     if (m_isEscaping) return;
     m_isEscaping = true;

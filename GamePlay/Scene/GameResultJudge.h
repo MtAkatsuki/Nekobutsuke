@@ -18,10 +18,14 @@ public:
     bool IsSceneChanging() const { return m_isSceneChanging; }
 
 private:
+    // 敗北フローを進める。敗北処理中なら true（勝利判定を抑止する）
     bool ProcessGameOverFlow(float deltaSeconds);
+    // 勝利フローを進め、余韻の待機を経てクリアシーンへ遷移する
     void ProcessGameClearFlow(float deltaSeconds);
 
+    // 勝利条件（敵全滅 または 脱出達成）を満たしているか
     bool IsGameClearCondition() const;
+    // 攻撃・消滅などの演出が残っていて、遷移を待つべきか
     bool IsFieldBusyForClear() const;
 
     GameContext* m_context = nullptr;   // 非所有

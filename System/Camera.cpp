@@ -195,12 +195,12 @@ void Camera::SaveConfig() {
 	// プロジェクトの .exe と同階層に nekobutsuke_camera.ini を生成
 	std::unordered_map<std::string, float> config;
 
-	// 1. 【核心】：利用表驱动自动组装数据字典
+	// 1. テーブル駆動でキーと値のマップを自動構築する
 	for (const auto& entry : CONFIG_TABLE) {
 		config[entry.key] = *(entry.value);
 	}
 
-	// 2. 委托底层写入
+	// 2. 下層（IniParser）へ書き込みを委譲
 	if (IniParser::SaveFloatMap(CONFIG_FILE_NAME, config)) {
 		DBG_TRACE("[Camera] Configuration saved to disk.");
 	}
@@ -309,10 +309,6 @@ void Camera::BeginKillSlow() {
 void Camera::UpdateKillCamFollow(const Vector3& victimPos) {
 	// 死亡飛翔開始時に KillSlow（見上げ＋ソフト追従）へ遷移
 	if (m_cinePhase == CinePhase::KillLead) BeginKillSlow();
-	if (m_cinePhase != CinePhase::KillSlow) return;
-
-	// KillSlow（その場見上げ演出）中のみ有効。
-	// カメラ位置は固定し、注視点のみを緩やかに追従させる。
 	if (m_cinePhase != CinePhase::KillSlow) return;
 
 	// 1. 演出開始位置（アンカー）からの移動量を取得

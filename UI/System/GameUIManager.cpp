@@ -202,7 +202,7 @@ void GameUIManager::OpenMainMenu() {
     for (int i = 0; i < m_mainMenuOptions.size(); ++i) {
         m_mainMenuOptions[i].currentScale = Vector3(1.0f, 1.0f, 1.0f);
         m_mainMenuOptions[i].targetScale = Vector3(1.0f, 1.0f, 1.0f);
-		// デフォルトでは「移動」と「攻撃」を有効、「終了」は非表示
+		// 「終了」は常に表示（「移動」「攻撃」の表示可否は SetMoveOptionEnabled 等で別途制御）
         if (i == 2) {
             m_mainMenuOptions[i].isVisible = true;
         }

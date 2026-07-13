@@ -89,8 +89,11 @@ private:
 	// ---------------------------------------------------------
 	// 更新サブルーチン：フロー制御インターセプト (Flow Control Interceptors)
 	// ---------------------------------------------------------
+	// 開始前の待機・チュートリアル進行を処理。まだ本編を止めるべきなら true
 	bool HandlePreGameBlocking(float deltaSeconds);
+	// ターンカットイン再生中は true を返し、後続の更新を止める
 	bool HandleTurnCutinBlocking(float deltaSeconds);
+	// ターンカウンター演出中か（盤面更新を一時停止するかの判定）
 	bool IsTurnCounterAnimating() const;
 
 	// ---------------------------------------------------------

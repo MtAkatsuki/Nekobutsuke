@@ -53,6 +53,7 @@ public:
 	// ---------------------------------------------------------
 	// 空間クエリ・属性取得
 	// ---------------------------------------------------------
+	// 境界内かつ占有者・通行不可の構造物が無ければ true
 	bool IsWalkable(int gridX, int gridZ) const;
 	Vector3 GetWorldPosition(int gridX, int gridZ) const;
 	Vector3 GetWorldPosition(const Tile& tile) const;
@@ -68,7 +69,10 @@ public:
 	// アルゴリズム・経路探索
 	// ---------------------------------------------------------
 	int CalculateDistance(int x1, int z1, int x2, int z2) const { return std::abs(x1 - x2) + std::abs(z1 - z2); }
+	// BFS で経路を返す。開始・目標マス自体は含まず、目標の手前で停止する。
+	// ignoreTraps=true は罠を通行可能扱いにする（プレイヤー用）
 	std::vector<Tile*> FindPaths(int startX, int startZ, int goalX, int goalZ, bool ignoreTraps = false);
+	// maxSteps 歩以内に到達可能なマスを BFS で返す（開始マスも含む）
 	std::vector<Tile*> GetReachableTiles(int startX, int startZ, int maxSteps);
 
 	// ---------------------------------------------------------
@@ -84,9 +88,13 @@ private:
 	std::vector<std::vector<std::string>> ParseCSV(const std::string& filePath);
 
 	void ClearCurrentLevel();
+	// CSV の行数・列数からグリッド寸法を確定し、全タイルを初期化する
 	void SetupGridDimensions(const std::vector<std::vector<std::string>>& csvData);
+	// 床レイヤーを敷き詰める
 	void SpawnFloorLayer(GameContext* context);
+	// 壁・罠・家具などの静的構造物を CSV から生成する
 	void SpawnStaticStructures(const std::vector<std::vector<std::string>>& csvData, GameContext* context);
+	// プレイヤー・敵・味方などの動的ユニットを CSV から生成する（床の後に追加）
 	void SpawnDynamicEntities(const std::vector<std::vector<std::string>>& csvData, GameContext* context);
 
 private:

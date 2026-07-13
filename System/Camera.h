@@ -58,6 +58,7 @@ public:
     // カメラ制御：目標駆動 (Target-driven Smooth Controls)
     // ※ Lerp補間によって滑らかに遷移するためのターゲット設定
     // ---------------------------------------------------------
+    // 注視点の目標を設定する（境界内へクランプ）
     void SetTargetLookAt(const Vector3& target);
     void SetTargetRadius(float radius) { m_targetRadius = radius; }
     void SetTargetAzimuth(float azimuth) { m_targetAzimuth = azimuth; }
@@ -71,6 +72,7 @@ public:
     void PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, bool immediate = false);
     // KillSlow 中および死亡演出中のユニットへ緩やかに追従（毎フレーム座標を受け取る）
     void UpdateKillCamFollow(const Vector3& victimPos);
+    // 攻撃ズーム演出を開始する（一定時間後に自動で通常カメラへ復帰）
     void PlayAttackZoom(const Vector3& focusPos);
 
     // ---------------------------------------------------------
@@ -105,8 +107,11 @@ public:
     // ---------------------------------------------------------
     // 状態管理・ゲッター (State & Getters)
     // ---------------------------------------------------------
+    // 注視点をクランプする移動境界を設定する
     void SetBounds(float minX, float maxX, float minZ, float maxZ);
+    // カメラの追従状態を切り替える（演出中は無視して HOLD を守る）
     void ChangeState(CameraState state, const Vector3& targetPos = Vector3(0, 0, 0));
+    // 追従系ステート中のみ、注視点を対象へ更新する
     void UpdateTrackingTarget(const Vector3& targetPos);
 
     CameraState GetState() const { return m_state; }
@@ -127,7 +132,9 @@ public:
     bool IsCinematic() const { return m_cinePhase != CinePhase::None; }
     // 世界の時間スケール（KillSlow 中だけ <1、相机/UI は読まない）
     float GetTimeScale() const { return (m_cinePhase == CinePhase::KillSlow) ? KILLCAM_TIME_SCALE : 1.0f; }
+    // 演出開始前のカメラ状態を退避する（復帰時に使用）
     void CaptureCineReturn();
+    // 退避した状態へ戻し、通常カメラへの復帰を開始する
     void RestoreCineReturn();
     // ---------------------------------------------------------
     // 設定管理 (Config Management)

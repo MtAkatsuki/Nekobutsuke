@@ -51,7 +51,6 @@ public:
         m_state = AnimState::Hidden;
     }
 
-    // ... 前面部分保持不变 ...
     void Update(float deltaSeconds) {
         if (m_state == AnimState::Hidden || m_state == AnimState::Fixed) return;
 

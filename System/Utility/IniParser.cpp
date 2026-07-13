@@ -1,5 +1,4 @@
-﻿// --- System/IO/IniParser.cpp ---
-#include "IniParser.h"
+﻿#include "IniParser.h"
 #include <fstream>
 #include <sstream>
 #include "../../Core/DebugLog.h"
