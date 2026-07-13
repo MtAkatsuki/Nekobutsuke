@@ -141,14 +141,18 @@ bool EnemyManager::AreAllEnemiesDead() const {
 	return true; 
 }
 
-bool EnemyManager::IsAnyEnemyDying() const {
-	for (const auto* enemy : m_enemies) {
+Enemy* EnemyManager::GetDyingEnemy() const {
+	for (Enemy* enemy : m_enemies) {
 		// 死亡飛翔中の敵がいるかチェック
-		if (enemy && enemy->GetHP() > 0 && enemy->IsDeadFlying()) {
-			return true;
+		if (enemy && enemy->IsDeadFlying()) {
+			return enemy;
 		}
 	}
-	return false;
+	return nullptr;
+}
+
+bool EnemyManager::IsAnyEnemyDying() const {
+	return GetDyingEnemy() != nullptr;
 }
 
 bool EnemyManager::IsAnyEnemyAnimating() const {

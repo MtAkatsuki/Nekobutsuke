@@ -66,8 +66,11 @@ public:
     // シーン中心へのショートカットコマンド
     void SetLookAtCenter() { SetLookat(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z)); }
     void SetTargetToCenter() { SetTargetLookAt(Vector3(SCENE_CENTER_X, SCENE_CENTER_Y, SCENE_CENTER_Z)); }
+
 	//攻撃演出用のカメラ制御
     void PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, bool immediate = false);
+    // KillSlow 中および死亡演出中のユニットへ緩やかに追従（毎フレーム座標を受け取る）
+    void UpdateKillCamFollow(const Vector3& victimPos);
     void PlayAttackZoom(const Vector3& focusPos);
 
     // ---------------------------------------------------------
@@ -141,7 +144,7 @@ public:
     static constexpr float TUTORIAL_RADIUS = 45.0f;
     static constexpr float BASE_RADIUS = 30.0f;
     static constexpr float TARGET_FOCUS_RADIUS = 17.0f;
-    static constexpr float CAMERA_LERP_SPEED = 5.0f;
+    static inline float CAMERA_LERP_SPEED = 5.0f;
 
     static constexpr float SCENE_CENTER_X = 0.0f;
     static constexpr float SCENE_CENTER_Y = 0.0f;
@@ -166,6 +169,14 @@ public:
     static inline float ATTACK_ZOOM_LEAD = 0.15f;
     static inline float KILLCAM_PITCH_LIFT = 9.0f;   // KillSlow：その場で見上げる量（注視点を上へ持ち上げる高さ）
 
+    // --- KillCam の追従・演出復帰 ---
+    static inline float KILLCAM_FOLLOW_WEIGHT = 0.3f; // 追従率（0: 固定視点、1: 完全追従）
+    static inline float KILLCAM_FOLLOW_MAX_Y = 6.0f; // Y方向の追従上限（アンカー基準）
+    static inline float KILLCAM_FOLLOW_MIN_Y = 0.0f; // Y方向の追従下限（地面より下は追従しない）
+    static inline float CINE_RETURN_LERP_SPEED = 1.8f; // 演出終了後の復帰補間速度
+    static inline float KILLCAM_WAIT_TIMEOUT = 2.0f; // KillLead が死亡飛翔開始を待機する最大時間（超過時は演出を終了）
+protected:
+    void BeginKillSlow(); // KillSlow（見上げ＋ソフト追従）へ遷移
 protected:
     // --- トランスフォーム・行列 ---
     Vector3   m_position{ 0.0f, 0.0f, 0.0f };
@@ -194,6 +205,8 @@ protected:
     float       m_cineReturnRadius = BASE_RADIUS;
     float       m_cineReturnAzimuth = BASE_AZIMUTH;
     float       m_cineReturnElevation = BASE_ELEVATION;
+    Vector3 m_killCamAnchor{};       // KillCam 開始時のアンカー位置
+    bool    m_cineReturning = false; // 演出復帰中（低速補間）
 
     // --- 動作制限・状態 ---
     float m_minX = -100.0f;
@@ -202,6 +215,5 @@ protected:
     float m_maxZ = 100.0f;
 
     CameraState m_state = CameraState::BaseView;
-    float       m_lerpSpeed = 5.0f;
     int         m_dirIndexOffset = 0; // 回転オフセット：0=基本, 1=右, 2=背後右, 3=背後左
 };

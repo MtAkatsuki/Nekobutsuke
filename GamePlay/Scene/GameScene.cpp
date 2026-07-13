@@ -418,8 +418,16 @@ void GameScene::UpdateCameraFocus(float deltaSeconds)
 	
 	// 画面が静止してフリーズしたような印象を与えないよう、カメラ移動のみ最優先で継続させる
 	if (m_camera) {
+		// KillCam 中は死亡飛翔中の敵位置を毎フレーム渡す。
+		// Camera は対象へのポインタを保持せず、オブジェクト破棄後のダングリングポインタを防止。
+		if (m_camera->IsCinematic() && m_context && m_context->GetEnemyManager()) {
+			if (Enemy* dying = m_context->GetEnemyManager()->GetDyingEnemy()) {
+				m_camera->UpdateKillCamFollow(dying->GetSRT().pos);
+			}
+		}
 		m_camera->Update(deltaSeconds);
 	}
+	
 }
 
 void GameScene::UpdateTurnIntroSequence(float deltaSeconds) {

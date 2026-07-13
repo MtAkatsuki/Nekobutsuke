@@ -50,6 +50,7 @@ public:
 	bool IsEnemyListEmpty() const { return m_enemies.empty(); } 
 	bool IsAnyEnemyDying() const;
 	bool IsAnyEnemyAnimating() const;
+	Enemy* GetDyingEnemy() const;   // 死亡演出中の敵を返す（存在しない場合は nullptr）
 
 private:
 	// ---------------------------------------------------------

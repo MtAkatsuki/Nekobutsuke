@@ -228,11 +228,17 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
     if (ImGui::CollapsingHeader("Kill Cam")) {
         ImGui::SliderFloat("KillCam Radius", &Camera::KILLCAM_RADIUS, 5.0f, 40.0f, "%.1f");
         ImGui::SliderFloat("KillCam Elevation", &Camera::KILLCAM_ELEVATION, -1.5f, 0.0f, "%.3f");
-        ImGui::SliderFloat("Shoulder Yaw", &Camera::KILLCAM_SHOULDER_YAW, -1.5f, 1.5f, "%.3f");
-        ImGui::SliderFloat("KillCam Lead", &Camera::KILLCAM_LEAD, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Shoulder Yaw", &Camera::KILLCAM_SHOULDER_YAW, -1.5f, 1.5f, "%.3f");       
+        ImGui::SliderFloat("Windup (Lead)", &Camera::KILLCAM_LEAD, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Wait Timeout", &Camera::KILLCAM_WAIT_TIMEOUT, 0.5f, 4.0f, "%.1f");
         ImGui::SliderFloat("KillCam Hold (slow)", &Camera::KILLCAM_HOLD, 0.2f, 3.0f, "%.2f");
         ImGui::SliderFloat("Time Scale", &Camera::KILLCAM_TIME_SCALE, 0.05f, 1.0f, "%.2f");
         ImGui::SliderFloat("Pitch Lift (look up)", &Camera::KILLCAM_PITCH_LIFT, 0.0f, 30.0f, "%.1f");
+        ImGui::SliderFloat("Follow Weight", &Camera::KILLCAM_FOLLOW_WEIGHT, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Follow Max Y", &Camera::KILLCAM_FOLLOW_MAX_Y, 0.0f, 15.0f, "%.1f");
+        ImGui::SliderFloat("Follow Min Y", &Camera::KILLCAM_FOLLOW_MIN_Y, -5.0f, 5.0f, "%.1f");
+        ImGui::SliderFloat("Return Speed", &Camera::CINE_RETURN_LERP_SPEED, 0.5f, 8.0f, "%.1f");
+        ImGui::SliderFloat("Lerp Speed", &Camera::CAMERA_LERP_SPEED, 0.5f, 12.0f, "%.1f");
 
         if (ImGui::Button("Test Kill Cam", ImVec2(-1, 30))) {
             SpawnDebugEnemyInFront(1);

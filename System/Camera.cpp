@@ -14,6 +14,9 @@ namespace {
 	constexpr float FOV_DEG = 15.0f;    // 視野角 (タクティカルRPGに適した狭角設定)
 	constexpr float NEAR_PLANE = 0.1f;     // ニアクリップ面
 	constexpr float FAR_PLANE = 1000.0f;  // ファークリップ面
+	// --- 演出復帰完了の判定閾値（この範囲内で通常カメラへ復帰）---
+	constexpr float RETURN_DONE_ANGLE_RAD = 0.02f; // 方位角の許容誤差
+	constexpr float RETURN_DONE_DIST_SQ = 0.25f; // 注視点までの許容距離²（0.5m）
 
 	// --- 設定ファイル名 ---
 	const std::string CONFIG_FILE_NAME = "nekobutsuke_camera.ini";
@@ -39,6 +42,11 @@ namespace {
 		{ "ATTACKZOOM_HOLD",      &Camera::ATTACKZOOM_HOLD },
 		{ "ATTACK_ZOOM_LEAD",     &Camera::ATTACK_ZOOM_LEAD },
 		{ "KILLCAM_PITCH_LIFT",   &Camera::KILLCAM_PITCH_LIFT },
+		{ "CAMERA_LERP_SPEED",      &Camera::CAMERA_LERP_SPEED },
+		{ "KILLCAM_FOLLOW_WEIGHT",  &Camera::KILLCAM_FOLLOW_WEIGHT },
+		{ "KILLCAM_FOLLOW_MAX_Y",   &Camera::KILLCAM_FOLLOW_MAX_Y },
+		{ "KILLCAM_FOLLOW_MIN_Y",   &Camera::KILLCAM_FOLLOW_MIN_Y },
+		{ "CINE_RETURN_LERP_SPEED", &Camera::CINE_RETURN_LERP_SPEED },
 	};
 
 	float UnwrapNear(float ref, float angle) {
@@ -67,14 +75,10 @@ void Camera::Update(float dt) {
 			if (m_cinePhaseTimer >= ATTACKZOOM_HOLD) RestoreCineReturn();
 			break;
 		case CinePhase::KillLead:
-			if (m_cinePhaseTimer >= KILLCAM_LEAD) {
-				m_cinePhase = CinePhase::KillSlow;
-				m_cinePhaseTimer = 0.0f;
-				// その場で見上げる：カメラ位置を固定し、注視点だけ上へ振る（Pitchのみ）
-				m_killCamPitch = true;
-				m_killCamPos = m_position;
-				m_targetLookAt = m_lookat + Vector3(0.0f, KILLCAM_PITCH_LIFT, 0.0f);  // 注視点を上へ
-			}
+			// 肩越し構図へ移行しながら、対象の死亡飛翔開始を待機する。
+			// 死亡飛翔が開始された時点で KillSlow へ遷移する。
+			// 一定時間内に開始されない場合は演出を終了する。
+			if (m_cinePhaseTimer >= KILLCAM_WAIT_TIMEOUT) RestoreCineReturn();
 			break;
 		case CinePhase::KillSlow:
 			if (m_cinePhaseTimer >= KILLCAM_HOLD) RestoreCineReturn();
@@ -82,13 +86,17 @@ void Camera::Update(float dt) {
 		default: break;
 		}
 	}
+	// 演出復帰中は、目標位置まで十分に収束したら通常追従へ戻す
+	if (m_cineReturning) {
+		const bool azimuthArrived = std::fabsf(m_targetAzimuth - m_azimuth) < RETURN_DONE_ANGLE_RAD;
+		const bool lookatArrived = (m_targetLookAt - m_lookat).LengthSquared() < RETURN_DONE_DIST_SQ;
+		if (azimuthArrived && lookatArrived) m_cineReturning = false;
+	}
 
-	// 1. フレームレートに依存しない平滑化（Lerp）係数の計算
-
-	// t = 1 - f^dt
-
-	// f = e^ln(f)-> f^dt = e^ln(f)*dt
-	float t = 1.0f - std::expf(-m_lerpSpeed * dt);
+	// 1. フレームレート非依存の補間係数を計算
+	// （演出復帰中は専用の低速補間、それ以外は通常速度）
+	const float lerpSpeed = m_cineReturning ? CINE_RETURN_LERP_SPEED : CAMERA_LERP_SPEED;
+	float t = 1.0f - std::expf(-lerpSpeed * dt);
 
 	auto LerpFunc = [&](float& current, float target) {
 		current += (target - current) * t;
@@ -244,11 +252,16 @@ void Camera::RestoreCineReturn() {
 	m_targetRadius = m_cineReturnRadius;
 	m_targetAzimuth = m_cineReturnAzimuth;
 	m_targetElevation = m_cineReturnElevation;
+	// 演出復帰を開始（復帰速度・完了判定は Update 側で制御）
+	m_cineReturning = true;
 }
 
 void Camera::PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, bool immediate) {
 	if (m_cinePhase == CinePhase::KillLead || m_cinePhase == CinePhase::KillSlow) return;
 	CaptureCineReturn();
+
+	m_cineReturning = false;     // 前回の演出復帰状態をクリア
+	m_killCamAnchor = victimPos; // 新しい追従アンカーを設定
 
 	Vector3 d = victimPos - attackerPos; d.y = 0.0f;
 	if (d.LengthSquared() < 0.0001f) d = Vector3(0, 0, 1); else d.Normalize();
@@ -275,11 +288,7 @@ void Camera::PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, b
 		m_position = m_lookat + polor.ToCartesian();
 
 		// KillLead を飛ばして直接 KillSlow（その場見上げ）
-		m_cinePhase = CinePhase::KillSlow;
-		m_cinePhaseTimer = 0.0f;
-		m_killCamPitch = true;
-		m_killCamPos = m_position;
-		m_targetLookAt = m_lookat + Vector3(0.0f, KILLCAM_PITCH_LIFT, 0.0f);
+		BeginKillSlow();
 	}
 	else {
 		// 予測式（自軍攻撃）：KILLCAM_LEAD かけて肩越しへ寄せる（蓄勢）
@@ -288,8 +297,41 @@ void Camera::PlayKillCam(const Vector3& attackerPos, const Vector3& victimPos, b
 	}
 }
 
+void Camera::BeginKillSlow() {
+	// カメラ位置を固定したまま、注視点を上方向へ補正する
+	m_cinePhase = CinePhase::KillSlow;
+	m_cinePhaseTimer = 0.0f;
+	m_killCamPitch = true;
+	m_killCamPos = m_position;
+	m_targetLookAt = m_killCamAnchor + Vector3(0.0f, KILLCAM_PITCH_LIFT, 0.0f);
+}
+
+void Camera::UpdateKillCamFollow(const Vector3& victimPos) {
+	// 死亡飛翔開始時に KillSlow（見上げ＋ソフト追従）へ遷移
+	if (m_cinePhase == CinePhase::KillLead) BeginKillSlow();
+	if (m_cinePhase != CinePhase::KillSlow) return;
+
+	// KillSlow（その場見上げ演出）中のみ有効。
+	// カメラ位置は固定し、注視点のみを緩やかに追従させる。
+	if (m_cinePhase != CinePhase::KillSlow) return;
+
+	// 1. 演出開始位置（アンカー）からの移動量を取得
+	Vector3 offset = victimPos - m_killCamAnchor;
+
+	// 2. Y方向の追従量を制限し、過度な見上げや地面方向への追従を防ぐ
+	offset.y = std::clamp(offset.y, KILLCAM_FOLLOW_MIN_Y, KILLCAM_FOLLOW_MAX_Y);
+
+	// 3. 追従率を適用し、注視点を更新
+	m_targetLookAt = m_killCamAnchor
+		+ Vector3(0.0f, KILLCAM_PITCH_LIFT, 0.0f)
+		+ offset * KILLCAM_FOLLOW_WEIGHT;
+
+	// 4. 補間処理は Update() 側で実施
+}
+
 void Camera::PlayAttackZoom(const Vector3& focusPos) {
 	CaptureCineReturn();
+	m_cineReturning = false;
 	m_targetLookAt = focusPos; 
 	m_targetRadius = ATTACKZOOM_RADIUS;
 	m_state = CameraState::Cinematic;
