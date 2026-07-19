@@ -41,6 +41,7 @@ private:
     // --- UI アセット ---
     std::unique_ptr<CSprite> m_dialogueHelpSprite;
     std::unique_ptr<CSprite> m_dialogueEscapeSprite;
+    std::unique_ptr<CSprite> m_dialogueDangerSprite;
     CSprite* m_currentSprite = nullptr;
 
     // --- 状態管理 ---

@@ -116,7 +116,10 @@ public:
 			int index = m_currentTurn - 1;
 			if (index >= 0 && index < m_numberSprites.size()) {
 				m_numberSprites[index]->ModifyMtrl(mtrl);
-				m_numberSprites[index]->Draw(m_currentScale, Vector3(0, 0, 0), m_currentPos);
+				Vector3 adjustedPos = m_currentPos;
+                adjustedPos.x += NUM_TEX_OFFSET_X;
+				adjustedPos.y += NUM_TEX_OFFSET_Y; 
+				m_numberSprites[index]->Draw(m_currentScale, Vector3(0, 0, 0), adjustedPos);
 			}
 		}
 
@@ -136,8 +139,10 @@ public:
 
 private:
     // --- 定数 ---
-    static constexpr float NUM_TEX_W = 462.0f;
-    static constexpr float NUM_TEX_H = 100.0f;
+    static constexpr float NUM_TEX_W = 439.6f;
+    static constexpr float NUM_TEX_H = 189.0f;
+    static constexpr float NUM_TEX_OFFSET_Y = 30.0f;
+    static constexpr float NUM_TEX_OFFSET_X = -20.0f;
     static constexpr float PROMPT_TEX_W = 502.0f;
     static constexpr float PROMPT_TEX_H = 215.0f;
 

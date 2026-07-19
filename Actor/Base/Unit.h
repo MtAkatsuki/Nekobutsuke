@@ -110,6 +110,14 @@ public:
 	void DrawPushPreview(Direction pushDir);
 
 	virtual void OnHpChanged() {};
+	// --- アウトライン上書き（保護対象の強調表示用） ---
+	void SetOutlineOverride(const Color& color) {
+		m_hasOutlineOverride = true;
+		m_outlineOverrideColor = color;
+	}
+	void ClearOutlineOverride() { m_hasOutlineOverride = false; }
+public:
+	static inline bool s_hpBarVisible = true;  // HPバー表示切替（DebugUIから制御）
 
 protected:
 	virtual void OnTurnChanged(TurnState state);
@@ -148,6 +156,9 @@ protected:
 	CStaticMeshRenderer* m_pushArrowMesh = nullptr;
 
 	std::unique_ptr<HPBar> m_hpBar;
+	// --- アウトライン上書き ---
+    bool  m_hasOutlineOverride = false;
+    Color m_outlineOverrideColor = Color(0, 0, 0, 0);  // .w = アウトライン幅
 
 	// --- コアステータス ---
 	int m_maxHP = 5;

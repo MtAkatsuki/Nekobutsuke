@@ -17,8 +17,8 @@ namespace {
 }
 
 float HPBar::s_hpBarOffsetY = 1.0f;
-float HPBar::s_hpBarTexSize = 22.0f;
-float HPBar::s_hpBarGap = 1.0f;
+float HPBar::s_hpBarTexSize = 18.0f;
+float HPBar::s_hpBarGap = 0.5f;
 
 void HPBar::Init(GameContext* context) {
     m_context = context;

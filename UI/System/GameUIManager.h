@@ -112,8 +112,10 @@ private:
 
 	std::unique_ptr<CSprite> m_escHintSprite;
 	std::unique_ptr<CSprite> m_enterHintSprite;
-	std::unique_ptr<CSprite> m_activeArrow;
+	std::unique_ptr<CSprite> m_activeArrow; // プレイヤー頭上の保護対象マーカー
+	std::unique_ptr<CSprite> m_allyArrow;   // 味方頭上の保護対象マーカー
 	std::vector<TutorialArrow> m_arrows;
+
 
 
 	// --- カメラ回転ガイドUI ---

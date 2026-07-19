@@ -1,9 +1,11 @@
 ﻿#include "GameUIManager.h"
 #include "../../Core/GameContext.h"
 #include "../../Actor/Character/Player.h"
+#include "../../Actor/Character/Ally.h"
 #include "../../System/Camera.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../Core/Application.h"
+#include "../../UI/Component/DialogueUI.h"
 #include <cmath>
 
 namespace {
@@ -32,8 +34,8 @@ namespace {
     const float ENTER_HINT_TEX_H = 42.5f;
     const float GUIDE_ARROW_TEX_W = 87.5f;
     const float GUIDE_ARROW_TEX_H = 59.0f;
-    const float ACTIVE_ARROW_TEX_W = 53.0f;
-    const float ACTIVE_ARROW_TEX_H = 66.0f;
+    const float ACTIVE_ARROW_TEX_W = 38.6f;
+    const float ACTIVE_ARROW_TEX_H = 70.6f;
 
     // --- カメラ回転ヒントUI ---
     const float CAM_HINT_SCALE = 0.5f;          // 表示スケール
@@ -96,8 +98,11 @@ void GameUIManager::Init(GameContext* context) {
 
     m_isGuideActive = false;
 
-    // 3. プレイヤー頭上の指示矢印を復元
+    // 3. プレイヤー頭上の指示矢印
     m_activeArrow = std::make_unique<CSprite>(ACTIVE_ARROW_TEX_W, ACTIVE_ARROW_TEX_H, "Assets/texture/ui/ui_arrow_down.png");
+
+    // 味方頭上の保護対象マーカー
+    m_allyArrow = std::make_unique<CSprite>(ACTIVE_ARROW_TEX_W, ACTIVE_ARROW_TEX_H, "Assets/texture/ui/ui_arrow_down_ally.png");
 
     // 4. カメラ回転UIをロードし、初期位置を設定
     m_cameraRotateScale = CAM_HINT_SCALE;
@@ -130,10 +135,8 @@ void GameUIManager::Update(float deltaSeconds) {
     UpdateGuideUI(deltaSeconds);
 
     // プレイヤー頭上の矢印用単振動
-    if (m_context && m_context->GetTurnManager() && m_context->GetTurnManager()->GetTurnState() == TurnState::PlayerPhase) {
         m_arrowTimer += deltaSeconds;
         m_arrowHoverY = std::sinf(m_arrowTimer * ARROW_HOVER_SPEED) * ARROW_HOVER_AMP;
-    }
 }
 
 void GameUIManager::Draw() {
@@ -159,6 +162,26 @@ void GameUIManager::Draw() {
                 Vector3 arrowPos(std::round(arrowScreenPos.x), std::round(arrowScreenPos.y + m_arrowHoverY), 0);
                 if (m_activeArrow) {
                     m_activeArrow->Draw(Vector3(1.0f, 1.0f, 1.0f), Vector3(0, 0, 0), arrowPos);
+                }
+            }
+        }
+
+        // 味方頭上の矢印描画（保護対象の常時明示）
+        if (Ally* ally = m_context->GetAlly()) {
+            bool dialogueShowing = m_context->GetDialogueUI() && m_context->GetDialogueUI()->IsShowing();
+            if (ally->GetHP() > 0 && !ally->IsEscapeDone() && !dialogueShowing) {
+                Vector3 allyArrowWorldPos = ally->GetSRT().pos;
+                allyArrowWorldPos.y += ACTIVE_ARROW_Y_OFFSET;
+
+                Vector2 allyArrowScreenPos = WorldToScreen(allyArrowWorldPos, camera->GetViewMatrix(), camera->GetProjMatrix(), screenW, screenH);
+
+                if (allyArrowScreenPos.x > -SCREEN_CULL_MARGIN && allyArrowScreenPos.x < screenW + SCREEN_CULL_MARGIN &&
+                    allyArrowScreenPos.y > -SCREEN_CULL_MARGIN && allyArrowScreenPos.y < screenH + SCREEN_CULL_MARGIN) {
+
+                    Vector3 allyArrowPos(std::round(allyArrowScreenPos.x), std::round(allyArrowScreenPos.y + m_arrowHoverY), 0);
+                    if (m_allyArrow) {
+                        m_allyArrow->Draw(Vector3(0.85f, 0.85f, 1.0f), Vector3(0, 0, 0), allyArrowPos);  // 少し小さめでプレイヤー矢印と区別
+                    }
                 }
             }
         }

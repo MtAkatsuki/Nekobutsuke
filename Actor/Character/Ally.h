@@ -46,17 +46,23 @@ private:
     void Init();
     // 採掘（ツルハシ振り）アニメーションを更新する
     void UpdateDiggingAnimation(float dt);
+    // 危険警告（敵にロックオンされた際のジャンプ）の状態を更新する
+    void UpdateAlarmState(float dt);
 
     // =========================================================
     // メンバー変数
     // =========================================================
     CShader* m_shader = nullptr;
+    // --- 識別用アウトラインの呼吸パルス ---
+    float m_outlinePulseTimer = 0.0f;
 
     // --- 採掘アニメーション ---
     bool m_isDigging = false;
     float m_digTimer = 0.0f;
     int m_digCount = 0;
     bool m_hasTriggeredEffect = false;
+    int m_digTargetCount = 3;          // 今回の採掘で振る回数（最初の一回のみ多め）
+    bool m_hasPlayedIntroDig = false;  // 最初の一回を再生済みか
 
     // --- 脱出システム ---
     enum class EscapeState {
@@ -70,4 +76,10 @@ private:
     float m_escapeAlpha = 1.0f;
     bool m_isKnockedBack = false;
     bool m_isDeadFlying = false;
+
+    // --- 危険警告（ロックオンされる時のジャンプ） ---
+    bool  m_isAlarmed = false;
+    float m_alarmTimer = 0.0f;
+    float m_jumpBaseY = 0.0f;
+    bool  m_alarmSignalStarted = false;  // 警告演出（ジャンプ＋吹き出し）を開始済みか
 };

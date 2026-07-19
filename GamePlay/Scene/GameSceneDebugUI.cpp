@@ -18,6 +18,7 @@
 #include "../../Actor/Character/Player.h"
 #include "../../Actor/Character/Ally.h"
 #include "../../Actor/Character/Enemy.h"
+#include "../../Actor/Base/Unit.h"
 #include <stdio.h>
 
 void GameSceneDebugUI::DrawCameraTuningWindow() {
@@ -68,6 +69,8 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
         if (ImGui::Checkbox("Shadow", &shadowOn)) {
             Renderer::s_shadowEnabled = shadowOn;
         }
+
+        ImGui::Checkbox("HP Bar", &Unit::s_hpBarVisible);
 
         if (changed) Renderer::SetToonParam(tp);
     }

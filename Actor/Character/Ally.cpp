@@ -9,15 +9,16 @@
 #include "../../System/ModelRegistry.h"
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../Core/DebugLog.h"
+#include "../../GamePlay/Manager/EnemyManager.h"
 
 namespace {
     // 演出・バランス用定数
     const int INITIAL_HP = 4;
-    const int MAX_DIG_COUNT = 3;           // 採掘アニメーションの振り下ろし回数
+    const int MAX_DIG_COUNT = 5;           // 採掘アニメーションの振り下ろし回数
     const float DIG_SPEED = 15.0f;         // 採掘アニメーションの速度
     const float DIG_HIT_ANGLE = 0.4f;      // 採掘エフェクトを発生させる閾値角度（ラジアン）
     const float FADE_OUT_SPEED = 1.0f;     // 脱出時のフェードアウト速度
-    const float MODEL_SCALE = 0.8f;        // 味方モデルの表示スケール
+    const float MODEL_SCALE = 0.7f;        // 味方モデルの表示スケール
 
     // 採掘演出の詳細パラメータ
     const float DIG_SWING_AMPLITUDE = 0.5f;    // ツルハシ振りの最大角度（ラジアン）
@@ -25,6 +26,19 @@ namespace {
     const float DIG_SE_VOLUME = 2.6f;          // 採掘SEの音量
     const float RUBBLE_OFFSET_X = 0.5f;        // 瓦礫エフェクトの足元オフセット
     const int RUBBLE_SPAWN_COUNT = 3;          // 一振りで発生させる瓦礫の数
+    const int INTRO_DIG_COUNT = 5;     // 最初の一回特写時の振り下ろし回数（通常は MAX_DIG_COUNT）
+
+    // --- 識別用アウトライン（呼吸パルス） ---
+    const Color OUTLINE_PULSE_MIN = Color(0.0f, 0.78f, 1.0f, 0.0005f);  // シアン（.w = 幅）
+    const Color OUTLINE_PULSE_MAX = Color(0.75f, 1.0f, 1.0f, 0.0005f);  // 白寄り（.w = 幅）
+    const float OUTLINE_PULSE_SPEED = 2.5f;   // 呼吸速度（rad/s）
+
+    // --- 危険警告（ロックオンされる時のジャンプ） ---
+    const float ALARM_JUMP_SPEED = 15.0f;       // ジャンプ周期（rad/s、着地間隔 = π/速度）
+    const float ALARM_JUMP_HEIGHT = 0.35f;     // ジャンプの最大高さ
+    const int   ALARM_JUMP_COUNT = 3;           // 1セットで跳ぶ回数
+    const float ALARM_JUMP_PAUSE = 1.0f;        // セット間の待機時間（秒）
+    const float ALARM_DIALOGUE_DURATION = 3.0f;// 警告開始時の吹き出し表示時間（秒）
 }
 
 //Spawnファクトリー
@@ -54,10 +68,18 @@ void Ally::Init()
     SetFacing(Direction::South);
     UpdateWorldMatrix();
 
+    // 保護対象の識別用アウトライン（常時表示）
+    SetOutlineOverride(OUTLINE_PULSE_MIN);
+
 }
 
 void Ally::Update(float deltaSeconds) {
     Unit::Update(deltaSeconds);
+
+    // アウトラインの呼吸パルス（シアン⇔白寄りを往復）
+    m_outlinePulseTimer += deltaSeconds;
+    float pulse = (sinf(m_outlinePulseTimer * OUTLINE_PULSE_SPEED) + 1.0f) * 0.5f;  // 0～1
+    SetOutlineOverride(Color::Lerp(OUTLINE_PULSE_MIN, OUTLINE_PULSE_MAX, pulse));
 
     if (m_isDeadFlying) {
         UpdateDeathFly(deltaSeconds);
@@ -111,6 +133,7 @@ void Ally::Update(float deltaSeconds) {
         return;
     }
 
+    UpdateAlarmState(deltaSeconds);
     if (m_isDigging) { UpdateDiggingAnimation(deltaSeconds); }
     UpdateWorldMatrix();
 
@@ -178,6 +201,10 @@ void Ally::StartTurn() {
     m_digCount = 0;
     m_hasTriggeredEffect = false;
     m_srt.rot.z = 0.0f;
+
+    // 開場（初回）のみ長めに掘って特写の見せ場を作る
+    m_digTargetCount = m_hasPlayedIntroDig ? MAX_DIG_COUNT : INTRO_DIG_COUNT;
+    m_hasPlayedIntroDig = true;
 }
 
 void Ally::OnTurnChanged(TurnState state) {
@@ -206,6 +233,7 @@ void Ally::TriggerEscape() {
     m_srt.rot.z = 0.0f;
 
     m_escapeState = EscapeState::Digging;
+    m_digTargetCount = MAX_DIG_COUNT;
 
     // 脱出ダイアログを表示（ - 1.0fを渡して自動消失を無効化）
     if (m_context && m_context->GetDialogueUI()) {
@@ -238,7 +266,8 @@ void Ally::UpdateDiggingAnimation(float dt) {
     }
 
     // 終了判定
-    if (m_digCount >= MAX_DIG_COUNT && angle < DIG_SETTLE_TOLERANCE && angle > -DIG_SETTLE_TOLERANCE) {
+      // 終了判定
+    if (m_digCount >= m_digTargetCount && angle < DIG_SETTLE_TOLERANCE && angle > -DIG_SETTLE_TOLERANCE) {
         m_isDigging = false;
         m_srt.rot.z = 0.0f;
         // ---脱出モードでの採掘完了後、フェードアウト状態へ遷移 ---
@@ -248,4 +277,55 @@ void Ally::UpdateDiggingAnimation(float dt) {
     }
 
     UpdateWorldMatrix();
+}
+
+void Ally::UpdateAlarmState(float dt) {
+    // ロックオンされているかを毎フレーム判定（チャージ敵の死亡・自分の被押し出しで自動解除）
+    bool targeted = false;
+    if (!IsEscaping() && m_currentHP > 0 && m_context && m_context->GetEnemyManager()) {
+        targeted = m_context->GetEnemyManager()->IsAnyEnemyTargeting(m_gridX, m_gridZ);
+    }
+
+    if (targeted && !m_isAlarmed) {
+        m_isAlarmed = true;
+        m_alarmSignalStarted = false;   // 演出（ジャンプ＋吹き出し）は採掘完了後に開始
+    }
+    else if (!targeted && m_isAlarmed) {
+        // 警告解除：接地へ戻す
+        m_isAlarmed = false;
+        if (m_alarmSignalStarted) {
+            m_alarmSignalStarted = false;
+            m_srt.pos.y = m_jumpBaseY;
+        }
+    }
+
+    if (!m_isAlarmed) return;
+
+    // 採掘優先：採掘が終わるまで警告演出を待機（採掘が割り込んだ場合は接地へ戻す）
+    if (m_isDigging) {
+        if (m_alarmSignalStarted) {
+            m_alarmSignalStarted = false;
+            m_srt.pos.y = m_jumpBaseY;
+        }
+        return;
+    }
+
+    // 採掘完了後の最初のフレームで警告演出を開始
+    if (!m_alarmSignalStarted) {
+        m_alarmSignalStarted = true;
+        m_alarmTimer = 0.0f;
+        m_jumpBaseY = m_srt.pos.y;
+        if (m_context->GetDialogueUI()) {
+            m_context->GetDialogueUI()->ShowDialogue(m_srt.pos, DialogueType::Danger, ALARM_DIALOGUE_DURATION);
+        }
+    }
+
+    // ジャンプ3回 → 休止 → 繰り返し（|sin|の半周期 = ジャンプ1回）
+    m_alarmTimer += dt;
+    const float jumpPhaseLen = ALARM_JUMP_COUNT * PI / ALARM_JUMP_SPEED;
+    const float cycleLen = jumpPhaseLen + ALARM_JUMP_PAUSE;
+    float phase = fmodf(m_alarmTimer, cycleLen);
+    m_srt.pos.y = (phase < jumpPhaseLen)
+        ? m_jumpBaseY + fabsf(sinf(phase * ALARM_JUMP_SPEED)) * ALARM_JUMP_HEIGHT
+        : m_jumpBaseY;
 }

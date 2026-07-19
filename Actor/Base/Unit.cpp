@@ -360,14 +360,30 @@ void Unit::DrawModel() {
 
 void Unit::DrawOutline()
 {
-	if (Renderer::GetToonParam().OutlineColor.w <= 0.0001f) return;  // 幅0 = 無効化（不要な1回分のDrawを省略）
+	// 上書きがあれば専用色、なければグローバル値（.w = 幅、0 = 無効化）
+	TOONPARAM globalToon = Renderer::GetToonParam();
+	const Color& oc = m_hasOutlineOverride ? m_outlineOverrideColor : globalToon.OutlineColor;
+	if (oc.w <= 0.0001f) return;// 幅0 = 無効化（不要な1回分のDrawを省略）
+	
 	if (!m_outlineShader) m_outlineShader = MeshManager::GetShader<CShader>("outlineshader");
 	if (!m_toonShader)    m_toonShader = MeshManager::GetShader<CShader>("toonshader");
 	if (!m_outlineShader || !m_toonShader) return;
 
+	// 上書き色を定数バッファへ一時反映
+	if (m_hasOutlineOverride) {
+		TOONPARAM tmp = globalToon;
+		tmp.OutlineColor = m_outlineOverrideColor;
+		Renderer::SetToonParam(tmp);
+	}
+
 	m_outlineShader->SetGPU();          // アウトライン用VS/PSへ切り替え
 	Renderer::SetCullFront();   // 表面をカリングし、裏面シェルのみ描画
 	m_renderer->Draw();         // 同じmeshを外側へ拡張して再描画
+
+	// 還元：グローバル値へ戻す
+	if (m_hasOutlineOverride) {
+		Renderer::SetToonParam(globalToon);
+	}
 
 	// 復元：トゥーンシェーディング + 通常の裏面カリング
 	m_toonShader->SetGPU();
@@ -401,7 +417,7 @@ void Unit::DrawBlobShadow() {
 }
 
 void Unit::DrawUI() {
-	if (!m_hpBar || m_currentHP <= 0) return;
+	if (!s_hpBarVisible || !m_hpBar || m_currentHP <= 0) return;
 
 	m_hpBar->Draw(m_srt.pos, m_currentHP, m_maxHP, m_previewDamage);
 

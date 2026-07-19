@@ -53,6 +53,8 @@ public:
 	bool IsAnyEnemyDying() const;
 	bool IsAnyEnemyAnimating() const;
 	Enemy* GetDyingEnemy() const;   // 死亡演出中の敵を返す（存在しない場合は nullptr）
+	// 指定マスをロックオンしてチャージ中の敵がいるか（保護対象の危険警告用）
+	bool IsAnyEnemyTargeting(int gridX, int gridZ) const;
 
 private:
 	// ---------------------------------------------------------

@@ -11,6 +11,7 @@
 namespace {
     const float CAMERA_ARRIVAL_TOLERANCE = 0.2f;  // カメラ到達判定の許容誤差
     const float CAMERA_HOVER_DURATION = 0.5f;  // BaseView到達後の待機時間
+    const float INTRO_FOCUS_RADIUS = 14.0f;  // 開場特写の距離（通常のTargetFocus=17より寄せる）
 }
 
 void IntroDirector::Start() {
@@ -45,6 +46,7 @@ void IntroDirector::Update(float deltaSeconds, bool allyTalked) {
             if (ally && camera) {
                 // 味方へ視点を移動
                 camera->ChangeState(CameraState::TargetFocus, ally->GetSRT().pos);
+                camera->SetTargetRadius(INTRO_FOCUS_RADIUS);
             }
         }
     }

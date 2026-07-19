@@ -151,6 +151,16 @@ Enemy* EnemyManager::GetDyingEnemy() const {
 	return nullptr;
 }
 
+bool EnemyManager::IsAnyEnemyTargeting(int gridX, int gridZ) const {
+	for (Enemy* e : m_enemies) {
+		if (e && e->IsCharging() && !e->IsDeadFlying() &&
+			e->GetLockedGridX() == gridX && e->GetLockedGridZ() == gridZ) {
+			return true;
+		}
+	}
+	return false;
+}
+
 bool EnemyManager::IsAnyEnemyDying() const {
 	return GetDyingEnemy() != nullptr;
 }

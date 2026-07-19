@@ -13,6 +13,8 @@ namespace {
     // --- 吹き出しスプライトのテクスチャ実寸（px） ---
     constexpr float HELP_TEX_W = 370.0f;
     constexpr float HELP_TEX_H = 112.0f;
+    constexpr float DANGER_TEX_W = 295.6f;
+    constexpr float DANGER_TEX_H = 89.6f;
     constexpr float ESCAPE_TEX_W = 517.0f;
     constexpr float ESCAPE_TEX_H = 156.0f;
 }
@@ -21,6 +23,7 @@ void DialogueUI::Init(GameContext* context) {
     m_context = context;
 
     m_dialogueHelpSprite = std::make_unique<CSprite>(HELP_TEX_W, HELP_TEX_H, "Assets/texture/ui/ui_dialogue_help.png");
+    m_dialogueDangerSprite = std::make_unique<CSprite>(DANGER_TEX_W, DANGER_TEX_H, "Assets/texture/ui/ui_dialogue_danger.png");
     m_dialogueEscapeSprite = std::make_unique<CSprite>(ESCAPE_TEX_W, ESCAPE_TEX_H, "Assets/texture/ui/ui_dialogue_escape.png");
 
     m_isVisible = false;
@@ -71,12 +74,9 @@ void DialogueUI::ShowDialogue(const Vector3& targetWorldPos, DialogueType type, 
     m_targetPos = targetWorldPos;
     m_targetPos.y += WORLD_OFFSET_Y; // 頭の上に表示
 
-    if (type == DialogueType::Escape) {
-        m_currentSprite = m_dialogueEscapeSprite.get();
-    }
-    else {
-        m_currentSprite = m_dialogueHelpSprite.get();
-    }
+    if (type == DialogueType::Escape)      m_currentSprite = m_dialogueEscapeSprite.get();
+    else if (type == DialogueType::Danger) m_currentSprite = m_dialogueDangerSprite.get();
+    else                                   m_currentSprite = m_dialogueHelpSprite.get();
 
     m_displayTimer = duration;
     m_isVisible = true;

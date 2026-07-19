@@ -45,6 +45,8 @@ namespace {
 	const Color ESCAPE_CUBE_COLOR = Color(135.0f / 255.0f, 206.0f / 255.0f, 250.0f / 255.0f, 0.6f); // 空色・半透明
 	const float WIN_TEXT_Y_OFFSET = 1.7f;              // WIN表示のプレイヤー頭上オフセット
 	const float BGM_FADE_TIME = 2.0f;                  // ゲームBGMのフェードイン時間（秒）
+	const float ALLY_HELP_DURATION = 3.0f;        // 通常ターンの救援吹き出し表示時間（秒）
+	const float INTRO_ALLY_HELP_DURATION = 4.5f;  // 導入演出中の吹き出し表示時間（＝味方特写の滞在時間）
 
 	// スプライトのテクスチャ実寸（px）
 	const float ESCAPE_MARKER_TEX_SIZE = 128.0f;
@@ -587,7 +589,10 @@ void GameScene::ProcessAllyTacticalDialogue()
 				if (m_ally && m_ally->GetHP() > 0) {
 					Vector3 allyPos = m_ally->GetSRT().pos;
 					if (m_dialogueUI) {
-						m_dialogueUI->ShowDialogue(allyPos, DialogueType::Help);
+						// 導入演出中は吹き出しを長めに表示（IntroDirector は吹き出しが閉じるまでカメラを戻さない）
+						float duration = (m_introDirector && !m_introDirector->IsFinished())
+							? INTRO_ALLY_HELP_DURATION : ALLY_HELP_DURATION;
+						m_dialogueUI->ShowDialogue(allyPos, DialogueType::Help, duration);
 					}
 				}
 				m_isAllyTalked = true;

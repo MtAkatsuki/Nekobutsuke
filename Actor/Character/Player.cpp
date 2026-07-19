@@ -25,7 +25,7 @@ namespace {
 
 	// 描画関連の定数
 	const float UI_INPUT_COOLDOWN = 0.15f; // WASDの連続入力防止時間
-	const float MODEL_SCALE = 0.8f;        // プレイヤーモデルの表示スケール
+	const float MODEL_SCALE = 0.7f;        // プレイヤーモデルの表示スケール
 
 	// ジャンプ（祝賀）アニメーション
 	const float JUMP_SPEED = 15.0f;
