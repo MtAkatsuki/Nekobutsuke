@@ -112,7 +112,6 @@ private:
 	// ---------------------------------------------------------
 	void TurnChangeCheck();
 	void ProcessEndOfEnemyPhase();
-	void CheckAndTriggerEscapeEvent();
 
 	// ---------------------------------------------------------
 	// レンダリングパイプライン (Rendering Sub-routines)
@@ -181,6 +180,7 @@ private:
 	bool m_shouldShowDebugEscape = false;
 	Enemy* m_killCamTrackTarget = nullptr;// KillCam の追従対象（演出中は固定）
 	bool m_killCamTargetAcquired = false; // 本演出で追従対象を取得済みか（再取得を行わない）
+	float m_killCamStarTimer = 0.0f;      // 十字スター開始からの経過（実時間、終了で復帰）
 
 	// --- 定数パラメータ ---
 	const float START_WAIT_TIME = 1.0f;

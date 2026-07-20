@@ -129,7 +129,7 @@ public:
     float GetBoundMinZ() const { return m_minZ; }
     float GetBoundMaxZ() const { return m_maxZ; }
 
-    bool IsCinematic() const { return m_cinePhase != CinePhase::None; }
+    bool IsCinematic() const { return m_cinePhase != CinePhase::None || m_cineReturning; }
     // 世界の時間スケール（KillSlow 中だけ <1、相机/UI は読まない）
     float GetTimeScale() const { return (m_cinePhase == CinePhase::KillSlow) ? KILLCAM_TIME_SCALE : 1.0f; }
     // 演出開始前のカメラ状態を退避する（復帰時に使用）
@@ -142,6 +142,9 @@ public:
     static void SaveConfig();
     static void LoadConfig();
 
+    // KillSlow 演出を早期終了して復帰を開始する（十字スター終了時にシーン側から呼ぶ）
+    // KILLCAM_HOLD は上限（保険）として引き続き機能する
+    void EndKillCam() { if (m_cinePhase == CinePhase::KillSlow) RestoreCineReturn(); }
 
 
 public:

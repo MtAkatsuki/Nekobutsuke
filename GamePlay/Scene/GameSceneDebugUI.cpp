@@ -12,6 +12,7 @@
 #include "../../GamePlay/Manager/MapManager.h"
 #include "../../GamePlay/Manager/EnemyManager.h"
 #include "../../GamePlay/Manager/TurnManager.h"
+#include "../../GamePlay/Manager/EffectManager.h"
 #include "../../UI/Component/HPBar.h"
 #include "../../UI/Component/TurnCounter.h"
 #include "../../UI/System/GameUIManager.h"
@@ -19,6 +20,7 @@
 #include "../../Actor/Character/Ally.h"
 #include "../../Actor/Character/Enemy.h"
 #include "../../Actor/Base/Unit.h"
+#include "../../System/FxTunables.h"
 #include <stdio.h>
 
 void GameSceneDebugUI::DrawCameraTuningWindow() {
@@ -246,6 +248,88 @@ void GameSceneDebugUI::DrawCameraTuningWindow() {
         if (ImGui::Button("Test Kill Cam", ImVec2(-1, 30))) {
             SpawnDebugEnemyInFront(1);
             m_player->DebugForceAttack(m_player->GetFacing());
+        }
+    }
+
+    if (ImGui::CollapsingHeader("FX")) {
+        // --- 手応えパラメータ ---
+        ImGui::SliderInt("Burst Count", &Fx::Burst.count, 5, 60);
+        ImGui::SliderFloat("Burst Speed Max", &Fx::Burst.speedMax, 2.0f, 15.0f);
+        ImGui::SliderFloat("Shake Duration", &Fx::DeathShake.duration, 0.1f, 1.0f);
+        ImGui::SliderFloat("Star Arm Len", &Fx::Star.armLen, 0.5f, 3.0f);
+        ImGui::SliderFloat("Star Progress", &Fx::Star.progress, 0.3f, 0.9f);
+        ImGui::SliderFloat("Rubble Bounce", &Fx::Rubble.restitution, 0.0f, 0.9f);
+
+        // --- 各エフェクトの色（Color は XMFLOAT4 派生のため &c.x を直接バインド） ---
+        if (ImGui::TreeNode("Colors")) {
+            ImGui::ColorEdit4("Rubble 1", &Fx::Rubble.colors[0].x);
+            ImGui::ColorEdit4("Rubble 2", &Fx::Rubble.colors[1].x);
+            ImGui::ColorEdit4("Rubble 3", &Fx::Rubble.colors[2].x);
+            ImGui::Separator();
+            ImGui::ColorEdit4("Hit 1", &Fx::Hit.colors[0].x);
+            ImGui::ColorEdit4("Hit 2", &Fx::Hit.colors[1].x);
+            ImGui::Separator();
+            ImGui::ColorEdit4("Burst 1", &Fx::Burst.colors[0].x);
+            ImGui::ColorEdit4("Burst 2", &Fx::Burst.colors[1].x);
+            ImGui::ColorEdit4("Burst 3", &Fx::Burst.colors[2].x);
+            ImGui::ColorEdit4("Burst 4", &Fx::Burst.colors[3].x);
+            ImGui::Separator();
+            ImGui::ColorEdit4("Trail", &Fx::Trail.color.x);
+            ImGui::ColorEdit4("Star", &Fx::Star.color.x);
+            ImGui::TreePop();
+        }
+
+        bool additive = Fx::Render.additive != 0;
+        if (ImGui::Checkbox("Additive Blend", &additive)) Fx::Render.additive = additive ? 1 : 0;
+
+        // --- INI 永続化（Camera と同じ現場調整→保存の流れ） ---
+        if (ImGui::Button("Save##fx")) Fx::SaveConfig();
+        ImGui::SameLine();
+        if (ImGui::Button("Load##fx")) Fx::LoadConfig();
+    }
+
+    // --- 各エフェクトのサイズ調整 ---
+    if (ImGui::CollapsingHeader("FX Size")) {
+        ImGui::SliderFloat("Rubble Scale Min", &Fx::Rubble.scaleMin, 0.02f, 0.5f);
+        ImGui::SliderFloat("Rubble Scale Max", &Fx::Rubble.scaleMax, 0.02f, 0.6f);
+        ImGui::SliderFloat3("Hit Spark Scale", &Fx::Hit.sparkScale.x, 0.02f, 0.8f);
+        ImGui::SliderFloat("Burst Scale Min", &Fx::Burst.scaleMin, 0.02f, 0.4f);
+        ImGui::SliderFloat("Burst Scale Max", &Fx::Burst.scaleMax, 0.02f, 0.5f);
+        ImGui::SliderFloat("Trail Scale", &Fx::Trail.scale, 0.02f, 0.5f);
+        ImGui::SliderFloat("Star Arm Thick", &Fx::Star.armThick, 0.05f, 0.6f);
+
+        // --- 即時プレビュー（プレイヤー位置で再生、パラメータ調整の確認用） ---
+        if (m_scene.m_player && m_scene.m_context && m_scene.m_context->GetEffectManager()) {
+            EffectManager* fx = m_scene.m_context->GetEffectManager();
+            const Vector3 base = m_scene.m_player->GetSRT().pos;
+            const float PREVIEW_HIT_Y = 0.6f;   // 打撃：体の中心あたり
+            const float PREVIEW_STAR_Y = 1.2f;  // スター：頭上
+            const float PREVIEW_TRAIL_STEP = 0.35f; // トレイル：縦に並べて軌跡を模擬
+
+            if (ImGui::Button("Play Rubble")) fx->Spawn3DRubble(base);
+            ImGui::SameLine();
+            if (ImGui::Button("Play Hit")) {
+                Vector3 p = base; p.y += PREVIEW_HIT_Y;
+                fx->Spawn3DHit(p);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Play Burst")) {
+                Vector3 p = base; p.y += Fx::Burst.spawnYOffset;
+                fx->Spawn3DDeathBurst(p);
+            }
+            if (ImGui::Button("Play Star")) {
+                Vector3 p = base; p.y += PREVIEW_STAR_Y;
+                fx->Spawn3DStarCross(p);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Play Trail x10")) {
+                // 実際は飛翔軌跡に沿って生成されるため、縦一列で雰囲気を確認する
+                for (int i = 0; i < 10; ++i) {
+                    Vector3 p = base;
+                    p.y += PREVIEW_TRAIL_STEP * i;
+                    fx->Spawn3DTrailPuff(p);
+                }
+            }
         }
     }
     ImGui::End();

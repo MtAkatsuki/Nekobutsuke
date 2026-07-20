@@ -15,8 +15,8 @@ namespace {
 	constexpr float NEAR_PLANE = 0.1f;     // ニアクリップ面
 	constexpr float FAR_PLANE = 1000.0f;  // ファークリップ面
 	// --- 演出復帰完了の判定閾値（この範囲内で通常カメラへ復帰）---
-	constexpr float RETURN_DONE_ANGLE_RAD = 0.02f; // 方位角の許容誤差
-	constexpr float RETURN_DONE_DIST_SQ = 0.25f; // 注視点までの許容距離²（0.5m）
+	constexpr float RETURN_DONE_ANGLE_RAD = 0.05f; // 方位角の許容誤差（尾の緩慢さを抑えるため緩和）
+	constexpr float RETURN_DONE_DIST_SQ = 1.0f;    // 注視点までの許容距離²（0.5→1.0m：末端の低速走行を短縮）
 
 	// --- 設定ファイル名 ---
 	const std::string CONFIG_FILE_NAME = "nekobutsuke_camera.ini";

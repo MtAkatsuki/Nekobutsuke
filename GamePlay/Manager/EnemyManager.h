@@ -55,6 +55,10 @@ public:
 	Enemy* GetDyingEnemy() const;   // 死亡演出中の敵を返す（存在しない場合は nullptr）
 	// 指定マスをロックオンしてチャージ中の敵がいるか（保護対象の危険警告用）
 	bool IsAnyEnemyTargeting(int gridX, int gridZ) const;
+	// 指定の敵がまだ登録されているか（死亡破棄後の懸垂ポインタ検出用）
+	bool Contains(const Enemy* e) const {
+		return std::find(m_enemies.begin(), m_enemies.end(), e) != m_enemies.end();
+	}
 
 private:
 	// ---------------------------------------------------------

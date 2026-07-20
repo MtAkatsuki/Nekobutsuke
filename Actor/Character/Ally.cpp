@@ -19,13 +19,14 @@ namespace {
     const float DIG_HIT_ANGLE = 0.4f;      // 採掘エフェクトを発生させる閾値角度（ラジアン）
     const float FADE_OUT_SPEED = 1.0f;     // 脱出時のフェードアウト速度
     const float MODEL_SCALE = 0.7f;        // 味方モデルの表示スケール
+    const float ESCAPE_POINT_HOLD = 0.6f;  // 採掘完了→脱出点出現後、台詞までの間（秒）
+    const float ESCAPE_SPEAK_HOLD = 1.2f;  // 台詞表示→フェード開始までの間（秒）
 
     // 採掘演出の詳細パラメータ
     const float DIG_SWING_AMPLITUDE = 0.5f;    // ツルハシ振りの最大角度（ラジアン）
     const float DIG_SETTLE_TOLERANCE = 0.1f;   // 採掘終了とみなす静止角度の許容範囲
     const float DIG_SE_VOLUME = 2.6f;          // 採掘SEの音量
     const float RUBBLE_OFFSET_X = 0.5f;        // 瓦礫エフェクトの足元オフセット
-    const int RUBBLE_SPAWN_COUNT = 3;          // 一振りで発生させる瓦礫の数
     const int INTRO_DIG_COUNT = 5;     // 最初の一回特写時の振り下ろし回数（通常は MAX_DIG_COUNT）
 
     // --- 識別用アウトライン（呼吸パルス） ---
@@ -86,19 +87,37 @@ void Ally::Update(float deltaSeconds) {
         return;
     }
 
-    // 出演出：透明化フェーズ
+    // 脱出シーケンス：採掘完了(PointReveal) → 台詞(Speaking) → フェード開始(Fading)
+    if (m_escapeState == EscapeState::PointReveal) {
+        m_escapeSeqTimer += deltaSeconds;
+        if (m_escapeSeqTimer >= ESCAPE_POINT_HOLD) {
+            // 脱出点が出た後、ここで初めて台詞を出す（無限表示：フェード完了時に閉じる）
+            if (m_context && m_context->GetDialogueUI())
+                m_context->GetDialogueUI()->ShowDialogue(m_srt.pos, DialogueType::Escape, -1.0f);
+            m_escapeState = EscapeState::Speaking;
+            m_escapeSeqTimer = 0.0f;
+        }
+    }
+    else if (m_escapeState == EscapeState::Speaking) {
+        m_escapeSeqTimer += deltaSeconds;
+        if (m_escapeSeqTimer >= ESCAPE_SPEAK_HOLD) {
+            m_escapeState = EscapeState::Fading;
+        }
+    }
+
+    // 透明化フェーズ
     if (m_escapeState == EscapeState::Fading && m_escapeAlpha > 0.0f) {
         m_escapeAlpha -= deltaSeconds * FADE_OUT_SPEED;
         if (m_escapeAlpha <= 0.0f) {
             m_escapeAlpha = 0.0f;
-            m_escapeState = EscapeState::Done; // 全に消失
+            m_escapeState = EscapeState::Done; // 完全に消失
 
             // 占有していたタイルを解放
             if (m_context && GetMap()) {
                 Tile* t = GetMap()->GetTile(m_gridX, m_gridZ);
                 if (t && t->occupant == this) t->occupant = nullptr;
             }
-            //  吹き出しUIを閉じる
+            // 吹き出しUIを閉じる
             if (m_context && m_context->GetDialogueUI()) {
                 m_context->GetDialogueUI()->HideDialogue();
             }
@@ -147,7 +166,7 @@ void Ally::OnDraw(float /*deltaSeconds*/) {
     Renderer::SetDepthEnable(true);
     Renderer::SetWorldMatrix(&m_worldMatrix);
 
-    if (m_isEscaping) {
+    if (m_escapeState == EscapeState::Fading) {
         // アルファブレンド用のマテリアルオーバーライド
         auto OverrideAlpha = [this](CStaticMeshRenderer* renderer) {
             if (!renderer || !renderer->GetMaterial(0)) return;
@@ -174,9 +193,15 @@ void Ally::OnDraw(float /*deltaSeconds*/) {
     Renderer::SetBlendState(BS_NONE);
 }
 
+void Ally::DrawUI() {
+    // 脱出中/脱出後は無敵で退場するため、HPバーを表示しない
+    if (IsEscaping() || IsEscapeDone()) return;
+    Unit::DrawUI();
+}
+
 void Ally::TakeDamage(int damage, Unit* attacker) {
     Unit::TakeDamage(damage, attacker);
-    if (m_currentHP <= 0 && !m_isEscaping && !m_isDeadFlying) {
+    if (m_currentHP <= 0 && !IsEscaping() && !m_isDeadFlying) {
         m_isDeadFlying = true;
         if (m_context && GetMap()) {
             Tile* myTile = GetMap()->GetTile(m_gridX, m_gridZ);
@@ -194,8 +219,8 @@ void Ally::OnDeathFlyComplete() {
 
 void Ally::StartTurn() {
     if (m_currentHP <= 0) return;
-    // ターン開始時、採掘アニメーション実行する
-    DBG_ERROR("[Ally] Start Turn: Start Digging!");
+    // 脱出シーケンス進行中（採掘完了後）は通常採掘を行わない。Armed は「脱出採掘」なので許可
+    if (m_escapeState != EscapeState::None && m_escapeState != EscapeState::Armed) return;
     m_isDigging = true;
     m_digTimer = 0.0f;
     m_digCount = 0;
@@ -220,25 +245,10 @@ void Ally::OnPushed(Direction pushDir, Unit* attacker) {
     Unit::OnPushed(pushDir);
 }
 
-void Ally::TriggerEscape() {
-    if (m_isEscaping) return;
-    m_isEscaping = true;
-    SetInvincible(true);// 無敵化
-
-    // 採掘を強制開始
-    m_isDigging = true;
-    m_digTimer = 0.0f;
-    m_digCount = 0;
-    m_hasTriggeredEffect = false;
-    m_srt.rot.z = 0.0f;
-
-    m_escapeState = EscapeState::Digging;
-    m_digTargetCount = MAX_DIG_COUNT;
-
-    // 脱出ダイアログを表示（ - 1.0fを渡して自動消失を無効化）
-    if (m_context && m_context->GetDialogueUI()) {
-        m_context->GetDialogueUI()->ShowDialogue(m_srt.pos, DialogueType::Escape, -1.0f);
-    }
+void Ally::ArmEscape() {
+    if (m_escapeState != EscapeState::None) return;
+    m_escapeState = EscapeState::Armed;
+    SetInvincible(true);   // 予約時点から無敵化（採掘～消失まで安全）
 }
 
 void Ally::UpdateDiggingAnimation(float dt) {
@@ -254,7 +264,7 @@ void Ally::UpdateDiggingAnimation(float dt) {
         if (GetEffectManager()) {
             Vector3 footPos = m_srt.pos;
             footPos.x -= RUBBLE_OFFSET_X;
-            GetEffectManager()->SpawnRubble(footPos, RUBBLE_SPAWN_COUNT);
+            GetEffectManager()->Spawn3DRubble(footPos);
         }
         m_hasTriggeredEffect = true;
         ++m_digCount;
@@ -270,9 +280,10 @@ void Ally::UpdateDiggingAnimation(float dt) {
     if (m_digCount >= m_digTargetCount && angle < DIG_SETTLE_TOLERANCE && angle > -DIG_SETTLE_TOLERANCE) {
         m_isDigging = false;
         m_srt.rot.z = 0.0f;
-        // ---脱出モードでの採掘完了後、フェードアウト状態へ遷移 ---
-        if (m_escapeState == EscapeState::Digging) {
-            m_escapeState = EscapeState::Fading;
+        // 脱出予約中なら、採掘完了で脱出点出現フェーズへ
+        if (m_escapeState == EscapeState::Armed) {
+            m_escapeState = EscapeState::PointReveal;
+            m_escapeSeqTimer = 0.0f;
         }
     }
 
@@ -282,7 +293,7 @@ void Ally::UpdateDiggingAnimation(float dt) {
 void Ally::UpdateAlarmState(float dt) {
     // ロックオンされているかを毎フレーム判定（チャージ敵の死亡・自分の被押し出しで自動解除）
     bool targeted = false;
-    if (!IsEscaping() && m_currentHP > 0 && m_context && m_context->GetEnemyManager()) {
+    if (!IsEscaping() && !IsEscapeDone() && m_currentHP > 0 && m_context && m_context->GetEnemyManager()) {
         targeted = m_context->GetEnemyManager()->IsAnyEnemyTargeting(m_gridX, m_gridZ);
     }
 

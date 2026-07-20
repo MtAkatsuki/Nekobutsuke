@@ -22,6 +22,7 @@ public:
     // レンダリング (Rendering)
     // ---------------------------------------------------------
     void OnDraw(float deltaSeconds) override;
+    void DrawUI() override;
 
     // ---------------------------------------------------------
     // フロー制御・イベント (Flow & Events)
@@ -32,11 +33,20 @@ public:
     void OnTurnChanged(TurnState state) override;
     virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
 
-    // 脱出を開始。無敵化し、採掘 → フェードアウトの演出へ移行する
-    void TriggerEscape();
+    // 脱出を予約する（規定ターン到達時に GameScene から呼ぶ）。
+    // 実際の演出は次のプレイヤーフェーズの採掘完了を起点に進行する
+    void ArmEscape();
     bool IsEscapeDone() const { return m_escapeState == EscapeState::Done; }
+    // 脱出シーケンス進行中か（Armed～Fading）。ジャンプ警告・被押し出し・被ダメージの抑止に使う
     bool IsEscaping() const {
-        return m_escapeState == EscapeState::Digging || m_escapeState == EscapeState::Fading;
+        return m_escapeState != EscapeState::None && m_escapeState != EscapeState::Done;
+    }
+    // 脱出点（マーカー/キューブ）を表示すべきか（採掘完了以降）
+    bool IsEscapePointVisible() const {
+        return m_escapeState == EscapeState::PointReveal
+            || m_escapeState == EscapeState::Speaking
+            || m_escapeState == EscapeState::Fading
+            || m_escapeState == EscapeState::Done;
     }
 
 protected:
@@ -67,12 +77,14 @@ private:
     // --- 脱出システム ---
     enum class EscapeState {
         None,
-        Digging,
-        Fading,
+        Armed,       // 脱出待機中（次の採掘で脱出地点を表示）
+        PointReveal, // 脱出地点を表示し、台詞表示まで待機
+        Speaking,    // 脱出台詞を表示中
+        Fading,      // フェードアウト中
         Done
     };
     EscapeState m_escapeState = EscapeState::None;
-    bool m_isEscaping = false;
+    float m_escapeSeqTimer = 0.0f;   // PointReveal/Speaking の経過時間
     float m_escapeAlpha = 1.0f;
     bool m_isKnockedBack = false;
     bool m_isDeadFlying = false;

@@ -14,6 +14,7 @@ enum class EnemyState {
     MOVING,
     ATTACKING,
     KNOCKBACK,
+    DEATH_SHAKE,
     DEAD_FLYING
 };
 
@@ -45,8 +46,10 @@ public:
     // ステータス・クエリ (Status Queries)
     // ---------------------------------------------------------
     void SetDisplayOrder(int order) { m_displayOrder = order; }
-    bool IsIdle() const { return m_state == EnemyState::IDLE; }
-    bool IsDeadFlying() const { return m_state == EnemyState::DEAD_FLYING; }
+    bool IsIdle() const { return m_state == EnemyState::IDLE; }    
+    bool IsDeadFlying() const {
+        return m_state == EnemyState::DEAD_FLYING || m_state == EnemyState::DEATH_SHAKE;
+    }
     bool IsCharging() const { return m_isCharging; }
     int GetLockedGridX() const { return m_lockedGridX; }
     int GetLockedGridZ() const { return m_lockedGridZ; }
@@ -79,6 +82,9 @@ private:
     
     // ターゲットを選定し、攻撃（チャージ開始）か接近移動かを判断する
     void ExecuteAI();
+    // 指定ターゲットへの行動（攻撃 or 接近）を試みる。行動を開始できたら true。
+    // 到達不可・近づけない場合は false を返し、呼び出し側が次の候補へフォールバックする
+    bool TryActOnTarget(Unit* target);
     // 行動を終了し IDLE へ戻す
     void EnemyEndAction();
     // 指定経路への移動を開始する
@@ -109,6 +115,7 @@ private:
 
     int m_enemyDamage = 2;
     int m_displayOrder = 0;
+    float m_deathShakeTimer = 0.0f;
 
     // --- パス・移動 ---
     std::vector<Tile*> m_currentPath;

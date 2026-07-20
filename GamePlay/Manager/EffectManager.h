@@ -3,41 +3,36 @@
 #include <vector>
 #include <memory>
 #include "../../System/CSprite.h"
-
+class CStaticMeshRenderer;
+class CShader;
 class GameContext;
 
-// =========================================================
-// パーティクルの種類
-// 物理シミュレーションを伴うものと、純粋なアニメーションを区別する
-// =========================================================
-enum class ParticleType {
-    RUBBLE,     // 瓦礫・破片（重力の影響を受け、放物線を描いて落下・バウンドする）
-    HIT_EFFECT  // ヒットエフェクト（指定座標に留まり、スケールのみがアニメーションする）
-};
 
 // =========================================================
-// 汎用エフェクトパーティクル構造体
+// 3D パーティクル（ワールド空間・box メッシュ共用・toon 描画）
 // =========================================================
-struct EffectParticle {
+struct Particle3D {
     bool active = false;
-    ParticleType type = ParticleType::RUBBLE;
-
-    Vector2 pos;               // スクリーン座標系の位置
-    Vector2 velocity;          // 移動速度 (px/sec)
-
-    float rotation = 0.0f;     // 現在の回転角度 (ラジアン)
-    float rotSpeed = 0.0f;     // 回転速度
-    float scale = 1.0f;        // 描画スケール
-
-    float lifeTime = 0.0f;     // 残り寿命 (秒)
-    float maxLifeTime = 1.0f;  // 初期設定寿命（イージング計算の分母として使用）
-
-    int textureIndex = 0;      // 描画に使用するテクスチャの配列インデックス
+    Vector3 pos;                // ワールド座標
+    Vector3 velocity;           // ワールド速度 (unit/sec)
+    Vector3 rotation;           // オイラー角
+    Vector3 rotSpeed;           // 回転速度
+    Vector3 baseScale = Vector3(0.15f, 0.15f, 0.15f); // 形状（非等方で破片/スパークを表現）
+    Color   color = Color(1, 1, 1, 1);
+    float   gravity = 0.0f;     // 個別重力（トレイル等は 0）
+    float   life = 1.0f;
+    float   maxLife = 1.0f;
+    bool    bounce = false;     // 地面バウンドの有無（瓦礫用）
+    float   groundY = 0.0f;     // バウンド基準面
+    bool    isStar = false;     // 十字スター（ビルボード・拡大→縮小）
+    bool    useShard = false;        // fx_shard（三角形）で描画するか（false = cube）
+    bool    alignToVelocity = false; // 長手(+X)を速度方向へ向けるか（スパーク用）
 };
 
 // =========================================================
 // EffectManager クラス
-// 2Dスクリーン座標系でのパーティクルエフェクトの生成・更新・描画を一括管理する
+// ワールド空間 3D パーティクルの生成・更新・描画を一括管理する。
+// パラメータは System/FxTunables.h（Fx::）に集約。
 // =========================================================
 class EffectManager {
 public:
@@ -52,26 +47,23 @@ public:
     void Clear(); // シーン遷移時やリセット時に全パーティクルを安全に破棄
 
     // ---------------------------------------------------------
+    // レンダリング (Rendering)
+    // ---------------------------------------------------------
+    // ワールド空間描画（GameScene の透過レイヤーから呼ぶ）
+    void Draw3D();
+
+    // 攻撃プレビュー表示時、障害物となるマスに静的な警告アイコンを描画する（2D遺産で唯一存続）
+    void DrawStaticHitPreview(const Vector3& worldPos);
+
+
+    // ---------------------------------------------------------
     // エフェクト生成 (Spawning Interfaces)
     // ---------------------------------------------------------
-    // 物理挙動を持つ瓦礫パーティクルを複数生成する（壁衝突や採掘時など）
-    void SpawnRubble(const Vector3& worldPos, int count = 3);
-
-    // 打撃の瞬間を示すヒットエフェクトを生成する（攻撃命中時）
-    void SpawnHitEffect(const Vector3& worldPos);
-
-    // ---------------------------------------------------------
-    // レンダリングパイプライン (Rendering Sub-routines)
-    // GameSceneのZオーダー順序に従って個別に呼び出される描画関数群
-    // ---------------------------------------------------------
-    // 描画順: 5.2 半透明エンティティレイヤー（キャラクターや壁の間に描画）
-    void DrawRubble();
-
-    // 描画順: 7 最前面UI・エフェクトレイヤー（UIなどの最前面に重なるように描画）
-    void DrawHitEffects();
-
-    // 攻撃プレビュー表示時、障害物となるマスに静的な警告エフェクトを描画する
-    void DrawStaticHitPreview(const Vector3& worldPos);
+    void Spawn3DRubble(const Vector3& worldPos, int count = 6); // 採掘・壁衝突の土塊
+    void Spawn3DHit(const Vector3& worldPos);                   // 打撃スパーク（放射）
+    void Spawn3DDeathBurst(const Vector3& worldPos);            // 死亡時の多色バースト
+    void Spawn3DTrailPuff(const Vector3& worldPos);             // 飛翔トレイル（白い残気）
+    void Spawn3DStarCross(const Vector3& worldPos);             // 消滅の十字スター
 
 private:
     // =========================================================
@@ -79,10 +71,13 @@ private:
     // =========================================================
     GameContext* m_context = nullptr;
 
-    // プリロードされたエフェクト用テクスチャ（スプライト）群
-    std::vector<std::unique_ptr<CSprite>> m_textures;
+    // --- 3D パーティクル ---
+    std::vector<Particle3D> m_particles3d;
+    CStaticMeshRenderer* m_boxRenderer = nullptr;  // 全パーティクル共用の box メッシュ
+    CStaticMeshRenderer* m_shardRenderer = nullptr; // 三角形カケラ（スパーク/スター用、遅延取得）
+    CShader* m_fxShader = nullptr; 
 
-    // パーティクルのオブジェクトプール（実行時の動的なメモリ確保を抑えるためのコンテナ）
-    std::vector<EffectParticle> m_particles;
+    // --- 攻撃プレビュー警告アイコン（スクリーン空間スプライト） ---
+    std::unique_ptr<CSprite> m_hitPreviewSprite;
 
 };

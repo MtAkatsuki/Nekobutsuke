@@ -31,6 +31,7 @@
 #include "../../UI/Component/TurnCutin.h"
 #include "../../UI/Component/TurnCounter.h"
 #include "../../UI/Component/TutorialUI.h"
+#include "../../System/FxTunables.h"
 #include <stdio.h> // for sprintf_s
 #include <cfloat>  // for FLT_MAX
 
@@ -252,6 +253,7 @@ void GameScene::ResetManagers() {
 
 void GameScene::InitializeCamera() {
 	Camera::LoadConfig();
+	Fx::LoadConfig();   // FX パラメータの INI 上書き（無ければヘッダ既定値）
 	m_camera = m_context->GetCamera();
 	m_camera->ForceSetPolar(Camera::TUTORIAL_RADIUS, Camera::BASE_AZIMUTH, Camera::BASE_ELEVATION);
 	m_camera->ChangeState(CameraState::BaseView);
@@ -275,6 +277,7 @@ void GameScene::LoadRenderResources() {
 		{"toonshader",    "shader/ToonVS.hlsl",    "shader/ToonPS.hlsl"},
 		{"outlineshader", "shader/OutlineVS.hlsl", "shader/OutlinePS.hlsl"},
 		{"blobshader",    "shader/BlobVS.hlsl",    "shader/BlobPS.hlsl"},
+		{"fxshader",      "shader/UnlitTextureVS.hlsl", "shader/UnlitTexturePS.hlsl"},
 	};
 	for (const auto& s : shaderDefs) {
 		auto shader = std::make_unique<CShader>();
@@ -423,6 +426,12 @@ void GameScene::UpdateCameraFocus(float deltaSeconds)
 {
 	if (!m_camera) return;
 
+	// 追従対象が既に破棄されていたら参照を切る（復帰滑走中に消滅するケース）
+	if (m_killCamTrackTarget && m_context && m_context->GetEnemyManager() &&
+		!m_context->GetEnemyManager()->Contains(m_killCamTrackTarget)) {
+		m_killCamTrackTarget = nullptr;
+	}
+
 	if (m_camera->IsCinematic()) {
 		// 追従対象は演出開始時に一度だけ取得し、演出中は変更しない。
 		// 複数の敵が連続で撃破されても、追従対象は切り替えない。
@@ -433,13 +442,26 @@ void GameScene::UpdateCameraFocus(float deltaSeconds)
 		// 対象が破棄された場合は追従を停止し、現在の注視点を維持する。
 		// 演出終了後は通常のカメラ制御へ復帰。
 		if (m_killCamTrackTarget) {
-			m_camera->UpdateKillCamFollow(m_killCamTrackTarget->GetSRT().pos);
+			if (m_killCamTrackTarget->IsDeathVisualHidden()) {
+				// 十字スター出現後：下方向への追従を止め、スター位置を注視したまま定格。
+				// スターの寿命が尽きたら演出を早期終了してカメラを復帰させる。
+				// （スターの寿命もこのタイマーも実時間なので同期が取れる）
+				m_killCamStarTimer += deltaSeconds;
+				if (m_killCamStarTimer >= Fx::Star.life) {
+					m_camera->EndKillCam();
+				}
+			}
+			else {
+				m_killCamStarTimer = 0.0f;
+				m_camera->UpdateKillCamFollow(m_killCamTrackTarget->GetSRT().pos);
+			}
 		}
 	}
 	else {
 		// 演出終了後に追従対象をリセット（次回演出で再取得）
 		m_killCamTrackTarget = nullptr;
 		m_killCamTargetAcquired = false;
+		m_killCamStarTimer = 0.0f;
 	}
 
 	m_camera->Update(deltaSeconds);
@@ -586,7 +608,7 @@ void GameScene::ProcessAllyTacticalDialogue()
 		if (m_turnCutin && !m_turnCutin->IsAnimating()) {
 			if (!m_isAllyTalked) {
 				// 戦術の誘導：プレイヤーターンの開始時、生存している味方から行動のヒントを提示
-				if (m_ally && m_ally->GetHP() > 0) {
+				if (m_ally && m_ally->GetHP() > 0 && !m_ally->IsEscaping()) {
 					Vector3 allyPos = m_ally->GetSRT().pos;
 					if (m_dialogueUI) {
 						// 導入演出中は吹き出しを長めに表示（IntroDirector は吹き出しが閉じるまでカメラを戻さない）
@@ -659,36 +681,21 @@ void GameScene::ProcessEndOfEnemyPhase()
 	// UIの更新
 	if (m_turnCounter) m_turnCounter->SetTurn(m_remainingTurns);
 
-	// --- ターンの進行に伴う特殊イベントの評価 ---
-	CheckAndTriggerEscapeEvent();
+	// 脱出予約：規定ターン到達後、次のプレイヤーフェーズで
+		// 「採掘 → 脱出点出現 → 台詞 → 消失」の順に Ally 側で演出する
+	if (m_remainingTurns <= 0 && !m_isEscapeActive) {
+		m_isEscapeActive = true;
+		if (m_ally) {
+			m_escapeGridX = m_ally->GetUnitGridX();
+			m_escapeGridZ = m_ally->GetUnitGridZ();
+			m_ally->ArmEscape();
+		}
+	}
 
 	// 味方が脱出後、味方の会話フラグをリセット
 	m_isAllyTalked = false;
 
 }
-
-void GameScene::CheckAndTriggerEscapeEvent()
-{
-	// 規定ターン（0）に到達し、かつまだ脱出フェーズが起動していない場合のみ実行
-	if (m_remainingTurns <= 0 && !m_isEscapeActive) {
-
-		m_isEscapeActive = true;
-
-		if (m_ally) {
-			m_escapeGridX = m_ally->GetUnitGridX();
-			m_escapeGridZ = m_ally->GetUnitGridZ();
-
-			m_ally->TriggerEscape();
-
-			if (m_dialogueUI) {
-				m_dialogueUI->ShowDialogue(m_ally->GetSRT().pos, DialogueType::Escape);
-			}
-			DBG_ERROR("[GameEvent] Survival Phase Ended. Escape Triggered at ("
-				<< m_escapeGridX << ", " << m_escapeGridZ << ").");
-		}
-	}
-}
-
 
 // ---------------------------------------------------------
  
@@ -751,23 +758,20 @@ void GameScene::DrawEnvironmentAndEntities(float deltaSeconds) {
 void GameScene::DrawTransparentWorld(float deltaSeconds) {
 	Renderer::SetBlendState(BS_ALPHABLEND);
 
-	// 物理パーティクル（瓦礫など。深度テストによる遮蔽を有効にする）
-	if (m_context && m_context->GetEffectManager()) {
-		m_context->GetEffectManager()->DrawRubble();
-	}
-
 	// 半透明エンティティ（残像など）
 	for (const auto& obj : m_gameObjectList) {
 		obj->DrawTransparent(deltaSeconds);
 	}
 
 	// 仲間の脱出（採掘・フェードアウト）が完了した後のみ、空色のマスを描画
-	bool shouldDrawEscape = (m_isEscapeActive && m_ally && m_ally->IsEscapeDone()) || m_shouldShowDebugEscape; 
+	bool shouldDrawEscape = (m_isEscapeActive && m_ally && m_ally->IsEscapePointVisible()) || m_shouldShowDebugEscape;
 	if (shouldDrawEscape) {
 		DrawEscapeCube();
 	}
 
 	Renderer::SetBlendState(BS_NONE);
+
+	if (m_context && m_context->GetEffectManager()) m_context->GetEffectManager()->Draw3D();
 }
 
 void GameScene::DrawTacticalOverlays(float deltaSeconds) {
@@ -784,9 +788,7 @@ void GameScene::DrawTacticalOverlays(float deltaSeconds) {
 }
 
 void GameScene::DrawDamageAndHitEffects() {
-	if (m_context && m_context->GetEffectManager()) {
-		m_context->GetEffectManager()->DrawHitEffects(); // 攻撃エフェクト（スパークなど）
-	}
+
 	if (m_damageNumberManager) {
 		m_damageNumberManager->Draw();
 	}
@@ -809,7 +811,7 @@ void GameScene::DrawScreenSpaceUI() {
 	if (m_dialogueUI) m_dialogueUI->Draw();
 
 	// --- 2. 特定状況下のポップアップ ---
-	bool shouldDrawEscape = (m_isEscapeActive && m_ally && m_ally->IsEscapeDone()) || m_shouldShowDebugEscape;
+	bool shouldDrawEscape = (m_isEscapeActive && m_ally && m_ally->IsEscapePointVisible()) || m_shouldShowDebugEscape;
 	if (shouldDrawEscape && m_player && m_player->GetState() != PlayerState::ANIM_CELEBRATE) {
 		DrawEscapeMarker();
 	}

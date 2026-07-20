@@ -118,6 +118,8 @@ public:
 	void ClearOutlineOverride() { m_hasOutlineOverride = false; }
 public:
 	static inline bool s_hpBarVisible = true;  // HPバー表示切替（DebugUIから制御）
+	// 死亡飛翔中、十字スター出現によりモデルが非表示になったか（KillCam の定格判定用）
+	bool IsDeathVisualHidden() const { return m_isDeathVisualHidden; }
 
 protected:
 	virtual void OnTurnChanged(TurnState state);
@@ -197,6 +199,12 @@ protected:
 	Vector3 m_deathVelocity = {};
 	Vector3 m_deathSpin = {};
 	bool m_isDeathFlying = false;
+	// --- 死亡飛翔の演出（トレイル＋消滅スター） ---
+	float m_deathFlyTimer = 0.0f;
+	float m_deathArcTime = 0.0f;        // 対称放物線の周期（進行率の分母）
+	float m_deathTrailTimer = 0.0f;
+	bool  m_deathStarSpawned = false;
+	bool  m_isDeathVisualHidden = false; // スター出現後モデル非表示
 
 
 	// TurnManager への購読ID（デストラクタで自動解除）

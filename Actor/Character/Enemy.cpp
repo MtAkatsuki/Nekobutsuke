@@ -11,6 +11,7 @@
 #include "../../GamePlay/Manager/EnemyManager.h"
 #include "../../Actor/Character/Player.h"
 #include "../../Actor/Character/Ally.h"
+#include "../../System/FxTunables.h"
 
 
 namespace {
@@ -27,6 +28,7 @@ namespace {
 	const float ARRIVE_EPSILON_SQ = 0.01f;     // タイル到着判定の距離二乗しきい値
 	const float AXIS_BIAS_THRESHOLD = 0.1f;    // 方向判定でX/Z軸を区別する最小差分
 
+
 	// 攻撃意図矢印（オーバーレイ）の表示パラメータ
 	const float ATTACK_ARROW_POS_RATIO = 0.35f;                       // 自分→対象間の矢印配置比率
 	const float ATTACK_ARROW_SCALE = 0.6f;                            // 矢印の表示スケール
@@ -37,6 +39,8 @@ namespace {
 	// --- 床ヒントUIの表示色 ---
 	const Color MOVE_RANGE_COLOR = Color(0.0f, 1.0f, 0.0f, 0.2f);   // 移動範囲：薄い緑
 	const Color DANGER_TILE_COLOR = Color(0.9f, 0.0f, 0.0f, 0.5f);  // ロックオン中のタイル：半透明の赤
+
+
 }
 
 //Spawnファクトリー
@@ -97,6 +101,31 @@ void Enemy::Update(float deltaSeconds) {
 	}
 	else {
 		m_shakeOffset = Vector3(0, 0, 0);
+	}
+
+	// 死亡確定演出：その場で震え、時間経過でバーストと共に飛翔開始
+	if (m_state == EnemyState::DEATH_SHAKE) {
+		// スロー演出の影響を打ち消し、実時間で進行（UpdateDeathFly と同方針）
+		float dt = deltaSeconds;
+		if (Camera* cam = m_context ? m_context->GetCamera() : nullptr) {
+			float s = cam->GetTimeScale();
+			if (s > 0.0001f) dt /= s;
+		}
+
+		auto& rng = RandomEngine::tls();
+		m_shakeOffset = Vector3(
+			(float)rng.uniformReal(-Fx::DeathShake.amp, Fx::DeathShake.amp), 0.0f,
+			(float)rng.uniformReal(-Fx::DeathShake.amp, Fx::DeathShake.amp));
+
+		m_deathShakeTimer -= dt;
+		if (m_deathShakeTimer <= 0.0f) {
+			m_shakeOffset = Vector3(0, 0, 0);
+
+			StartDeathFly();
+			m_state = EnemyState::DEAD_FLYING;
+		}
+		UpdateWorldMatrix();
+		return;
 	}
 
 	//死亡飛翔中の更新処理
@@ -198,7 +227,7 @@ void Enemy::OnDraw(float /*deltaSeconds*/) {
 	if (m_enemyShader != nullptr) m_enemyShader->SetGPU();
 
 	// 蓄力中の震えは `m_srt.pos` を直接汚染せず、描画用の一時的な Matrix で処理する
-	if (m_isCharging) {
+		if (m_isCharging || m_state == EnemyState::DEATH_SHAKE) {
 		Matrix4x4 shakeWorld = Matrix4x4::CreateScale(m_srt.scale)
 			* Matrix4x4::CreateRotationY(m_srt.rot.y)
 			* Matrix4x4::CreateTranslation(m_srt.pos + m_shakeOffset); // オフセットを加算
@@ -289,7 +318,7 @@ void Enemy::TakeDamage(int damage, Unit* attacker) {
 	Unit::TakeDamage(damage, attacker);
 	if (attacker) m_hitSourcePos = attacker->GetSRT().pos;
 
-	if (m_currentHP <= 0 && m_state != EnemyState::DEAD_FLYING)
+	if (m_currentHP <= 0 && !IsDeadFlying())
 	{
 		// 現在ノックバック中（KNOCKBACK）であれば、死亡演出を遅延させる
 		if (m_state == EnemyState::KNOCKBACK) {
@@ -305,7 +334,6 @@ void Enemy::ExecuteAI() {
 	Ally* ally = m_context->GetAlly();
 
 	//ターゲット決定(一番近いユニット)
-	Unit* target = nullptr;
 	int distToPlayer = DIST_UNREACHABLE;
 	int distToAlly = DIST_UNREACHABLE;
 
@@ -321,46 +349,54 @@ void Enemy::ExecuteAI() {
 			this->m_gridX, this->m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
 	}
 
-	if (distToAlly < distToPlayer) target = ally;
-	else target = player;
+	// 近い方を第一候補、もう一方を第二候補とする（同距離はプレイヤー優先）。
+	// 第一候補が到達不可（経路が塞がれている等）の場合、第二候補へフォールバックする
+	Unit* primary = (distToAlly < distToPlayer) ? (Unit*)ally : (Unit*)player;
+	Unit* secondary = (primary == (Unit*)ally) ? (Unit*)player : (Unit*)ally;
 
-	if (!target) {
-		EndTurn();//ターゲットがいない場合、ターン終了
-		return;
-	}
+	int primaryDist = (primary == (Unit*)ally) ? distToAlly : distToPlayer;
+	int secondaryDist = (primary == (Unit*)ally) ? distToPlayer : distToAlly;
 
-	int dist = GetMap()->CalculateDistance(this->m_gridX, this->m_gridZ, target->GetUnitGridX(), target->GetUnitGridZ());
-	//攻撃範囲の設定
+	if (primaryDist < DIST_UNREACHABLE && TryActOnTarget(primary)) return;
+	if (secondaryDist < DIST_UNREACHABLE && TryActOnTarget(secondary)) return;
 
+	// 全候補に対して行動不能：その場でターン終了
+	EnemyEndAction();
+}
 
+bool Enemy::TryActOnTarget(Unit* target) {
+	if (!target) return false;
+
+	MapManager* map = GetMap();
+	int tx = target->GetUnitGridX(), tz = target->GetUnitGridZ();
+	int dist = map->CalculateDistance(m_gridX, m_gridZ, tx, tz);
+
+	// 攻撃範囲内：チャージ開始
 	if (dist <= ATTACK_RANGE) {
 		StartCharge(target);
+		return true;
 	}
-	else {
-		MapManager* map = GetMap();
-		int tx = target->GetUnitGridX(), tz = target->GetUnitGridZ();
 
-		// targetをgoalとして扱う：FindPathsはtarget隣接マスで停止する（意図した仕様）
-		auto path = map->FindPaths(m_gridX, m_gridZ, tx, tz, false);
-		if (path.empty()) { EnemyEndAction(); return; }   // 到達不可：行動終了、残留pathを参照してonMoveFinishedを呼ばない
+	// targetをgoalとして扱う：FindPathsはtarget隣接マスで停止する（意図した仕様）
+	auto path = map->FindPaths(m_gridX, m_gridZ, tx, tz, false);
+	if (path.empty()) return false;   // 到達不可：次の候補へ
 
-		// 「行動力の範囲内」で、目標に最も近づける移動先を選択
-		int limit = std::min((int)path.size(), m_currentMovePoints);
-		int bestIdx = -1;
-		int bestD = map->CalculateDistance(m_gridX, m_gridZ, tx, tz); // 初期位置の距離を基準にする
+	// 「行動力の範囲内」で、目標に最も近づける移動先を選択
+	int limit = std::min((int)path.size(), m_currentMovePoints);
+	int bestIdx = -1;
+	int bestD = dist;   // 現在位置の距離を基準にする
 
-		for (int i = 0; i < limit; ++i) {
-			int d = map->CalculateDistance(path[i]->gridX, path[i]->gridZ, tx, tz);
-			if (d < bestD) { bestD = d; bestIdx = i; }    // より近づく地点のみ採用
-		}
-
-		if (bestIdx < 0) { EnemyEndAction(); return; }    // 範囲内に近づける地点なし：移動しない（残留pathを参照しない）
-
-		path.resize(bestIdx + 1);                         // 「最も近い移動先」まで経路を切り詰める
-		m_currentMovePoints -= (int)path.size();
-
-		EnemyStartMoveTo(std::move(path));
+	for (int i = 0; i < limit; ++i) {
+		int d = map->CalculateDistance(path[i]->gridX, path[i]->gridZ, tx, tz);
+		if (d < bestD) { bestD = d; bestIdx = i; }    // より近づく地点のみ採用
 	}
+
+	if (bestIdx < 0) return false;    // 範囲内に近づける地点なし：次の候補へ
+
+	path.resize(bestIdx + 1);                         // 「最も近い移動先」まで経路を切り詰める
+	m_currentMovePoints -= (int)path.size();
+	EnemyStartMoveTo(std::move(path));
+	return true;
 }
 
 void Enemy::EnemyEndAction() {
@@ -469,7 +505,8 @@ void Enemy::StartCharge(Unit* target) {
 
 
 void Enemy::Die() {
-	m_state = EnemyState::DEAD_FLYING;
+	m_state = EnemyState::DEATH_SHAKE;
+	m_deathShakeTimer = Fx::DeathShake.duration;
 	// 死亡時に蓄力（チャージ）状態を強制クリアし、警告UIの残存を防止する
 	m_isCharging = false;
 	m_pendingCharge = false;
@@ -479,10 +516,16 @@ void Enemy::Die() {
 		if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
 	}
 
-	StartDeathFly();
+	// 死亡の瞬間：震えと同時に多色バーストを爆散させる
+	if (GetEffectManager()) {
+		Vector3 burstPos = m_srt.pos;
+		burstPos.y += Fx::Burst.spawnYOffset;
+		GetEffectManager()->Spawn3DDeathBurst(burstPos);
+	}
 
+	// カメラは「震え→バースト→飛翔」を通しで見せる
 	if (m_context && m_context->GetCamera())
-		m_context->GetCamera()->PlayKillCam(m_hitSourcePos, m_srt.pos,true);
+		m_context->GetCamera()->PlayKillCam(m_hitSourcePos, m_srt.pos, true);
 }
 
 void Enemy::DeathFlyingUpdate(float deltaSeconds) {

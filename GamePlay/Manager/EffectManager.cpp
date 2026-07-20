@@ -4,216 +4,348 @@
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../Core/Application.h"
 #include "../../System/RandomEngine.h"
+#include "../../System/ModelRegistry.h"
+#include "../../System/MeshManager.h"
+#include "../../System/CStaticMeshRenderer.h"
+#include "../../System/FxTunables.h"
 
 namespace {
-    // --- パーティクル・物理シミュレーション用の調整パラメータ ---
-    const float GRAVITY = 1200.0f;              // 瓦礫の落下速度（重力加速度）
-    const float RUBBLE_MIN_VEL_X = -150.0f;     // 横方向の拡散速度（最小）
-    const float RUBBLE_MAX_VEL_X = 150.0f;      // 横方向の拡散速度（最大）
-    const float RUBBLE_MIN_VEL_Y = -400.0f;     // 上方向への跳ね返り速度（最小）
-    const float RUBBLE_MAX_VEL_Y = -200.0f;     // 上方向への跳ね返り速度（最大）
+    const float FX_PI = 3.14159265f;
 
-    const float HIT_EFFECT_DURATION = 0.25f;    // ヒットエフェクトの再生時間
-    const float HIT_EFFECT_INITIAL_SCALE = 0.5f;// ヒットエフェクトの初期スケール
-    const int   HIT_EFFECT_TEXTURE_INDEX = 4;   // ヒットエフェクトとして登録されたテクスチャのインデックス
-    const int   RUBBLE_TEXTURE_COUNT = 4;       // 瓦礫テクスチャの種類数（インデックス 0〜3）
-
-    // --- 瓦礫パーティクルの生成パラメータ ---
-    const float RUBBLE_LIFETIME = 1.0f;         // 瓦礫の寿命（秒）
-    const float RUBBLE_MIN_SCALE = 0.5f;        // 瓦礫のランダムスケール下限
-    const float RUBBLE_MAX_SCALE = 1.2f;        // 瓦礫のランダムスケール上限
-    const float RUBBLE_SPIN_FACTOR = 0.05f;     // 横速度から自転速度への変換係数
-
-    // --- 画面外カリングの余白（px） ---
-    const float RUBBLE_CULL_MARGIN = 50.0f;
-    const float HIT_CULL_MARGIN = 100.0f;
-
-    // --- 衝突プレビュー表示 ---
+    // --- 攻撃プレビュー警告アイコン（唯一の 2D 遺産） ---
+    const float HIT_PREVIEW_TEX_W = 120.0f;
+    const float HIT_PREVIEW_TEX_H = 120.0f;
+    const float HIT_PREVIEW_CULL_MARGIN = 100.0f;
     const Color HIT_PREVIEW_COLOR = Color(1.0f, 1.0f, 0.0f, 0.7f); // 半透明の黄色（警告）
     const float HIT_PREVIEW_SCALE = 0.7f;
+
 }
 
 void EffectManager::Init(GameContext* context) {
     m_context = context;
 
-    // テクスチャ定義テーブル（幅・高さはテクスチャ実寸px）
-    // ※ 並び順はインデックスに対応：0〜3 = 瓦礫、4 = ヒットエフェクト（HIT_EFFECT_TEXTURE_INDEX）
-    struct TexDef { float w, h; const char* path; };
-    const TexDef texDefs[] = {
-        { 50.0f,  46.0f, "Assets/texture/effect/rubble_01.png" },
-        { 48.0f,  46.0f, "Assets/texture/effect/rubble_02.png" },
-        { 51.0f,  41.0f, "Assets/texture/effect/rubble_03.png" },
-        { 42.0f,  50.0f, "Assets/texture/effect/rubble_04.png" },
-        { 120.0f, 120.0f, "Assets/texture/effect/hit_effect.png" },
-    };
-    for (const auto& t : texDefs) {
-        m_textures.push_back(std::make_unique<CSprite>(t.w, t.h, t.path));
-    }
+    // 攻撃プレビュー用の警告アイコンのみプリロード（パーティクルはメッシュ描画のため不要）
+    m_hitPreviewSprite = std::make_unique<CSprite>(
+        HIT_PREVIEW_TEX_W, HIT_PREVIEW_TEX_H, "Assets/texture/effect/hit_effect.png");
 }
 
 void EffectManager::Update(float dt) {
-    for (auto& p : m_particles) {
+    for (auto& p : m_particles3d) {
         if (!p.active) continue;
+        p.life -= dt;
+        if (p.life <= 0.0f) { p.active = false; continue; }
 
-        p.lifeTime -= dt;
-        if (p.lifeTime <= 0.0f) {
-            p.active = false;
-            continue;
-        }
+        // 共通物理：重力 → 速度 → 位置・回転
+        p.velocity.y -= p.gravity * dt;
+        p.pos += p.velocity * dt;
+        p.rotation += p.rotSpeed * dt;
 
-        // パーティクルタイプ別の更新ロジック
-        if (p.type == ParticleType::RUBBLE) {
-            // 【物理演算レイヤー】：瓦礫・破片などの落下運動
-            p.velocity.y += GRAVITY * dt;
-            p.pos.x += p.velocity.x * dt;
-            p.pos.y += p.velocity.y * dt;
-            p.rotation += p.rotSpeed * dt;
-        }
-        else if (p.type == ParticleType::HIT_EFFECT) {
-            // 【アニメーションレイヤー】：ヒット時のスケール曲線（イージング）
-            float progress = 1.0f - (p.lifeTime / p.maxLifeTime); // 0.0 -> 1.0
-
-            // シンプルなバウンス曲線：1.5倍まで素早く拡大し、その後少し戻る
-            if (progress < 0.3f) {
-                // 前半30%の時間：0.5 -> 1.5
-                float t = progress / 0.3f;
-                p.scale = 0.5f + t * 1.0f;
-            }
-            else {
-                // 後半70%の時間：1.5 -> 1.0 (またはそれ以下)
-                float t = (progress - 0.3f) / 0.7f;
-                p.scale = 1.5f - t * 0.5f;
-            }
+        // 地面バウンド（土塊のみ）：反発しつつ水平減衰
+        if (p.bounce && p.pos.y < p.groundY && p.velocity.y < 0.0f) {
+            p.pos.y = p.groundY;
+            p.velocity.y *= -Fx::Rubble.restitution;
+            p.velocity.x *= Fx::Rubble.friction;
+            p.velocity.z *= Fx::Rubble.friction;
         }
     }
 
-    // 寿命を迎えたパーティクルのメモリ解放 (remove_if イディオム)
-    m_particles.erase(std::remove_if(m_particles.begin(), m_particles.end(),
-        [](const EffectParticle& p) { return !p.active; }), m_particles.end());
+    // 寿命を迎えたパーティクルの解放 (remove_if イディオム)
+    m_particles3d.erase(std::remove_if(m_particles3d.begin(), m_particles3d.end(),
+        [](const Particle3D& p) { return !p.active; }), m_particles3d.end());
 }
 
 void EffectManager::Clear() {
-    m_particles.clear();
+    m_particles3d.clear();
 }
 
-void EffectManager::SpawnRubble(const Vector3& worldPos, int count) {
-    if (!m_context || !m_context->GetCamera()) return;
+// =========================================================
+// 3D パーティクル生成
+// 各エフェクトの個性は「運動モデル×形状×色×寿命」の組で表現する：
+//   土塊   = 放物線＋バウンド ／ 扁平キューブ ／ 土色     ／ 中寿命
+//   打撃   = 直線放射         ／ 細長スパーク ／ 白黄     ／ 超短命
+//   バースト= 全方位爆散＋スピン／ 小キューブ  ／ 多色     ／ 中寿命
+//   トレイル= 無重力漂い       ／ 小キューブ  ／ 白       ／ 短命
+//   スター = 物理なし         ／ 十字ビルボード／ 黄      ／ sin拡縮
+// =========================================================
 
-    // 1. 3Dの足元座標をスクリーン座標に変換
-    float sw = (float)Application::GetWidth();
-    float sh = (float)Application::GetHeight();
-    Vector2 screenPos = WorldToScreen(worldPos, m_context->GetCamera()->GetViewMatrix(), m_context->GetCamera()->GetProjMatrix(), sw, sh);
-
-    // 画面外カリング (境界チェック)
-    if (screenPos.x < -RUBBLE_CULL_MARGIN || screenPos.x > sw + RUBBLE_CULL_MARGIN ||
-        screenPos.y < -RUBBLE_CULL_MARGIN || screenPos.y > sh + RUBBLE_CULL_MARGIN) return;
-
-    // 2. パーティクルの生成
+void EffectManager::Spawn3DRubble(const Vector3& worldPos, int count) {
+    const auto& P = Fx::Rubble;
+    if (count < 0) count = P.count;
     auto& rng = RandomEngine::tls();
 
     for (int i = 0; i < count; ++i) {
-        EffectParticle p; 
+        Particle3D p;
         p.active = true;
-        p.type = ParticleType::RUBBLE;
-        p.pos = screenPos;
-        p.velocity = Vector2(
-            static_cast<float>(rng.uniformReal(RUBBLE_MIN_VEL_X, RUBBLE_MAX_VEL_X)),
-            static_cast<float>(rng.uniformReal(RUBBLE_MIN_VEL_Y, RUBBLE_MAX_VEL_Y)));
-        p.rotation = 0.0f;
-        p.rotSpeed = static_cast<float>(rng.uniformReal(RUBBLE_MIN_VEL_X, RUBBLE_MAX_VEL_X)) * RUBBLE_SPIN_FACTOR; // ランダムな自転速度
-        p.scale = static_cast<float>(rng.uniformReal(RUBBLE_MIN_SCALE, RUBBLE_MAX_SCALE));
-        p.lifeTime = RUBBLE_LIFETIME;
-        p.maxLifeTime = RUBBLE_LIFETIME;
-        p.textureIndex = rng.uniformInt(0, RUBBLE_TEXTURE_COUNT - 1);
+        // 足元から少し浮かせて生成（地面へのめり込み防止）
+        p.pos = worldPos + Vector3(0.0f, P.spawnLift, 0.0f);
 
-        m_particles.push_back(p);
+        // 水平はランダム方位に拡散、垂直は必ず上向き → 「掘り出されて跳ねる」弧を描く
+        float ang = (float)rng.uniformReal(0.0, 2.0 * FX_PI);
+        float side = (float)rng.uniformReal(P.sideMin, P.sideMax);
+        p.velocity = Vector3(cosf(ang) * side,
+            (float)rng.uniformReal(P.upMin, P.upMax), sinf(ang) * side);
+
+        // 全軸ランダム自転（転がる土塊感）
+        p.rotSpeed = Vector3(
+            (float)rng.uniformReal(-P.spinMax, P.spinMax),
+            (float)rng.uniformReal(-P.spinMax, P.spinMax),
+            (float)rng.uniformReal(-P.spinMax, P.spinMax));
+
+        // Y を潰した不揃いキューブ = 土塊のシルエット
+        float s = (float)rng.uniformReal(P.scaleMin, P.scaleMax);
+        p.baseScale = Vector3(s, s * P.flatten, s);
+
+        p.color = P.colors[rng.uniformInt(0, (int)std::size(P.colors) - 1)];
+        p.gravity = P.gravity;
+        p.life = p.maxLife = P.life;
+
+        // このエフェクトだけ地面バウンドが有効（カートゥーンの跳ね感）
+        p.bounce = true;
+        p.groundY = worldPos.y + P.groundLift;
+
+        m_particles3d.push_back(p);
     }
 }
 
-void EffectManager::SpawnHitEffect(const Vector3& worldPos) {
-    if (!m_context || !m_context->GetCamera()) return;
+void EffectManager::Spawn3DHit(const Vector3& worldPos) {
+    const auto& P = Fx::Hit;
+    auto& rng = RandomEngine::tls();
 
-    // 座標変換（ワールド座標からスクリーン座標へ）
-    float sw = (float)Application::GetWidth();
-    float sh = (float)Application::GetHeight();
-    Vector2 screenPos = WorldToScreen(worldPos, m_context->GetCamera()->GetViewMatrix(), m_context->GetCamera()->GetProjMatrix(), sw, sh);
+    for (int i = 0; i < P.count; ++i) {
+        Particle3D p;
+        p.active = true;
+        p.pos = worldPos;
 
-    // 画面外カリング（画面から大きく外れている場合は生成しない）
-    if (screenPos.x < -HIT_CULL_MARGIN || screenPos.x > sw + HIT_CULL_MARGIN ||
-        screenPos.y < -HIT_CULL_MARGIN || screenPos.y > sh + HIT_CULL_MARGIN) return;
+        // 全方位放射。elev（垂直比率）を水平寄りに偏らせて「パンッ」と弾ける印象にする
+        float ang = (float)rng.uniformReal(0.0, 2.0 * FX_PI);
+        float elev = (float)rng.uniformReal(P.elevMin, P.elevMax);
+        float spd = (float)rng.uniformReal(P.speedMin, P.speedMax);
+        p.velocity = Vector3(cosf(ang) * spd, elev * spd, sinf(ang) * spd);
 
-    EffectParticle p;
+        // 三角カケラを速度方向へ向けて飛ばす（描画時に基底を構築するため回転は不要）
+        p.useShard = true;
+        p.alignToVelocity = true;
+        p.baseScale = P.sparkScale;
+
+        p.color = P.colors[rng.uniformInt(0, (int)std::size(P.colors) - 1)];
+        p.gravity = P.gravity;
+        p.life = p.maxLife = P.life;
+        m_particles3d.push_back(p);
+    }
+}
+
+void EffectManager::Spawn3DDeathBurst(const Vector3& worldPos) {
+    const auto& P = Fx::Burst;
+    auto& rng = RandomEngine::tls();
+
+    for (int i = 0; i < P.count; ++i) {
+        Particle3D p;
+        p.active = true;
+        p.pos = worldPos;
+
+        // 全方位＋上向きバイアス：噴水状に打ち上がってから降り注ぐ
+        float ang = (float)rng.uniformReal(0.0, 2.0 * FX_PI);
+        float spd = (float)rng.uniformReal(P.speedMin, P.speedMax);
+        float up = (float)rng.uniformReal(0.0, P.upBias);
+        p.velocity = Vector3(cosf(ang) * spd, up + spd * P.upFactor, sinf(ang) * spd);
+
+        // 高速スピン＝紙吹雪のきらめき（toon の明暗バンドがチラつく）
+        p.rotSpeed = Vector3(
+            (float)rng.uniformReal(-P.spinMax, P.spinMax),
+            (float)rng.uniformReal(-P.spinMax, P.spinMax),
+            (float)rng.uniformReal(-P.spinMax, P.spinMax));
+
+        float s = (float)rng.uniformReal(P.scaleMin, P.scaleMax);
+        p.baseScale = Vector3(s, s, s);
+
+        // 5色からランダム＝華やかさの核
+        p.color = P.colors[rng.uniformInt(0, (int)std::size(P.colors) - 1)];
+        p.gravity = P.gravity;
+        p.life = p.maxLife = P.life;
+        m_particles3d.push_back(p);
+    }
+}
+
+void EffectManager::Spawn3DTrailPuff(const Vector3& worldPos) {
+    const auto& P = Fx::Trail;
+    auto& rng = RandomEngine::tls();
+
+    // 1個ずつ生成（生成間隔は呼び出し側 Unit::UpdateDeathFly が Fx::Trail.interval で制御）
+    Particle3D p;
     p.active = true;
-    p.type = ParticleType::HIT_EFFECT; // ヒットエフェクトとして設定
-    p.pos = screenPos;
-    p.velocity = Vector2(0, 0); // 移動なし
-    p.rotation = static_cast<float>(RandomEngine::tls().uniformInt(0, 359)) * PI / 180.0f;// ランダムな初期角度
-    p.rotSpeed = 0.0f;
-    p.scale = HIT_EFFECT_INITIAL_SCALE;
-    p.maxLifeTime = HIT_EFFECT_DURATION;
-    p.lifeTime = p.maxLifeTime;
-    p.textureIndex = HIT_EFFECT_TEXTURE_INDEX; // hit_effect.png のインデックスを指定
+    p.pos = worldPos;
 
-    m_particles.push_back(p);
+    // 無重力＋微小ドリフト：その場に残って漂う「残気」。飛翔体の軌跡として線状に並ぶ
+    p.velocity = Vector3(
+        (float)rng.uniformReal(-P.drift, P.drift),
+        (float)rng.uniformReal(0.0, P.drift),
+        (float)rng.uniformReal(-P.drift, P.drift));
+    p.rotSpeed = Vector3(P.spin, P.spin, P.spin);
+    p.baseScale = Vector3(P.scale, P.scale, P.scale);
+    p.color = P.color;
+    p.gravity = 0.0f;
+    p.life = p.maxLife = P.life;
+    m_particles3d.push_back(p);
 }
 
-void EffectManager::DrawRubble() {
-    for (const auto& p : m_particles) {
-        if (p.active && p.type == ParticleType::RUBBLE && p.textureIndex < m_textures.size()) {
-            float fadeAlpha = p.lifeTime / p.maxLifeTime;
-            MATERIAL mtrl;
-            mtrl.Diffuse = Color(1, 1, 1, fadeAlpha);
-            mtrl.TextureEnable = true;
-            m_textures[p.textureIndex]->ModifyMtrl(mtrl);
-            float drawScale = p.scale * (p.lifeTime);
-            m_textures[p.textureIndex]->Draw(
-                Vector3(drawScale, drawScale, 1.0f), Vector3(0, 0, p.rotation), Vector3(p.pos.x, p.pos.y, 0)
-            );
-        }
-    }
+void EffectManager::Spawn3DStarCross(const Vector3& worldPos) {
+    const auto& P = Fx::Star;
+
+    // 物理・乱数なしの1粒子。描画側で「ビルボード十字＋sin拡縮」の特殊パスを通る
+    Particle3D p;
+    p.active = true;
+    p.pos = worldPos;
+    p.color = P.color;
+    p.life = p.maxLife = P.life;
+    p.isStar = true;
+    m_particles3d.push_back(p);
 }
 
-void EffectManager::DrawHitEffects() {
-    for (const auto& p : m_particles) {
-        if (p.active && p.type == ParticleType::HIT_EFFECT && p.textureIndex < m_textures.size()) {
-            MATERIAL mtrl;
-            mtrl.Diffuse = Color(1, 1, 1, 1.0f);
-            mtrl.TextureEnable = true;
-            m_textures[p.textureIndex]->ModifyMtrl(mtrl);
-            m_textures[p.textureIndex]->Draw(
-                Vector3(p.scale, p.scale, 1.0f), Vector3(0, 0, p.rotation), Vector3(p.pos.x, p.pos.y, 0)
-            );
+// =========================================================
+// 描画
+// =========================================================
+void EffectManager::Draw3D() {
+    if (m_particles3d.empty()) return;
+
+    // 遅延取得（GameScene のリソース登録順に依存しないように）
+    if (!m_boxRenderer) m_boxRenderer = ModelRegistry::RegisterModel(
+        "fx_particle_box", "Assets/model/obj/fx_cube.obj", "Assets/model/obj");
+    if (!m_shardRenderer) m_shardRenderer = ModelRegistry::RegisterModel(
+        "fx_particle_shard", "Assets/model/obj/fx_shard.obj", "Assets/model/obj");
+    if (!m_fxShader) m_fxShader = MeshManager::GetShader<CShader>("fxshader");
+    if (!m_boxRenderer || !m_fxShader || !m_boxRenderer->GetMaterial(0)) return;
+
+    Camera* cam = m_context ? m_context->GetCamera() : nullptr;
+
+    // ビルボード基底（ビュー行列回転部の転置 = カメラ基底）：スター用
+    Matrix4x4 bb = Matrix4x4::Identity;
+    if (cam) {
+        Matrix4x4 v = cam->GetViewMatrix();
+        bb._11 = v._11; bb._12 = v._21; bb._13 = v._31;
+        bb._21 = v._12; bb._22 = v._22; bb._23 = v._32;
+        bb._31 = v._13; bb._32 = v._23; bb._33 = v._33;
+    }
+
+    // 全 subset のマテリアルへ色を反映
+    auto setAllMaterials = [](CStaticMeshRenderer* r, const Color& c) {
+        for (int i = 0; ; ++i) {
+            CMaterial* mat = r->GetMaterial(i);
+            if (!mat) break;
+            MATERIAL m = mat->GetData();
+            m.Diffuse = c;
+            m.TextureEnable = FALSE;
+            mat->SetMaterial(m);
+        }
+        };
+
+    m_fxShader->SetGPU();   // 無光沢（発光体）：Material.Diffuse を直接出力
+    if (Fx::Render.additive) {
+        Renderer::SetBlendState(BS_ADDITIVE);
+        Renderer::DisableCulling(false);   // 三角カケラは単面のため両面描画
+        Renderer::SetDepthReadOnly();   // 加算時は深度書込を止め、順序起因のチラつきを防ぐ
+    }
+    else {
+        Renderer::SetBlendState(BS_ALPHABLEND);
+        Renderer::DisableCulling(false);   // 三角カケラは単面のため両面描画
+        Renderer::SetDepthEnable(true);
+    }
+
+
+    for (const auto& p : m_particles3d) {
+        if (!p.active) continue;
+        float lifeRatio = p.life / p.maxLife;
+
+        Color c = p.color;
+        c.w = p.color.w * ((lifeRatio < Fx::Curve.fadeStartRatio)
+            ? lifeRatio / Fx::Curve.fadeStartRatio : 1.0f);
+        setAllMaterials(m_boxRenderer, c);
+
+        CStaticMeshRenderer* mesh =
+            (p.useShard && m_shardRenderer) ? m_shardRenderer : m_boxRenderer;
+        setAllMaterials(mesh, c);
+
+        if (p.isStar) {
+            // 四芒星：三角カケラ4枚を billboard 平面内で 90° ずつ、尖端を外向きに配置
+            CStaticMeshRenderer* starMesh = m_shardRenderer ? m_shardRenderer : m_boxRenderer;
+            setAllMaterials(starMesh, c);
+            float prog = 1.0f - lifeRatio;
+            float s = sinf(FX_PI * prog);
+            Matrix4x4 trans = Matrix4x4::CreateTranslation(p.pos);
+            for (int arm = 0; arm < 4; ++arm) {
+                Matrix4x4 w = Matrix4x4::CreateScale(
+                    Fx::Star.armLen * s, Fx::Star.armThick * s, 1.0f)
+                    * Matrix4x4::CreateRotationZ(arm * FX_PI * 0.5f)
+                    * bb * trans;
+                Renderer::SetWorldMatrix(&w);
+                starMesh->Draw();
+            }
+        }
+        else if (p.alignToVelocity) {
+            // 速度方向へ +X を向ける正規直交基底を構築（オイラー角を経由しない）
+            Vector3 ax = p.velocity;
+            if (ax.LengthSquared() < 0.0001f) ax = Vector3(1, 0, 0);
+            ax.Normalize();
+            Vector3 up = (fabsf(ax.y) > 0.99f) ? Vector3(0, 0, 1) : Vector3(0, 1, 0);
+            Vector3 az = ax.Cross(up); az.Normalize();
+            Vector3 ay = az.Cross(ax);
+
+            Matrix4x4 rot = Matrix4x4::Identity;
+            rot._11 = ax.x; rot._12 = ax.y; rot._13 = ax.z;
+            rot._21 = ay.x; rot._22 = ay.y; rot._23 = ay.z;
+            rot._31 = az.x; rot._32 = az.y; rot._33 = az.z;
+
+            float shrink = (lifeRatio < Fx::Curve.shrinkStartRatio)
+                ? lifeRatio / Fx::Curve.shrinkStartRatio : 1.0f;
+            Matrix4x4 scale = Matrix4x4::CreateScale(p.baseScale * shrink);
+            Matrix4x4 trans = Matrix4x4::CreateTranslation(p.pos);
+
+            // 単面カケラは真横から見ると線になるため、長軸回りに 90° 回した2枚目で十字刃にする
+            Matrix4x4 w1 = scale * rot * trans;
+            Renderer::SetWorldMatrix(&w1);
+            mesh->Draw();
+            Matrix4x4 w2 = scale * Matrix4x4::CreateRotationX(FX_PI * 0.5f) * rot * trans;
+            Renderer::SetWorldMatrix(&w2);
+            mesh->Draw();
+        }
+        else {
+            float shrink = (lifeRatio < Fx::Curve.shrinkStartRatio)
+                ? lifeRatio / Fx::Curve.shrinkStartRatio : 1.0f;
+            Matrix4x4 w = Matrix4x4::CreateScale(p.baseScale * shrink)
+                * Matrix4x4::CreateRotationX(p.rotation.x)
+                * Matrix4x4::CreateRotationY(p.rotation.y)
+                * Matrix4x4::CreateRotationZ(p.rotation.z)
+                * Matrix4x4::CreateTranslation(p.pos);
+            Renderer::SetWorldMatrix(&w);
+            mesh->Draw();
         }
     }
+
+    Renderer::DisableCulling(true);   // CULL_BACK へ還元
+    Renderer::SetBlendState(BS_NONE);
+    Renderer::SetDepthEnable(true);
 }
 
 void EffectManager::DrawStaticHitPreview(const Vector3& worldPos) {
-    if (!m_context || !m_context->GetCamera()) return;
+    if (!m_context || !m_context->GetCamera() || !m_hitPreviewSprite) return;
 
     Camera* cam = m_context->GetCamera();
     float sw = (float)Application::GetWidth();
     float sh = (float)Application::GetHeight();
 
-    // スクリーン座標に変換
     Vector2 screenPos = WorldToScreen(worldPos, cam->GetViewMatrix(), cam->GetProjMatrix(), sw, sh);
 
     // 画面外のカリング（描画除外）処理
-    if (screenPos.x < -HIT_CULL_MARGIN || screenPos.x > sw + HIT_CULL_MARGIN ||
-        screenPos.y < -HIT_CULL_MARGIN || screenPos.y > sh + HIT_CULL_MARGIN) return;
+    if (screenPos.x < -HIT_PREVIEW_CULL_MARGIN || screenPos.x > sw + HIT_PREVIEW_CULL_MARGIN ||
+        screenPos.y < -HIT_PREVIEW_CULL_MARGIN || screenPos.y > sh + HIT_PREVIEW_CULL_MARGIN) return;
 
-    // ヒットエフェクト用テクスチャがロード済みか確認
-    if (m_textures.size() > HIT_EFFECT_TEXTURE_INDEX && m_textures[HIT_EFFECT_TEXTURE_INDEX]) {
+    MATERIAL mtrl;
+    // 半透明の黄色に設定し、警告としての衝突をシミュレート
+    mtrl.Diffuse = HIT_PREVIEW_COLOR;
+    mtrl.TextureEnable = true;
+    m_hitPreviewSprite->ModifyMtrl(mtrl);
 
-        MATERIAL mtrl;
-        // 半透明の黄色に設定し、警告としての衝突をシミュレート
-        mtrl.Diffuse = HIT_PREVIEW_COLOR;
-        mtrl.TextureEnable = true;
-        m_textures[HIT_EFFECT_TEXTURE_INDEX]->ModifyMtrl(mtrl);
-
-        m_textures[HIT_EFFECT_TEXTURE_INDEX]->Draw(
-            Vector3(HIT_PREVIEW_SCALE, HIT_PREVIEW_SCALE, 1.0f),
-            Vector3(0, 0, 0),
-            Vector3(screenPos.x, screenPos.y, 0)
-        );
-    }
+    m_hitPreviewSprite->Draw(
+        Vector3(HIT_PREVIEW_SCALE, HIT_PREVIEW_SCALE, 1.0f),
+        Vector3(0, 0, 0),
+        Vector3(screenPos.x, screenPos.y, 0));
 }

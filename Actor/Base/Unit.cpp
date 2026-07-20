@@ -8,6 +8,7 @@
 #include "../../System/ZFightTunables.h"
 #include <cmath>
 #include "../../System/RandomEngine.h"
+#include "../../System/FxTunables.h"
 
 namespace {
 	// ---------------------------------------------------------
@@ -100,7 +101,7 @@ void Unit::TakeDamage(int damage, Unit* attacker) {
 		hitPos.x += static_cast<float>(rng.uniformReal(-0.5, 0.5)) * HIT_POS_RANDOM_SPREAD;
 		hitPos.z += static_cast<float>(rng.uniformReal(-0.5, 0.5)) * HIT_POS_RANDOM_SPREAD;
 
-		GetEffectManager()->SpawnHitEffect(hitPos);
+		GetEffectManager()->Spawn3DHit(hitPos);
 	}
 
 	if (m_context && m_context->GetDamageManager()) {
@@ -351,7 +352,7 @@ void Unit::SetModelRenderer(CStaticMeshRenderer* r) {
 }
 
 void Unit::DrawModel() {
-	if (!m_renderer) return;
+	if (!m_renderer || m_isDeathVisualHidden) return;
 	if (!m_isDeathFlying) DrawBlobShadow();
 	Renderer::SetWorldMatrix(&m_worldMatrix);
 	m_renderer->Draw();
@@ -494,6 +495,14 @@ void Unit::StartDeathFly() {
 		static_cast<float>(rng.uniformReal(0.0, DEATH_SPIN_MAX)),
 		static_cast<float>(rng.uniformReal(0.0, DEATH_SPIN_MAX)),
 		static_cast<float>(rng.uniformReal(0.0, DEATH_SPIN_MAX)));
+
+	// 進行率の基準：上昇と対称な放物線の周期（0.5 = 頂点、0.6 = 頂点を少し過ぎた位置）
+	m_deathArcTime = (m_deathVelocity.y > 0.01f)
+		? 2.0f * m_deathVelocity.y / DEATH_GRAVITY : 0.5f;
+	m_deathFlyTimer = 0.0f;
+	m_deathTrailTimer = 0.0f;
+	m_deathStarSpawned = false;
+	m_isDeathVisualHidden = false;
 }
 
 void Unit::UpdateDeathFly(float delta) {
@@ -511,6 +520,21 @@ void Unit::UpdateDeathFly(float delta) {
 	m_deathVelocity.y -= DEATH_GRAVITY * delta;
 	m_srt.pos += m_deathVelocity * delta;
 	m_srt.rot += m_deathSpin * delta; 
+
+	// ③ 飛翔演出：トレイル生成 → 60% 地点で十字スター＋モデル消滅
+	m_deathFlyTimer += delta;
+	if (!m_isDeathVisualHidden && GetEffectManager()) {
+		m_deathTrailTimer += delta;
+		while (m_deathTrailTimer >= Fx::Trail.interval) {
+			m_deathTrailTimer -= Fx::Trail.interval;
+			GetEffectManager()->Spawn3DTrailPuff(m_srt.pos);
+		}
+		if (!m_deathStarSpawned && m_deathFlyTimer >= m_deathArcTime * Fx::Star.progress) {
+			m_deathStarSpawned = true;
+			m_isDeathVisualHidden = true;   // スターと同時にモデル消滅（トレイルも止まる）
+			GetEffectManager()->Spawn3DStarCross(m_srt.pos);
+		}
+	}
 
 	if (m_srt.pos.y < DEATH_FALL_KILL_Y) OnDeathFlyComplete();
 	UpdateWorldMatrix();
