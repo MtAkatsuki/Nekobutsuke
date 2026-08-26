@@ -9,6 +9,7 @@
 #include <cmath>
 #include "../../System/RandomEngine.h"
 #include "../../System/FxTunables.h"
+#include "../../System/CMaterial.h"
 
 namespace {
 	// ---------------------------------------------------------
@@ -30,6 +31,8 @@ namespace {
 	const float MODEL_FORWARD_OFFSET = 0.0f;	// ← モデル導入後の一回限り標定
 
 	const float BLOB_SIZE = 1.2f;                // Blob影のスケール（半径）
+
+	const float FADE_LERP_SPEED = 10.0f; 
 
 	// 死亡飛出
 	const float DEATH_GRAVITY = 50.0f;
@@ -72,6 +75,13 @@ Unit::~Unit() {}
 void Unit::Update(float deltaSeconds) {
 	if (m_hpBar) {
 		m_hpBar->Update(deltaSeconds);
+	}
+
+	// fade を目標値へ滑らかに遷移（遮蔽フェード / 接近フェードで共通利用）
+	if (m_fade != m_targetFade) {
+		float t = 1.0f - expf(-FADE_LERP_SPEED * deltaSeconds);
+		m_fade += (m_targetFade - m_fade) * t;
+		if (fabsf(m_fade - m_targetFade) < 0.001f) m_fade = m_targetFade;
 	}
 }
 
@@ -353,10 +363,29 @@ void Unit::SetModelRenderer(CStaticMeshRenderer* r) {
 
 void Unit::DrawModel() {
 	if (!m_renderer || m_isDeathVisualHidden) return;
+	if (m_fade >= 0.999f) return;
 	if (!m_isDeathFlying) DrawBlobShadow();
+
+	// fade > 0 の場合、非表示量をマテリアルの Dummy.x に設定。
+	// 描画後に元の値へ戻し、共有マテリアルへの影響を残さない。
+	const bool fading = (m_fade > 0.001f);
+	if (fading) ApplyFadeToMaterials(m_fade);
+
 	Renderer::SetWorldMatrix(&m_worldMatrix);
 	m_renderer->Draw();
 	DrawOutline();
+
+	if (fading) ApplyFadeToMaterials(0.0f);
+}
+
+void Unit::ApplyFadeToMaterials(float fade) {
+	// 本体のすべての子マテリアルを走査し、fade 値を Dummy.x に設定
+	if (!m_renderer) return;
+	for (int i = 0; CMaterial * mtrl = m_renderer->GetMaterial(i); ++i) {
+		MATERIAL data = mtrl->GetData();
+		data.Dummy[0] = fade;
+		mtrl->SetMaterial(data);
+	}
 }
 
 void Unit::DrawOutline()

@@ -234,6 +234,11 @@ public:
 		}
 	}
 
+	// マウス相対移動量（REL モード）
+	int GetMouseMoveX() const { return m_MouseState.lX; }
+	int GetMouseMoveY() const { return m_MouseState.lY; }
+	int GetMouseWheel() const { return m_MouseState.lZ; }
+
 	//----------------------------------
 	// キーボードバッファ取得処理
 	//----------------------------------

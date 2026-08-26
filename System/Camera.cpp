@@ -11,7 +11,6 @@
 
 namespace {
 	// --- レンダリング・投影行列用定数 ---
-	constexpr float FOV_DEG = 15.0f;    // 視野角 (タクティカルRPGに適した狭角設定)
 	constexpr float NEAR_PLANE = 0.1f;     // ニアクリップ面
 	constexpr float FAR_PLANE = 1000.0f;  // ファークリップ面
 	// --- 演出復帰完了の判定閾値（この範囲内で通常カメラへ復帰）---
@@ -48,6 +47,22 @@ namespace {
 		{ "KILLCAM_FOLLOW_MIN_Y",   &Camera::KILLCAM_FOLLOW_MIN_Y },
 		{ "CINE_RETURN_LERP_SPEED", &Camera::CINE_RETURN_LERP_SPEED },
 		{ "KILLCAM_PAN_MAX_DIST",   &Camera::KILLCAM_PAN_MAX_DIST },
+		{ "STRATEGY_FOV",         &Camera::STRATEGY_FOV },
+		{ "BATTLE_FOV",           &Camera::BATTLE_FOV },
+		{ "BATTLE_RADIUS",        &Camera::BATTLE_RADIUS },
+		{ "BATTLE_ELEVATION",     &Camera::BATTLE_ELEVATION },
+		{ "ACTOR_INTRO_HOLD",     &Camera::ACTOR_INTRO_HOLD },
+		{ "BASE_RADIUS",          &Camera::BASE_RADIUS },
+		{ "BATTLE_LOOK_Y_OFFSET", &Camera::BATTLE_LOOK_Y_OFFSET },
+		{ "MOUSE_ORBIT_SENS_X",   &Camera::MOUSE_ORBIT_SENS_X },
+		{ "MOUSE_ORBIT_SENS_Y",   &Camera::MOUSE_ORBIT_SENS_Y },
+		{ "ORBIT_ELEV_MIN",       &Camera::ORBIT_ELEV_MIN },
+		{ "ORBIT_ELEV_MAX",       &Camera::ORBIT_ELEV_MAX },
+		{ "CAMERA_MIN_HEIGHT",    &Camera::CAMERA_MIN_HEIGHT },
+		{ "PLAYER_FADE_START", &Camera::PLAYER_FADE_START },
+		{ "PLAYER_FADE_FULL",  &Camera::PLAYER_FADE_FULL },
+		{ "ENEMY_WATCH_BACK",     &Camera::ENEMY_WATCH_BACK },
+		{ "ENEMY_WATCH_SHOULDER", &Camera::ENEMY_WATCH_SHOULDER },
 	};
 
 	float UnwrapNear(float ref, float angle) {
@@ -94,6 +109,15 @@ void Camera::Update(float dt) {
 		if (azimuthArrived && lookatArrived) m_cineReturning = false;
 	}
 
+	// 行動者トランジション：戦略で居中 → 一定時間後に第三人称へ俯冲
+	if (m_actorIntroActive && !IsCinematic()) {
+		m_actorIntroTimer += dt;
+		if (m_actorIntroTimer >= ACTOR_INTRO_HOLD) {
+			m_actorIntroActive = false;
+			EnterBattleView(m_actorIntroPos, m_actorIntroYaw); // TPS視点へ急降下（背後への回り込みを含む）
+		}
+	}
+
 	// 1. フレームレート非依存の補間係数を計算
 	// （演出復帰中は専用の低速補間、それ以外は通常速度）
 	const float lerpSpeed = m_cineReturning ? CINE_RETURN_LERP_SPEED : CAMERA_LERP_SPEED;
@@ -113,6 +137,7 @@ void Camera::Update(float dt) {
 	LerpFunc(m_radius, m_targetRadius);
 	LerpFunc(m_azimuth, m_targetAzimuth);
 	LerpFunc(m_elevation, m_targetElevation);
+	LerpFunc(m_fov, m_targetFov);
 
 	// 3. 極座標 → デカルト座標（pitchモード時はカメラ位置を固定し、注視点上昇で見上げのみ）
 	if (m_killCamPitch) {
@@ -120,13 +145,29 @@ void Camera::Update(float dt) {
 		m_up = Vector3(0.0f, 1.0f, 0.0f);   // LookAtLH が水平基準で正しく仰角を作る
 	}
 	else {
+		// 極座標 → カメラ位置
 		CPolar3D polor(m_radius, m_elevation, m_azimuth);
 		Vector3 offset = polor.ToCartesian();
-		m_position = m_lookat + offset;
+
+		// 床による衝突判定（地面への貫通を防止）：
+		// カメラが床より低くなる場合、「注視点 → カメラ」のレイ上を移動させ、床面まで引き上げる。
+		// lookAt はプレイヤーの胸元（床より高い位置）にあるため、
+		// 交点はプレイヤー側に寄り、カメラはそれ以上下降せず、地面に沿って接近する。
+		Vector3 camPos = m_lookat + offset;
+		if (camPos.y < CAMERA_MIN_HEIGHT && offset.y < -0.0001f) {
+			float t = (CAMERA_MIN_HEIGHT - m_lookat.y) / offset.y; // offset.y < 0 かつ分子 < 0 → t ∈ (0,1)
+			t = std::clamp(t, 0.05f, 1.0f);
+			offset *= t;                                           // レイを短縮し、床面の高さまで引き上げる＋プレイヤーに接近
+			camPos = m_lookat + offset;
+		}
+
+		m_effectiveDist = offset.Length();
+		m_position = camPos;
 
 		CPolar3D polorup(1.0f, m_elevation + PI / 2.0f, m_azimuth);
 		m_up = polorup.ToCartesian();
 	}
+	
 }
 
 void Camera::Draw(){
@@ -136,37 +177,76 @@ void Camera::Draw(){
 
 	// プロジェクション行列の生成
 	float aspectRatio = static_cast<float>(Application::GetWidth()) / static_cast<float>(Application::GetHeight());
-	float fovRad = DirectX::XMConvertToRadians(FOV_DEG);
+	float fovRad = DirectX::XMConvertToRadians(m_fov);
 
 	m_projmtx = DirectX::XMMatrixPerspectiveFovLH(fovRad, aspectRatio, NEAR_PLANE, FAR_PLANE);
 	Renderer::SetProjectionMatrix(&m_projmtx);
 }
 
-void Camera::ChangeState(CameraState state, const Vector3& targetPos) {
-	if (IsCinematic()) return;// 演出中はカメラ制御を奪わせない（HOLD を最後まで守る）
-	m_state = state;
 
-	switch (state) {
-	case CameraState::BaseView:
-		SetTargetToCenter();
-		SetTargetRadius(BASE_RADIUS);
-		break;
+void Camera::EnterStrategyView() {
+	m_viewMode = ViewMode::Strategy;
+	ChangeState(CameraState::BaseView);
+}
 
+void Camera::EnterBattleView(const Vector3& focusPos, float facingYaw) {
+	m_viewMode = ViewMode::Battle;
+	ChangeState(CameraState::Tracking, focusPos);
+	OrientBehind(facingYaw);
+}
+
+void Camera::HomeToStrategy() {
+	if (IsCinematic()) return;
+	m_viewMode = ViewMode::Strategy;
+	m_state = CameraState::Tracking;      // 現在の注視対象を維持（ステージ中央には戻さない）
+	m_targetLookAt = m_lookat;            // 注視点を現在の対象に固定：ズームアウト中も以前の対象を注視（#1）
+	m_targetRadius = BASE_RADIUS;         // 戦略俯瞰まで引き戻す
+	m_targetElevation = BASE_ELEVATION;
+	m_targetFov = STRATEGY_FOV;
+}
+
+void Camera::BeginActorTransition(const Vector3& focusPos, float facingYaw) {
+	if (IsCinematic()) return;
+
+	// 第1段階：戦略画面の俯瞰視点で、これから行動するユニットを中央に捉える
+	m_viewMode = ViewMode::Strategy;
+	ChangeState(CameraState::Tracking, focusPos);
+
+	// 第2段階：一定時間停止した後、第三人称視点へカメラを急降下させる
+	m_actorIntroActive = true;
+	m_actorIntroTimer = 0.0f;
+	m_actorIntroPos = focusPos;
+	m_actorIntroYaw = facingYaw;
+}
+
+void Camera::OrientBehind(float facingYaw) {
+	if (IsCinematic()) return;
+	m_targetAzimuth = UnwrapNear(m_azimuth, atan2f(cosf(facingYaw), sinf(facingYaw)));
+}
+
+void Camera::ApplyFraming() {
+	switch (m_state) {
+	case CameraState::BaseView:    SetTargetToCenter(); m_targetRadius = BASE_RADIUS;        break;
+	case CameraState::TargetFocus: m_targetRadius = TARGET_FOCUS_RADIUS;                     break;
 	case CameraState::Tracking:
-		SetTargetLookAt(targetPos);
-		SetTargetRadius(ZOOM_RADIUS);
-		break;
-
-	case CameraState::TargetFocus:
-		SetTargetLookAt(targetPos);
-		SetTargetRadius(TARGET_FOCUS_RADIUS);
-		break;
-
-	case CameraState::ActionFocus:
-		SetTargetLookAt(targetPos);
-		SetTargetRadius(ZOOM_RADIUS);
-		break;
+	case CameraState::ActionFocus: m_targetRadius = GetTrackingRadius();                     break;
+	default: return;  
 	}
+	m_targetElevation = GetTrackingElevation();  
+	m_targetFov = GetTrackingFov();
+}
+
+void Camera::ChangeState(CameraState state, const Vector3& targetPos) {
+	if (IsCinematic()) return;
+	m_state = state;
+	if (state != CameraState::BaseView) SetTargetLookAt(targetPos);
+	ApplyFraming();
+}
+
+void Camera::SetViewMode(ViewMode mode) {
+	if (IsCinematic()) return;
+	m_viewMode = mode;
+	ApplyFraming();
 }
 
 void Camera::UpdateTrackingTarget(const Vector3& targetPos) {
@@ -180,6 +260,10 @@ void Camera::UpdateTrackingTarget(const Vector3& targetPos) {
 
 void Camera::SetTargetLookAt(const Vector3& target) {
 	m_targetLookAt = target;
+	// 第三人称視点：注視点を胸～頭の高さまで引き上げる（戦略 / 俯瞰視点では適用しない）
+	if (m_viewMode == ViewMode::Battle) {
+		m_targetLookAt.y += BATTLE_LOOK_Y_OFFSET;
+	}
 	// 注視点をクランプし、カメラが追跡しすぎて画面外の未描画領域（穿面）が見えるのを防ぐ
 	m_targetLookAt.x = std::clamp(m_targetLookAt.x, m_minX, m_maxX);
 	m_targetLookAt.z = std::clamp(m_targetLookAt.z, m_minZ, m_maxZ);
@@ -353,3 +437,55 @@ void Camera::PlayAttackZoom(const Vector3& focusPos) {
 	m_cinePhaseTimer = 0.0f;
 }
 
+void Camera::OrbitByMouse(float dAzimuth, float dElevation) {
+	m_targetAzimuth += dAzimuth;
+	m_azimuth = m_targetAzimuth;
+
+	m_targetElevation = std::clamp(m_targetElevation + dElevation, ORBIT_ELEV_MIN, ORBIT_ELEV_MAX);
+	m_elevation = m_targetElevation;
+}
+
+void Camera::FrameEnemyFromPlayer(const Vector3& playerPos, const Vector3& enemyPos) {
+	if (IsCinematic()) return;
+	m_viewMode = ViewMode::Battle;
+	m_state = CameraState::Tracking;
+
+	// 敵を中央に配置：注視点 = 敵（BATTLE_LOOK_Y_OFFSET による戦闘時の高さ補正を含む）
+	SetTargetLookAt(enemyPos);
+
+	// 水平方向：プレイヤー → 敵
+	float dx = enemyPos.x - playerPos.x;
+	float dz = enemyPos.z - playerPos.z;
+	float dist = sqrtf(dx * dx + dz * dz);
+
+	// 方位角：プレイヤー → 敵の方向を基準に、肩越しのオフセットを加えてプレイヤーを画面の一側に配置
+	float az = atan2f(dz, dx) + ENEMY_WATCH_SHOULDER;
+	m_targetAzimuth = UnwrapNear(m_azimuth, az);
+
+	m_targetElevation = BATTLE_ELEVATION;   // カメラの高さ・仰角を制御
+	m_targetFov = BATTLE_FOV;
+
+	// 半径：カメラを水平方向にプレイヤーの背後 BACK の位置へ配置
+	// カメラと敵の水平距離 = プレイヤー→敵の距離 + BACK
+	// また、水平距離 = radius * |sin(elev)|
+	float sinE = fabsf(sinf(m_targetElevation));
+	if (sinE < 0.2f) sinE = 0.2f;            // 仰角が水平に近い場合の半径の発散を防止
+	m_targetRadius = (dist + ENEMY_WATCH_BACK) / sinE;
+}
+
+bool Camera::IsAtTarget() const {
+	if (fabsf(m_radius - m_targetRadius) > 0.3f)  return false;
+	if (fabsf(m_elevation - m_targetElevation) > 0.02f) return false;
+	if (fabsf(m_fov - m_targetFov) > 0.5f) return false;
+
+	// 方位角はラップアラウンドを考慮して差分を求める
+	float da = m_targetAzimuth - m_azimuth;
+	while (da > PI) da -= 2.0f * PI;
+	while (da < -PI) da += 2.0f * PI;
+	if (fabsf(da) > 0.03f) return false;
+
+	// 注視点（許容誤差：0.5m）
+	if ((m_targetLookAt - m_lookat).LengthSquared() > 0.25f) return false;
+
+	return true;
+}

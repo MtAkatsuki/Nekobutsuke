@@ -75,6 +75,13 @@ void GameDraw(uint64_t deltatime){
 		DebugUI::Toggle();
 	}
 
+	// マウスロック制御：ウィンドウがアクティブかつデバッグ UI が非表示の場合は、
+	// ウィンドウ内にカーソルを固定して非表示にする（三人称自由視点用）。それ以外は解除する
+	if (GetForegroundWindow() == Application::GetWindow() && !DebugUI::IsVisible())
+		Application::LockCursorToWindow();
+	else
+		Application::UnlockCursor();
+
 	if (DebugUI::IsVisible()) {
 		DebugUI::BeginFrame();
 	}
@@ -95,6 +102,7 @@ void GameDraw(uint64_t deltatime){
 }
 
 void GameDispose(){
+	Application::UnlockCursor();
 	DebugUI::DisposeUI();
 	SceneManager::GetInstance().Dispose();
 	Renderer::Uninit();

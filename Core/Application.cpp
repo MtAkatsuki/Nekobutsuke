@@ -16,6 +16,7 @@ HINSTANCE Application::m_hInst = nullptr;
 HWND      Application::m_hWnd = nullptr;
 uint32_t  Application::m_Width = 0;
 uint32_t  Application::m_Height = 0;
+bool      Application::m_cursorLocked = false;
 
 // ImGuiのWin32プロシージャハンドラ
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -162,9 +163,42 @@ LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
+    case WM_ACTIVATE:
+        // ウィンドウが非アクティブになったら、直ちにカーソルロックを解除
+        if (LOWORD(wp) == WA_INACTIVE) UnlockCursor();
+        break;
     default:
         break;
     }
 
     return DefWindowProc(hWnd, msg, wp, lp);
+}
+
+void Application::LockCursorToWindow() {
+    if (!m_hWnd) return;
+
+    // 初回ロック時：カーソルを非表示にする。
+    // ShowCursor は参照カウント方式のため、while でカウントを 0 未満まで下げ、状態変更時のみ実行する
+    if (!m_cursorLocked) {
+        m_cursorLocked = true;
+        while (ShowCursor(FALSE) >= 0) {}
+    }
+
+    // 毎フレーム制限領域を更新：
+    // ウィンドウの移動や再アクティブ化によって OS が以前の ClipCursor 設定を解除する場合があるため、再設定する
+    RECT rc;
+    GetClientRect(m_hWnd, &rc);
+    POINT tl{ rc.left,  rc.top };
+    POINT br{ rc.right, rc.bottom };
+    ClientToScreen(m_hWnd, &tl);   // クライアント領域の座標 → スクリーン座標（ClipCursor はスクリーン座標を使用）
+    ClientToScreen(m_hWnd, &br);
+    RECT clip{ tl.x, tl.y, br.x, br.y };
+    ClipCursor(&clip);
+}
+
+void Application::UnlockCursor() {
+    if (!m_cursorLocked) return;
+    m_cursorLocked = false;
+    ClipCursor(nullptr);                 // カーソルの制限を解除
+    while (ShowCursor(TRUE) < 0) {}      // カーソルを再表示（カウントを 0 以上に戻す）
 }

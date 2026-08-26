@@ -4,6 +4,11 @@ SamplerState g_SamplerState : register(s0);
 
 float4 main(in PS_IN3 In) : SV_Target
 {
+    // --- Dither Fade：Material.Dummy.x = fade（0 = 不透明、1 = 完全非表示）---
+    // fade より閾値が低いピクセルを破棄し、スクリーンドア（ディザ）による透明表現を実現。
+    // 深度は通常どおり書き込むため、後方にあるプレイヤーがディザの隙間から見える。
+    clip(DitherThreshold(In.Position.xy) - Material.Dummy.x);
+    
     float4 albedo;
     if (Material.TextureEnable)
     {

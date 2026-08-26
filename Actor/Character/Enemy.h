@@ -67,6 +67,10 @@ public:
     // ---------------------------------------------------------
     virtual void DrawUI() override;
 
+
+    void PlayActionOrderBounce(int times);   // 行動順の数字を times 回バウンスさせる
+    bool IsActionOrderBouncing() const;
+
 protected:
     using Unit::Unit;
 
@@ -102,6 +106,7 @@ private:
     // 吹き飛び中の更新（基底の死亡飛翔処理へ委譲）
     void DeathFlyingUpdate(float delta);
     virtual void OnDeathFlyComplete() override;
+
 
     // =========================================================
     // メンバー変数

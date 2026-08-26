@@ -82,9 +82,15 @@ void Player::Update(float deltaSeconds) {
 	if (m_isWaitingTurnStart) {
 		Ally* ally = m_context->GetAlly();
 		// もし仲間が存在し、かつ脱出アニメーション（採掘やフェード）の最中であれば
-		if (ally && ally->IsEscaping()) {
-			// この間、プレイヤーの状態は WAITING のまま維持され、入力は受け付けず、カメラも仲間を注視し続ける
-			return;
+		if (ally && ally->IsEscaping()) return;
+		// この間、プレイヤーの状態は WAITING のまま維持され、入力は受け付けず、カメラも仲間を注視し続ける
+
+		if (m_menuHold) return;   // カメラ帰還→UI再生中はメニューを開かない（急降下開始後に GameScene 側で解除）
+
+		// 第三人称への急降下演出が完了するまで行動メニューを開かない
+		if (Camera* cam = m_context ? m_context->GetCamera() : nullptr) {
+			if (cam->IsActorTransitioning()) return;
+			if (cam->GetViewMode() == ViewMode::Battle && !cam->IsAtTarget()) return;
 		}
 		m_isWaitingTurnStart = false;
 		SwitchToMenuMain();
@@ -94,7 +100,7 @@ void Player::Update(float deltaSeconds) {
 	if (!m_isZoomedIn) {
 		m_isZoomedIn = true;
 		if (m_context && m_context->GetCamera()) {
-			m_context->GetCamera()->SetTargetRadius(Camera::ZOOM_RADIUS); 
+			m_context->GetCamera()->SetTargetRadius(m_context->GetCamera()->GetTrackingRadius());
 		}
 	}
 
@@ -396,9 +402,8 @@ void Player::SwitchToAttackDirSelect(AttackType type) {
 	// 【戦闘カメラ演出】：攻撃方向の選択時、カメラを攻撃方向へ少し前進（オフセット）させる
 	if (m_context && m_context->GetCamera()) {
 		DirOffset offset = DirOffset::From(m_attackDir);
-		// 攻撃方向へ 1.5 マス分オフセットさせた位置をターゲットにする
-		Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * ATTACK_CAM_ENTER_OFFSET;
-		m_context->GetCamera()->ChangeState(CameraState::ActionFocus, targetPos);
+		Vector3 warnCenter = GetMap()->GetWorldPosition(m_gridX + offset.x, m_gridZ + offset.z);
+		m_context->GetCamera()->ChangeState(CameraState::ActionFocus, warnCenter);
 	}
 }
 
@@ -566,8 +571,9 @@ void Player::HandleAttackDirInput(float dt) {
 			SetFacingFromVector(Vector3((float)offset.x, 0, (float)offset.z));
 
 			if (m_context && m_context->GetCamera()) {
-				Vector3 targetPos = m_srt.pos + Vector3((float)offset.x, 0.0f, (float)offset.z) * ATTACK_CAM_AIM_OFFSET;
-				m_context->GetCamera()->UpdateTrackingTarget(targetPos);
+				// 攻撃方向の変更に追従して、予警中心（対象マス）へ注視点を更新
+				Vector3 warnCenter = GetMap()->GetWorldPosition(m_gridX + offset.x, m_gridZ + offset.z);
+				m_context->GetCamera()->UpdateTrackingTarget(warnCenter);
 			}
 		}
 	}

@@ -15,6 +15,7 @@
 
 class GameScene;
 class GameContext;
+class MapObject;
 
 enum class TileType {
 	FLOOR,
@@ -81,6 +82,15 @@ public:
 	void DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX::SimpleMath::Color& color);
 	void ClearOccupants();
 
+	// ---------------------------------------------------------
+	// カメラ検査
+	// ---------------------------------------------------------
+
+	// カメラ衝突：from から dir 方向へ maxDist まで、最初の障害物までの距離（無ければ maxDist）
+	float ProbeCameraObstacle(const Vector3& from, const Vector3& dir, float maxDist) const;
+	// カメラ遮蔽判定：from から dir 方向へ maxDist まで走査し、途中の通行不可オブジェクトを out に追加（重複を除外）
+	void CollectOccluders(const Vector3& from, const Vector3& dir, float maxDist,
+		std::vector<class MapObject*>& out) const;
 private:
 	// =========================================================
 	// レベル生成サブサブルーチン (Cataloging)
@@ -96,6 +106,8 @@ private:
 	void SpawnStaticStructures(const std::vector<std::vector<std::string>>& csvData, GameContext* context);
 	// プレイヤー・敵・味方などの動的ユニットを CSV から生成する（床の後に追加）
 	void SpawnDynamicEntities(const std::vector<std::vector<std::string>>& csvData, GameContext* context);
+
+	const Tile* GetTileAtWorld(const Vector3& world) const;
 
 private:
 	int m_mapWidth;

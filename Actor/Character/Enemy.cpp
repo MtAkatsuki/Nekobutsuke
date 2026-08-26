@@ -228,6 +228,7 @@ void Enemy::OnDraw(float /*deltaSeconds*/) {
 
 	// 蓄力中の震えは `m_srt.pos` を直接汚染せず、描画用の一時的な Matrix で処理する
 		if (m_isCharging || m_state == EnemyState::DEATH_SHAKE) {
+			if (m_fade >= 0.999f) return;
 		Matrix4x4 shakeWorld = Matrix4x4::CreateScale(m_srt.scale)
 			* Matrix4x4::CreateRotationY(m_srt.rot.y)
 			* Matrix4x4::CreateTranslation(m_srt.pos + m_shakeOffset); // オフセットを加算
@@ -617,3 +618,6 @@ void Enemy::ReleaseChargeAttack() {
 	if (m_context && m_context->GetCamera())
 		m_context->GetCamera()->PlayAttackZoom((m_srt.pos + targetGridPos) * 0.5f);
 }
+
+void Enemy::PlayActionOrderBounce(int times) { if (m_actionUI) m_actionUI->PlayBounce(times); }
+bool Enemy::IsActionOrderBouncing() const { return m_actionUI && m_actionUI->IsBouncing(); }

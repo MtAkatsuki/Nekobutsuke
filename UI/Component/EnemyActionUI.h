@@ -24,6 +24,9 @@ public:
     // order: 行動順 (1から開始)
     void Draw(const Vector3& worldPos, int order);
 
+    void PlayBounce(int times);
+    bool IsBouncing() const { return m_state == AnimState::Jump; }
+
 private:
     GameContext* m_context = nullptr;
     std::vector<std::unique_ptr<CSprite>> m_numSprites;
@@ -32,7 +35,8 @@ private:
     enum class AnimState {
         Entrance,   // 登場（拡大しながら出現）
         Idle,       // 待機
-        Shake       // 周期的な揺れ（アテンション誘導）
+        Shake,       // 周期的な揺れ（アテンション誘導）
+        Jump,
     };
 
     AnimState m_state = AnimState::Entrance;
@@ -44,4 +48,7 @@ private:
     // 描画用のトランスフォームキャッシュ（Updateで計算し、Drawで適用）
     float m_currentScale = 1.0f;
     float m_currentRotationZ = 0.0f;
+
+    int   m_jumpRemaining = 0;    // 残りのバウンス回数
+    float m_currentJumpY = 0.0f; // 現在の垂直方向の移動量（スクリーンピクセル）
 };

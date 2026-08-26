@@ -16,6 +16,9 @@ namespace {
     constexpr float SHAKE_ANGLE_RAD = 0.3f; // 揺れの最大角度（約17度）
     constexpr float SHAKE_SPEED_MULTIPLIER = 6.0f; // 揺れの速度（往復回数に影響）
 
+    constexpr float JUMP_HEIGHT_PX = 45.0f;  // スクリーン空間でのジャンプ高さ（戦略俯瞰でも十分視認できる。調整可能）
+    constexpr float JUMP_DURATION = 0.26f;  // 1回の上下バウンスにかかる時間
+
     // --- 配置定数 ---
     constexpr float WORLD_OFFSET_Y = 1.4f; // HPバーの少し上に配置
     constexpr float WORLD_OFFSET_X = 0.1f;
@@ -24,6 +27,7 @@ namespace {
     // --- 行動順序スプライト ---
     constexpr int MAX_ORDER_SPRITES = 9;   // 用意されている番号テクスチャの枚数（ui_num_1〜9）
     constexpr float NUM_TEX_SIZE = 48.0f;  // 番号テクスチャの実寸（px、正方形）
+
 }
 
 void EnemyActionUI::Init(GameContext* context) {
@@ -39,6 +43,7 @@ void EnemyActionUI::Init(GameContext* context) {
     m_state = AnimState::Entrance;
     m_animTimer = 0.0f;
     m_intervalTimer = 0.0f;
+    int m_entranceRepeats = 1;
 }
 
 void EnemyActionUI::Update(float dt) {
@@ -90,7 +95,26 @@ void EnemyActionUI::Update(float dt) {
             m_currentRotationZ = 0.0f;
         }
         break;
+
+    case AnimState::Jump:
+        if (m_animTimer < JUMP_DURATION) {
+            float t = m_animTimer / JUMP_DURATION;
+            m_currentJumpY = sinf(t * PI) * JUMP_HEIGHT_PX;  // 0→頂点→0：跳び上がって元の位置に戻る
+            m_currentScale = 1.0f;
+            m_currentRotationZ = 0.0f;
+        }
+        else {
+            m_animTimer = 0.0f;
+            if (--m_jumpRemaining <= 0) {
+                m_currentJumpY = 0.0f;
+                m_state = AnimState::Idle;
+                m_intervalTimer = 0.0f;
+            }
+            // 残り回数があれば次のジャンプへ継続（引き続き Jump 状態、m_animTimer は 0 にリセット済み）
+        }
+        break;
     }
+
 }
 
 void EnemyActionUI::Draw(const Vector3& worldPos, int order) {
@@ -119,7 +143,14 @@ void EnemyActionUI::Draw(const Vector3& worldPos, int order) {
     // Z軸のみを回転させて平面上での揺れを表現
     Vector3 scaleVec(m_currentScale, m_currentScale, 1.0f);
     Vector3 rotVec(0.0f, 0.0f, m_currentRotationZ);
-    Vector3 drawPos(screenPos.x, screenPos.y, 0.0f);
+    Vector3 drawPos(screenPos.x, screenPos.y - m_currentJumpY, 0.0f);
 
     m_numSprites[spriteIndex]->Draw(scaleVec, rotVec, drawPos);
+}
+
+void EnemyActionUI::PlayBounce(int times) {
+    m_state = AnimState::Jump;
+    m_animTimer = 0.0f;
+    m_jumpRemaining = (times > 0) ? times : 1;
+    m_currentJumpY = 0.0f;
 }

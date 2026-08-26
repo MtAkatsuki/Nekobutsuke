@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_set>
+#include <cmath>
 #include "MapManager.h"
 #include "EnemyManager.h"
 #include "../../Core/DebugLog.h"
@@ -505,6 +506,33 @@ void MapManager::SpawnDynamicEntities(const std::vector<std::vector<std::string>
 	if (m_scene) {
 		for (auto& unitObj : unitsToSpawn) {
 			m_scene->AddObject(std::move(unitObj));
+		}
+	}
+}
+
+const Tile* MapManager::GetTileAtWorld(const Vector3& world) const {
+	// GetWorldPosition の逆変換（Z は VISUAL_Z_OFFSET を戻す）
+	float fx = (world.x - m_tileOffsets.x - m_tileSize * 0.5f) / m_tileSize;
+	float fz = (world.z - m_tileOffsets.z - m_tileSize * 0.5f - VISUAL_Z_OFFSET) / m_tileSize;
+	int gx = (int)std::floor(fx + 0.5f);
+	int gz = (int)std::floor(fz + 0.5f);
+	return GetTile(gx, gz);
+}
+
+
+void MapManager::CollectOccluders(const Vector3& from, const Vector3& dir, float maxDist,
+	std::vector<MapObject*>& out) const {
+	const float step = m_tileSize * 0.25f;   // サンプリング間隔（1マスの1/4）
+	MapObject* last = nullptr;
+	for (float d = step; d <= maxDist; d += step) {
+		Vector3 p = from + dir * d;
+		const Tile* t = GetTileAtWorld(p);
+		if (!t) continue;
+		MapObject* s = t->structure;
+		// 通行不可の構造物（壁・家具）のみを遮蔽物として扱う。隣接サンプルの重複＋全体の重複を除外
+		if (s && !s->IsWalkable() && s != last) {
+			if (std::find(out.begin(), out.end(), s) == out.end()) out.push_back(s);
+			last = s;
 		}
 	}
 }

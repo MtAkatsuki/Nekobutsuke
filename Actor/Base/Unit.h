@@ -110,12 +110,18 @@ public:
 	void DrawPushPreview(Direction pushDir);
 
 	virtual void OnHpChanged() {};
+
 	// --- アウトライン上書き（保護対象の強調表示用） ---
 	void SetOutlineOverride(const Color& color) {
 		m_hasOutlineOverride = true;
 		m_outlineOverrideColor = color;
 	}
 	void ClearOutlineOverride() { m_hasOutlineOverride = false; }
+
+	// ディザによるフェード：目標値を外部から設定し、m_fade は毎フレーム滑らかに遷移
+	void  SetTargetFade(float f) { m_targetFade = f; }
+	void  SetFade(float f) { m_fade = f; m_targetFade = f; } // 即時設定（既存インターフェースを維持）
+	float GetFade() const { return m_fade; }
 public:
 	static inline bool s_hpBarVisible = true;  // HPバー表示切替（DebugUIから制御）
 	// 死亡飛翔中、十字スター出現によりモデルが非表示になったか（KillCam の定格判定用）
@@ -140,6 +146,9 @@ protected:
 		return m_context ? m_context->GetEffectManager() : nullptr;
 	}
 
+	// fade 値を本体のすべての子マテリアルの Dummy.x に設定
+	// ToonPS / OutlinePS のディザリングクリップに使用
+	void ApplyFadeToMaterials(float fade);
 
 protected:
 	// =========================================================
@@ -156,6 +165,7 @@ protected:
 	CShader* m_blobShader = nullptr;
 	CStaticMeshRenderer* m_blobMesh = nullptr;
 	CStaticMeshRenderer* m_pushArrowMesh = nullptr;
+	float m_targetFade = 0.0f;
 
 	std::unique_ptr<HPBar> m_hpBar;
 	// --- アウトライン上書き ---
@@ -209,4 +219,6 @@ protected:
 
 	// TurnManager への購読ID（デストラクタで自動解除）
 	TurnManager::ScopedConnection m_turnConnection;
+	//ディザリングクリップに使用
+	float m_fade = 0.0f;
 };

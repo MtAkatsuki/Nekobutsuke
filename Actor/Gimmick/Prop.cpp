@@ -30,10 +30,14 @@ void Prop::Update(float deltaSeconds) {
 
 }
 
-void Prop::OnDraw(float /*deltaSeconds*/) {
-    if (!m_renderer) return;
+void Prop::OnDraw(float deltaSeconds) {
+    // 遮蔽フェード：先に fade を更新（完全に非表示でも更新を続け、遮蔽解除時に復帰できるようにする）
+    UpdateFade(deltaSeconds);
 
-    DrawPropShadow();
+    if (!m_renderer) return;
+    if (m_fade >= 0.999f) return;           // 完全に非表示：影と本体の描画をスキップ
+
+    DrawPropShadow();                        // 部分的なフェード中は接地影を維持（>= 0.999 で全体を非表示）
 
     if (!m_toonShader) m_toonShader = MeshManager::GetShader<CShader>("toonshader");
     if (m_toonShader) m_toonShader->SetGPU();
@@ -41,7 +45,12 @@ void Prop::OnDraw(float /*deltaSeconds*/) {
     Renderer::SetDepthEnable(true);
     Renderer::SetWorldMatrix(&m_worldMatrix);
 
+    // fade > 0 の場合、マテリアルの Dummy.x に設定 → ToonPS でディザリングクリップ。
+    // 描画後に元の値へ戻す
+    const bool fading = (m_fade > 0.001f);
+    if (fading) ApplyFadeToMaterials(m_fade);
     m_renderer->Draw();
+    if (fading) ApplyFadeToMaterials(0.0f);
 }
 
 void Prop::DrawPropShadow() {

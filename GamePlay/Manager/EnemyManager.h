@@ -9,6 +9,10 @@ class GameContext;
 enum class EnemyPhaseState {
 	IDLE,
 	READY_TO_START,
+	CUT_HOME,   // カメラを戦略視点へ戻す（前の対象を引き続き注視）
+	CUT_PAN,   // 戦略視点でLerpに次の対象へ切り替え、中央に配置
+	CUT_DIVE,   // 対象へ急降下し、第三人称視点へ移行
+	CUT_BOUNCE,// 戦略視点で数字を2回バウンスさせる
 	ACTING,
 	INTERVAL,
 	ALL_FINISHED
@@ -59,6 +63,13 @@ public:
 	bool Contains(const Enemy* e) const {
 		return std::find(m_enemies.begin(), m_enemies.end(), e) != m_enemies.end();
 	}
+	// 現在行動中の敵（CUT_DIVE/ACTING 中のみ有効。それ以外は nullptr）
+	Enemy* GetActingEnemy() const {
+		if ((m_state == EnemyPhaseState::CUT_DIVE || m_state == EnemyPhaseState::ACTING) &&
+			m_currentActorIndex >= 0 && m_currentActorIndex < (int)m_enemies.size())
+			return m_enemies[m_currentActorIndex];
+		return nullptr;
+	}
 
 private:
 	// ---------------------------------------------------------
@@ -73,7 +84,12 @@ private:
 	GameContext* m_context = nullptr;
 	std::vector<Enemy*> m_enemies;
 
+	// 行動開始時：プレイヤーの背後から敵を捉える構図で、戦略視点から第三人称視点へ急降下
+	void FocusActor(Enemy* e);
+
 	EnemyPhaseState m_state = EnemyPhaseState::IDLE;
 	int m_currentActorIndex = 0;
 	float m_phaseTimer = 0.0f;
+	bool AdvanceToNextAlive();   // m_currentActorIndex から次に行動可能な敵を探し、見つからなければ false を返す
+	float m_focusTimer = 0.0f;   // カメラが所定の位置に到達した後の追加待機時間
 };

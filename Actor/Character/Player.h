@@ -41,6 +41,7 @@ public:
     int GetPreviewGridX() const { return m_previewGridX; }
     int GetPreviewGridZ() const { return m_previewGridZ; }
     bool IsCelebrationDone() const { return m_isCelebrationDone; }
+    void SetMenuHold(bool h) { m_menuHold = h; }   //カメラ帰還＋UI再生中は GameScene 側でメニュー操作を無効化
 
     // ---------------------------------------------------------
     // フローとイベント (Flow & Events)
@@ -114,6 +115,7 @@ private:
     PlayerState m_state = PlayerState::WAITING;
     PlayerState m_nextState = PlayerState::WAITING;
     bool canControl = false;
+    bool m_menuHold = false;
     // 現在フレームの操作コマンドを保持
     PlayerCommand m_currentCmd;
 

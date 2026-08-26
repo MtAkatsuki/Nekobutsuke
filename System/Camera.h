@@ -16,6 +16,8 @@ enum class CameraState {
 
 enum class CinePhase { None, AttackZoom, KillLead, KillSlow };
 
+enum class ViewMode { Strategy, Battle };
+
 // =========================================================
 // Camera クラス
 // 3D空間の視点を管理する。
@@ -74,6 +76,31 @@ public:
     void UpdateKillCamFollow(const Vector3& victimPos);
     // 攻撃ズーム演出を開始する（一定時間後に自動で通常カメラへ復帰）
     void PlayAttackZoom(const Vector3& focusPos);
+    void SetTargetFov(float deg) { m_targetFov = deg; }
+
+    // ダブルモード切り替え用のエントリーポイント
+    void EnterStrategyView();                                      // 俯瞰型の戦略画面へ切り替え
+    void EnterBattleView(const Vector3& focusPos, float facingYaw); // ユニットの背後から追従する三人称視点へ切り替え
+    void HomeToStrategy();              // 戦略俯瞰へ戻す：注視点を現在の対象に固定
+    void SnapLookAt(const Vector3& pos); // 注視点を新しい対象へ即座に切り替える
+    ViewMode GetViewMode() const { return m_viewMode; }
+    void SetViewMode(ViewMode mode);
+    // プレイヤー側から敵を捉える：敵を中央、プレイヤーを画面端に配置し、カメラは常にプレイヤーの背後に置く
+    void FrameEnemyFromPlayer(const Vector3& playerPos, const Vector3& enemyPos);
+
+    // 追従状態における構図パラメータ（現在のモードに応じて切り替え、Player / Scene から共通利用）
+    float GetTrackingRadius()    const { return (m_viewMode == ViewMode::Battle) ? BATTLE_RADIUS : ZOOM_RADIUS; }
+    float GetTrackingElevation() const { return (m_viewMode == ViewMode::Battle) ? BATTLE_ELEVATION : BASE_ELEVATION; }
+    float GetTrackingFov()       const { return (m_viewMode == ViewMode::Battle) ? BATTLE_FOV : STRATEGY_FOV; }
+    float GetFov() const { return m_fov; }
+    // 主要な Lerp パラメータがすべて目標値に収束したかを判定
+    // （カメラが所定の位置に到達してから敵を行動させるために使用）
+    bool IsAtTarget() const;
+
+    // アクター遷移：戦略画面の中央表示 → 第三人称視点へ急降下
+    void BeginActorTransition(const Vector3& focusPos, float facingYaw);
+    bool IsActorTransitioning() const { return m_actorIntroActive; }
+
 
     // ---------------------------------------------------------
     // カメラ制御：4方向回転 (Quarter-View Rotation)
@@ -105,6 +132,14 @@ public:
     int GetNormalizedDirIndex() const { return (m_dirIndexOffset % 4 + 4) % 4; }
 
     // ---------------------------------------------------------
+    // カメラ制御：三人称 マウス操作
+    // ---------------------------------------------------------
+    
+    void OrbitByMouse(float dAzimuth, float dElevation);   // マウスによる旋回（目標角度を変更）
+    float GetEffectiveDistance() const { return m_effectiveDist; }
+    void OrientBehind(float facingYaw);
+
+    // ---------------------------------------------------------
     // 状態管理・ゲッター (State & Getters)
     // ---------------------------------------------------------
     // 注視点をクランプする移動境界を設定する
@@ -123,6 +158,8 @@ public:
     Vector3 GetLookat()       const { return m_lookat; }
     Vector3 GetUP()           const { return m_up; }
     Vector3 GetTargetLookAt() const { return m_targetLookAt; }
+    float GetAzimuth() const { return m_azimuth; }
+    float GetTargetAzimuth() const { return m_targetAzimuth; }
 
     float GetBoundMinX() const { return m_minX; }
     float GetBoundMaxX() const { return m_maxX; }
@@ -152,7 +189,7 @@ public:
     // カメラ制御パラメータ定数群 (Public Parameters)
     // ==========================================
     static constexpr float TUTORIAL_RADIUS = 45.0f;
-    static constexpr float BASE_RADIUS = 30.0f;
+    static inline float BASE_RADIUS = 30.0f;
     static constexpr float TARGET_FOCUS_RADIUS = 17.0f;
     static inline float CAMERA_LERP_SPEED = 5.0f;
 
@@ -186,8 +223,33 @@ public:
     static inline float CINE_RETURN_LERP_SPEED = 1.8f; // 演出終了後の復帰補間速度
     static inline float KILLCAM_WAIT_TIMEOUT = 2.0f; // KillLead が死亡飛翔開始を待機する最大時間（超過時は演出を終了）
     static inline float KILLCAM_PAN_MAX_DIST = 2.0f; // 水平方向の追従上限（メートル、0 で水平追従なし）
+
+
+     // --- 戦略 / バトル 2モード用パラメータ（.ini から上書き可能）---
+    static inline float STRATEGY_FOV = 15.0f;   // 戦略画面：望遠寄りで奥行きを圧縮
+    static inline float BATTLE_FOV = 50.0f;   // バトル画面：パースを強調して奥行きを表現
+    static inline float BATTLE_RADIUS = 9.0f;    // 三人称視点：キャラクター後方からの距離
+    static inline float BATTLE_ELEVATION = -1.30f;  // 三人称視点：低いカメラ位置（-π/2 に近いほど地面に近づく）
+    static inline float ACTOR_INTRO_HOLD = 0.6f;   // 中央表示での停止時間。その後、カメラを急降下させる
+    static inline float BATTLE_LOOK_Y_OFFSET = 1.0f;// 三人称視点：注視点を引き上げる（胸～頭の高さ）
+
+    // 三人称視点：手動旋回・カメラ衝突パラメータ（F5 で調整可能 / .ini に保存）
+    static inline float MOUSE_ORBIT_SENS_X = 0.005f;
+    static inline float MOUSE_ORBIT_SENS_Y = 0.005f;
+    static inline float ORBIT_ELEV_MIN = -1.50f;  // 旋回時の仰角下限（値が小さいほど地面に近づく）
+    static inline float ORBIT_ELEV_MAX = -0.35f;  // 仰角上限
+    static inline float PLAYER_FADE_START = 3.0f;  // この距離より近づくとプレイヤーのフェードアウトを開始
+    static inline float PLAYER_FADE_FULL = 1.2f;  // この距離より近づくとプレイヤーを完全に非表示
+    static inline float CAMERA_MIN_HEIGHT = 0.3f;  // カメラの最低高度（床との衝突を防ぎ、仰角を下げても地面を貫通しない）
+
+    // 敵観察時の構図（プレイヤーに対するカメラ位置を調整可能）
+    static inline float ENEMY_WATCH_BACK = 3.0f;   // カメラをプレイヤーの背後に配置する距離
+    static inline float ENEMY_WATCH_SHOULDER = 0.35f;  // 肩越しのオフセット：正の値でプレイヤーを画面左側に配置（右側に寄せる場合は負の値）
+
 protected:
     void BeginKillSlow(); // KillSlow（見上げ＋ソフト追従）へ遷移
+    void ApplyFraming();//State&Modeへ演出構図
+
 protected:
     // --- トランスフォーム・行列 ---
     Vector3   m_position{ 0.0f, 0.0f, 0.0f };
@@ -205,6 +267,13 @@ protected:
     float m_targetAzimuth = 1.58f;
     float m_elevation = -1.08f;
     float m_targetElevation = -1.08f;
+    float m_fov = 15.0f;
+    float m_targetFov = 15.0f;
+    bool    m_actorIntroActive = false;
+    float   m_actorIntroTimer = 0.0f;
+    Vector3 m_actorIntroPos{};
+    float   m_actorIntroYaw = 0.0f;
+    ViewMode m_viewMode = ViewMode::Strategy;
 
     // --- シネマティック演出用変数 ---
     CinePhase   m_cinePhase = CinePhase::None;
@@ -227,4 +296,7 @@ protected:
 
     CameraState m_state = CameraState::BaseView;
     int         m_dirIndexOffset = 0; // 回転オフセット：0=基本, 1=右, 2=背後右, 3=背後左
+
+    // --- マウス ---
+    float m_effectiveDist = 30.0f;
 };

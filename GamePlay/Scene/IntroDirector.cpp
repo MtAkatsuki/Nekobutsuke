@@ -78,7 +78,7 @@ void IntroDirector::Update(float deltaSeconds, bool allyTalked) {
                 Player* player = m_context ? m_context->GetPlayer() : nullptr;
                 if (player && camera) {
                     // プレイヤー追従カメラへ復帰
-                    camera->ChangeState(CameraState::Tracking, player->GetSRT().pos);
+                    camera->BeginActorTransition(player->GetSRT().pos, player->GetSRT().rot.y);
                 }
             }
         }

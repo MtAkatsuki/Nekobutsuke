@@ -2,9 +2,14 @@
 #include "../../Core/GameContext.h"
 #include "TurnManager.h"
 #include "../../Core/DebugLog.h"
+#include "../../System/Camera.h"
+#include "../../Actor/Character/Player.h"
+#include <cmath>
 
 namespace {
-	const float ACT_INTERVAL = 0.5f; // 敵の行動と行動の間のインターバル待機時間
+	const float ACT_INTERVAL = 0.5f;   // （既存）
+	const float CUT_PAN_HOLD = 0.3f;  // 戦略視点で中央に配置した後の待機時間（#2 の「一瞬中央に捉える」演出）
+	const float ENEMY_FOCUS_HOLD = 0.1f;   // 急降下で所定位置に到達した後、さらに待機してから行動を開始
 }
 
 void EnemyManager::Update(float deltaSeconds) {
@@ -27,33 +32,86 @@ void EnemyManager::Update(float deltaSeconds) {
 	case EnemyPhaseState::READY_TO_START:
 		ResortAndRenumber();
 		m_currentActorIndex = 0;
-
-		// 行動可能な敵を検索
-		while (m_currentActorIndex < m_enemies.size()) {
-			auto* enemy = m_enemies[m_currentActorIndex];
-			if (enemy->GetHP() > 0 && !enemy->IsDeadFlying()) break;
-			++m_currentActorIndex;
-		}
-
-		if (m_currentActorIndex >= m_enemies.size()) {
+		if (!AdvanceToNextAlive()) {
 			m_state = EnemyPhaseState::ALL_FINISHED;
 			if (m_context->GetTurnManager()) m_context->GetTurnManager()->RequestEndTurn();
 		}
 		else {
-			m_enemies[m_currentActorIndex]->EnemyStartAction();
-			m_state = EnemyPhaseState::ACTING;
+			m_focusTimer = 0.0f;
+			m_state = EnemyPhaseState::CUT_HOME;          //まずは戦略画面へ戻る
 		}
 		break;
 
+	case EnemyPhaseState::CUT_HOME: {
+		// 戦略視点へ戻る（ズームアウト中も前の対象を注視）
+		Camera* cam = m_context ? m_context->GetCamera() : nullptr;
+		if (!cam) { m_state = EnemyPhaseState::ACTING; break; }
+
+		cam->HomeToStrategy();// 毎フレーム呼び出し
+		if (!cam->IsCinematic() && cam->IsAtTarget()) {
+			cam->SetTargetLookAt(m_enemies[m_currentActorIndex]->GetSRT().pos);
+			m_focusTimer = 0.0f;
+			m_state = EnemyPhaseState::CUT_PAN;
+		}
+		break;
+	}
+
+	case EnemyPhaseState::CUT_PAN: {
+
+		// 戦略視点で次の対象へパン移動し、到着後に少し待機してから急降下
+		Camera* cam = m_context ? m_context->GetCamera() : nullptr;
+
+		bool arrived = (!cam) || (!cam->IsCinematic() && cam->IsAtTarget());
+
+		if (arrived) {
+			m_focusTimer += deltaSeconds;
+			if (m_focusTimer >= CUT_PAN_HOLD) {
+				m_focusTimer = 0.0f;
+				m_enemies[m_currentActorIndex]->PlayActionOrderBounce(2); // 数字を2回バウンス
+				m_state = EnemyPhaseState::CUT_BOUNCE;
+			}
+		}
+		else {
+			m_focusTimer = 0.0f;
+		}
+		break;
+	}
+
+	case EnemyPhaseState::CUT_BOUNCE: {
+		// 戦略視点で対象を中央に捉えたまま、数字のバウンスが終了してから急降下
+		if (!m_enemies[m_currentActorIndex]->IsActionOrderBouncing()) {
+			m_state = EnemyPhaseState::CUT_DIVE;
+		}
+		break;
+	}
+
+	case EnemyPhaseState::CUT_DIVE: {
+		// 対象の第三人称視点まで急降下し、完全に到達してから行動開始
+		Camera* cam = m_context ? m_context->GetCamera() : nullptr;
+		bool ready = (!cam) || (!cam->IsCinematic() && cam->IsAtTarget());
+
+		if (ready) {
+			m_focusTimer += deltaSeconds;
+			if (m_focusTimer >= ENEMY_FOCUS_HOLD) {
+				m_enemies[m_currentActorIndex]->EnemyStartAction();
+				m_state = EnemyPhaseState::ACTING;
+			}
+		}
+		else {
+			m_focusTimer = 0.0f;
+		}
+		break;
+	}
+
 	case EnemyPhaseState::ACTING: {
-		if (m_currentActorIndex >= m_enemies.size()) {
+		if (m_currentActorIndex >= (int)m_enemies.size()) {
 			m_state = EnemyPhaseState::INTERVAL;
 			m_phaseTimer = 0.0f;
 			break;
 		}
-		Enemy* current = m_enemies[m_currentActorIndex];
-		// アニメーション完了、または急な死亡によるフェーズ進行の遮断解除
-		if (current->IsDead() || current->IsDeadFlying() || current->IsIdle()) {
+
+		Enemy* cur = m_enemies[m_currentActorIndex];
+		if (cur->IsDead() || cur->IsDeadFlying() || cur->IsIdle()) {
 			m_state = EnemyPhaseState::INTERVAL;
 			m_phaseTimer = 0.0f;
 		}
@@ -62,24 +120,16 @@ void EnemyManager::Update(float deltaSeconds) {
 
 	case EnemyPhaseState::INTERVAL:
 		m_phaseTimer += deltaSeconds;
-
-		//行動後の待ち時間
 		if (m_phaseTimer >= ACT_INTERVAL) {
 			++m_currentActorIndex;
-
-			while (m_currentActorIndex < m_enemies.size()) {
-				auto* enemy = m_enemies[m_currentActorIndex];
-				if (enemy->GetHP() > 0 && !enemy->IsDeadFlying()) break;
-				++m_currentActorIndex;
-			}
-
-			if (m_currentActorIndex >= m_enemies.size()) {
+			if (!AdvanceToNextAlive()) {
 				m_state = EnemyPhaseState::ALL_FINISHED;
-				if (m_context->GetTurnManager()) m_context->GetTurnManager()->RequestEndTurn();
+				if (m_context->GetTurnManager())
+					m_context->GetTurnManager()->RequestEndTurn();
 			}
 			else {
-				m_enemies[m_currentActorIndex]->EnemyStartAction();
-				m_state = EnemyPhaseState::ACTING;
+				m_focusTimer = 0.0f;
+				m_state = EnemyPhaseState::CUT_HOME;      // 次の敵も同様に、まず戦略視点へ戻る
 			}
 		}
 		break;
@@ -175,3 +225,11 @@ bool EnemyManager::IsAnyEnemyAnimating() const {
 	return false;
 }
 
+bool EnemyManager::AdvanceToNextAlive() {
+	while (m_currentActorIndex < (int)m_enemies.size()) {
+		Enemy* e = m_enemies[m_currentActorIndex];
+		if (e && e->GetHP() > 0 && !e->IsDeadFlying()) return true;
+		++m_currentActorIndex;
+	}
+	return false;
+}

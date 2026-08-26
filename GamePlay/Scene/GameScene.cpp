@@ -2,6 +2,7 @@
 #include "GameSceneDebugUI.h"
 #include "IntroDirector.h"
 #include "GameResultJudge.h"
+#include "Background.h"
 #include "../../Actor/Character/Enemy.h"
 #include "../../Actor/Character/Player.h"
 #include "../../Actor/Character/Ally.h"
@@ -27,13 +28,13 @@
 #include "../../UI/System/GameUIManager.h"
 #include "../../UI/System/DamageNumberManager.h"
 #include "../../UI/Component/DialogueUI.h"
-#include "Background.h"
 #include "../../UI/Component/TurnCutin.h"
 #include "../../UI/Component/TurnCounter.h"
 #include "../../UI/Component/TutorialUI.h"
 #include "../../System/FxTunables.h"
 #include <stdio.h> // for sprintf_s
 #include <cfloat>  // for FLT_MAX
+#include <cmath>
 
 
 
@@ -48,6 +49,7 @@ namespace {
 	const float BGM_FADE_TIME = 2.0f;                  // ゲームBGMのフェードイン時間（秒）
 	const float ALLY_HELP_DURATION = 3.0f;        // 通常ターンの救援吹き出し表示時間（秒）
 	const float INTRO_ALLY_HELP_DURATION = 4.5f;  // 導入演出中の吹き出し表示時間（＝味方特写の滞在時間）
+	const float UNIT_OCCLUDE_RADIUS = 0.6f;   // ユニットの遮蔽判定半径（カメラと注視対象を結ぶ線の周囲）
 
 	// スプライトのテクスチャ実寸（px）
 	const float ESCAPE_MARKER_TEX_SIZE = 128.0f;
@@ -94,10 +96,12 @@ void GameScene::Update(float deltaSeconds)
 	// 1. システム・表現の最優先更新（ロジック停止中も画面をフリーズさせないため）
 	UpdateCoreTimers(deltaSeconds);
 	UpdateCameraFocus(deltaSeconds);
+	UpdateOcclusionFade();//dither fade out
 
 	// 2. フロー制御インターセプト（チュートリアルや演出中は後続の入力を遮断）
 	if (HandlePreGameBlocking(deltaSeconds)) return;
 	UpdateEnvironmentAndDamageUI(deltaSeconds);
+	MaybePlayPendingTurnCutin();
 	if (HandleTurnCutinBlocking(deltaSeconds)) return;
 
 	// 3. 演出と入力の更新
@@ -258,6 +262,7 @@ void GameScene::InitializeCamera() {
 	m_camera->ForceSetPolar(Camera::TUTORIAL_RADIUS, Camera::BASE_AZIMUTH, Camera::BASE_ELEVATION);
 	m_camera->ChangeState(CameraState::BaseView);
 	m_camera->ResetCameraDirection();
+	m_camera->EnterStrategyView();
 	m_camera->Update(1.0f); // 初期View/Proj行列を正確に算出するため一度強制更新
 }
 
@@ -366,28 +371,35 @@ void GameScene::SetupUserInterface() {
 	m_sceneTurnConnection = m_context->GetTurnManager()->RegisterObserver([this](TurnState state) {
 		if (state == TurnState::PlayerPhase) {
 			if (m_turnCounter) m_turnCounter->Hide();
-			m_turnCutin->PlayCutinAnimation("Player Phase");
 
-			m_needsTurnCounterAnim = true;
-
-			if (m_player) {
-				// フェーズに応じたプレイヤー誘導：
-				// ① 脱出フェーズ中は目的地である味方を注視
-				// ② ゲーム開始直後（第1ターン）は守るべき対象（味方）を注視し、プレイヤーに目標を認識させる
-				// ③ それ以外の通常ターンは操作対象であるプレイヤー自身を注視
-				if (m_isEscapeActive && m_ally && !m_ally->IsEscapeDone()) {
-					m_camera->ChangeState(CameraState::TargetFocus, m_ally->GetSRT().pos);
-				}
-				else if (m_remainingTurns != INITIAL_TURN_COUNT) {
-					m_camera->ChangeState(CameraState::Tracking, m_player->GetSRT().pos);
-				}
+			if (m_isEscapeActive && m_ally && !m_ally->IsEscapeDone()) {
+				// 脱出：即座に UI を再生し、Ally を注視
+				m_turnCutin->PlayCutinAnimation("Player Phase");
+				m_needsTurnCounterAnim = true;
+				if (m_player) m_player->SetMenuHold(false);
+				m_camera->ChangeState(CameraState::TargetFocus, m_ally->GetSRT().pos);
+			}
+			else if (m_remainingTurns != INITIAL_TURN_COUNT) {
+				// 通常ターン：戦略視点へ戻る（前の対象を注視）→ 帰還後に UI 再生 → UI 終了後にプレイヤーへ急降下
+				m_pendingCutinLabel = "Player Phase";
+				m_pendingTurnCutin = true;
+				m_pendingIsPlayerPhase = true;
+				m_playerIntroPendingDive = true;
+				if (m_camera) m_camera->HomeToStrategy();     // 注視点を前の対象に固定したまま、戦略視点へ戻る
+				if (m_player) m_player->SetMenuHold(true);     // 一連の演出中はメニュー操作を無効化
+			}
+			else {
+				// 1ターン目：IntroDirector に任せ、即座に UI を再生
+				m_turnCutin->PlayCutinAnimation("Player Phase");
+				m_needsTurnCounterAnim = true;
+				if (m_player) m_player->SetMenuHold(false);
 			}
 		}
 		else if (state == TurnState::EnemyPhase) {
-			m_turnCutin->PlayCutinAnimation("Enemy Phase");
 			m_context->GetEnemyManager()->StartEnemyPhase();
-			// 敵ターン中は全体状況を把握させるため俯瞰視点へ戻す
-			m_camera->ChangeState(CameraState::BaseView);
+			// まずカメラを戦略視点へ戻す（EnemyManager の CUT_HOME で制御）。カメラが所定位置に戻ってからカットインを再生
+			m_pendingCutinLabel = "Enemy Phase";
+			m_pendingTurnCutin = true;
 		}
 		});
 
@@ -403,11 +415,27 @@ void GameScene::SetupUserInterface() {
 	m_introDirector = std::make_unique<IntroDirector>(m_context, m_turnCounter.get());
 }
 
+void GameScene::MaybePlayPendingTurnCutin() {
+	if (!m_pendingTurnCutin || !m_camera) return;
+	if (m_camera->IsCinematic()) return;
+
+	// カメラが完全に戦略俯瞰へ戻ってから、このターンの UI を再生
+	if (m_camera->GetViewMode() != ViewMode::Strategy || !m_camera->IsAtTarget()) return;
+
+	if (m_turnCutin) m_turnCutin->PlayCutinAnimation(m_pendingCutinLabel);
+	m_pendingTurnCutin = false;
+
+	if (m_pendingIsPlayerPhase) { // プレイヤーターン：カットイン直後にカウンターアニメーションを開始
+		m_needsTurnCounterAnim = true;
+		m_pendingIsPlayerPhase = false;
+	}
+}
+
 void GameScene::InitializeDebugFeatures() {
 	DBG_ERROR("   [GameScene] Registering DebugUI...");
 
 	m_debugUI = std::make_unique<GameSceneDebugUI>(*this);
-	DebugUI::RegisterDebugFunction([this]() { m_debugUI->DrawCameraTuningWindow(); });
+	DebugUI::RegisterDebugFunction([this]() { m_debugUI->Draw(); });
 }
 
 
@@ -464,7 +492,124 @@ void GameScene::UpdateCameraFocus(float deltaSeconds)
 		m_killCamStarTimer = 0.0f;
 	}
 
+	// ===== バトルカメラ：定常時の構図（遷移中は EnemyManager の制御処理 / actorIntro が担当）=====
+	float playerFade = 0.0f;
+	TurnManager* tm = m_context ? m_context->GetTurnManager() : nullptr;
+	bool playerPhase = tm && tm->GetTurnState() == TurnState::PlayerPhase;
+
+	if (playerPhase) {
+		if (m_camera->GetViewMode() == ViewMode::Battle) {
+			// バトル視点へ移行した初フレーム：プレイヤーの背後に合わせる（一度だけ）。以降はマウス操作に委ねる
+			if (!m_playerBattleOriented && m_player) {
+				m_camera->OrientBehind(m_player->GetSRT().rot.y);
+				m_playerBattleOriented = true;
+			}
+
+			// プレイヤーが操作可能な状態（メニュー表示中）のみマウス旋回を許可。
+			// 急降下・待機中はカメラを回転させず、IsAtTarget が確実に収束するようにする
+			PlayerState ps = m_player ? m_player->GetState() : PlayerState::WAITING;
+			bool controllable = (ps != PlayerState::WAITING && ps != PlayerState::DEAD_FLYING);
+
+			// マウス旋回：通常時は自由に操作。ImGui がマウスを使用している場合は右ボタンが必要
+			auto& in = CDirectInput::GetInstance();
+			bool imguiMouse = ImGui::GetIO().WantCaptureMouse;
+			bool canOrbit = imguiMouse ? in.GetMouseRButtonCheck() : true;
+			if (canOrbit) {
+				float dx = (float)in.GetMouseMoveX();
+				float dy = (float)in.GetMouseMoveY();
+				if (dx != 0.0f || dy != 0.0f)
+					m_camera->OrbitByMouse(dx * Camera::MOUSE_ORBIT_SENS_X, dy * Camera::MOUSE_ORBIT_SENS_Y);
+			}
+
+			// 接近によるフェード
+			float eff = m_camera->GetEffectiveDistance();
+			float span = Camera::PLAYER_FADE_START - Camera::PLAYER_FADE_FULL;
+			if (span > 0.0001f) {
+				float f = (Camera::PLAYER_FADE_START - eff) / span;
+				playerFade = (f < 0.0f) ? 0.0f : (f > 1.0f ? 1.0f : f);
+			}
+		}
+		else {
+			// 遷移中にバトル視点を離れた場合 → リセットし、dive 完了後に再び背後へ合わせる
+			m_playerBattleOriented = false;
+		}
+	}
+	else {
+		m_playerBattleOriented = false;
+
+		// 敵ターン：CUT_DIVE / ACTING（GetActingEnemy が有効）のみ
+		// 「プレイヤー側から敵を見る」構図を適用する。
+		// CUT_HOME / CUT_SNAP 中は対象なし → カメラを HomeToStrategy / SnapLookAt に委ねる。
+		Enemy* actor = (m_context && m_context->GetEnemyManager())
+			? m_context->GetEnemyManager()->GetActingEnemy() : nullptr;
+
+		if (actor && m_player)
+			m_camera->FrameEnemyFromPlayer(m_player->GetSRT().pos, actor->GetSRT().pos);
+	}
+
+	m_playerFadeProximity = playerFade;
 	m_camera->Update(deltaSeconds);
+}
+
+void GameScene::UpdateOcclusionFade()
+{
+	// --- 構造物（家具・壁）による遮蔽：前フレームの状態をリセット ---
+	for (MapObject* o : m_occluders) if (o) o->SetOccluded(false);
+	m_occluders.clear();
+
+	// --- ユニット：関連するすべてのユニットの目標 fade をリセット ---
+	EnemyManager* em = m_context ? m_context->GetEnemyManager() : nullptr;
+	if (em) for (Enemy* e : em->GetAllEnemies()) if (e) e->SetTargetFade(0.0f);
+
+	// プレイヤー：接近によるフェードのみ適用
+	// （敵ターンでは前景にいるプレイヤーを遮蔽によって非表示にしない）
+	if (m_player) m_player->SetTargetFade(m_playerFadeProximity);
+
+	if (!m_camera || m_camera->GetViewMode() != ViewMode::Battle) return;
+
+	Vector3 from = m_camera->GetLookat();     // 注視対象（主体）
+	Vector3 to = m_camera->GetPosition();   // カメラ
+
+	// --- 構造物による遮蔽（レイ上の遮蔽物を収集、既存の処理を使用）---
+	if (m_mapManager) {
+		Vector3 d = to - from;
+		float dist = d.Length();
+		if (dist > 0.001f) {
+			d *= 1.0f / dist;
+			m_mapManager->CollectOccluders(from, d, dist, m_occluders);
+			for (MapObject* o : m_occluders) if (o) o->SetOccluded(true);
+		}
+	}
+
+	// --- 敵による遮蔽：カメラと注視対象の間にいる敵をフェードアウト
+	//     （注視対象自身はフェードさせない）---
+	TurnManager* tm = m_context ? m_context->GetTurnManager() : nullptr;
+	bool playerPhase = tm && tm->GetTurnState() == TurnState::PlayerPhase;
+	Unit* subject = playerPhase ? (Unit*)m_player
+		: (Unit*)(em ? em->GetActingEnemy() : nullptr);
+
+	// XZ 平面：点 p が線分 from → to の中間付近にあるかを判定
+	// （視線を遮っているかどうかを判定）
+	auto occludes = [&](const Vector3& p) -> bool {
+		float ax = from.x, az = from.z, bx = to.x, bz = to.z;
+		float abx = bx - ax, abz = bz - az;
+		float ab2 = abx * abx + abz * abz;
+		if (ab2 < 1e-4f) return false;
+
+		float t = ((p.x - ax) * abx + (p.z - az) * abz) / ab2;
+		if (t < 0.05f || t > 0.95f) return false;              // 主体またはカメラに近すぎる場合は遮蔽とみなさない
+
+		float cx = ax + abx * t, cz = az + abz * t;
+		float dx = p.x - cx, dz = p.z - cz;
+		return (dx * dx + dz * dz) < UNIT_OCCLUDE_RADIUS * UNIT_OCCLUDE_RADIUS;
+		};
+
+	if (em) {
+		for (Enemy* e : em->GetAllEnemies()) {
+			if (!e || e == subject || e->IsDead()) continue;
+			if (occludes(e->GetSRT().pos)) e->SetTargetFade(1.0f);
+		}
+	}
 }
 
 void GameScene::UpdateTurnIntroSequence(float deltaSeconds) {
@@ -472,8 +617,6 @@ void GameScene::UpdateTurnIntroSequence(float deltaSeconds) {
 		if (m_turnCounter) m_turnCounter->StartAnimation();
 		m_needsTurnCounterAnim = false;
 
-		// 開幕の演出制御：第1ターン開始時、戦局全体を見せるカメラ演出を挿入
-		
 		if (m_remainingTurns == INITIAL_TURN_COUNT && m_introDirector && m_introDirector->IsIdle()) {
 			m_introDirector->Start();
 		}
@@ -481,6 +624,20 @@ void GameScene::UpdateTurnIntroSequence(float deltaSeconds) {
 
 	if (m_turnCounter) m_turnCounter->Update(deltaSeconds);
 	if (m_introDirector) m_introDirector->Update(deltaSeconds, m_isAllyTalked);
+
+	// プレイヤーターン：カットイン＋カウンターの再生がすべて終了した後、プレイヤーへ急降下
+	if (m_playerIntroPendingDive && !m_pendingTurnCutin
+		&& m_turnCutin && !m_turnCutin->IsAnimating()
+		&& m_turnCounter && !m_turnCounter->IsAnimating()
+		&& m_camera && !m_camera->IsCinematic()) {
+
+		if (m_player) {
+			m_camera->BeginActorTransition(m_player->GetSRT().pos, m_player->GetSRT().rot.y);
+			m_player->SetMenuHold(false);   // 以降はカメラ側（IsActorTransitioning + IsAtTarget）で操作を制御
+		}
+
+		m_playerIntroPendingDive = false;
+	}
 }
 
 
@@ -546,21 +703,17 @@ void GameScene::UpdateEnvironmentAndDamageUI(float deltaSeconds)
 
 void GameScene::HandleCameraRotationInput()
 {
-	// リザルト演出中やシーン遷移中は、カメラの不自然な回転を防ぐため入力を無視する
-	bool canRotate = (m_isGameStarted && m_resultJudge &&
-		!m_resultJudge->IsGameOverProcessing() && !m_resultJudge->IsSceneChanging());
+	//// リザルト演出中やシーン遷移中は、カメラの不自然な回転を防ぐため入力を無視する
+	//bool canRotate = (m_isGameStarted && m_resultJudge &&
+	//	!m_resultJudge->IsGameOverProcessing() && !m_resultJudge->IsSceneChanging());
 
 	if (m_gameUIManager) {
-		m_gameUIManager->SetCameraRotateVisible(canRotate);
+		m_gameUIManager->SetCameraRotateVisible(false);
 	}
 
-	if (canRotate) {
-		if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_Q)) {
-			if (m_camera) m_camera->RotateCameraReverse();
-		}
-		if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_E)) {
-			if (m_camera) m_camera->RotateCameraForward();
-		}
+	// Debug：F2 で 三人称 <-> 战略 を切替
+	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_F2)) {
+		ToggleViewModeDebug();
 	}
 }
 
@@ -932,7 +1085,17 @@ void GameScene::DrawWinText() {
 	Renderer::SetUISamplerMode(false);
 }
 
-
+//Debugカメラ遷移
+void GameScene::ToggleViewModeDebug()
+{
+	if (!m_camera || !m_player) return;
+	if (m_camera->GetViewMode() == ViewMode::Battle) {
+		m_camera->EnterStrategyView();
+	}
+	else {
+		m_camera->BeginActorTransition(m_player->GetSRT().pos, m_player->GetSRT().rot.y);
+	}
+}
 
 
 

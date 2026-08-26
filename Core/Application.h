@@ -32,6 +32,12 @@ public:
     static HWND      GetWindow() { return m_hWnd; }
     static HINSTANCE GetHInstance() { return m_hInst; }
 
+    // ---------------------------------------------------------
+    // マウスロック (Cursor Lock)
+    // ---------------------------------------------------------
+    static void LockCursorToWindow();  // カーソルをウィンドウのクライアント領域内に固定し、非表示にする（三人称自由視点用）
+    static void UnlockCursor();        // カーソルの固定を解除し、表示を復元する
+
 private:
     static bool InitApp();
     static void TermApp();
@@ -47,4 +53,6 @@ private:
     static HWND      m_hWnd;
     static uint32_t  m_Width;
     static uint32_t  m_Height;
+
+    static bool m_cursorLocked;   // 現在カーソルがロックされているか（ShowCursor は状態が切り替わる際のみ呼び出す）
 };

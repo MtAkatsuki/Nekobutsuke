@@ -57,6 +57,10 @@ public:
 	void AddObject(std::unique_ptr<GameObject> obj) {
 		m_gameObjectList.push_back(std::move(obj));
 	}
+	// ---------------------------------------------------------
+	// デバグ機能 (Debug)
+	// ---------------------------------------------------------
+	void ToggleViewModeDebug();
 
 	// 初期ターン数（脱出イベントまでのカウントダウン開始値）
 	static constexpr int INITIAL_TURN_COUNT = 5;
@@ -85,7 +89,7 @@ private:
 	void UpdateCoreTimers(float deltaSeconds);
 	void UpdateCameraFocus(float deltaSeconds);
 	void UpdateTurnIntroSequence(float deltaSeconds);
-
+	void UpdateOcclusionFade(); // 毎フレーム、カメラと本体の間にある遮蔽物を検出し、その fade 値を制御
 	// ---------------------------------------------------------
 	// 更新サブルーチン：フロー制御インターセプト (Flow Control Interceptors)
 	// ---------------------------------------------------------
@@ -112,6 +116,7 @@ private:
 	// ---------------------------------------------------------
 	void TurnChangeCheck();
 	void ProcessEndOfEnemyPhase();
+	void MaybePlayPendingTurnCutin();   // カメラが所定位置に戻った後に、このターンのカットインを再生
 
 	// ---------------------------------------------------------
 	// レンダリングパイプライン (Rendering Sub-routines)
@@ -181,9 +186,17 @@ private:
 	Enemy* m_killCamTrackTarget = nullptr;// KillCam の追従対象（演出中は固定）
 	bool m_killCamTargetAcquired = false; // 本演出で追従対象を取得済みか（再取得を行わない）
 	float m_killCamStarTimer = 0.0f;      // 十字スター開始からの経過（実時間、終了で復帰）
+	bool m_playerBattleOriented = false;   // プレイヤーがバトルモードに入った際、背後方向へ一度だけ向きを合わせる
+	bool        m_pendingTurnCutin = false;
+	const char* m_pendingCutinLabel = "";
+	bool m_pendingIsPlayerPhase = false;   // カメラ帰還後にカットインを再生する際、カウンターも同時に更新するか
+	bool m_playerIntroPendingDive = false;   // UI 終了後にプレイヤー視点への急降下を待機中
 
 	// --- 定数パラメータ ---
 	const float START_WAIT_TIME = 1.0f;
+	// --- Dither Fade ---
+	std::vector<class MapObject*> m_occluders; // 今フレームの遮蔽物（次フレームでリセット）
+	float m_playerFadeProximity = 0.0f;   // カメラの接近によるプレイヤーのフェード量（UpdateCameraFocus で算出）
 };
 
 REGISTER_CLASS(GameScene)

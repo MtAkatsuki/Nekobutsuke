@@ -21,15 +21,22 @@ PlayerCommand PlayerController::PollInput() const {
     else if (input.CheckKeyBuffer(DIK_A) || input.CheckKeyBuffer(DIK_LEFT))  screenDir = { -1, 0 };
     else if (input.CheckKeyBuffer(DIK_D) || input.CheckKeyBuffer(DIK_RIGHT)) screenDir = { 1,  0 };
 
-    // 3. カメラの向きを考慮し、ワールド座標系の方向へ変換
+    // 3. 三人称：カメラ方位を基準に前後左右をワールドへ写像
     if (screenDir.x != 0 || screenDir.z != 0) {
-        int camDir = (m_context && m_context->GetCamera()) ? m_context->GetCamera()->GetNormalizedDirIndex() : 0;
-        switch (camDir) {
-        case 1:  cmd.worldDir = screenDir.MoveLeft(); break;   // 正面右カメラ
-        case 2:  cmd.worldDir = screenDir.MoveBack(); break;   // 背面右カメラ
-        case 3:  cmd.worldDir = screenDir.MoveRight(); break;  // 背面左カメラ
-        default: cmd.worldDir = screenDir; break;              // 正面左（基本カメラ）
-        }
+        float a = 0.0f;
+        if (m_context && m_context->GetCamera()) a = m_context->GetCamera()->GetAzimuth();
+
+        // カメラ前方（地面投影） F=(cos a, sin a)、右 R=(sin a, -cos a)
+        const float fwdX = cosf(a), fwdZ = sinf(a);
+        const float rgtX = sinf(a), rgtZ = -cosf(a);
+
+        // screenDir.z=前後（W で F 方向へ）, screenDir.x=左右（D で R 方向へ）
+        const float wx = fwdX * screenDir.z + rgtX * screenDir.x;
+        const float wz = fwdZ * screenDir.z + rgtZ * screenDir.x;
+
+        // グリッド移動のため、最も近い四方位へスナップ
+        if (fabsf(wx) > fabsf(wz)) cmd.worldDir = { (wx > 0.0f) ? 1 : -1, 0 };
+        else                       cmd.worldDir = { 0, (wz > 0.0f) ? 1 : -1 };
     }
 
     return cmd;
