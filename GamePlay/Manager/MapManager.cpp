@@ -536,3 +536,61 @@ void MapManager::CollectOccluders(const Vector3& from, const Vector3& dir, float
 		}
 	}
 }
+
+bool MapManager::WorldToGrid(const Vector3& world, int& gx, int& gz) const {
+	// GetTileAtWorld と同じ逆変換（Z は VISUAL_Z_OFFSET を戻す）
+	float fx = (world.x - m_tileOffsets.x - m_tileSize * 0.5f) / m_tileSize;
+	float fz = (world.z - m_tileOffsets.z - m_tileSize * 0.5f - VISUAL_Z_OFFSET) / m_tileSize;
+	gx = static_cast<int>(std::floor(fx + 0.5f));
+	gz = static_cast<int>(std::floor(fz + 0.5f));
+	return (gx >= 0 && gx < m_mapWidth && gz >= 0 && gz < m_mapDepth);
+}
+
+bool MapManager::IsBlockedForCollision(int gx, int gz) const {
+	const Tile* t = GetTile(gx, gz);
+	if (!t) return true;                                   // マップ外は壁扱い（場外へ出さない）
+	if (t->structure && !t->structure->IsWalkable()) return true; // 壁・通行不可家具
+	return false;                                          // occupant は移動を妨げない
+}
+
+Vector3 MapManager::ResolveCircleCollision(const Vector3& center, float radius) const {
+	using namespace GM31::GE::Collision;
+	Vector3 c = center;
+
+	int gx, gz;
+	WorldToGrid(c, gx, gz);
+
+	// 円の中心セル周囲 3x3 の壁だけを対象に押し出す
+	// （1フレームの移動量は 1 セル未満なので 3x3 で十分）
+	for (int dz = -1; dz <= 1; ++dz) {
+		for (int dx = -1; dx <= 1; ++dx) {
+			int tx = gx + dx, tz = gz + dz;
+			if (!IsBlockedForCollision(tx, tz)) continue;
+
+			// セル中心から 1x1 の AABB を作る。XZ 判定なので Y は広く取り、
+			// 「最近接点の Y = 円中心の Y」となって Y 成分が判定に混ざらないようにする
+			Vector3 wc = GetWorldPosition(tx, tz);
+			BoundingBoxAABB box;
+			box.min = Vector3(wc.x - m_tileSize * 0.5f, c.y - 1000.0f, wc.z - m_tileSize * 0.5f);
+			box.max = Vector3(wc.x + m_tileSize * 0.5f, c.y + 1000.0f, wc.z + m_tileSize * 0.5f);
+
+			// AABB 上で円中心に最も近い点 q
+			Vector3 q;
+			ClosestPtPointAABB(c, box, q);
+
+			Vector3 d = c - q;
+			d.y = 0.0f;                       // 平面（XZ）でのめり込みだけ見る
+			float dist = d.Length();
+			if (dist < radius) {              // めり込んでいる
+				if (dist > 0.0001f) {
+					d /= dist;
+					c += d * (radius - dist); // めり込み量だけ法線方向へ押し戻す
+				}
+				else {
+					c.x += radius;            // 中心が壁内部の稀ケースは +X へ退避
+				}
+			}
+		}
+	}
+	return c;
+}

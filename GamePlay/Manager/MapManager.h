@@ -66,6 +66,11 @@ public:
 	int GetMapWidth() const { return m_mapWidth; }
 	int GetMapDepth() const { return m_mapDepth; }
 
+	// ワールド座標→グリッド添字。マップ内なら true
+	bool WorldToGrid(const Vector3& world, int& gx, int& gz) const;
+	// 円（半径 radius・中心 center）を近傍セルの壁 AABB から押し出した補正位置を返す
+	Vector3 ResolveCircleCollision(const Vector3& center, float radius) const;
+
 	// ---------------------------------------------------------
 	// アルゴリズム・経路探索
 	// ---------------------------------------------------------
@@ -108,6 +113,9 @@ private:
 	void SpawnDynamicEntities(const std::vector<std::vector<std::string>>& csvData, GameContext* context);
 
 	const Tile* GetTileAtWorld(const Vector3& world) const;
+
+	// 移動衝突用：そのセルが壁・通行不可家具か（occupant は見ない＝ユニットは素通り）
+	bool IsBlockedForCollision(int gx, int gz) const;
 
 private:
 	int m_mapWidth;

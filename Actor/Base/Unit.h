@@ -41,10 +41,12 @@ public:
 	int GetMaxHP() const { return m_maxHP; }
 	int GetUnitGridX() const { return m_gridX; }
 	int GetUnitGridZ() const { return m_gridZ; }
+	float GetBodyRadius() const { return m_bodyRadius; }
 	Direction GetFacing() const { return m_facing; }
 
 	void SetGridPosition(int x, int z) { m_gridX = x; m_gridZ = z; }
 	virtual void ResetMovePoints() { m_currentMovePoints = m_maxMovePoints; }
+
 
 	// ---------------------------------------------------------
 	// 戦闘と物理干渉 (Combat & Physics)
@@ -93,6 +95,9 @@ public:
 	bool UpdateSlideAnimation(float deltaSeconds);
 
 	void UpdateFacingRotation(float dt);
+
+	// 連続 yaw を直接指定（進行方向へ滑らかに向く。lerp は UpdateFacingRotation が担当）
+	void SetFacingYaw(float yawRadians);
 
 	// ---------------------------------------------------------
 	// 死亡飛出演出 (Death Fly)
@@ -189,6 +194,8 @@ protected:
 	Vector3 m_targetWorldPos;
 
 	bool m_isInvincible = false;
+
+	float m_bodyRadius = 0.35f;  // 移動・攻撃判定に使う体の半径（円）
 
 	// --- アニメーション制御データ ---
 	Vector3 m_animStartPos;

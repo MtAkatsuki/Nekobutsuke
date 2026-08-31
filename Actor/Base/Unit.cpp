@@ -220,6 +220,16 @@ void Unit::SetFacingFromVector(const Vector3& dir) {
 	SetFacing(newDir);
 }
 
+void Unit::SetFacingYaw(float yawRadians) {
+	// 視覚は連続 yaw（既存の lerp をそのまま利用）
+	m_targetRot.y = yawRadians + MODEL_FORWARD_OFFSET;
+	m_isTurning = true;
+
+	// 離散 m_facing も最寄り4向へ同期しておく（攻撃の初期方向などロジック用）
+	// yaw=atan2(dirX, dirZ) の逆：dir=(sin yaw, cos yaw)
+	m_facing = DirOffset::FromVector(sinf(yawRadians), cosf(yawRadians));
+}
+
 void Unit::SetFacing(Direction newDir) {
 	if (m_facing == newDir) return;
 

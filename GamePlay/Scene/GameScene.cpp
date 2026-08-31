@@ -308,6 +308,7 @@ void GameScene::LoadRenderResources() {
 		{"arrow_corner_mesh",   "Assets/model/obj/arrow_corner.obj",        "Assets/model/obj/"},
 		{"arrow_attack_mesh",   "Assets/model/obj/arrow_attack.obj",        "Assets/model/obj/"},
 		{"arrow_push_mesh",     "Assets/model/obj/arrow_push.obj",          "Assets/model/obj/"},
+		{"action_ring_line_mesh", "Assets/model/obj/ring_line.obj", "Assets/model/obj/"},
 	};
 	for (const auto& m : models) {
 		ModelRegistry::RegisterModel(m.name, m.path, m.texDir);
@@ -332,6 +333,16 @@ void GameScene::LoadRenderResources() {
 			if (auto* mat = r.GetMaterial(0)) {
 				MATERIAL m = mat->GetData();
 				m.Diffuse = ESCAPE_CUBE_COLOR;
+				m.TextureEnable = FALSE;
+				mat->SetMaterial(m);
+			}
+		});
+	// 範囲円モデル
+	ModelRegistry::RegisterModel("action_ring_mesh", "Assets/model/obj/action_ring.obj", "Assets/model/obj/",
+		[](CStaticMeshRenderer& r) {
+			if (auto* mat = r.GetMaterial(0)) {
+				MATERIAL m = mat->GetData();
+				m.Diffuse = m.Emission = m.Ambient = Color(0.35f, 1.0f, 0.55f, 1.0f);
 				m.TextureEnable = FALSE;
 				mat->SetMaterial(m);
 			}

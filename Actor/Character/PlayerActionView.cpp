@@ -9,6 +9,8 @@
 #include "../../GamePlay/Manager/MapManager.h"
 #include "../Gimmick/Trap.h"
 #include "../Base/Unit.h"
+#include "../../System/CMesh.h"
+#include <cmath>
 
 namespace {
     const float GHOST_ALPHA = 0.6f;   // ゴースト（残像）の透明度
@@ -21,12 +23,21 @@ namespace {
     // --- 経路矢印の表示色 ---
     const Color PATH_NORMAL_COLOR = Color(1.0f, 1.0f, 1.0f, 1.0f);    // 白（通常時）
     const Color PATH_DANGER_COLOR = Color(1.0f, 0.0f, 0.0f, 1.0f);    // 赤（目的地に罠がある時）
+
+    // --- 行動範囲リングの見た目パラメータ（ここで調整） ---
+    const int   ACTION_RING_SEG = 72;                              // 円周の分割数（滑らかさ）
+    const float ACTION_RING_INNER = 0.98f;                           // 内半径（帯幅＝半径×0.02）
+    const Color ACTION_RING_COLOR = Color(0.35f, 1.0f, 0.55f, 1.0f); // 発光する薄緑
 }
 
 void PlayerActionView::Init(GameContext* context) {
     m_context = context;
     m_pathLineRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_straight_mesh");
     m_pathCornerRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_corner_mesh");
+
+    m_ringRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("action_ring_mesh");
+    m_fxShader = MeshManager::GetShader<CShader>("fxshader");
+    m_ringLineRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("action_ring_line_mesh");
 }
 
 void PlayerActionView::DrawMoveRange(const std::vector<Tile*>& rangeTiles) {
@@ -187,4 +198,69 @@ float PlayerActionView::CalculateCornerRotation(int dx1, int dz1, int dx2, int d
     if (right && up) return PI;            // Right + Up -> 180
     if (up && left) return PI / 2.0f;      // Up + Left -> 90
     return 0.0f;
+}
+
+void PlayerActionView::DrawActionCircle(const Vector3& center, float radius, const Color& color) {
+    if (!m_ringRenderer) return;
+    if (!m_fxShader) m_fxShader = MeshManager::GetShader<CShader>("fxshader");
+    if (!m_fxShader) return;
+
+    // 平面（白テクスチャ＋αで形状表現）を直径ぶんスケール、中心へ、地面から浮かせる
+    Vector3 p = center;
+    p.y = ZFight::RangePanel;
+    Matrix4x4 world = Matrix4x4::CreateScale(radius * 2.0f, 1.0f, radius * 2.0f)
+        * Matrix4x4::CreateTranslation(p);
+
+    m_fxShader->SetGPU();
+    Renderer::SetBlendState(BS_ALPHABLEND);   // αグラデ表現なので加算ではなく半透明合成
+    Renderer::DisableCulling(false);
+    Renderer::SetDepthReadOnly();
+    Renderer::SetWorldMatrix(&world);
+
+    // 白テクスチャ × Material.Diffuse で任意色に着色（呼び出しごとに色を差し替え）
+    if (auto* mat = m_ringRenderer->GetMaterial(0)) {
+        MATERIAL old = mat->GetData();
+        MATERIAL tmp = old;
+        tmp.Diffuse = color;
+        tmp.TextureEnable = TRUE;   // 白αテクスチャをサンプル
+        mat->SetMaterial(tmp);
+        m_ringRenderer->Draw();
+        mat->SetMaterial(old);      // 共有 mesh を汚さないよう復元
+    }
+
+    Renderer::SetDepthEnable(true);
+    Renderer::DisableCulling(true);
+    Renderer::SetBlendState(BS_NONE);
+}
+
+void PlayerActionView::DrawActionCircleLine(const Vector3& center, float radius, const Color& color) {
+    if (!m_ringLineRenderer) return;
+    if (!m_fxShader) m_fxShader = MeshManager::GetShader<CShader>("fxshader");
+    if (!m_fxShader) return;
+
+    Vector3 p = center;
+    p.y = ZFight::RangePanel + 0.002f;   // 塗り環より少し上に重ねる（z-fight回避）
+    const float LINE_FIT = 0.99f;
+    Matrix4x4 world = Matrix4x4::CreateScale(radius * LINE_FIT, 1.0f, radius * LINE_FIT)
+        * Matrix4x4::CreateTranslation(p);
+
+    m_fxShader->SetGPU();
+    Renderer::SetBlendState(BS_ALPHABLEND);   // 高輝度の発光ライン
+    Renderer::DisableCulling(false);
+    Renderer::SetDepthReadOnly();
+    Renderer::SetWorldMatrix(&world);
+
+    if (auto* mat = m_ringLineRenderer->GetMaterial(0)) {
+        MATERIAL old = mat->GetData();
+        MATERIAL tmp = old;
+        tmp.Diffuse = color;
+        tmp.TextureEnable = FALSE;   // 純色（Material.Diffuse をそのまま出力）
+        mat->SetMaterial(tmp);
+        m_ringLineRenderer->Draw();
+        mat->SetMaterial(old);
+    }
+
+    Renderer::SetDepthEnable(true);
+    Renderer::DisableCulling(true);
+    Renderer::SetBlendState(BS_NONE);
 }

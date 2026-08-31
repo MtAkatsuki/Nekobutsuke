@@ -97,7 +97,12 @@ private:
     void HandleMoveInput(float dt);
     // 攻撃方向選択中の入力処理。方向変更・カメラ追従・確定を行う
     void HandleAttackDirInput(float dt);
-
+    // FREE_MOVE：連続ドライブの入力処理（移動・攻撃入口・ターン終了）
+    void HandleFreeMove(float dt);
+    // 移動を 1 フレーム進める（壁衝突＋行動円クランプ＋連続 yaw）。動いたら true
+    bool DriveContinuous(const Vector3& worldDir, float dt);
+    // pos を行動円（中心 m_moveStartPos・半径 m_actionRadius）内へ丸めた位置を返す
+    Vector3 ClampToActionCircle(const Vector3& pos) const;
 
     // --- ユーティリティ (Utilities) ---
     // 移動アニメーションを 1 フレーム進める（完了で true）
@@ -128,6 +133,8 @@ private:
     std::vector<Tile*> m_moveRangeTiles;
     std::vector<Tile*> m_currentPath;
     int m_pathAnimIndex = 0;
+    float   m_actionRadius = 4.0f;   // 行動可能円の半径（＝移動力パラメータ）
+    Vector3 m_moveStartPos;          // 行動円の中心（ターン開始位置）
 
     // --- 戦闘・攻撃 ---
     AttackType m_selectedAttackType = AttackType::Normal;

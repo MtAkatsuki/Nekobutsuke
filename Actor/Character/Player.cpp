@@ -20,7 +20,7 @@ namespace {
 	// バランス・演出用の定数
 	const int INITIAL_HP = 4;
 	const int INITIAL_MOVE_POINTS = 4;
-	const float MOVE_SPEED = 10.0f;        // タイル間移動速度
+	const float MOVE_SPEED = 5.0f;        // タイル間移動速度
 	const int ATTACK_RANGE = 1;            // 攻撃距離
 
 	// 描画関連の定数
@@ -93,7 +93,7 @@ void Player::Update(float deltaSeconds) {
 			if (cam->GetViewMode() == ViewMode::Battle && !cam->IsAtTarget()) return;
 		}
 		m_isWaitingTurnStart = false;
-		SwitchToMenuMain();
+		m_state = PlayerState::FREE_MOVE;   // メニューを廃し、直接ドライブ状態へ
 	}
 
 	// UIアニメーション終了後、最初のUpdateにてカメラのズームイン（接近）を開始
@@ -118,6 +118,9 @@ void Player::Update(float deltaSeconds) {
 
 	//プレーヤーの状態に応じた更新
 	switch (m_state) {
+	case PlayerState::FREE_MOVE:
+		HandleFreeMove(deltaSeconds);
+		break;
 	case PlayerState::MENU_MAIN:
 		HandleMenuInput();
 		break;
@@ -259,6 +262,8 @@ void Player::StartTurn() {
 	m_previewGridX = m_gridX;
 	m_previewGridZ = m_gridZ;
 
+	m_moveStartPos = m_srt.pos;   // 行動円の中心をターン開始位置に固定
+
 	m_state = PlayerState::WAITING;
 	m_isWaitingTurnStart = true;
 }
@@ -303,6 +308,14 @@ void Player::OnTurnChanged(TurnState state) {
 
 void Player::OnDrawFloorUI(float /*deltaSeconds*/) {
 	if (m_playerShader != nullptr) m_playerShader->SetGPU();
+
+	// 三人称：行動範囲の発光リング（FREE_MOVE 中は常時表示）
+	if (m_state == PlayerState::FREE_MOVE) {
+		// 塗り環：暗めの半透明シアングリーン
+		m_actionView->DrawActionCircle(m_moveStartPos, m_actionRadius, Color(0.15f, 0.75f, 0.55f, 0.6f));
+		// ライン：明るいシアン
+		m_actionView->DrawActionCircleLine(m_moveStartPos, m_actionRadius, Color(0.35f, 1.0f, 0.85f, 1.0f));
+	}
 
 	if (m_state == PlayerState::MOVE_SELECT) {
 		m_actionView->DrawMoveRange(m_moveRangeTiles);
@@ -584,6 +597,52 @@ void Player::HandleAttackDirInput(float dt) {
 	}
 }
 
+void Player::HandleFreeMove(float dt) {
+	// ESC：ターン終了
+	if (m_currentCmd.endTurn) { EndTurn(); return; }
+
+	// 右クリック：攻撃モードへ（攻撃大ブロックで実装。今は入口のみ）
+	// if (m_currentCmd.aimToggle) { EnterAim(); return; }
+
+	// WASD 連続ドライブ
+	Vector3 dir(m_currentCmd.moveX, 0.0f, m_currentCmd.moveZ);
+	if (DriveContinuous(dir, dt)) {
+		// カメラ追従：注視点を自機へ
+		if (m_context && m_context->GetCamera())
+			m_context->GetCamera()->UpdateTrackingTarget(m_srt.pos);
+	}
+	UpdateWorldMatrix();
+}
+
+bool Player::DriveContinuous(const Vector3& worldDir, float dt) {
+	if (worldDir.LengthSquared() < 0.0001f) return false;
+
+	// ① 素の移動
+	Vector3 newPos = m_srt.pos + worldDir * (m_moveSpeed * dt);
+	// ② 壁との衝突解決（円 vs 近傍セル AABB の押し出し）
+	newPos = GetMap()->ResolveCircleCollision(newPos, m_bodyRadius);
+	// ③ 行動円クランプ（消費なし・毎回ここで丸める）
+	newPos = ClampToActionCircle(newPos);
+
+	m_srt.pos = newPos;
+
+	// ④ 連続 yaw：進行方向へ滑らかに向く（atan2(x, z) は SetFacing と同じ規約）
+	SetFacingYaw(atan2f(worldDir.x, worldDir.z));
+	return true;
+}
+
+Vector3 Player::ClampToActionCircle(const Vector3& pos) const {
+	Vector3 d = pos - m_moveStartPos;
+	d.y = 0.0f;
+	float dist = d.Length();
+	if (dist > m_actionRadius && dist > 0.0001f) {
+		d *= (m_actionRadius / dist);           // 円周上へ投影
+		Vector3 r = m_moveStartPos + d;
+		r.y = pos.y;                            // 高さは元のまま
+		return r;
+	}
+	return pos;
+}
 
 bool Player::UpdatePathMovement(float dt) {
 	if (m_currentPath.empty()) return true; //パスは空なら終了

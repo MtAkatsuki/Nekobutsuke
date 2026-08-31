@@ -3,6 +3,7 @@
 #include <vector>
 #include "../../System/CommonTypes.h"   // Vector3 / Matrix4x4 / Color
 #include "../../Types/Direction.h"     // Direction
+#include "../../System/CShader.h"
 
 class GameContext;
 class CStaticMeshRenderer;
@@ -35,6 +36,10 @@ public:
     // 攻撃対象のノックバックプレビュー（最前面表示）
     void DrawAttackWarningOverlay(int gridX, int gridZ, Direction attackDir, bool isPush, Unit* self);
 
+    // 行動範囲の発光リングを地面に描画（中心・半径）
+    void DrawActionCircle(const Vector3& center, float radius, const Color& color);
+    void DrawActionCircleLine(const Vector3& center, float radius, const Color& color);
+
 private:
     float CalculateLineRotation(int dx, int dz);
     float CalculateCornerRotation(int dx1, int dz1, int dx2, int dz2);
@@ -42,4 +47,7 @@ private:
     GameContext* m_context = nullptr;   // 非所有（マップ座標変換に使用）
     CStaticMeshRenderer* m_pathLineRenderer = nullptr;
     CStaticMeshRenderer* m_pathCornerRenderer = nullptr;
+    CStaticMeshRenderer* m_ringRenderer = nullptr;    // プロシージャル生成の円環（アニュラス）
+    CShader* m_fxShader = nullptr; // 無光照シェーダ（発光リング用）
+    CStaticMeshRenderer* m_ringLineRenderer = nullptr;
 };
