@@ -42,6 +42,7 @@ namespace {
 		{ "ATTACK_ZOOM_LEAD",     &Camera::ATTACK_ZOOM_LEAD },
 		{ "KILLCAM_PITCH_LIFT",   &Camera::KILLCAM_PITCH_LIFT },
 		{ "CAMERA_LERP_SPEED",      &Camera::CAMERA_LERP_SPEED },
+		{ "LOOKAT_LERP_SPEED",    &Camera::LOOKAT_LERP_SPEED },
 		{ "KILLCAM_FOLLOW_WEIGHT",  &Camera::KILLCAM_FOLLOW_WEIGHT },
 		{ "KILLCAM_FOLLOW_MAX_Y",   &Camera::KILLCAM_FOLLOW_MAX_Y },
 		{ "KILLCAM_FOLLOW_MIN_Y",   &Camera::KILLCAM_FOLLOW_MIN_Y },
@@ -123,16 +124,20 @@ void Camera::Update(float dt) {
 	const float lerpSpeed = m_cineReturning ? CINE_RETURN_LERP_SPEED : CAMERA_LERP_SPEED;
 	float t = 1.0f - std::expf(-lerpSpeed * dt);
 
+	// 注視点だけ独立の（速い）追従で、玩家との滞後距離を縮める。
+	// 演出復帰中(cineReturning)は従来どおり遅い t を使い、ゆっくり戻す。
+	float tLook = m_cineReturning ? t : (1.0f - std::expf(-LOOKAT_LERP_SPEED * dt));
+
 	auto LerpFunc = [&](float& current, float target) {
 		current += (target - current) * t;
 		};
 
 	// 2. 目標パラメータへの追従
 
-	// 線形補間（Lerp）：a + (b - a) * t
-	LerpFunc(m_lookat.x, m_targetLookAt.x);
-	LerpFunc(m_lookat.y, m_targetLookAt.y);
-	LerpFunc(m_lookat.z, m_targetLookAt.z);
+	// 注視点は tLook（密着）
+	m_lookat.x += (m_targetLookAt.x - m_lookat.x) * tLook;
+	m_lookat.y += (m_targetLookAt.y - m_lookat.y) * tLook;
+	m_lookat.z += (m_targetLookAt.z - m_lookat.z) * tLook;
 
 	LerpFunc(m_radius, m_targetRadius);
 	LerpFunc(m_azimuth, m_targetAzimuth);

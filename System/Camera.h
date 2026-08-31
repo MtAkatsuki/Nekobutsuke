@@ -191,7 +191,7 @@ public:
     static constexpr float TUTORIAL_RADIUS = 45.0f;
     static inline float BASE_RADIUS = 30.0f;
     static constexpr float TARGET_FOCUS_RADIUS = 17.0f;
-    static inline float CAMERA_LERP_SPEED = 5.0f;
+    static inline float CAMERA_LERP_SPEED = 10.0f;
 
     static constexpr float SCENE_CENTER_X = 0.0f;
     static constexpr float SCENE_CENTER_Y = 0.0f;
@@ -241,6 +241,7 @@ public:
     static inline float PLAYER_FADE_START = 3.0f;  // この距離より近づくとプレイヤーのフェードアウトを開始
     static inline float PLAYER_FADE_FULL = 1.2f;  // この距離より近づくとプレイヤーを完全に非表示
     static inline float CAMERA_MIN_HEIGHT = 0.3f;  // カメラの最低高度（床との衝突を防ぎ、仰角を下げても地面を貫通しない）
+    static inline float LOOKAT_LERP_SPEED = 12.0f;  // 注視点だけの追従速度（大きいほど玩家に密着＝滞後が小さい）
 
     // 敵観察時の構図（プレイヤーに対するカメラ位置を調整可能）
     static inline float ENEMY_WATCH_BACK = 3.0f;   // カメラをプレイヤーの背後に配置する距離

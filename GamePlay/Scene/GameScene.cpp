@@ -529,7 +529,7 @@ void GameScene::UpdateCameraFocus(float deltaSeconds)
 				float dx = (float)in.GetMouseMoveX();
 				float dy = (float)in.GetMouseMoveY();
 				if (dx != 0.0f || dy != 0.0f)
-					m_camera->OrbitByMouse(dx * Camera::MOUSE_ORBIT_SENS_X, dy * Camera::MOUSE_ORBIT_SENS_Y);
+					m_camera->OrbitByMouse(-dx * Camera::MOUSE_ORBIT_SENS_X, dy * Camera::MOUSE_ORBIT_SENS_Y);
 			}
 
 			// 接近によるフェード

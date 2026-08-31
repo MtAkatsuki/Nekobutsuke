@@ -107,6 +107,7 @@ void GameSceneDebugUI::DrawViewModePanel() {
         ImGui::Separator();
         ImGui::SliderFloat("Player Fade Start", &Camera::PLAYER_FADE_START, 0.5f, 6.0f, "%.2f");
         ImGui::SliderFloat("Player Fade Full", &Camera::PLAYER_FADE_FULL, 0.2f, 4.0f, "%.2f");
+        ImGui::SliderFloat("LookAt Lerp", &Camera::LOOKAT_LERP_SPEED, 1.0f, 25.0f, "%.1f");
         if (m_scene.m_player)
             ImGui::Text("Player Fade: %.2f", m_scene.m_player->GetFade());
         if (cam) ImGui::Text("Effective Dist: %.2f", cam->GetEffectiveDistance());
