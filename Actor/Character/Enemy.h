@@ -39,7 +39,6 @@ public:
     // 敵の行動を開始。蓄力中なら突進を解放し、そうでなければ AI を実行する
     void EnemyStartAction();
     virtual void OnTurnChanged(TurnState state) override;
-    virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
     virtual void TakeDamage(int damage, Unit* attacker) override;
 
     // ---------------------------------------------------------
@@ -76,6 +75,10 @@ protected:
 
     virtual void OnDrawOverlay(float deltaSeconds) override;
     virtual void OnDrawFloorUI(float deltaSeconds) override;
+
+    bool CanBePushed() const override { return m_currentHP > 0 && m_state != EnemyState::DEAD_FLYING; }
+    void OnKnockbackBegin() override;
+    void OnKnockbackEnd() override;
 
 private:
     void Init();
@@ -136,4 +139,7 @@ private:
     bool m_isCharging = false;
     bool m_pendingCharge = false;
     Vector3 m_shakeOffset = Vector3(0, 0, 0); // 蓄力中の震え。m_srt.pos を汚さず描画時のみ加算する
+
+    // --- ノックバック ---
+    int m_kbOldX = 0, m_kbOldZ = 0;
 };

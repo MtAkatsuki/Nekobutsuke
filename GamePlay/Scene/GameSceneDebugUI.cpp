@@ -37,6 +37,7 @@ void GameSceneDebugUI::Draw() {
     ImGui::Checkbox("F7  Rendering", &m_showRendering);
     ImGui::Checkbox("F8  FX", &m_showFx);
     ImGui::Checkbox("F9  Debug Actions", &m_showDebugActions);
+    ImGui::Checkbox("Ignore Mouse Look (F10)", &Camera::s_ignoreMouseLook);
     ImGui::Separator();
     ImGui::TextDisabled("F2: toggle Player <-> Strategy");
     ImGui::End();
@@ -105,9 +106,14 @@ void GameSceneDebugUI::DrawViewModePanel() {
         ImGui::SliderFloat("Elev Max", &Camera::ORBIT_ELEV_MAX, -1.0f, -0.1f, "%.3f");
         ImGui::SliderFloat("Camera Min Height", &Camera::CAMERA_MIN_HEIGHT, 0.0f, 2.0f, "%.2f");
         ImGui::Separator();
+        ImGui::SliderFloat("Battle Radius (distance)", &Camera::BATTLE_RADIUS, 2.0f, 20.0f, "%.1f");
+        ImGui::SliderFloat("Battle FOV", &Camera::BATTLE_FOV, 20.0f, 70.0f, "%.1f");
         ImGui::SliderFloat("Player Fade Start", &Camera::PLAYER_FADE_START, 0.5f, 6.0f, "%.2f");
         ImGui::SliderFloat("Player Fade Full", &Camera::PLAYER_FADE_FULL, 0.2f, 4.0f, "%.2f");
         ImGui::SliderFloat("LookAt Lerp", &Camera::LOOKAT_LERP_SPEED, 1.0f, 25.0f, "%.1f");
+        ImGui::SliderFloat("Aim Orbit Max Az", &Camera::AIM_ORBIT_MAX_AZ, 0.0f, 1.5f, "%.2f");
+        ImGui::SliderFloat("Aim Orbit Max El", &Camera::AIM_ORBIT_MAX_EL, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Aim Return Delay", &Camera::AIM_ORBIT_RETURN_DELAY, 0.0f, 3.0f, "%.2f");
         if (m_scene.m_player)
             ImGui::Text("Player Fade: %.2f", m_scene.m_player->GetFade());
         if (cam) ImGui::Text("Effective Dist: %.2f", cam->GetEffectiveDistance());

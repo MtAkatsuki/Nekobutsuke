@@ -190,31 +190,6 @@ void Enemy::Update(float deltaSeconds) {
 		break;
 
 	case EnemyState::KNOCKBACK:
-		if (m_slideEndPos.LengthSquared() > 0.001f) {
-			if (UpdateSlideAnimation(deltaSeconds)) {
-				m_state = EnemyState::IDLE;
-				m_slideEndPos = Vector3(0, 0, 0);
-				if (m_currentHP <= 0) {
-					// 死亡して吹き飛ぶ演出へ移行。罠のトリガーロジックは完全にスキップ！
-					Die();
-				}
-				else {
-					m_state = EnemyState::IDLE;
-					// 生存している場合のみ、タイルのイベント（罠など）を発生させる
-					Tile* currentTile = GetMap()->GetTile(m_gridX, m_gridZ);
-					if (currentTile && currentTile->structure) {
-						currentTile->structure->OnEnter(this);
-					}
-				}
-			}
-		}
-		else {
-			if (UpdateAttackAnimation(deltaSeconds, nullptr)) {
-				// 壁に激突した後も生死判定を行い、HPが0なら死亡処理を実行する
-				if (m_currentHP <= 0) Die();
-				else m_state = EnemyState::IDLE;// 生き残っている場合のみIDLEへ
-			}
-		}
 		break;
 	default:break;
 	}
@@ -294,24 +269,16 @@ void Enemy::OnTurnChanged(TurnState state) {
 	if (state == TurnState::EnemyPhase) StartTurn();
 }
 
-void Enemy::OnPushed(Direction pushDir, Unit* attacker) {
-	if (m_currentHP <= 0 || m_state == EnemyState::DEAD_FLYING) return;
-
-	if (attacker) m_hitSourcePos = attacker->GetSRT().pos;
-
+void Enemy::OnKnockbackBegin() {
 	m_state = EnemyState::KNOCKBACK;
-	int oldX = m_gridX;
-	int oldZ = m_gridZ;
-
-	Unit::OnPushed(pushDir);
-
-	// 実際に位置が変化した（壁に衝突しなかった）場合のみ、ロックオン座標をスライドさせる
-	if (m_gridX != oldX || m_gridZ != oldZ) {
-		if (m_isCharging) {
-			// 移動量（新位置 - 旧位置）を現在のロックオン座標に加算
-			m_lockedGridX += (m_gridX - oldX);
-			m_lockedGridZ += (m_gridZ - oldZ);
-		}
+	m_kbOldX = m_gridX; m_kbOldZ = m_gridZ;
+}
+void Enemy::OnKnockbackEnd() {
+	if (m_currentHP <= 0) { Die(); return; }   // 滑り終わってから死亡演出へ
+	m_state = EnemyState::IDLE;
+	if (m_isCharging && (m_gridX != m_kbOldX || m_gridZ != m_kbOldZ)) {
+		m_lockedGridX += (m_gridX - m_kbOldX);   // charge ロック座標を移動量ぶん追随
+		m_lockedGridZ += (m_gridZ - m_kbOldZ);
 	}
 }
 
@@ -555,13 +522,8 @@ void Enemy::OnDrawFloorUI(float /*deltaSeconds*/) {
 		GetMap()->DrawColoredTiles(m_moveRangeTiles, MOVE_RANGE_COLOR);
 	}
 
-	// 敵がチャージ中の場合、ターゲットとなる床を赤くハイライトする
-	if (m_isCharging && m_context && GetMap()) {
-		Tile* targetTile = GetMap()->GetTile(m_lockedGridX, m_lockedGridZ);
-		if (targetTile) {
-			std::vector<Tile*> dangerTiles = { targetTile };
-			GetMap()->DrawColoredTiles(dangerTiles, DANGER_TILE_COLOR);
-		}
+	if (m_isCharging ) {
+		DrawPushForecast(lockedVictim); 
 	}
 }
 

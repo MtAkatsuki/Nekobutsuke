@@ -10,6 +10,7 @@
 #include "../../GamePlay/Manager/TurnManager.h"
 #include "../../Types/PlayerState.h"
 #include "../../Types/AttackType.h"
+#include "../../System/collision.h"
 
 class MapManager;
 class Enemy;
@@ -48,7 +49,6 @@ public:
     // ---------------------------------------------------------
     // 勝利演出（ジャンプ）を開始する
     void StartCelebration();
-    virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
     virtual void SetPreviewDamage(int dmg) override;
     virtual void OnDeathFlyComplete() override;
     // 外部からコマンドを注入し、入力処理とゲームロジックを分離
@@ -58,6 +58,9 @@ public:
 	// Debug / テスト用 (Debug / Testing)
     // ---------------------------------------------------------
     void DebugForceAttack(Direction dir, AttackType type = AttackType::Push);
+
+
+    virtual void DrawUI() override;   // 玩家HP + 攻撃モードのロックHUD
 
 protected:
     using Unit::Unit;
@@ -71,6 +74,9 @@ protected:
     virtual void OnDrawFloorUI(float deltaSeconds) override;
     virtual void OnDrawTransparent(float deltaSeconds) override;
     virtual void OnDrawOverlay(float deltaSeconds) override;
+
+    void OnKnockbackBegin() override;
+    void OnKnockbackEnd() override;
 
 private:
     void Init();
@@ -112,6 +118,16 @@ private:
     // 勝利ジャンプ演出を更新する
     void UpdateCelebration(float dt);
 
+    // 攻撃モード
+    void EnterAim();                 // 右クリックで進入：最寄り敵をロック＋構図
+    void ExitAim();                  // 右クリックで退出：FREE_MOVE へ戻す
+    void HandleAim(float dt);        // AIM 中：移動可・QE切替・構図追従・確定
+    void SelectNearestEnemy();       // 最寄りの攻撃可能な敵を m_aimTarget に
+    void CycleTarget(int step);      // Q(-1)/E(+1) でロック対象を切替
+    void GetAimBox(Vector3& center, float& yaw) const;  // 予警区の中心・向きを算出（判定と描画で共用）
+    bool IsAimHit() const;                              // 予警区(OBB) ∩ 敵受击円(sphere)
+    void DrawAimHUD();   // 敵両脇のロック箭头 + 赤X（2Dスクリーン）
+
     // =========================================================
     // メンバー変数
     // =========================================================
@@ -135,6 +151,7 @@ private:
     int m_pathAnimIndex = 0;
     float   m_actionRadius = 4.0f;   // 行動可能円の半径（＝移動力パラメータ）
     Vector3 m_moveStartPos;          // 行動円の中心（ターン開始位置）
+    void SyncGridFromWorld();   // 連続移動中、論理格 m_gridX/Z を現在位置から更新（発火しない）
 
     // --- 戦闘・攻撃 ---
     AttackType m_selectedAttackType = AttackType::Normal;
@@ -142,13 +159,18 @@ private:
     int m_playerDamage = 1;
     bool m_canAttack = false;
     float m_attackWindupTimer = 0.0f;
+    class Unit* m_aimTarget = nullptr;   // 現在ロックしている敵
+    bool m_canAimHit = false;   // 予警区が敵の受击円と重なっているか
+    Vector3 m_attackPushDir;
 
     // --- フラグ ---
     bool m_hasMoved = false;
     bool m_isZoomedIn = false;
     bool m_isWaitingTurnStart = false;
-    bool  m_attackIsLethal = false;
-    bool  m_isDebugAttack = false;
+    bool m_attackIsLethal = false;
+    bool m_isDebugAttack = false;
+    bool m_killedByHazard = false;   // 直近の致死が無攻撃者（罠など）か
+    float m_deathFlyDelay = 0.0f;
 
     // --- 勝利演出 ---
     int m_jumpCount = 0;
@@ -157,4 +179,7 @@ private:
 
     // --- 描画用 ---
     std::unique_ptr<PlayerActionView> m_actionView;
+    std::unique_ptr<CSprite> m_aimArrowSprite;   // ロック箭头（敵両脇）
+    std::unique_ptr<CSprite> m_aimCrossSprite;   // 攻撃不可の赤X
+    float m_aimArrowAnimTimer = 0.0f;            // 箭头の弾動アニメ用
 };

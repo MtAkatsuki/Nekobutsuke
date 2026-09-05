@@ -594,3 +594,21 @@ Vector3 MapManager::ResolveCircleCollision(const Vector3& center, float radius) 
 	}
 	return c;
 }
+
+bool MapManager::CircleHitsWall(const Vector3& center, float radius) const {
+	using namespace GM31::GE::Collision;
+	int gx, gz;
+	WorldToGrid(center, gx, gz);
+	for (int dz = -1; dz <= 1; ++dz) {
+		for (int dx = -1; dx <= 1; ++dx) {
+			int tx = gx + dx, tz = gz + dz;
+			if (!IsBlockedForCollision(tx, tz)) continue;
+			Vector3 wc = GetWorldPosition(tx, tz);
+			BoundingBoxAABB box;
+			box.min = Vector3(wc.x - m_tileSize * 0.5f, center.y - 1000.0f, wc.z - m_tileSize * 0.5f);
+			box.max = Vector3(wc.x + m_tileSize * 0.5f, center.y + 1000.0f, wc.z + m_tileSize * 0.5f);
+			if (CollisionSphereAABB(BoundingSphere{ center, radius }, box)) return true;
+		}
+	}
+	return false;
+}

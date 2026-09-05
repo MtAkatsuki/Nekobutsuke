@@ -71,6 +71,9 @@ public:
 	// 円（半径 radius・中心 center）を近傍セルの壁 AABB から押し出した補正位置を返す
 	Vector3 ResolveCircleCollision(const Vector3& center, float radius) const;
 
+	// 円（center・radius）が近傍セルの壁 AABB に食い込むか
+	bool CircleHitsWall(const Vector3& center, float radius) const;
+
 	// ---------------------------------------------------------
 	// アルゴリズム・経路探索
 	// ---------------------------------------------------------

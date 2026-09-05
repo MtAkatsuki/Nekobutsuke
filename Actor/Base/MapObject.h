@@ -47,13 +47,13 @@ public:
 	int GetGridZ() const { return m_gridZ; }
 
 	// 遮蔽フェード（ディザ）：カメラと本体の間に遮蔽物がある場合、目標 fade → 1。遮蔽物がない場合、目標 fade → 0
-	void  SetOccluded(bool occluded) { m_targetFade = occluded ? 1.0f : 0.0f; }
+	void SetOccluded(bool occluded) { m_targetFade = occluded ? s_occludedFadeMax : 0.0f; }
 	float GetFade() const { return m_fade; }
 
 protected:
 	void ApplyFadeToMaterials(float fade); // Dummy.x に設定（ToonPS のディザリングクリップで参照）
 	void UpdateFade(float dt);              // m_targetFade に向けて滑らかに遷移
-
+	
 protected:
 	CStaticMeshRenderer* m_renderer = nullptr;
 	MapModelType m_type = MapModelType::FLOOR;
@@ -73,5 +73,6 @@ protected:
 	float m_fade = 0.0f;
 	float m_targetFade = 0.0f;
 	static inline float FADE_LERP_SPEED = 10.0f; // 遮蔽フェードの遷移速度
+	static inline float s_occludedFadeMax = 0.7f;   // 遮蔽時の最大fade（1.0未満＝最も近くても一部残す）
 
 };

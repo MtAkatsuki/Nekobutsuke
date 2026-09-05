@@ -64,6 +64,9 @@ namespace {
 		{ "PLAYER_FADE_FULL",  &Camera::PLAYER_FADE_FULL },
 		{ "ENEMY_WATCH_BACK",     &Camera::ENEMY_WATCH_BACK },
 		{ "ENEMY_WATCH_SHOULDER", &Camera::ENEMY_WATCH_SHOULDER },
+		{ "AIM_ORBIT_MAX_AZ",        &Camera::AIM_ORBIT_MAX_AZ },
+		{ "AIM_ORBIT_MAX_EL",        &Camera::AIM_ORBIT_MAX_EL },
+		{ "AIM_ORBIT_RETURN_DELAY",  &Camera::AIM_ORBIT_RETURN_DELAY },
 	};
 
 	float UnwrapNear(float ref, float angle) {
@@ -124,9 +127,12 @@ void Camera::Update(float dt) {
 	const float lerpSpeed = m_cineReturning ? CINE_RETURN_LERP_SPEED : CAMERA_LERP_SPEED;
 	float t = 1.0f - std::expf(-lerpSpeed * dt);
 
-	// 注視点だけ独立の（速い）追従で、玩家との滞後距離を縮める。
-	// 演出復帰中(cineReturning)は従来どおり遅い t を使い、ゆっくり戻す。
-	float tLook = m_cineReturning ? t : (1.0f - std::expf(-LOOKAT_LERP_SPEED * dt));
+	// 注視点の高速追従は「第三人称の実時間追従(Battle+Tracking)」時のみ。
+	// 戦略へ戻る/居中などの転場は通常速度(CAMERA_LERP_SPEED)でゆっくり。
+	bool tpsFollow = (m_viewMode == ViewMode::Battle
+		&& m_state == CameraState::Tracking
+		&& !m_cineReturning);
+	float tLook = tpsFollow ? (1.0f - std::expf(-LOOKAT_LERP_SPEED * dt)) : t;
 
 	auto LerpFunc = [&](float& current, float target) {
 		current += (target - current) * t;
@@ -475,6 +481,57 @@ void Camera::FrameEnemyFromPlayer(const Vector3& playerPos, const Vector3& enemy
 	// また、水平距離 = radius * |sin(elev)|
 	float sinE = fabsf(sinf(m_targetElevation));
 	if (sinE < 0.2f) sinE = 0.2f;            // 仰角が水平に近い場合の半径の発散を防止
+	m_targetRadius = (dist + ENEMY_WATCH_BACK) / sinE;
+}
+
+void Camera::BeginAimFollow() {
+	m_aimOrbitOffsetAz = 0.0f;
+	m_aimOrbitOffsetEl = 0.0f;
+	m_aimIdleTimer = 0.0f;
+}
+
+void Camera::AimFollow(const Vector3& playerPos, const Vector3& enemyPos,
+	float mouseDx, float mouseDy, float dt) {
+	if (IsCinematic()) return;
+	m_viewMode = ViewMode::Battle;
+	m_state = CameraState::Tracking;
+
+	// --- アンカー：FrameEnemyFromPlayer と同じ「敵中央・玩家背後」の構図 ---
+	SetTargetLookAt(enemyPos);
+	float dx = enemyPos.x - playerPos.x;
+	float dz = enemyPos.z - playerPos.z;
+	float dist = sqrtf(dx * dx + dz * dz);
+	float anchorAz = atan2f(dz, dx) + ENEMY_WATCH_SHOULDER;
+	float anchorEl = BATTLE_ELEVATION;
+
+	// --- マウスによる受限オフセット ---
+	bool hasInput = (mouseDx != 0.0f || mouseDy != 0.0f);
+	if (hasInput) {
+		// 左へ動かす→右回り（FREE_MOVE と反転を揃える）。感度は既存 SENS を流用
+		m_aimOrbitOffsetAz = std::clamp(m_aimOrbitOffsetAz - mouseDx * MOUSE_ORBIT_SENS_X,
+			-AIM_ORBIT_MAX_AZ, AIM_ORBIT_MAX_AZ);
+		m_aimOrbitOffsetEl = std::clamp(m_aimOrbitOffsetEl + mouseDy * MOUSE_ORBIT_SENS_Y,
+			-AIM_ORBIT_MAX_EL, AIM_ORBIT_MAX_EL);
+		m_aimIdleTimer = 0.0f;
+	}
+	else {
+		// マウス静止：一定時間後、オフセットを 0 へ滑らかに戻す（帰位）
+		m_aimIdleTimer += dt;
+		if (m_aimIdleTimer >= AIM_ORBIT_RETURN_DELAY) {
+			float t = 1.0f - std::expf(-CAMERA_LERP_SPEED * dt);
+			m_aimOrbitOffsetAz += (0.0f - m_aimOrbitOffsetAz) * t;
+			m_aimOrbitOffsetEl += (0.0f - m_aimOrbitOffsetEl) * t;
+		}
+	}
+
+	// --- 最終ターゲット = アンカー + オフセット ---
+	m_targetAzimuth = UnwrapNear(m_targetAzimuth, anchorAz + m_aimOrbitOffsetAz);
+	m_targetElevation = std::clamp(anchorEl + m_aimOrbitOffsetEl, ORBIT_ELEV_MIN, ORBIT_ELEV_MAX);
+	m_targetFov = BATTLE_FOV;
+
+	// 半径：FrameEnemyFromPlayer と同じ「距離＋背後オフセット」換算
+	float sinE = fabsf(sinf(m_targetElevation));
+	if (sinE < 0.2f) sinE = 0.2f;
 	m_targetRadius = (dist + ENEMY_WATCH_BACK) / sinE;
 }
 

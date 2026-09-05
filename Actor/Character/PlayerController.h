@@ -18,7 +18,7 @@ struct PlayerCommand {
     bool endTurn = false; // ESC：ターン終了
 
     float aimYawDelta = 0.0f;  // 攻撃モード中の照準回転用：マウス水平移動量（生値・感度は消費側で掛ける）
-
+    float aimPitchDelta = 0.0f;  // 攻撃モードの上下視点用：マウス垂直移動量（生値）
     // ===== 旧（メニュー式）：Player 状態機の書き換え時に撤去予定 =====
     bool menuMove = false;
     bool menuAttack = false;
@@ -36,4 +36,5 @@ public:
 
 private:
     GameContext* m_context;
+
 };

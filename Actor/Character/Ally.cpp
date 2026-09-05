@@ -128,30 +128,6 @@ void Ally::Update(float deltaSeconds) {
     if (m_isTurning) { UpdateWorldMatrix(); return; }
 
 
-    // ノックバック中のスライディング更新（優先）
-    if (m_isKnockedBack) {
-        if (m_slideEndPos.LengthSquared() > 0.001f) {
-            if (UpdateSlideAnimation(deltaSeconds)) {
-                m_isKnockedBack = false;
-                m_slideEndPos = Vector3(0, 0, 0);
-
-                // 押し出された先のタイルにギミック（罠など）があるかチェック
-                Tile* currentTile = GetMap()->GetTile(m_gridX, m_gridZ);
-                if (currentTile && currentTile->structure) {
-                    DBG_TRACE("[Ally] Knocked into an event/trap!");
-                    currentTile->structure->OnEnter(this);
-                }
-            }
-        }
-        else {
-            // 実際の移動が発生しなかった場合（例：即座に壁に衝突したなど）
-            m_isKnockedBack = false;
-        }
-
-        UpdateWorldMatrix();
-        return;
-    }
-
     UpdateAlarmState(deltaSeconds);
     if (m_isDigging) { UpdateDiggingAnimation(deltaSeconds); }
     UpdateWorldMatrix();
@@ -236,13 +212,6 @@ void Ally::OnTurnChanged(TurnState state) {
     if (state == TurnState::PlayerPhase) {
         StartTurn();
     }
-}
-
-void Ally::OnPushed(Direction pushDir, Unit* attacker) {
-    if (IsEscaping()) return;
-
-    m_isKnockedBack = true;
-    Unit::OnPushed(pushDir);
 }
 
 void Ally::ArmEscape() {

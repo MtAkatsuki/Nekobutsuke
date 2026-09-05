@@ -10,6 +10,9 @@
 #include "../../System/RandomEngine.h"
 #include "../../System/FxTunables.h"
 #include "../../System/CMaterial.h"
+#include "../../System/collision.h"
+#include "../../GamePlay/Manager/EnemyManager.h"
+#include "../Character/Ally.h"
 
 namespace {
 	// ---------------------------------------------------------
@@ -33,6 +36,9 @@ namespace {
 	const float BLOB_SIZE = 1.2f;                // Blob影のスケール（半径）
 
 	const float FADE_LERP_SPEED = 10.0f; 
+
+	const float PUSH_DIST = 1.0f;   // 押し出し距離（1格固定）
+
 
 	// 死亡飛出
 	const float DEATH_GRAVITY = 50.0f;
@@ -83,6 +89,8 @@ void Unit::Update(float deltaSeconds) {
 		m_fade += (m_targetFade - m_fade) * t;
 		if (fabsf(m_fade - m_targetFade) < 0.001f) m_fade = m_targetFade;
 	}
+
+	if (m_isKnockback) UpdateKnockback(deltaSeconds);
 }
 
 void Unit::StartTurn() {}
@@ -160,52 +168,62 @@ int Unit::CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir
 	return expectedDamage;
 }
 
+int Unit::CalculateExpectedDamage(int baseDamage, bool isPush, const Vector3& pushDir) {
+	int expected = baseDamage;
+	if (isPush && m_context) {
+		PushResult r = SimulatePush(m_context, m_srt.pos, pushDir, PUSH_DIST,
+			GetBodyRadius(), m_onPushDamage, this);
+		expected += r.chainDamage;
+	}
+	return expected;
+}
+
 bool Unit::IsValidMoveTarget(int targetX, int targetZ) {
 	if (GetMap() == nullptr) return false;
 	return GetMap()->IsWalkable(targetX, targetZ);
 }
 
-void Unit::OnPushed(Direction pushDir, Unit* attacker) {
-	if (m_currentHP <= 0) return;
+void Unit::OnPushed(const Vector3& pushDir, Unit* attacker) {
+	if (!CanBePushed()) return;
+	if (attacker) m_hitSourcePos = attacker->GetSRT().pos;
 
-	DirOffset offset = DirOffset::From(pushDir);
-	int targetX = m_gridX + offset.x;
-	int targetZ = m_gridZ + offset.z;
+	OnKnockbackBegin();   // 派生：被击退状態＋固有処理
 
-	MapManager* map = GetMap();
-	bool isBlocked = !(map->IsWalkable(targetX, targetZ));
-	Tile* targetTile = map->GetTile(targetX, targetZ);
-
-	Unit* obstacleUnit = nullptr;
-	if (targetTile && targetTile->occupant) {
-		isBlocked = true;
-		obstacleUnit = targetTile->occupant;
-	}
-
-	if (isBlocked) {
-		// 障害物に衝突した場合の処理
-		Vector3 obstaclePos = map->GetWorldPosition(targetX, targetZ);
-		StartBumpAnimation(obstaclePos);
-
+	PushResult r = SimulatePush(m_context, m_srt.pos, pushDir, PUSH_DIST,
+		GetBodyRadius(), m_onPushDamage, this);
+	if (r.blocked) {
+		Vector3 dir = pushDir; dir.y = 0.0f;
+		if (dir.LengthSquared() > 0.0001f) dir.Normalize(); else dir = Vector3(0, 0, 1);
+		StartBumpAnimation(m_srt.pos + dir * PUSH_DIST);
+		m_slideEndPos = Vector3(0, 0, 0);       // 位移なし＝滑走なし
 		TakeDamage(m_onPushDamage, attacker);
-		if (obstacleUnit) {
-			// 連鎖衝突：ぶつかられたユニットもダメージを受ける
-			obstacleUnit->TakeDamage(m_onPushDamage, attacker);
-		}
+		if (r.hitUnit) r.hitUnit->TakeDamage(m_onPushDamage, attacker);   // 連鎖
 	}
 	else {
-		// 障害物がない場合の移動処理
-		Tile* currentTile = map->GetTile(m_gridX, m_gridZ);
-		if (currentTile) currentTile->occupant = nullptr;
-
-		m_gridX = targetX;
-		m_gridZ = targetZ;
-		if (targetTile) targetTile->occupant = this;
-
-		Vector3 targetWorldPos = map->GetWorldPosition(targetX, targetZ);
-		StartSlideAnimation(targetWorldPos);
+		if (GetMap()) { int gx, gz; if (GetMap()->WorldToGrid(r.landingPos, gx, gz)) { m_gridX = gx; m_gridZ = gz; } }
+		StartSlideAnimation(r.landingPos);
 	}
+	m_isKnockback = true;
 }
+
+void Unit::UpdateKnockback(float dt) {
+	// 撞击で即死：滑らせず終了へ（罠スキップ）。死亡演出は派生の OnKnockbackEnd→Die に任せる
+	if (m_currentHP <= 0) { m_isKnockback = false; OnKnockbackEnd(); return; }
+
+	bool done = (m_slideEndPos.LengthSquared() > 0.001f) ? UpdateSlideAnimation(dt) : true;
+	if (!done) return;
+
+	m_isKnockback = false;
+	m_slideEndPos = Vector3(0, 0, 0);
+
+	// 生存時のみ落点ギミック（罠）を発火
+	if (GetMap()) {
+		Tile* t = GetMap()->GetTile(m_gridX, m_gridZ);
+		if (t && t->structure) t->structure->OnEnter(this);
+	}
+	OnKnockbackEnd();   // 派生：通常状態へ
+}
+
 
 // ---------------------------------------------------------
 
@@ -513,11 +531,6 @@ void Unit::DrawPushPreview(Direction pushDir) {
 	}
 	Renderer::DisableCulling(true);
 
-	if (isBlocked && GetEffectManager()) {
-		Vector3 effectPos = targetPos;
-		effectPos.y += HIT_EFFECT_Y_OFFSET;
-		GetEffectManager()->DrawStaticHitPreview(effectPos);
-	}
 }
 
 void Unit::StartDeathFly() {
@@ -581,4 +594,130 @@ void Unit::UpdateDeathFly(float delta) {
 
 void Unit::OnDeathFlyComplete() {
 	Destroy();
+}
+
+Unit::PushResult Unit::SimulatePush(GameContext* ctx, const Vector3& fromPos,
+	const Vector3& pushDir, float pushDist, float victimRadius,
+	int collisionDamage, const Unit* ignoreSelf) {
+	using namespace GM31::GE::Collision;
+	PushResult r;
+
+	Vector3 dir = pushDir; dir.y = 0.0f;
+	if (dir.LengthSquared() < 0.0001f) { r.landingPos = fromPos; return r; }
+	dir.Normalize();
+	r.landingPos = fromPos + dir * pushDist;
+
+	MapManager* map = ctx ? ctx->GetMapManager() : nullptr;
+
+	// ① 壁：落点円が壁に食い込むなら反弹
+	if (map && map->CircleHitsWall(r.landingPos, victimRadius)) {
+		r.blocked = true; r.landingPos = fromPos; r.chainDamage = collisionDamage;
+		return r;
+	}
+
+	// ② ユニット：落点円が他ユニットの円と重なるなら反弹＋連鎖
+	std::vector<Unit*> units;
+	if (ctx) {
+		if (Unit* p = (Unit*)ctx->GetPlayer()) units.push_back(p);
+		if (Unit* a = (Unit*)ctx->GetAlly())   units.push_back(a);
+		if (auto* em = ctx->GetEnemyManager())
+			for (Enemy* e : em->GetAllEnemies()) if (e) units.push_back(e);
+	}
+	BoundingSphere land{ r.landingPos, victimRadius };
+	for (Unit* u : units) {
+		if (!u || u == ignoreSelf || u->IsDead()) continue;
+		BoundingSphere us{ u->GetSRT().pos, u->GetBodyRadius() };
+		if (CollisionSphere(land, us)) {
+			r.blocked = true; r.hitUnit = u; r.landingPos = fromPos;
+			r.chainDamage = collisionDamage;
+			return r;
+		}
+	}
+
+	// ③ 無阻：落点マスに未発動の罠があれば罠ダメージ
+	if (map) {
+		int gx, gz;
+		if (map->WorldToGrid(r.landingPos, gx, gz)) {
+			if (Trap* trap = Trap::GetArmedTrap(map->GetTile(gx, gz)))
+				r.chainDamage = trap->GetTrapDamage();
+		}
+	}
+	return r;
+}
+
+void Unit::DrawPushForecast(Unit* target) {
+	if (!target) return;
+	Vector3 dir = target->GetSRT().pos - m_srt.pos; dir.y = 0.0f;
+	if (dir.LengthSquared() < 0.0001f) return;
+	dir.Normalize();
+
+	PushResult r = SimulatePush(m_context, target->GetSRT().pos, dir,
+		PUSH_DIST, target->GetBodyRadius(), 0, target);
+
+	const Color col = r.blocked ? Color(1.0f, 0.3f, 0.2f, 1.0f)
+		: Color(0.4f, 1.0f, 0.5f, 1.0f);
+	Vector3 spot = r.blocked ? (target->GetSRT().pos + dir * PUSH_DIST) : r.landingPos;
+
+	DrawGroundRing(spot, 0.45f, col);
+	DrawGroundArrow(target->GetSRT().pos, spot, col);
+
+	if (r.blocked && GetEffectManager()) {
+		Vector3 fxPos = spot;
+		fxPos.y += HIT_EFFECT_Y_OFFSET;
+		GetEffectManager()->DrawStaticHitPreview(fxPos);
+	}
+}
+
+void Unit::DrawGroundRing(const Vector3& center, float radius, const Color& color) {
+	CStaticMeshRenderer* fill = MeshManager::GetRenderer<CStaticMeshRenderer>("action_ring_mesh");
+	CStaticMeshRenderer* line = MeshManager::GetRenderer<CStaticMeshRenderer>("action_ring_line_mesh");
+	CShader* fx = MeshManager::GetShader<CShader>("fxshader");
+	if (!fx) return;
+
+	auto drawOne = [&](CStaticMeshRenderer* r, float scale, const Color& c, BOOL tex) {
+		if (!r) return;
+		Vector3 p = center; p.y = ZFight::RangePanel;
+		Matrix4x4 w = Matrix4x4::CreateScale(scale, 1.0f, scale) * Matrix4x4::CreateTranslation(p);
+		fx->SetGPU();
+		Renderer::SetBlendState(BS_ALPHABLEND);
+		Renderer::DisableCulling(false);
+		Renderer::SetDepthReadOnly();
+		Renderer::SetWorldMatrix(&w);
+		if (auto* mat = r->GetMaterial(0)) {
+			MATERIAL old = mat->GetData(), tmp = old;
+			tmp.Diffuse = c; tmp.TextureEnable = tex;
+			mat->SetMaterial(tmp); r->Draw(); mat->SetMaterial(old);
+		}
+		Renderer::SetDepthEnable(true);
+		Renderer::DisableCulling(true);
+		Renderer::SetBlendState(BS_NONE);
+		};
+	drawOne(fill, radius * 2.0f, Color(color.x, color.y, color.z, 0.35f), TRUE);  // 塗り
+	drawOne(line, radius, color, FALSE); // ライン
+}
+
+void Unit::DrawGroundArrow(const Vector3& from, const Vector3& to, const Color& color) {
+	CStaticMeshRenderer* arrow = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_push_mesh");
+	CShader* fx = MeshManager::GetShader<CShader>("fxshader");
+	if (!arrow || !fx) return;
+
+	Vector3 d = to - from; d.y = 0.0f;
+	if (d.Length() < 0.05f) return;
+	float rotY = -atan2f(d.z, d.x);        // arrow_push_mesh は +X 基準
+	Vector3 mid = (from + to) * 0.5f; mid.y = ZFight::Arrow;
+
+	Matrix4x4 w = Matrix4x4::CreateRotationY(rotY) * Matrix4x4::CreateTranslation(mid);
+	fx->SetGPU();
+	Renderer::SetBlendState(BS_ALPHABLEND);
+	Renderer::DisableCulling(false);
+	Renderer::SetDepthReadOnly();
+	Renderer::SetWorldMatrix(&w);
+	if (auto* mat = arrow->GetMaterial(0)) {
+		MATERIAL old = mat->GetData(), tmp = old;
+		tmp.Diffuse = color; tmp.TextureEnable = FALSE;
+		mat->SetMaterial(tmp); arrow->Draw(); mat->SetMaterial(old);
+	}
+	Renderer::SetDepthEnable(true);
+	Renderer::DisableCulling(true);
+	Renderer::SetBlendState(BS_NONE);
 }

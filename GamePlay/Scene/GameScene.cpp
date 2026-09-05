@@ -463,6 +463,8 @@ void GameScene::UpdateCoreTimers(float deltaSeconds)
 
 void GameScene::UpdateCameraFocus(float deltaSeconds)
 {
+	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_F10))
+		Camera::s_ignoreMouseLook = !Camera::s_ignoreMouseLook;
 	if (!m_camera) return;
 
 	// 追従対象が既に破棄されていたら参照を切る（復帰滑走中に消滅するケース）
@@ -519,12 +521,15 @@ void GameScene::UpdateCameraFocus(float deltaSeconds)
 			// プレイヤーが操作可能な状態（メニュー表示中）のみマウス旋回を許可。
 			// 急降下・待機中はカメラを回転させず、IsAtTarget が確実に収束するようにする
 			PlayerState ps = m_player ? m_player->GetState() : PlayerState::WAITING;
-			bool controllable = (ps != PlayerState::WAITING && ps != PlayerState::DEAD_FLYING);
+			bool controllable = (ps != PlayerState::WAITING && ps != PlayerState::DEAD_FLYING
+				&& ps != PlayerState::AIM);
 
 			// マウス旋回：通常時は自由に操作。ImGui がマウスを使用している場合は右ボタンが必要
 			auto& in = CDirectInput::GetInstance();
 			bool imguiMouse = ImGui::GetIO().WantCaptureMouse;
-			bool canOrbit = imguiMouse ? in.GetMouseRButtonCheck() : true;
+			bool canOrbit = controllable
+				&& (imguiMouse ? in.GetMouseRButtonCheck() : true)
+				&& !Camera::s_ignoreMouseLook;
 			if (canOrbit) {
 				float dx = (float)in.GetMouseMoveX();
 				float dy = (float)in.GetMouseMoveY();

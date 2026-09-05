@@ -39,6 +39,7 @@ public:
     // 行動範囲の発光リングを地面に描画（中心・半径）
     void DrawActionCircle(const Vector3& center, float radius, const Color& color);
     void DrawActionCircleLine(const Vector3& center, float radius, const Color& color);
+    void DrawAimWarningBox(const Vector3& center, float yaw, float size, const Color& color);
 
 private:
     float CalculateLineRotation(int dx, int dz);
@@ -50,4 +51,5 @@ private:
     CStaticMeshRenderer* m_ringRenderer = nullptr;    // プロシージャル生成の円環（アニュラス）
     CShader* m_fxShader = nullptr; // 無光照シェーダ（発光リング用）
     CStaticMeshRenderer* m_ringLineRenderer = nullptr;
+    CStaticMeshRenderer* m_warnBoxRenderer = nullptr;
 };

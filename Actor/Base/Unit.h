@@ -24,6 +24,14 @@ class CShader;
 class Unit : public GameObject {
 public:
 
+	// 連続押し出しの結果（結算と予測で共用）
+	struct PushResult {
+		bool     blocked = false;      // 壁 or ユニットに阻まれたか
+		Vector3  landingPos;           // 無阻＝起点+方向×距離／有阻＝起点
+		Unit* hitUnit = nullptr;    // 衝突したユニット（連鎖ダメージ対象）
+		int      chainDamage = 0;      // 衝突=collisionDamage／落点罠=trapDamage／他=0
+	};
+
 	explicit Unit(GameContext* context);
 	Unit(const Unit&) = delete;
 	Unit& operator=(const Unit&) = delete;
@@ -54,10 +62,14 @@ public:
 	virtual void TakeDamage(int damage, Unit* attacker);
 
 	// 押し出し（ノックバック）を受けた際の処理。壁衝突時は false を返す想定など、派生クラスで拡張可能
-	virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr);
-
+	virtual void OnPushed(const Vector3& pushDir, Unit* attacker = nullptr);
+	void OnPushed(Direction pushDir, Unit* attacker = nullptr) { 
+		DirOffset o = DirOffset::From(pushDir);
+		OnPushed(Vector3((float)o.x, 0.0f, (float)o.z), attacker);
+	}
 	// 押し出しを伴う攻撃を受けた際、壁や罠による二次ダメージを含めた最終被ダメージを算出
 	int CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir);
+	int CalculateExpectedDamage(int baseDamage, bool isPush, const Vector3& pushDir);
 
 	// (fromX, fromZ) から pushDir 方向へ押し出された場合の連鎖ダメージ（衝突 or 罠）を予測。
 	// 実結算と移動プレビューが同一ルールを共有するための static 純関数。
@@ -80,6 +92,11 @@ public:
 		if (other->IsInvincible()) return false; 
 		return true;
 	}
+
+	// 連続版：起点から pushDir へ pushDist 押した結果を返す純関数
+	static PushResult SimulatePush(class GameContext* ctx, const Vector3& fromPos,
+		const Vector3& pushDir, float pushDist, float victimRadius,
+		int collisionDamage, const Unit* ignoreSelf);
 
 	// ---------------------------------------------------------
 	// アニメーション制御 (Animation System)
@@ -113,6 +130,8 @@ public:
 	void DrawModel();
 	virtual void DrawUI();
 	void DrawPushPreview(Direction pushDir);
+	// 攻撃者(this)が target を押した場合の予測（落点円＋方向矢印）を地面に描画
+	void DrawPushForecast(Unit* target);
 
 	virtual void OnHpChanged() {};
 
@@ -127,10 +146,13 @@ public:
 	void  SetTargetFade(float f) { m_targetFade = f; }
 	void  SetFade(float f) { m_fade = f; m_targetFade = f; } // 即時設定（既存インターフェースを維持）
 	float GetFade() const { return m_fade; }
-public:
-	static inline bool s_hpBarVisible = true;  // HPバー表示切替（DebugUIから制御）
+
 	// 死亡飛翔中、十字スター出現によりモデルが非表示になったか（KillCam の定格判定用）
 	bool IsDeathVisualHidden() const { return m_isDeathVisualHidden; }
+
+public:
+	static inline bool s_hpBarVisible = true;  // HPバー表示切替（DebugUIから制御）
+
 
 protected:
 	virtual void OnTurnChanged(TurnState state);
@@ -154,6 +176,16 @@ protected:
 	// fade 値を本体のすべての子マテリアルの Dummy.x に設定
 	// ToonPS / OutlinePS のディザリングクリップに使用
 	void ApplyFadeToMaterials(float fade);
+
+	// =========================================================
+	// ノックバック
+	// =========================================================
+	virtual bool CanBePushed() const { return m_currentHP > 0; }  // 派生で条件追加
+	virtual void OnKnockbackBegin() {}                            // 被击退状態へ＋固有処理
+	virtual void OnKnockbackEnd() {}                              // 通常状態へ（死亡なら Die）
+	void UpdateKnockback(float dt);
+	void DrawGroundRing(const Vector3& center, float radius, const Color& color);
+	void DrawGroundArrow(const Vector3& from, const Vector3& to, const Color& color);
 
 protected:
 	// =========================================================
@@ -223,6 +255,8 @@ protected:
 	bool  m_deathStarSpawned = false;
 	bool  m_isDeathVisualHidden = false; // スター出現後モデル非表示
 
+	// --- ノックバック ---
+	bool m_isKnockback = false;
 
 	// TurnManager への購読ID（デストラクタで自動解除）
 	TurnManager::ScopedConnection m_turnConnection;

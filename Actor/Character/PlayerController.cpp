@@ -65,7 +65,10 @@ PlayerCommand PlayerController::PollInput() const {
     // =========================================================
     // 4. 照準回転用のマウス水平移動量（攻撃モード中のみ消費側で使う）
     // =========================================================
-    cmd.aimYawDelta = static_cast<float>(input.GetMouseMoveX());
-
+    if (!Camera::s_ignoreMouseLook) {
+        cmd.aimYawDelta = static_cast<float>(input.GetMouseMoveX());
+        cmd.aimPitchDelta = static_cast<float>(input.GetMouseMoveY());
+    }
+    // 無視中は 0 のまま（AimFollow 側は「入力なし」として扱い、帰位が働く）
     return cmd;
 }

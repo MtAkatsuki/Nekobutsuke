@@ -87,6 +87,10 @@ public:
     void SetViewMode(ViewMode mode);
     // プレイヤー側から敵を捉える：敵を中央、プレイヤーを画面端に配置し、カメラは常にプレイヤーの背後に置く
     void FrameEnemyFromPlayer(const Vector3& playerPos, const Vector3& enemyPos);
+    // 攻撃モードの視点：敵を捉える構図(アンカー)＋マウスによる受限オフセット＋静止で帰位
+    void AimFollow(const Vector3& playerPos, const Vector3& enemyPos,
+        float mouseDx, float mouseDy, float dt);
+    void BeginAimFollow();   // AIM 進入時にオフセットをリセット
 
     // 追従状態における構図パラメータ（現在のモードに応じて切り替え、Player / Scene から共通利用）
     float GetTrackingRadius()    const { return (m_viewMode == ViewMode::Battle) ? BATTLE_RADIUS : ZOOM_RADIUS; }
@@ -191,7 +195,7 @@ public:
     static constexpr float TUTORIAL_RADIUS = 45.0f;
     static inline float BASE_RADIUS = 30.0f;
     static constexpr float TARGET_FOCUS_RADIUS = 17.0f;
-    static inline float CAMERA_LERP_SPEED = 10.0f;
+    static inline float CAMERA_LERP_SPEED = 5.0f;
 
     static constexpr float SCENE_CENTER_X = 0.0f;
     static constexpr float SCENE_CENTER_Y = 0.0f;
@@ -242,6 +246,11 @@ public:
     static inline float PLAYER_FADE_FULL = 1.2f;  // この距離より近づくとプレイヤーを完全に非表示
     static inline float CAMERA_MIN_HEIGHT = 0.3f;  // カメラの最低高度（床との衝突を防ぎ、仰角を下げても地面を貫通しない）
     static inline float LOOKAT_LERP_SPEED = 12.0f;  // 注視点だけの追従速度（大きいほど玩家に密着＝滞後が小さい）
+    static inline float AIM_ORBIT_MAX_AZ = 0.6f;        // 攻撃モード：方位オフセット上限(rad)≈35°
+    static inline float AIM_ORBIT_MAX_EL = 0.35f;       // 攻撃モード：仰角オフセット上限(rad)≈20°
+    static inline float AIM_ORBIT_RETURN_DELAY = 1.0f;  // マウス静止から帰位までの待ち(秒)
+    static inline bool s_ignoreMouseLook = false;  // デバッグ：マウス視点入力を無視（画面が動かないように）
+
 
     // 敵観察時の構図（プレイヤーに対するカメラ位置を調整可能）
     static inline float ENEMY_WATCH_BACK = 3.0f;   // カメラをプレイヤーの背後に配置する距離
@@ -300,4 +309,7 @@ protected:
 
     // --- マウス ---
     float m_effectiveDist = 30.0f;
+    float m_aimOrbitOffsetAz = 0.0f;  // アンカーからの方位オフセット（clamp管理）
+    float m_aimOrbitOffsetEl = 0.0f;  // アンカーからの仰角オフセット
+    float m_aimIdleTimer = 0.0f;      // マウス静止時間
 };

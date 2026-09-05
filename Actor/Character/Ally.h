@@ -31,7 +31,6 @@ public:
     virtual void OnDeathFlyComplete() override;
     virtual void StartTurn() override;
     void OnTurnChanged(TurnState state) override;
-    virtual void OnPushed(Direction pushDir, Unit* attacker = nullptr) override;
 
     // 脱出を予約する（規定ターン到達時に GameScene から呼ぶ）。
     // 実際の演出は次のプレイヤーフェーズの採掘完了を起点に進行する
@@ -51,6 +50,9 @@ public:
 
 protected:
     using Unit::Unit;
+    bool CanBePushed() const override { return m_currentHP > 0 && !IsEscaping(); }
+    void OnKnockbackBegin() override { m_isKnockedBack = true; }
+    void OnKnockbackEnd()   override { m_isKnockedBack = false; }
 
 private:
     void Init();
