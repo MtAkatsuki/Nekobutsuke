@@ -633,6 +633,9 @@
     <ClInclude Include="System\IniConfig.h">
       <Filter>System</Filter>
     </ClInclude>
+    <ClInclude Include="System\ForecastTunables.h">
+      <Filter>System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shader\ToonVS.hlsl">

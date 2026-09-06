@@ -37,7 +37,7 @@ void GameSceneDebugUI::Draw() {
     ImGui::Checkbox("F7  Rendering", &m_showRendering);
     ImGui::Checkbox("F8  FX", &m_showFx);
     ImGui::Checkbox("F9  Debug Actions", &m_showDebugActions);
-    ImGui::Checkbox("Ignore Mouse Look (F10)", &Camera::s_ignoreMouseLook);
+    ImGui::Checkbox("Ignore Mouse Look (F3)", &Camera::s_ignoreMouseLook);
     ImGui::Separator();
     ImGui::TextDisabled("F2: toggle Player <-> Strategy");
     ImGui::End();
@@ -117,6 +117,12 @@ void GameSceneDebugUI::DrawViewModePanel() {
         if (m_scene.m_player)
             ImGui::Text("Player Fade: %.2f", m_scene.m_player->GetFade());
         if (cam) ImGui::Text("Effective Dist: %.2f", cam->GetEffectiveDistance());
+    }
+
+    if (ImGui::CollapsingHeader("Aim Anchor (attack mode)")) {
+        ImGui::SliderFloat("Aim Shoulder (over-shoulder)", &Camera::AIM_ANCHOR_SHOULDER, 0.0f, 1.2f, "%.3f");
+        ImGui::SliderFloat("Aim Back (distance)", &Camera::AIM_ANCHOR_BACK, 0.0f, 10.0f, "%.2f");
+        ImGui::SliderFloat("Aim Elevation (height)", &Camera::AIM_ANCHOR_ELEVATION, -1.55f, -0.4f, "%.3f");
     }
 
     if (ImGui::CollapsingHeader("Strategy", ImGuiTreeNodeFlags_DefaultOpen)) {

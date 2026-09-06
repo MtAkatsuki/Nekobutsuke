@@ -309,6 +309,7 @@ void GameScene::LoadRenderResources() {
 		{"arrow_attack_mesh",   "Assets/model/obj/arrow_attack.obj",        "Assets/model/obj/"},
 		{"arrow_push_mesh",     "Assets/model/obj/arrow_push.obj",          "Assets/model/obj/"},
 		{"action_ring_line_mesh", "Assets/model/obj/ring_line.obj", "Assets/model/obj/"},
+		{"arrow_arc_mesh", "Assets/model/obj/arrow_arc_mesh.obj", "Assets/model/obj/"},
 	};
 	for (const auto& m : models) {
 		ModelRegistry::RegisterModel(m.name, m.path, m.texDir);
@@ -463,7 +464,7 @@ void GameScene::UpdateCoreTimers(float deltaSeconds)
 
 void GameScene::UpdateCameraFocus(float deltaSeconds)
 {
-	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_F10))
+	if (CDirectInput::GetInstance().CheckKeyBufferTrigger(DIK_F3))
 		Camera::s_ignoreMouseLook = !Camera::s_ignoreMouseLook;
 	if (!m_camera) return;
 

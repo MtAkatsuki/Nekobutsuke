@@ -522,9 +522,9 @@ void Enemy::OnDrawFloorUI(float /*deltaSeconds*/) {
 		GetMap()->DrawColoredTiles(m_moveRangeTiles, MOVE_RANGE_COLOR);
 	}
 
-	if (m_isCharging ) {
-		DrawPushForecast(lockedVictim); 
-	}
+	// TODO(Phase 2): 敵のロックを格子(m_lockedGridX/Z)から Unit* へ変更後、
+	// DrawPushForecast(victim) を接続して押し出しプレビューを表示する。
+	// 現状は victim(Unit*) を持たないため未接続（攻撃予告矢印は OnDrawOverlay 側で描画）。
 }
 
 void Enemy::OnDrawOverlay(float /*deltaSeconds*/) {

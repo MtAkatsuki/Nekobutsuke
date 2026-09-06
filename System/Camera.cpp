@@ -67,6 +67,9 @@ namespace {
 		{ "AIM_ORBIT_MAX_AZ",        &Camera::AIM_ORBIT_MAX_AZ },
 		{ "AIM_ORBIT_MAX_EL",        &Camera::AIM_ORBIT_MAX_EL },
 		{ "AIM_ORBIT_RETURN_DELAY",  &Camera::AIM_ORBIT_RETURN_DELAY },
+		{ "AIM_ANCHOR_SHOULDER",     &Camera::AIM_ANCHOR_SHOULDER },
+		{ "AIM_ANCHOR_BACK",         &Camera::AIM_ANCHOR_BACK },
+		{ "AIM_ANCHOR_ELEVATION",    &Camera::AIM_ANCHOR_ELEVATION },
 	};
 
 	float UnwrapNear(float ref, float angle) {
@@ -501,8 +504,8 @@ void Camera::AimFollow(const Vector3& playerPos, const Vector3& enemyPos,
 	float dx = enemyPos.x - playerPos.x;
 	float dz = enemyPos.z - playerPos.z;
 	float dist = sqrtf(dx * dx + dz * dz);
-	float anchorAz = atan2f(dz, dx) + ENEMY_WATCH_SHOULDER;
-	float anchorEl = BATTLE_ELEVATION;
+	float anchorAz = atan2f(dz, dx) + AIM_ANCHOR_SHOULDER;
+	float anchorEl = AIM_ANCHOR_ELEVATION;
 
 	// --- マウスによる受限オフセット ---
 	bool hasInput = (mouseDx != 0.0f || mouseDy != 0.0f);
@@ -532,7 +535,7 @@ void Camera::AimFollow(const Vector3& playerPos, const Vector3& enemyPos,
 	// 半径：FrameEnemyFromPlayer と同じ「距離＋背後オフセット」換算
 	float sinE = fabsf(sinf(m_targetElevation));
 	if (sinE < 0.2f) sinE = 0.2f;
-	m_targetRadius = (dist + ENEMY_WATCH_BACK) / sinE;
+	m_targetRadius = (dist + AIM_ANCHOR_BACK) / sinE;
 }
 
 bool Camera::IsAtTarget() const {

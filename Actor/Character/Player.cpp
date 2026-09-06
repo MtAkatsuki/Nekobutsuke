@@ -16,6 +16,7 @@
 #include "../../Actor/Character/Ally.h"
 #include "../../System/Utility/WorldToScreen.h"
 #include "../../Core/Application.h"
+#include "../../System/ForecastTunables.h"
 #include	<cmath>
 
 namespace {
@@ -45,10 +46,6 @@ namespace {
 	const float AIM_WARN_SIZE = 1.0f;
 	const float AIM_WARN_OFFSET = 1.0f;                          // 0.7→1.0：モデル外の正前方1格へ
 	const Color AIM_WARN_COLOR = Color(1.0f, 0.2f, 0.2f, 0.25f);// 黄→薄い赤（攻撃予警）
-	// 敵の受击円（判定・描画で共用。ここで大きさ・色を変える）
-	const float ENEMY_HIT_RADIUS = 0.6f;                         // 受击円の半径
-	const Color ENEMY_HIT_FILL_COLOR = Color(0.2f, 0.4f, 1.0f, 0.35f);// 塗り（薄青）
-	const Color ENEMY_HIT_LINE_COLOR = Color(0.35f, 0.6f, 1.0f, 1.0f);// 発光ライン（青）
 
 	// 攻撃ロックHUD（2Dスクリーン）
 	const int   AIM_ARROW_W = 67, AIM_ARROW_H = 79; 
@@ -374,17 +371,17 @@ void Player::OnDrawFloorUI(float /*deltaSeconds*/) {
 	}
 
 	if (m_state == PlayerState::AIM) {
-		// 玩家の攻撃予警区（方形）
+		// プレイヤーの攻撃予警範囲（矩形）
 		Vector3 center; float yaw;
 		GetAimBox(center, yaw);
 		m_actionView->DrawAimWarningBox(center, yaw, AIM_WARN_SIZE, AIM_WARN_COLOR);
 
-		// 敵の受击円：玩家の行動円と同じく「塗り環 + 発光ライン」の2枚重ね
-		if (m_canAimHit && m_aimTarget) {
-			DrawPushForecast(m_aimTarget);
+		// 敵の被弾円（照準中は常に）＋着地点の円（命中時）：床デカール＝敵／罠が上に乗る
+		if (m_aimTarget) {
+			DrawHitRing(m_aimTarget);
+			if (m_canAimHit) DrawLandingRing(m_aimTarget);
 		}
 	}
-
 	else if (m_state == PlayerState::ATTACK_DIR_SELECT) {
 		m_actionView->DrawAttackWarningFloor(m_gridX, m_gridZ, m_attackDir); // 赤い警告エリア（床面）
 	}
@@ -404,6 +401,14 @@ void Player::OnDrawOverlay(float /*deltaSeconds*/) {
 		bool isPush = (m_selectedAttackType == AttackType::Push);
 		m_actionView->DrawAttackWarningOverlay(m_gridX, m_gridZ, m_attackDir, isPush, this);
 	}
+
+
+	// 放物線状の矢印のみ最前面に表示（敵／罠に遮られない）。円は床レイヤー側で描画済み
+	if (m_state == PlayerState::AIM && m_canAimHit && m_aimTarget) {
+		DrawForecastArrow(m_aimTarget);
+	}
+
+
 }
 
 void Player::SwitchToMenuMain() {
@@ -924,7 +929,7 @@ bool Player::IsAimHit() const {
 	// 敵の受击円
 	BoundingSphere sph;
 	sph.center = m_aimTarget->GetSRT().pos;
-	sph.radius = ENEMY_HIT_RADIUS;   // GetBodyRadius() → ENEMY_HIT_RADIUS（描画と一致）
+	sph.radius = ForecastUI::HitRingRadius;
 
 	return CollisionSphereOBB(sph, obb);
 }

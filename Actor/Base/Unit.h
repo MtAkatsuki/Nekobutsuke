@@ -130,8 +130,11 @@ public:
 	void DrawModel();
 	virtual void DrawUI();
 	void DrawPushPreview(Direction pushDir);
-	// 攻撃者(this)が target を押した場合の予測（落点円＋方向矢印）を地面に描画
-	void DrawPushForecast(Unit* target);
+	// 攻撃者（this）→target のノックバック予測。描画レイヤーごとに分割：
+	void DrawHitRing(Unit* target);       // 敵の被弾円（床レイヤー・敵の足元＝踏まれる位置）
+	void DrawLandingRing(Unit* target);   // 着地点の円（床レイヤー）
+	void DrawForecastArrow(Unit* target); // 放物線状の矢印（最前面オーバーレイ）
+
 
 	virtual void OnHpChanged() {};
 
@@ -184,8 +187,12 @@ protected:
 	virtual void OnKnockbackBegin() {}                            // 被击退状態へ＋固有処理
 	virtual void OnKnockbackEnd() {}                              // 通常状態へ（死亡なら Die）
 	void UpdateKnockback(float dt);
-	void DrawGroundRing(const Vector3& center, float radius, const Color& color);
-	void DrawGroundArrow(const Vector3& from, const Vector3& to, const Color& color);
+	void DrawGroundRing(const Vector3& center, float radius, float borderThickness, const Color& color);
+	// 常量厚度の円環ボーダー（小箱を円周に並べる。厚みは半径と独立）
+	void DrawRingBorder(const Vector3& center, float radius, float thickness,
+		const Color& color, int segments = 48);
+	// 対象の足元 → 落点へ弧を描く立体的な放物線矢印（押し出しプレビュー用）
+	void DrawArcArrow(const Vector3& from, const Vector3& to, const Color& color);
 
 protected:
 	// =========================================================

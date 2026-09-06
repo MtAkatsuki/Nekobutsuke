@@ -6,6 +6,7 @@
 #include "../../GamePlay/Manager/EffectManager.h"
 #include "../../Actor/Gimmick/Trap.h"
 #include "../../System/ZFightTunables.h"
+#include "../../System/ModelRegistry.h"
 #include <cmath>
 #include "../../System/RandomEngine.h"
 #include "../../System/FxTunables.h"
@@ -13,6 +14,7 @@
 #include "../../System/collision.h"
 #include "../../GamePlay/Manager/EnemyManager.h"
 #include "../Character/Ally.h"
+#include "../../System/ForecastTunables.h"
 
 namespace {
 	// ---------------------------------------------------------
@@ -645,79 +647,143 @@ Unit::PushResult Unit::SimulatePush(GameContext* ctx, const Vector3& fromPos,
 	return r;
 }
 
-void Unit::DrawPushForecast(Unit* target) {
+// ===== ノックバック予測（レイヤー別） =====
+
+// 敵の被弾円：床レイヤーに描画し、その後に描画される敵／罠が上に乗る
+void Unit::DrawHitRing(Unit* target) {
+	if (!target) return;
+	DrawGroundRing(target->GetSRT().pos, ForecastUI::HitRingRadius,
+		ForecastUI::HitRingBorder, ForecastUI::HitRingColor);
+}
+
+// 着地点の円：床レイヤー
+void Unit::DrawLandingRing(Unit* target) {
 	if (!target) return;
 	Vector3 dir = target->GetSRT().pos - m_srt.pos; dir.y = 0.0f;
 	if (dir.LengthSquared() < 0.0001f) return;
 	dir.Normalize();
-
 	PushResult r = SimulatePush(m_context, target->GetSRT().pos, dir,
 		PUSH_DIST, target->GetBodyRadius(), 0, target);
-
-	const Color col = r.blocked ? Color(1.0f, 0.3f, 0.2f, 1.0f)
-		: Color(0.4f, 1.0f, 0.5f, 1.0f);
+	const Color col = r.blocked ? Color(1.0f, 0.3f, 0.2f, 1.0f) : Color(0.4f, 1.0f, 0.5f, 1.0f);
 	Vector3 spot = r.blocked ? (target->GetSRT().pos + dir * PUSH_DIST) : r.landingPos;
+	DrawGroundRing(spot, ForecastUI::LandingRingRadius, ForecastUI::LandingRingBorder, col);
+}
 
-	DrawGroundRing(spot, 0.45f, col);
-	DrawGroundArrow(target->GetSRT().pos, spot, col);
-
+// 放物線状の矢印（最前面）＋衝突予測エフェクト
+void Unit::DrawForecastArrow(Unit* target) {
+	if (!target) return;
+	Vector3 dir = target->GetSRT().pos - m_srt.pos; dir.y = 0.0f;
+	if (dir.LengthSquared() < 0.0001f) return;
+	dir.Normalize();
+	PushResult r = SimulatePush(m_context, target->GetSRT().pos, dir,
+		PUSH_DIST, target->GetBodyRadius(), 0, target);
+	const Color col = r.blocked ? Color(1.0f, 0.3f, 0.2f, 1.0f) : Color(0.4f, 1.0f, 0.5f, 1.0f);
+	Vector3 spot = r.blocked ? (target->GetSRT().pos + dir * PUSH_DIST) : r.landingPos;
+	DrawArcArrow(target->GetSRT().pos, spot, col);
 	if (r.blocked && GetEffectManager()) {
-		Vector3 fxPos = spot;
-		fxPos.y += HIT_EFFECT_Y_OFFSET;
+		Vector3 fxPos = spot; fxPos.y += HIT_EFFECT_Y_OFFSET;
 		GetEffectManager()->DrawStaticHitPreview(fxPos);
 	}
 }
 
-void Unit::DrawGroundRing(const Vector3& center, float radius, const Color& color) {
+// 円（塗り＋一定幅のボーダー）。床レイヤー用：depth-read-only で地面に貼り、敵／罠が上に乗る
+void Unit::DrawGroundRing(const Vector3& center, float radius, float borderThickness, const Color& color) {
 	CStaticMeshRenderer* fill = MeshManager::GetRenderer<CStaticMeshRenderer>("action_ring_mesh");
-	CStaticMeshRenderer* line = MeshManager::GetRenderer<CStaticMeshRenderer>("action_ring_line_mesh");
 	CShader* fx = MeshManager::GetShader<CShader>("fxshader");
-	if (!fx) return;
 
-	auto drawOne = [&](CStaticMeshRenderer* r, float scale, const Color& c, BOOL tex) {
-		if (!r) return;
+	// 塗り：半透明ディスク
+	if (fill && fx) {
 		Vector3 p = center; p.y = ZFight::RangePanel;
-		Matrix4x4 w = Matrix4x4::CreateScale(scale, 1.0f, scale) * Matrix4x4::CreateTranslation(p);
+		Matrix4x4 w = Matrix4x4::CreateScale(radius * 2.0f, 1.0f, radius * 2.0f)
+			* Matrix4x4::CreateTranslation(p);
 		fx->SetGPU();
 		Renderer::SetBlendState(BS_ALPHABLEND);
 		Renderer::DisableCulling(false);
 		Renderer::SetDepthReadOnly();
 		Renderer::SetWorldMatrix(&w);
-		if (auto* mat = r->GetMaterial(0)) {
+		if (auto* mat = fill->GetMaterial(0)) {
 			MATERIAL old = mat->GetData(), tmp = old;
-			tmp.Diffuse = c; tmp.TextureEnable = tex;
-			mat->SetMaterial(tmp); r->Draw(); mat->SetMaterial(old);
+			tmp.Diffuse = Color(color.x, color.y, color.z, ForecastUI::RingFillAlpha);
+			tmp.TextureEnable = TRUE;
+			mat->SetMaterial(tmp); fill->Draw(); mat->SetMaterial(old);
 		}
 		Renderer::SetDepthEnable(true);
 		Renderer::DisableCulling(true);
 		Renderer::SetBlendState(BS_NONE);
-		};
-	drawOne(fill, radius * 2.0f, Color(color.x, color.y, color.z, 0.35f), TRUE);  // 塗り
-	drawOne(line, radius, color, FALSE); // ライン
+	}
+
+	// ボーダー：一定幅＋半透明
+	DrawRingBorder(center, radius, borderThickness,
+		Color(color.x, color.y, color.z, ForecastUI::RingBorderAlpha));
 }
 
-void Unit::DrawGroundArrow(const Vector3& from, const Vector3& to, const Color& color) {
-	CStaticMeshRenderer* arrow = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_push_mesh");
+// 一定幅の円環ボーダー（小箱を円周上に並べる）。床レイヤー用（depth-read-only）
+void Unit::DrawRingBorder(const Vector3& center, float radius, float thickness,
+	const Color& color, int segments) {
+	CStaticMeshRenderer* box = ModelRegistry::RegisterModel(
+		"fx_particle_box", "Assets/model/obj/fx_cube.obj", "Assets/model/obj");
 	CShader* fx = MeshManager::GetShader<CShader>("fxshader");
-	if (!arrow || !fx) return;
+	if (!box || !fx) return;
+	if (segments < 8) segments = 8;
 
-	Vector3 d = to - from; d.y = 0.0f;
-	if (d.Length() < 0.05f) return;
-	float rotY = -atan2f(d.z, d.x);        // arrow_push_mesh は +X 基準
-	Vector3 mid = (from + to) * 0.5f; mid.y = ZFight::Arrow;
+	const float H = 0.02f;                 // Y方向の薄さ（地面に密着させる）
+	const float TWO_PI = 6.2831853f;
 
-	Matrix4x4 w = Matrix4x4::CreateRotationY(rotY) * Matrix4x4::CreateTranslation(mid);
 	fx->SetGPU();
 	Renderer::SetBlendState(BS_ALPHABLEND);
 	Renderer::DisableCulling(false);
 	Renderer::SetDepthReadOnly();
-	Renderer::SetWorldMatrix(&w);
-	if (auto* mat = arrow->GetMaterial(0)) {
-		MATERIAL old = mat->GetData(), tmp = old;
-		tmp.Diffuse = color; tmp.TextureEnable = FALSE;
-		mat->SetMaterial(tmp); arrow->Draw(); mat->SetMaterial(old);
+
+	auto ringPt = [&](float a) {
+		return Vector3(center.x + cosf(a) * radius,
+			ZFight::RangePanel + 0.003f, center.z + sinf(a) * radius);
+		};
+
+	Vector3 prev = ringPt(0.0f);
+	for (int i = 1; i <= segments; ++i) {
+		Vector3 cur = ringPt(TWO_PI * (float)i / (float)segments);
+		Vector3 seg = cur - prev; float len = seg.Length();
+		if (len > 1e-4f) {
+			float rotY = -atan2f(seg.z, seg.x);        // 箱の +X をこの弦に合わせる
+			Vector3 mid = (prev + cur) * 0.5f;
+			Matrix4x4 w = Matrix4x4::CreateScale(len * 0.5f, H, thickness * 0.5f)
+				* Matrix4x4::CreateRotationY(rotY)
+				* Matrix4x4::CreateTranslation(mid);
+			Renderer::SetWorldMatrix(&w);
+			if (auto* mat = box->GetMaterial(0)) {
+				MATERIAL old = mat->GetData(), tmp = old;
+				tmp.Diffuse = color; tmp.TextureEnable = FALSE;
+				mat->SetMaterial(tmp); box->Draw(); mat->SetMaterial(old);
+			}
+		}
+		prev = cur;
 	}
 	Renderer::SetDepthEnable(true);
 	Renderer::DisableCulling(true);
 	Renderer::SetBlendState(BS_NONE);
 }
+
+// 放物線状の矢印：最前面オーバーレイを前提（深度／ブレンドはパス側に任せる）＋半透明
+void Unit::DrawArcArrow(const Vector3& from, const Vector3& to, const Color& color) {
+	CStaticMeshRenderer* arc = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_arc_mesh");
+	CShader* fx = MeshManager::GetShader<CShader>("fxshader");
+	if (!arc || !fx) return;
+
+	Vector3 d = to - from; d.y = 0.0f;
+	if (d.Length() < 0.05f) return;
+	float rotY = -atan2f(d.z, d.x);
+	Vector3 base = from; base.y = ZFight::Arrow;
+
+	Matrix4x4 w = Matrix4x4::CreateRotationY(rotY) * Matrix4x4::CreateTranslation(base);
+	fx->SetGPU();
+	Renderer::DisableCulling(false);
+	Renderer::SetWorldMatrix(&w);
+	if (auto* mat = arc->GetMaterial(0)) {
+		MATERIAL old = mat->GetData(), tmp = old;
+		tmp.Diffuse = Color(color.x, color.y, color.z, color.w * ForecastUI::ArrowAlpha);
+		tmp.TextureEnable = FALSE;
+		mat->SetMaterial(tmp); arc->Draw(); mat->SetMaterial(old);
+	}
+	Renderer::DisableCulling(true);
+}
+

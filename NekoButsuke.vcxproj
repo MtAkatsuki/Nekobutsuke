@@ -117,6 +117,7 @@
     <ClInclude Include="Core\Game.h" />
     <ClInclude Include="Core\GameContext.h" />
     <ClInclude Include="Core\main.h" />
+    <ClInclude Include="System\ForecastTunables.h" />
     <ClInclude Include="System\FxTunables.h" />
     <ClInclude Include="System\IniConfig.h" />
     <ClInclude Include="System\Utility\CSVParser.h" />

@@ -256,6 +256,11 @@ public:
     static inline float ENEMY_WATCH_BACK = 3.0f;   // カメラをプレイヤーの背後に配置する距離
     static inline float ENEMY_WATCH_SHOULDER = 0.35f;  // 肩越しのオフセット：正の値でプレイヤーを画面左側に配置（右側に寄せる場合は負の値）
 
+    // 攻撃モード：右肩越しアンカー（AimFollow 専用。敵観察構図 ENEMY_WATCH_* とは独立に調整可能）
+    static inline float AIM_ANCHOR_SHOULDER = 0.35f;   // 方位オフセット：大きいほど肩越しが強まり敵の背後が見える
+    static inline float AIM_ANCHOR_BACK = 3.0f;    // 背後距離オフセット：大きいほど引き
+    static inline float AIM_ANCHOR_ELEVATION = -1.30f;  // 仰角：上げる(0寄り)ほど敵越しに背後を見下ろせる
+
 protected:
     void BeginKillSlow(); // KillSlow（見上げ＋ソフト追従）へ遷移
     void ApplyFraming();//State&Modeへ演出構図

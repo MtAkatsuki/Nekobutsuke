@@ -56,8 +56,12 @@ PlayerCommand PlayerController::PollInput() const {
     // 3. モード操作：エッジtrigger（押した瞬間だけ true）
     //    切替・確定は 1 回だけ効けばよいので hold ではなく trigger
     // =========================================================
-    cmd.aimToggle = input.GetMouseRButtonTrigger();
-    cmd.attackConfirm = input.GetMouseLButtonTrigger();
+    // s_ignoreMouseLook 中は左右クリックをゲーム側で消費しない（ImGui のみが読む）
+    if (!Camera::s_ignoreMouseLook) {
+        cmd.aimToggle = input.GetMouseRButtonTrigger();
+        cmd.attackConfirm = input.GetMouseLButtonTrigger();
+    }
+    // 無視中は false のまま
     cmd.targetPrev = input.CheckKeyBufferTrigger(DIK_Q);
     cmd.targetNext = input.CheckKeyBufferTrigger(DIK_E);
     cmd.endTurn = input.CheckKeyBufferTrigger(DIK_ESCAPE);
