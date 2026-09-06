@@ -1,20 +1,18 @@
-#pragma once
-#include "CommonTypes.h"   // Colori= DirectX::SimpleMath::Colorj
+ï»¿#pragma once
+#include "CommonTypes.h"   // Colorï¼ˆ= DirectX::SimpleMath::Colorï¼‰
 
-// ƒmƒbƒNƒoƒbƒN—\‘ªiAIMj‚ÌŒ©‚½–Ú‚ÉŠÖ‚·‚éƒpƒ‰ƒ[ƒ^‚ğˆêŠ‡ŠÇ—B
-// ”í’e‰~i“G‚Ì‘«Œ³j‚Æ’…’n“_‚Ì‰~‚ÅAu”¼Œavuƒ{[ƒ_[‚Ì‘¾‚³v‚ğŒÂ•Ê‚Éİ’è‚·‚éB
+// ãƒãƒƒã‚¯ãƒãƒƒã‚¯äºˆæ¸¬ï¼ˆAIMï¼‰ã®è¦‹ãŸç›®ã«é–¢ã™ã‚‹ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’ä¸€æ‹¬ç®¡ç†ã€‚
+// è¢«å¼¾å††ï¼ˆæ•µã®è¶³å…ƒï¼‰ã¨ç€åœ°ç‚¹ã®å††ã§ã€ã€ŒåŠå¾„ã€ã€Œãƒœãƒ¼ãƒ€ãƒ¼ã®å¤ªã•ã€ã‚’å€‹åˆ¥ã«è¨­å®šã™ã‚‹ã€‚
 namespace ForecastUI {
-    // --- ”í’e‰~i“G‚Ì‘«Œ³E“G^ã©‚É“¥‚Ü‚ê‚é°ƒŒƒCƒ„[j ---
-    inline float HitRingRadius = 0.6f;                            // ”»’è‚Æ•`‰æ‚Å‹¤—pi’l‚ğˆê’v‚³‚¹‚éj
-    inline float HitRingBorder = 0.05f;                          // ”í’e‰~‚Ìƒ{[ƒ_[‚Ì‘¾‚³iŒÂ•Êİ’èj
-    inline Color HitRingColor = Color(0.35f, 0.6f, 1.0f, 1.0f); // Â
+    // --- è¢«å¼¾å††ï¼ˆæ•µã®è¶³å…ƒãƒ»æ•µï¼ç½ ã«è¸ã¾ã‚Œã‚‹ï¼åºŠãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼‰ ---
+    inline float HitRingRadius = 0.48f;                            // åˆ¤å®šã¨æç”»ã§å…±ç”¨ï¼ˆå€¤ã‚’ä¸€è‡´ã•ã›ã‚‹ï¼‰
+    inline Color HitRingColor = Color(0.35f, 0.6f, 1.0f, 1.0f); // é’
 
-    // --- ’…’n“_‚Ì‰~ ---
-    inline float LandingRingRadius = 0.45f;
-    inline float LandingRingBorder = 0.08f;                      // ’…’n“_‚Ì‰~‚Ìƒ{[ƒ_[‚Ì‘¾‚³iŒÂ•Êİ’èj
+    // --- ç€åœ°ç‚¹ã®å†† ---
+    inline float LandingRingRadius = 0.48f;
 
-    // --- “§–¾“x ---
-    inline float RingFillAlpha = 0.35f;   // ‰~‚Ì“h‚è
-    inline float RingBorderAlpha = 0.7f;    // ‰~‚Ìƒ{[ƒ_[
-    inline float ArrowAlpha = 0.6f;    // •ú•¨üó‚Ì–îˆó
+    // --- é€æ˜åº¦ ---
+    inline float RingFillAlpha = 1.00f;   // å††ã®å¡—ã‚Š
+    inline float RingBorderAlpha = 1.00f;    // å††ã®ãƒœãƒ¼ãƒ€ãƒ¼
+    inline float ArrowAlpha = 0.42f;    // æ”¾ç‰©ç·šçŠ¶ã®çŸ¢å°
 }

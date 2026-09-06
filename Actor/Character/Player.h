@@ -39,8 +39,6 @@ public:
     // ---------------------------------------------------------
     PlayerState GetState() const { return m_state; }
     int GetCurrentMovePoints() const { return m_currentMovePoints; }
-    int GetPreviewGridX() const { return m_previewGridX; }
-    int GetPreviewGridZ() const { return m_previewGridZ; }
     bool IsCelebrationDone() const { return m_isCelebrationDone; }
     void SetMenuHold(bool h) { m_menuHold = h; }   //カメラ帰還＋UI再生中は GameScene 側でメニュー操作を無効化
 
@@ -83,40 +81,22 @@ private:
     void LoadPlayerResources();
 
     // --- 状態遷移 (State Transitions) ---
-    // メインメニューへ遷移。移動・攻撃の可否を判定して UI を開く
-    void SwitchToMenuMain();
-    // 移動選択へ遷移。到達可能マスを算出してガイド UI を表示する
-    void SwitchToMoveSelect();
-    // 攻撃方向選択へ遷移。カメラを攻撃方向へ寄せる
-    void SwitchToAttackDirSelect(AttackType type);
-    // 選択した経路に沿った移動アニメーションを開始する
-    void ExecuteMove();
     // ウィンドアップ後の実際の打撃。ダメージと押し出しを適用する
     void PerformAttackStrike();
     // 攻撃開始。カメラ演出とウィンドアップに入る（打撃は PerformAttackStrike）
     void ExecuteAttack();
 
     // --- 入力ハンドラ (Input Handlers) ---
-    // メインメニューのキー入力を次状態への遷移要求に変換する
-    void HandleMenuInput();
-    // 移動選択中の入力処理。カーソル移動・経路更新・確定を行う
-    void HandleMoveInput(float dt);
-    // 攻撃方向選択中の入力処理。方向変更・カメラ追従・確定を行う
-    void HandleAttackDirInput(float dt);
     // FREE_MOVE：連続ドライブの入力処理（移動・攻撃入口・ターン終了）
     void HandleFreeMove(float dt);
     // 移動を 1 フレーム進める（壁衝突＋行動円クランプ＋連続 yaw）。動いたら true
     bool DriveContinuous(const Vector3& worldDir, float dt);
-    // pos を行動円（中心 m_moveStartPos・半径 m_actionRadius）内へ丸めた位置を返す
-    Vector3 ClampToActionCircle(const Vector3& pos) const;
 
     // --- ユーティリティ (Utilities) ---
-    // 移動アニメーションを 1 フレーム進める（完了で true）
-    bool UpdatePathMovement(float dt);
-    // 移動先で受ける罠・敵ロックオンの予測ダメージを算出する
-    void CalculateMovePreviewDamage();
     // 勝利ジャンプ演出を更新する
     void UpdateCelebration(float dt);
+
+    void UpdateTrapPreview(); // 足元の罠ダメージを毎フレーム予測表示
 
     // 攻撃モード
     void EnterAim();                 // 右クリックで進入：最寄り敵をロック＋構図
@@ -134,41 +114,26 @@ private:
     CShader* m_playerShader = nullptr;
 
     PlayerState m_state = PlayerState::WAITING;
-    PlayerState m_nextState = PlayerState::WAITING;
     bool canControl = false;
     bool m_menuHold = false;
     // 現在フレームの操作コマンドを保持
     PlayerCommand m_currentCmd;
 
-    // --- 移動・パス ---
-    int m_startGridX = 0;
-    int m_startGridZ = 0;
-    int m_previewGridX = 0;
-    int m_previewGridZ = 0;
-    float m_inputCooldown = 0.0f;
-    std::vector<Tile*> m_moveRangeTiles;
-    std::vector<Tile*> m_currentPath;
-    int m_pathAnimIndex = 0;
+    // --- 移動 ---
     float   m_actionRadius = 4.0f;   // 行動可能円の半径（＝移動力パラメータ）
-    Vector3 m_moveStartPos;          // 行動円の中心（ターン開始位置）
     void SyncGridFromWorld();   // 連続移動中、論理格 m_gridX/Z を現在位置から更新（発火しない）
 
     // --- 戦闘・攻撃 ---
-    AttackType m_selectedAttackType = AttackType::Normal;
-    Direction m_attackDir = Direction::North;
     int m_playerDamage = 1;
-    bool m_canAttack = false;
     float m_attackWindupTimer = 0.0f;
     class Unit* m_aimTarget = nullptr;   // 現在ロックしている敵
     bool m_canAimHit = false;   // 予警区が敵の受击円と重なっているか
     Vector3 m_attackPushDir;
 
     // --- フラグ ---
-    bool m_hasMoved = false;
     bool m_isZoomedIn = false;
     bool m_isWaitingTurnStart = false;
     bool m_attackIsLethal = false;
-    bool m_isDebugAttack = false;
     bool m_killedByHazard = false;   // 直近の致死が無攻撃者（罠など）か
     float m_deathFlyDelay = 0.0f;
 

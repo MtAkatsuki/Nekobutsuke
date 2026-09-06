@@ -21,6 +21,7 @@
 #include "../../Actor/Character/Enemy.h"
 #include "../../Actor/Base/Unit.h"
 #include "../../System/FxTunables.h"
+#include "../../System/ForecastTunables.h"
 #include <stdio.h>
 
 // =========================================================
@@ -264,6 +265,15 @@ void GameSceneDebugUI::DrawRenderingPanel() {
         ImGui::SliderFloat("Enemy Arrow", &ZFight::EnemyArrow, 0.0f, 0.5f, "%.3f");
         ImGui::SliderFloat("Blob Shadow", &ZFight::Blob, 0.0f, 0.5f, "%.3f");
         ImGui::SliderFloat("Trap", &ZFight::Trap, 0.0f, 1.0f, "%.3f");
+    }
+
+    if (ImGui::CollapsingHeader("Push Forecast UI")) {
+        ImGui::SliderFloat("Ring Fill Alpha", &ForecastUI::RingFillAlpha, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Ring Border Alpha", &ForecastUI::RingBorderAlpha, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Arrow Alpha", &ForecastUI::ArrowAlpha, 0.0f, 1.0f, "%.2f");
+        // ついでに半径も（不要なら消してOK）
+        ImGui::SliderFloat("HitRing Radius", &ForecastUI::HitRingRadius, 0.1f, 1.5f, "%.2f");
+        ImGui::SliderFloat("LandingRing Radius", &ForecastUI::LandingRingRadius, 0.1f, 1.5f, "%.2f");
     }
 
     if (ImGui::CollapsingHeader("PostFX")) {

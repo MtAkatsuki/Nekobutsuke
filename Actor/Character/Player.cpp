@@ -24,14 +24,12 @@ namespace {
 	const int INITIAL_HP = 4;
 	const int INITIAL_MOVE_POINTS = 4;
 	const float MOVE_SPEED = 5.0f;        // タイル間移動速度
-	const int ATTACK_RANGE = 1;            // 攻撃距離
 
 	const float DEATH_FLY_DELAY = 0.2f;   // カメラの構図を整えた後、吹き飛ぶ前の間（攻撃アニメーションの代わりとなる観察時間）
 	const float KILLCAM_HAZARD_DIST = 3.0f;   // 観察カメラとプレイヤーの水平方向の距離（1マス以上）
 	const float KILLCAM_HAZARD_HEIGHT = 0.0f;   // 観察カメラの高さオフセット
 
 	// 描画関連の定数
-	const float UI_INPUT_COOLDOWN = 0.15f; // WASDの連続入力防止時間
 	const float MODEL_SCALE = 0.7f;        // プレイヤーモデルの表示スケール
 
 	// ジャンプ（祝賀）アニメーション
@@ -85,7 +83,6 @@ void Player::Init() {
 	m_srt.rot = Vector3(0, 0, 0);
 
 	m_state = PlayerState::WAITING;
-	m_targetWorldPos = m_srt.pos;
 	m_moveSpeed = MOVE_SPEED;
 
 	SetFacing(Direction::South);
@@ -132,16 +129,6 @@ void Player::Update(float deltaSeconds) {
 
 	UpdateFacingRotation(deltaSeconds);
 
-	//アニメション終わった後、またメニュー遷移実際に実行する
-	
-	//メインメニュー状態の場合
-	if (m_state == PlayerState::MENU_MAIN && m_nextState != PlayerState::MENU_MAIN) {
-		if (m_nextState == PlayerState::MOVE_SELECT) SwitchToMoveSelect();
-		else if (m_nextState == PlayerState::ATTACK_DIR_SELECT) SwitchToAttackDirSelect(AttackType::Push);
-		else if (m_nextState == PlayerState::WAITING) EndTurn();
-		m_nextState = m_state;
-	}
-
 	//プレーヤーの状態に応じた更新
 	switch (m_state) {
 	case PlayerState::FREE_MOVE:
@@ -150,51 +137,6 @@ void Player::Update(float deltaSeconds) {
 
 	case PlayerState::AIM:
 		HandleAim(deltaSeconds);
-		break;
-
-	case PlayerState::MENU_MAIN:
-		HandleMenuInput();
-		break;
-
-	case PlayerState::MOVE_SELECT:
-		HandleMoveInput(deltaSeconds);
-		if (m_state != PlayerState::MOVE_SELECT) break;
-		m_srt.pos = GetMap()->GetWorldPosition(m_previewGridX, m_previewGridZ);
-		UpdateWorldMatrix();
-		// 移動予想位置に基づいて、プレイヤーの受けダメージ予測を計算
-		CalculateMovePreviewDamage();
-		break;
-
-	case PlayerState::ANIM_MOVE:
-		// 【追跡】：移動アニメーション中、プレイヤーを継続的に追従する
-		if (m_context && m_context->GetCamera()) {
-			m_context->GetCamera()->UpdateTrackingTarget(m_srt.pos);
-		}
-		if (UpdatePathMovement(deltaSeconds)) {
-			m_hasMoved = true;
-			// 現在位置のタイルのイベント（トラップ等）を発火させる
-			Tile* finalTile = GetMap()->GetTile(m_gridX, m_gridZ);
-			if (finalTile && finalTile->structure) {
-				// プレイヤーがオブジェクトを踏んだ（進入した）際のイベントを実行
-				finalTile->structure->OnEnter(this);
-			}
-			SwitchToMenuMain();
-		}
-		break;
-
-	case PlayerState::ATTACK_DIR_SELECT:
-		HandleAttackDirInput(deltaSeconds);
-		m_srt.pos = GetMap()->GetWorldPosition(m_gridX, m_gridZ);
-		// プレイヤーのダメージ予測を計算し、ターゲットのユニットへ設定
-		{
-			DirOffset offset = DirOffset::From(m_attackDir);
-			Tile* targetTile = GetMap()->GetTile(m_gridX + offset.x, m_gridZ + offset.z);
-			if (targetTile && this->CanTarget(targetTile->occupant)) {
-				bool isPush = (m_selectedAttackType == AttackType::Push);
-				int finalDmg = targetTile->occupant->CalculateExpectedDamage(m_playerDamage, isPush, m_attackDir);
-				targetTile->occupant->SetPreviewDamage(finalDmg);
-			}
-		}
 		break;
 
 	case PlayerState::ANIM_ATTACK_WINDUP: {
@@ -208,14 +150,7 @@ void Player::Update(float deltaSeconds) {
 
 	case PlayerState::ANIM_ATTACK:
 		if (UpdateAttackAnimation(deltaSeconds, nullptr)) {
-			if (m_isDebugAttack) {
-				m_isDebugAttack = false;
-				if (canControl) SwitchToMenuMain();
-				else m_state = PlayerState::WAITING;
-			}
-			else {
-				EndTurn();
-			}
+			EndTurn();
 		}
 		break;
 
@@ -260,24 +195,16 @@ void Player::OnKnockbackEnd() {
 }
 
 void Player::SetPreviewDamage(int dmg) {
-	// 【遮蔽】：移動先を選択中のステータスであれば、外部（敵）からの元の座標に対するダメージ注入を無視する。
-	if (m_state == PlayerState::MOVE_SELECT) return;
-
 	Unit::SetPreviewDamage(dmg);
 }
 
 void Player::StartTurn() {
 	canControl = true;
 	ResetMovePoints();
-	m_hasMoved = false;
 	m_isZoomedIn = false;
 
-	m_startGridX = m_gridX;
-	m_startGridZ = m_gridZ;
-	m_previewGridX = m_gridX;
-	m_previewGridZ = m_gridZ;
-
-	m_moveStartPos = m_srt.pos;   // 行動円の中心をターン開始位置に固定
+	m_moveOrigin = m_srt.pos;
+	m_moveBudget = m_actionRadius;
 
 	m_state = PlayerState::WAITING;
 	m_isWaitingTurnStart = true;
@@ -359,15 +286,7 @@ void Player::OnDrawFloorUI(float /*deltaSeconds*/) {
 
 	// 三人称：行動範囲の発光リング（FREE_MOVE 中は常時表示）
 	if (m_state == PlayerState::FREE_MOVE) {
-		// 塗り環：暗めの半透明シアングリーン
-		m_actionView->DrawActionCircle(m_moveStartPos, m_actionRadius, Color(0.15f, 0.75f, 0.55f, 0.6f));
-		// ライン：明るいシアン
-		m_actionView->DrawActionCircleLine(m_moveStartPos, m_actionRadius, Color(0.35f, 1.0f, 0.85f, 1.0f));
-	}
-
-	if (m_state == PlayerState::MOVE_SELECT) {
-		m_actionView->DrawMoveRange(m_moveRangeTiles);
-		m_actionView->DrawPathLine(m_currentPath, m_startGridX, m_startGridZ);
+		DrawMoveRangeCircle();
 	}
 
 	if (m_state == PlayerState::AIM) {
@@ -382,129 +301,16 @@ void Player::OnDrawFloorUI(float /*deltaSeconds*/) {
 			if (m_canAimHit) DrawLandingRing(m_aimTarget);
 		}
 	}
-	else if (m_state == PlayerState::ATTACK_DIR_SELECT) {
-		m_actionView->DrawAttackWarningFloor(m_gridX, m_gridZ, m_attackDir); // 赤い警告エリア（床面）
-	}
 }
 
 void Player::OnDrawTransparent(float /*deltaSeconds*/) {
-	if (m_state == PlayerState::MOVE_SELECT) {
-		UpdateWorldMatrix(); 
-		m_actionView->DrawGhost(m_renderer, m_srt.scale, m_srt.rot.y,
-			m_startGridX, m_startGridZ, m_worldMatrix);
-	}
 }
 
 void Player::OnDrawOverlay(float /*deltaSeconds*/) {
-	if (m_state == PlayerState::ATTACK_DIR_SELECT) {
-		// 攻撃プレビュー（敵のノックバック予測を含む最前面UI）を表示
-		bool isPush = (m_selectedAttackType == AttackType::Push);
-		m_actionView->DrawAttackWarningOverlay(m_gridX, m_gridZ, m_attackDir, isPush, this);
-	}
-
-
 	// 放物線状の矢印のみ最前面に表示（敵／罠に遮られない）。円は床レイヤー側で描画済み
 	if (m_state == PlayerState::AIM && m_canAimHit && m_aimTarget) {
 		DrawForecastArrow(m_aimTarget);
 	}
-
-
-}
-
-void Player::SwitchToMenuMain() {
-	m_state = PlayerState::MENU_MAIN;
-	m_nextState = PlayerState::MENU_MAIN;
-
-	// カメラ帰還
-	if (m_context && m_context->GetCamera()) {
-		m_context->GetCamera()->ChangeState(CameraState::Tracking, m_srt.pos);
-	}
-
-	if (m_hasMoved) m_context->GetUIManager()->SetMoveOptionEnabled(false);
-	else m_context->GetUIManager()->SetMoveOptionEnabled(true);
-
-	// 攻撃範囲内に敵がいるかどうかのチェック
-	m_canAttack = false;
-	int dx[] = { 0, 0, -1, 1 };
-	int dz[] = { 1, -1, 0, 0 };
-	for (int i = 0; i < 4; ++i) {
-		for (int r = 1; r <= ATTACK_RANGE; ++r) {
-			Tile* t = GetMap()->GetTile(m_gridX + dx[i] * r, m_gridZ + dz[i] * r);
-			// マスに誰かが存在し、かつそれが自分自身でない場合のみ、押し出し（Push）操作を許可する
-			if (t && t->occupant) {
-				Unit* targetUnit = dynamic_cast<Unit*>(t->occupant);
-				if (targetUnit && this->CanTarget(targetUnit)) {
-					m_canAttack = true;
-					break; // 対象が見つかった時点で、この方向のチェックを完了
-				}
-			}
-			if (m_canAttack) break; // 敵が見つかっていれば全チェック終了
-		}
-	}
-
-	m_context->GetUIManager()->SetAttackOptionEnabled(m_canAttack);
-	m_context->GetUIManager()->HideGuideUI();
-	m_context->GetUIManager()->OpenMainMenu();
-
-	// プレーヤー位置の誤差修正
-	m_srt.pos = GetMap()->GetWorldPosition(m_gridX, m_gridZ);
-	UpdateWorldMatrix();
-}
-
-void Player::SwitchToMoveSelect() {
-	m_state = PlayerState::MOVE_SELECT;
-	m_context->GetUIManager()->CloseMenu();
-
-	// 移動モード：矢印+ Enter + Esc
-	m_context->GetUIManager()->ShowGuideUI(m_srt.pos, {
-		.showArrows = true,
-		.showEnter = true,
-		.showEsc = true
-		});
-
-	m_previewGridX = m_gridX;
-	m_previewGridZ = m_gridZ;
-
-	m_moveRangeTiles = GetMap()->GetReachableTiles(m_gridX, m_gridZ, m_currentMovePoints);
-	m_currentPath.clear();
-}
-
-void Player::SwitchToAttackDirSelect(AttackType type) {
-	m_selectedAttackType = type;
-	m_state = PlayerState::ATTACK_DIR_SELECT;
-	m_context->GetUIManager()->CloseMenu();
-
-	m_attackDir = m_facing;
-	// 攻撃方向選択状態：矢印+ Enter + Esc
-	m_context->GetUIManager()->ShowGuideUI(m_srt.pos, {
-		.showArrows = true,
-		.showEnter = true,
-		.showEsc = true
-		});
-	// 【戦闘カメラ演出】：攻撃方向の選択時、カメラを攻撃方向へ少し前進（オフセット）させる
-	if (m_context && m_context->GetCamera()) {
-		DirOffset offset = DirOffset::From(m_attackDir);
-		Vector3 warnCenter = GetMap()->GetWorldPosition(m_gridX + offset.x, m_gridZ + offset.z);
-		m_context->GetCamera()->ChangeState(CameraState::ActionFocus, warnCenter);
-	}
-}
-
-void Player::ExecuteMove() {
-	if (m_currentPath.size() < 2) return;
-
-	m_gridX = m_previewGridX;
-	m_gridZ = m_previewGridZ;
-
-	Tile* oldTile = GetMap()->GetTile(m_startGridX, m_startGridZ);
-	if (oldTile) oldTile->occupant = nullptr;
-	Tile* newTile = GetMap()->GetTile(m_gridX, m_gridZ);
-	if (newTile) newTile->occupant = this;
-
-	// プレイヤーの位置を予想ポイントからスタートポイントにリセット
-	m_srt.pos = GetMap()->GetWorldPosition(m_startGridX, m_startGridZ);
-	m_pathAnimIndex = 1; // １から始まる、０はスタート位置
-
-	m_state = PlayerState::ANIM_MOVE;
 }
 
 void Player::ExecuteAttack() {
@@ -536,116 +342,6 @@ void Player::PerformAttackStrike() {
 	m_state = PlayerState::ANIM_ATTACK;
 }
 
-void Player::HandleMenuInput() {
-	// 移動していない場合のみ、Jキーで移動選択に切り替え
-	if (!m_hasMoved && m_currentCmd.menuMove) {
-		m_context->GetUIManager()->TriggerSelectAnim(0);
-		m_nextState = PlayerState::MOVE_SELECT;
-	}
-	// 攻撃可能な場合のみKキーの入力を受け付ける
-	else if (m_canAttack && m_currentCmd.menuAttack) {
-		m_context->GetUIManager()->TriggerSelectAnim(1);
-		m_nextState = PlayerState::ATTACK_DIR_SELECT;
-	}
-	else if (m_currentCmd.menuEnd) {
-		m_context->GetUIManager()->TriggerSelectAnim(2);
-		m_nextState = PlayerState::WAITING;
-	}
-}
-
-void Player::HandleMoveInput(float dt) {
-	// ESC: プレーヤー位置をリセットしてメインメニューに戻る
-	if (m_currentCmd.cancel) {
-		m_context->GetUIManager()->HideGuideUI();
-		m_gridX = m_startGridX;
-		m_gridZ = m_startGridZ;
-		m_previewGridX = m_startGridX;
-		m_previewGridZ = m_startGridZ;
-		SwitchToMenuMain();
-		return;
-	}
-
-	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
-	else {
-		// スクリーン空間の入力を取得し、カメラの向きに応じてワールド格子方向へ変換
-		DirOffset move = m_currentCmd.worldDir;
-		if (move.x != 0 || move.z != 0) {
-
-			int nextX = m_previewGridX + move.x;
-			int nextZ = m_previewGridZ + move.z;
-
-			// 移動できる範囲と予想移動先の検証
-			bool inRange = false;
-			for (auto* t : m_moveRangeTiles) {
-				if (t->gridX == nextX && t->gridZ == nextZ) {
-					inRange = true;
-					break;
-				}
-			}
-
-			if (inRange) {
-				m_previewGridX = nextX;
-				m_previewGridZ = nextZ;
-				m_inputCooldown = UI_INPUT_COOLDOWN;
-				// ルートの更新：startからpreviewまで
-				std::vector<Tile*> path = GetMap()->FindPaths(m_startGridX, m_startGridZ, m_previewGridX, m_previewGridZ, true);
-				m_currentPath.clear();
-
-				// 最初にスタートタイルを追加
-				Tile* startTile = GetMap()->GetTile(m_startGridX, m_startGridZ);
-				if (startTile) m_currentPath.push_back(startTile);
-				// 次に経由タイルを追加
-				m_currentPath.insert(m_currentPath.end(), path.begin(), path.end());
-				// 最後に目的地タイルを追加
-				Tile* destTile = GetMap()->GetTile(m_previewGridX, m_previewGridZ);
-				if (destTile) {
-					m_currentPath.push_back(destTile);
-				}
-
-				SetFacingFromVector(Vector3((float)move.x, 0, (float)move.z));
-
-				// 【カーソル移動】：カメラの目標注視点をカーソルのプレビュー位置に更新
-				Vector3 previewPos = GetMap()->GetWorldPosition(m_previewGridX, m_previewGridZ);
-				m_context->GetCamera()->UpdateTrackingTarget(previewPos);
-			}
-		}
-	}
-
-	if (m_currentCmd.submit) {
-		m_context->GetUIManager()->HideGuideUI();
-		ExecuteMove();
-	}
-}
-
-void Player::HandleAttackDirInput(float dt) {
-	if (m_currentCmd.cancel) {
-		SwitchToMenuMain();
-		return;
-	}
-
-	if (m_inputCooldown > 0.0f) m_inputCooldown -= dt;
-	else {
-		DirOffset move = m_currentCmd.worldDir;
-		if (move.x != 0 || move.z != 0) {
-			// 変換済みのワールド方向から攻撃方向と向きを設定
-			m_attackDir = DirOffset::FromVector((float)move.x, (float)move.z);
-			DirOffset offset = DirOffset::From(m_attackDir);
-			SetFacingFromVector(Vector3((float)offset.x, 0, (float)offset.z));
-
-			if (m_context && m_context->GetCamera()) {
-				// 攻撃方向の変更に追従して、予警中心（対象マス）へ注視点を更新
-				Vector3 warnCenter = GetMap()->GetWorldPosition(m_gridX + offset.x, m_gridZ + offset.z);
-				m_context->GetCamera()->UpdateTrackingTarget(warnCenter);
-			}
-		}
-	}
-
-	if (m_currentCmd.submit) {
-		m_context->GetUIManager()->HideGuideUI();
-		ExecuteAttack();
-	}
-}
-
 void Player::HandleFreeMove(float dt) {
 	// ESC：ターン終了
 	if (m_currentCmd.endTurn) { EndTurn(); return; }
@@ -661,6 +357,7 @@ void Player::HandleFreeMove(float dt) {
 			m_context->GetCamera()->UpdateTrackingTarget(m_srt.pos);
 	}
 	UpdateWorldMatrix();
+	UpdateTrapPreview();
 }
 
 bool Player::DriveContinuous(const Vector3& worldDir, float dt) {
@@ -671,7 +368,8 @@ bool Player::DriveContinuous(const Vector3& worldDir, float dt) {
 	// ② 壁との衝突解決（円 vs 近傍セル AABB の押し出し）
 	newPos = GetMap()->ResolveCircleCollision(newPos, m_bodyRadius);
 	// ③ 行動円クランプ（消費なし・毎回ここで丸める）
-	newPos = ClampToActionCircle(newPos);
+	newPos = ResolveUnitCollision(newPos);   // 他ユニット回避（統一）
+	newPos = ClampToMoveCircle(newPos); 
 
 	m_srt.pos = newPos;
 
@@ -681,81 +379,6 @@ bool Player::DriveContinuous(const Vector3& worldDir, float dt) {
 	return true;
 }
 
-Vector3 Player::ClampToActionCircle(const Vector3& pos) const {
-	Vector3 d = pos - m_moveStartPos;
-	d.y = 0.0f;
-	float dist = d.Length();
-	if (dist > m_actionRadius && dist > 0.0001f) {
-		d *= (m_actionRadius / dist);           // 円周上へ投影
-		Vector3 r = m_moveStartPos + d;
-		r.y = pos.y;                            // 高さは元のまま
-		return r;
-	}
-	return pos;
-}
-
-bool Player::UpdatePathMovement(float dt) {
-	if (m_currentPath.empty()) return true; //パスは空なら終了
-
-	Tile* targetTile = m_currentPath[m_pathAnimIndex];
-	Vector3 targetPos = GetMap()->GetWorldPosition(targetTile->gridX, targetTile->gridZ);
-
-	Vector3 diff = targetPos - m_srt.pos;
-	if (diff.LengthSquared() > 0.001f) {
-		SetFacingFromVector(diff);
-	}
-
-	// ベクトルの正規化と距離計算
-	Vector3 dir = diff;
-	float dist = dir.Length();
-	float step = MOVE_SPEED * dt;
-
-	if (dist <= step) {
-		m_srt.pos = targetPos;
-		++m_pathAnimIndex;// 次のターゲットへ
-		// すべてのターゲットに到達したかチェック
-		if (m_pathAnimIndex >= m_currentPath.size()) {
-			return true; // 移動完了
-		}
-	}else {
-		// まだ到達していない場合、進行
-		dir.Normalize();
-		m_srt.pos += dir * step;
-	}
-
-	UpdateWorldMatrix(); 
-	return false; // 移動中
-}
-
-void Player::CalculateMovePreviewDamage() {
-	int expectedDamage = 0;
-	MapManager* map = GetMap();
-
-	// 1. 予測：移動先が未発動の罠を踏んでしまうか
-	if (Trap* trap = Trap::GetArmedTrap(map->GetTile(m_previewGridX, m_previewGridZ))) {
-		expectedDamage += trap->GetTrapDamage();
-	}
-
-	// 2. 予測：敵の攻撃ロックオン範囲に侵入してしまうか
-	if (m_context->GetEnemyManager()) {
-		const auto& enemies = m_context->GetEnemyManager()->GetAllEnemies();
-		for (auto* enemy : enemies) {
-			// 敵がチャージ攻撃中で、かつプレイヤーの移動予定位置をロックオンしている場合
-			if (enemy->IsCharging() &&
-				enemy->GetLockedGridX() == m_previewGridX &&
-				enemy->GetLockedGridZ() == m_previewGridZ)
-			{
-				// 押し出された後の連鎖衝突／罠ダメージを予測位置からシミュレート
-				// （自分は移動済みの想定 → 占有判定から自身を除外）
-				expectedDamage += enemy->GetEnemyDamage()
-					+ SimulatePushChainDamage(map, m_previewGridX, m_previewGridZ,
-						enemy->GetFacing(), m_onPushDamage, this);
-			}
-		}
-	}
-
-	m_previewDamage = expectedDamage;
-}
 
 void Player::UpdateCelebration(float dt) {
 	// 前回のサイン値と今回のサイン値を比較して、ジャンプの上下動を実現
@@ -793,13 +416,11 @@ void Player::LoadPlayerResources() {
 	m_aimCrossSprite = std::make_unique<CSprite>(AIM_CROSS_W, AIM_CROSS_H, "Assets/texture/UI/ui_aim_cross.png");
 }
 
-void Player::DebugForceAttack(Direction dir, AttackType type) {
-	m_attackDir = dir;
-	m_selectedAttackType = type;
-	m_isDebugAttack = true;
-	SetFacing(dir);
-	ExecuteAttack();
+void Player::DebugForceAttack(Direction /*dir*/, AttackType /*type*/) {
+	SelectNearestEnemy();                 // 前方の敵をロック
+	if (m_aimTarget) ExecuteAttack();     // 新AIM攻撃で発動（KillCam/AttackZoomも実行）
 }
+
 
 void Player::SelectNearestEnemy() {
 	m_aimTarget = nullptr;
@@ -906,7 +527,7 @@ void Player::HandleAim(float dt) {
 
 	// 左クリック確定は「判定円 ∩ 受击盒」実装後（小步4）で接続
 	UpdateWorldMatrix();
-
+	UpdateTrapPreview();
 	m_aimArrowAnimTimer += dt;
 }
 
@@ -983,4 +604,10 @@ void Player::SyncGridFromWorld() {
 		m_gridX = gx;
 		m_gridZ = gz;   // 罠・占有・攻撃判定の基準となる論理格を追随させるだけ
 	}
+}
+
+void Player::UpdateTrapPreview() {
+	if (!GetMap()) return;
+	if (Trap* trap = Trap::GetArmedTrap(GetMap()->GetTile(m_gridX, m_gridZ)))
+		m_previewDamage = trap->GetTrapDamage();
 }

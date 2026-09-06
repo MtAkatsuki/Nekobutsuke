@@ -67,16 +67,9 @@ public:
 		DirOffset o = DirOffset::From(pushDir);
 		OnPushed(Vector3((float)o.x, 0.0f, (float)o.z), attacker);
 	}
-	// 押し出しを伴う攻撃を受けた際、壁や罠による二次ダメージを含めた最終被ダメージを算出
-	int CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir);
+	// 押し出しを伴う攻撃を受けた際、壁や罠による二次ダメージを含めた最終被ダメージを算出（連続方向）
 	int CalculateExpectedDamage(int baseDamage, bool isPush, const Vector3& pushDir);
 
-	// (fromX, fromZ) から pushDir 方向へ押し出された場合の連鎖ダメージ（衝突 or 罠）を予測。
-	// 実結算と移動プレビューが同一ルールを共有するための static 純関数。
-	// ignoreOccupant: 占有判定から除外するユニット（プレビュー時、移動後に空く自分自身のマス対策）
-	static int SimulatePushChainDamage(MapManager* map, int fromX, int fromZ,
-		Direction pushDir, int collisionDamage,
-		const Unit* ignoreOccupant = nullptr);
 	// 攻撃プレビューヒントのダメージ値を設定（UI描画用）
 	virtual void SetPreviewDamage(int dmg) { m_previewDamage = dmg; }
 	void DebugSetHP(int hp) { m_currentHP = hp; }
@@ -129,7 +122,6 @@ public:
 	void SetModelRenderer(CStaticMeshRenderer* r);
 	void DrawModel();
 	virtual void DrawUI();
-	void DrawPushPreview(Direction pushDir);
 	// 攻撃者（this）→target のノックバック予測。描画レイヤーごとに分割：
 	void DrawHitRing(Unit* target);       // 敵の被弾円（床レイヤー・敵の足元＝踏まれる位置）
 	void DrawLandingRing(Unit* target);   // 着地点の円（床レイヤー）
@@ -187,12 +179,19 @@ protected:
 	virtual void OnKnockbackBegin() {}                            // 被击退状態へ＋固有処理
 	virtual void OnKnockbackEnd() {}                              // 通常状態へ（死亡なら Die）
 	void UpdateKnockback(float dt);
-	void DrawGroundRing(const Vector3& center, float radius, float borderThickness, const Color& color);
-	// 常量厚度の円環ボーダー（小箱を円周に並べる。厚みは半径と独立）
-	void DrawRingBorder(const Vector3& center, float radius, float thickness,
-		const Color& color, int segments = 48);
+	void DrawGroundRing(const Vector3& center, float radius, const Color& color);
 	// 対象の足元 → 落点へ弧を描く立体的な放物線矢印（押し出しプレビュー用）
 	void DrawArcArrow(const Vector3& from, const Vector3& to, const Color& color);
+	// 攻撃予警範囲（矩形）を床デカールとして描画（this に依存しない汎用描画） 
+	void DrawWarningBox(const Vector3& center, float yaw, float size, const Color& color);
+	// 移動可能範囲の円（プレイヤーの行動範囲と同じ action_ring 系メッシュ）。床レイヤー 
+	void DrawMoveCircle(const Vector3& center, float radius, const Color& fillColor, const Color& lineColor);
+
+	// --- 移動予算・移動円（Player/Enemy 共通） ---
+	void DrawMoveRangeCircle();                              // m_moveOrigin/m_moveBudget で描画
+	Vector3 ClampToMoveCircle(const Vector3& pos) const;    // 予算円内にクランプ
+	Vector3 ResolveUnitCollision(const Vector3& pos) const; // 全ユニットとの円形衝突（統一）
+
 
 protected:
 	// =========================================================
@@ -208,7 +207,6 @@ protected:
 	CShader* m_outlineShader = nullptr;
 	CShader* m_blobShader = nullptr;
 	CStaticMeshRenderer* m_blobMesh = nullptr;
-	CStaticMeshRenderer* m_pushArrowMesh = nullptr;
 	float m_targetFade = 0.0f;
 
 	std::unique_ptr<HPBar> m_hpBar;
@@ -230,7 +228,6 @@ protected:
 	int m_onPushDamage = 2;  // ノックバック壁衝突時の基本ダメージ量
 
 	Vector3 m_targetRot = { 0.0f, 0.0f, 0.0f };
-	Vector3 m_targetWorldPos;
 
 	bool m_isInvincible = false;
 
@@ -269,4 +266,10 @@ protected:
 	TurnManager::ScopedConnection m_turnConnection;
 	//ディザリングクリップに使用
 	float m_fade = 0.0f;
+	// --- 移動予算・移動円（Player/Enemy 共通） ---
+	Vector3 m_moveOrigin;                 // 予算円の中心（ターン開始位置）
+	float   m_moveBudget = 0.0f;          // 予算＝行動円半径（移動力ぶんは派生で設定）
+	static inline Color s_moveFillColor = Color(0.15f, 0.75f, 0.55f, 0.6f); // プレイヤーと同じ
+	static inline Color s_moveLineColor = Color(0.35f, 1.0f, 0.85f, 1.0f);
+
 };

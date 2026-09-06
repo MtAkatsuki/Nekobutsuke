@@ -5,10 +5,6 @@
 // プレイヤーのステートマシン定義
 // =========================================================
 enum class PlayerState {
-    MENU_MAIN,          // 【撤去予定】旧メインメニュー
-    MOVE_SELECT,        // 【撤去予定】旧・格子移動
-    ANIM_MOVE,          // 【撤去予定】旧・移動アニメ
-    ATTACK_DIR_SELECT,  // 【撤去予定】旧・攻撃方向選択
     ANIM_ATTACK,
     ANIM_ATTACK_WINDUP,
     WAITING,

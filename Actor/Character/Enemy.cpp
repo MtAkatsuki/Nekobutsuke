@@ -12,6 +12,8 @@
 #include "../../Actor/Character/Player.h"
 #include "../../Actor/Character/Ally.h"
 #include "../../System/FxTunables.h"
+#include "../../System/collision.h"
+#include "../../System/ForecastTunables.h"
 
 
 namespace {
@@ -21,25 +23,19 @@ namespace {
 	const float MOVE_SPEED = 5.0f;
 	const float CHARGE_SHAKE_AMP = 0.01f;      // 蓄力時の震え幅
 	const float ATTACK_DELAY = 0.1f;           // 攻撃開始前のディレイ
-	const int ATTACK_RANGE = 1;				   // 攻撃範囲（グリッド単位）
 	const float MODEL_SCALE = 0.8f;            // 敵モデルの表示スケール
 
 	const int DIST_UNREACHABLE = 999;          // ターゲット不在時の距離初期値（十分大きな値）
-	const float ARRIVE_EPSILON_SQ = 0.01f;     // タイル到着判定の距離二乗しきい値
 	const float AXIS_BIAS_THRESHOLD = 0.1f;    // 方向判定でX/Z軸を区別する最小差分
-
-
-	// 攻撃意図矢印（オーバーレイ）の表示パラメータ
-	const float ATTACK_ARROW_POS_RATIO = 0.35f;                       // 自分→対象間の矢印配置比率
-	const float ATTACK_ARROW_SCALE = 0.6f;                            // 矢印の表示スケール
-	const Color ATTACK_ARROW_COLOR = Color(1.0f, 0.08f, 0.57f, 0.7f); // 赤ピンク色で危険を通知
 
 	const float MISS_NUM_Y_OFFSET = 1.0f;      // 空振り（miss）数字の表示高さ
 
 	// --- 床ヒントUIの表示色 ---
-	const Color MOVE_RANGE_COLOR = Color(0.0f, 1.0f, 0.0f, 0.2f);   // 移動範囲：薄い緑
 	const Color DANGER_TILE_COLOR = Color(0.9f, 0.0f, 0.0f, 0.5f);  // ロックオン中のタイル：半透明の赤
 
+	const float ENEMY_WARN_SIZE = 1.0f;   // 攻撃予警範囲（矩形）の一辺（プレイヤーの AIM_WARN_SIZE と対称）
+	const float ENEMY_WARN_OFFSET = 1.0f;   // 自分の正面方向への配置距離
+	const Color ENEMY_WARN_COLOR = Color(1.0f, 0.2f, 0.2f, 0.25f); // 薄い赤（危険範囲）
 
 }
 
@@ -63,7 +59,6 @@ void Enemy::Init() {
 
 	m_srt.scale = Vector3(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
 	m_srt.rot = Vector3(0, 0, 0);
-	m_targetWorldPos = m_srt.pos;
 	m_moveSpeed = MOVE_SPEED;
 
 	m_maxMovePoints = INITIAL_MOVE_POINTS;
@@ -72,10 +67,6 @@ void Enemy::Init() {
 	m_currentHP = m_maxHP;
 	m_state = EnemyState::IDLE;
 	m_isDead = false;
-
-	m_pushArrowRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_push_mesh");
-	m_attackArrowRenderer = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_attack_mesh");
-	if (!m_attackArrowRenderer) m_attackArrowRenderer = m_pushArrowRenderer;
 
 	UpdateWorldMatrix();
 }
@@ -142,18 +133,17 @@ void Enemy::Update(float deltaSeconds) {
 
 	if (m_actionUI) m_actionUI->Update(deltaSeconds);
 
-	// 敵のダメージ予測を計算し、ターゲットのユニットへ設定
-	if (m_isCharging && !m_isDead && m_state != EnemyState::DEAD_FLYING) {
-		Tile* lockedTile = GetMap()->GetTile(m_lockedGridX, m_lockedGridZ);
-		if (lockedTile && lockedTile->occupant && lockedTile->occupant != this) {
-			int finalDmg = lockedTile->occupant->CalculateExpectedDamage(m_enemyDamage, true, m_facing);
-			lockedTile->occupant->SetPreviewDamage(finalDmg);
-		}
+	// 敵のダメージ予測を計算し、ロック対象へ設定
+	if (m_isCharging && WillHitLockedVictim()
+		&& !m_isDead && m_state != EnemyState::DEAD_FLYING) {
+		Vector3 pushDir = m_lockedVictim->GetSRT().pos - m_srt.pos; pushDir.y = 0.0f;
+		int finalDmg = m_lockedVictim->CalculateExpectedDamage(m_enemyDamage, true, pushDir);
+		m_lockedVictim->SetPreviewDamage(finalDmg);
 	}
 
 	switch (m_state) {
 	case EnemyState::MOVING:
-		UpdateMove(deltaSeconds);
+		if (DriveTowardVictim(deltaSeconds)) OnMoveFinished();
 		break;
 
 	case EnemyState::ATTACKING:
@@ -161,25 +151,21 @@ void Enemy::Update(float deltaSeconds) {
 		m_attackTimer += deltaSeconds;
 		if (m_attackTimer > ATTACK_DELAY) {
 			auto impactCallback = [this]() {
-				Tile* targetTile = GetMap()->GetTile(m_lockedGridX, m_lockedGridZ);
-				if (targetTile != nullptr && this->CanTarget(targetTile->occupant)) {
-					// 移動後に参照が失われないよう、事前に対象オブジェクトのポインターを保存
-					Unit* victim = targetTile->occupant;
-
-					// 1. 先に押し出し（ノックバック）の物理効果を発生させる
-					victim->OnPushed(this->m_facing,this);
-
-					// 2. その後、ダメージ処理を実行（m_enemyDamage を実際のダメージ変数や数値に置き換え）
+				if (WillHitLockedVictim()) {
+					Unit* victim = m_lockedVictim;
+					Vector3 pushDir = victim->GetSRT().pos - m_srt.pos; pushDir.y = 0.0f;
+					victim->OnPushed(pushDir, this);      // 連続方向（予測と一致）
 					victim->TakeDamage(m_enemyDamage, this);
 				}
-				else {//miss
+				else { // miss
 					if (m_context->GetDamageManager()) {
-						Vector3 missPos = GetMap()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+						Vector3 missPos = m_lockedVictim ? m_lockedVictim->GetSRT().pos : m_srt.pos;
 						missPos.y += MISS_NUM_Y_OFFSET;
 						m_context->GetDamageManager()->SpawnDamage(missPos, 0);
 					}
 				}
 				};
+
 			if (UpdateAttackAnimation(deltaSeconds, impactCallback)) {
 				//アタックアニメ実行、完了の検査
 				m_state = EnemyState::IDLE;
@@ -258,11 +244,15 @@ void Enemy::EnemyStartAction() {
 	if (m_isCharging) {
 		ReleaseChargeAttack();
 	}
+
 	else {
 		m_pendingCharge = false;
 		ResetMovePoints();
+		m_moveOrigin = m_srt.pos;// 移動予算円の中心
+		m_moveBudget = (float)m_maxMovePoints * 1.0f;
 		ExecuteAI();
 	}
+
 }
 
 void Enemy::OnTurnChanged(TurnState state) {
@@ -271,15 +261,10 @@ void Enemy::OnTurnChanged(TurnState state) {
 
 void Enemy::OnKnockbackBegin() {
 	m_state = EnemyState::KNOCKBACK;
-	m_kbOldX = m_gridX; m_kbOldZ = m_gridZ;
 }
 void Enemy::OnKnockbackEnd() {
 	if (m_currentHP <= 0) { Die(); return; }   // 滑り終わってから死亡演出へ
 	m_state = EnemyState::IDLE;
-	if (m_isCharging && (m_gridX != m_kbOldX || m_gridZ != m_kbOldZ)) {
-		m_lockedGridX += (m_gridX - m_kbOldX);   // charge ロック座標を移動量ぶん追随
-		m_lockedGridZ += (m_gridZ - m_kbOldZ);
-	}
 }
 
 void Enemy::TakeDamage(int damage, Unit* attacker) {
@@ -334,128 +319,98 @@ void Enemy::ExecuteAI() {
 
 bool Enemy::TryActOnTarget(Unit* target) {
 	if (!target) return false;
-
-	MapManager* map = GetMap();
-	int tx = target->GetUnitGridX(), tz = target->GetUnitGridZ();
-	int dist = map->CalculateDistance(m_gridX, m_gridZ, tx, tz);
-
-	// 攻撃範囲内：チャージ開始
-	if (dist <= ATTACK_RANGE) {
-		StartCharge(target);
-		return true;
-	}
-
-	// targetをgoalとして扱う：FindPathsはtarget隣接マスで停止する（意図した仕様）
-	auto path = map->FindPaths(m_gridX, m_gridZ, tx, tz, false);
-	if (path.empty()) return false;   // 到達不可：次の候補へ
-
-	// 「行動力の範囲内」で、目標に最も近づける移動先を選択
-	int limit = std::min((int)path.size(), m_currentMovePoints);
-	int bestIdx = -1;
-	int bestD = dist;   // 現在位置の距離を基準にする
-
-	for (int i = 0; i < limit; ++i) {
-		int d = map->CalculateDistance(path[i]->gridX, path[i]->gridZ, tx, tz);
-		if (d < bestD) { bestD = d; bestIdx = i; }    // より近づく地点のみ採用
-	}
-
-	if (bestIdx < 0) return false;    // 範囲内に近づける地点なし：次の候補へ
-
-	path.resize(bestIdx + 1);                         // 「最も近い移動先」まで経路を切り詰める
-	m_currentMovePoints -= (int)path.size();
-	EnemyStartMoveTo(std::move(path));
+	// すでに幾何的に攻撃可能なら → チャージ
+	if (WouldHitVictim(target)) { StartCharge(target); return true; }
+	// それ以外は連続接近を開始（移動予算内で可能な限り接近）
+	m_moveTarget = target;
+	m_state = EnemyState::MOVING;
+	// 連続移動中はグリッド占有を解除
+	if (Tile* t = GetMap()->GetTile(m_gridX, m_gridZ))
+		if (t->occupant == this) t->occupant = nullptr;
 	return true;
 }
+
+
+bool Enemy::WouldHitVictim(Unit* v) const {
+	if (!CanTarget(v)) return false;
+	using namespace GM31::GE::Collision;
+	Vector3 dir = v->GetSRT().pos - m_srt.pos; dir.y = 0.0f;
+	if (dir.LengthSquared() < 1e-6f) dir = Vector3(sinf(m_srt.rot.y), 0.0f, cosf(m_srt.rot.y));
+	dir.Normalize();
+	float yaw = atan2f(dir.x, dir.z);
+	Vector3 center = m_srt.pos + dir * ENEMY_WARN_OFFSET;
+	BoundingBoxOBB obb = SetOBB(Vector3(0.0f, yaw, 0.0f), center,
+		ENEMY_WARN_SIZE, 2.0f, ENEMY_WARN_SIZE);
+	BoundingSphere sph; sph.center = v->GetSRT().pos; sph.radius = ForecastUI::HitRingRadius;
+	return CollisionSphereOBB(sph, obb);
+}
+bool Enemy::WillHitLockedVictim() const { return WouldHitVictim(m_lockedVictim); }
+
 
 void Enemy::EnemyEndAction() {
 	m_state = EnemyState::IDLE;
 }
 
-void Enemy::EnemyStartMoveTo(std::vector<Tile*> path) {
-	if (path.empty()) {
-		OnMoveFinished();
-		return;
-	}
-	Tile* oldTile = GetMap()->GetTile(m_gridX, m_gridZ);
-	if (oldTile && oldTile->occupant == this) oldTile->occupant = nullptr;
-
-	m_currentPath = std::move(path);
-	m_pathIndex = 0;
-	m_state = EnemyState::MOVING;
-	m_targetWorldPos = GetMap()->GetWorldPosition(*m_currentPath[m_pathIndex]);
+void Enemy::GetAttackBox(Vector3& center, float& yaw) const {
+	Vector3 dir = m_lockedVictim ? (m_lockedVictim->GetSRT().pos - m_srt.pos) : Vector3(0, 0, 0);
+	dir.y = 0.0f;
+	if (dir.LengthSquared() < 1e-6f) dir = Vector3(sinf(m_srt.rot.y), 0.0f, cosf(m_srt.rot.y));
+	dir.Normalize();
+	yaw = atan2f(dir.x, dir.z);                     // fwd=(sin yaw,0,cos yaw)
+	center = m_srt.pos + dir * ENEMY_WARN_OFFSET;
 }
 
-void Enemy::UpdateMove(float deltaSeconds) {
-	Vector3 currentPos = this->GetSRT().pos;
-	Vector3 direction = m_targetWorldPos - currentPos;
-	SetFacingFromVector(direction);
+bool Enemy::DriveTowardVictim(float dt) {
+	if (!m_moveTarget) return true;
+	Vector3 toV = m_moveTarget->GetSRT().pos - m_srt.pos; toV.y = 0.0f;
+	float distToV = toV.Length();
+	float contact = m_bodyRadius + m_moveTarget->GetBodyRadius();
+	if (distToV <= contact + 0.02f) return true;   // 接触＝これ以上接近できない
 
-	float distanceSq = direction.LengthSquared();
-	if (distanceSq < ARRIVE_EPSILON_SQ) {
-		this->SetPosition(m_targetWorldPos);
-		++m_pathIndex;
-		if (m_pathIndex >= m_currentPath.size()) OnMoveFinished();
-		else m_targetWorldPos = GetMap()->GetWorldPosition(*m_currentPath[m_pathIndex]);
-	}
-	else {
-		float moveStep = m_moveSpeed * deltaSeconds;
-		float dist = std::sqrt(distanceSq);
-		if (dist > 0.0001f) {
-			direction = direction * (1.0f / dist);
-			if (moveStep >= dist) this->SetPosition(m_targetWorldPos);
-			else this->SetPosition(currentPos + direction * moveStep);
-		}
-		UpdateWorldMatrix();
-	}
+	Vector3 dir = toV / distToV;
+	Vector3 before = m_srt.pos;
+
+	Vector3 newPos = m_srt.pos + dir * (m_moveSpeed * dt);
+	newPos = GetMap()->ResolveCircleCollision(newPos, m_bodyRadius);   // 壁に沿って移動
+	newPos = ResolveUnitCollision(newPos);// 他ユニットを回避
+	Vector3 clamped = ClampToMoveCircle(newPos);
+	bool atBudget = (clamped - newPos).LengthSquared() > 1e-8f;
+	newPos = clamped;
+	newPos.y = m_srt.pos.y;
+	m_srt.pos = newPos;
+	SetFacingYaw(atan2f(dir.x, dir.z));
+	SyncGridFromWorld();
+	UpdateWorldMatrix();
+
+	if (atBudget) return true;                         // 移動予算を使い切った
+	Vector3 moved = m_srt.pos - before; moved.y = 0.0f;
+	if (moved.LengthSquared() < 1e-8f) return true;    // 壁に阻まれて進めない＝これ以上進めない
+	return false;
+}
+
+void Enemy::SyncGridFromWorld() {
+	int gx, gz;
+	if (GetMap() && GetMap()->WorldToGrid(m_srt.pos, gx, gz)) { m_gridX = gx; m_gridZ = gz; }
 }
 
 void Enemy::OnMoveFinished() {
 	m_state = EnemyState::IDLE;
-	m_moveRangeTiles.clear();
-
-	if (!m_currentPath.empty()) {
-		Tile* endTile = m_currentPath.back();
-		this->m_gridX = endTile->gridX;
-		this->m_gridZ = endTile->gridZ;
-		if (endTile) {
-			endTile->occupant = this;
-			//罠のチェック
-			if (endTile->structure) endTile->structure->OnEnter(this);
-		}
+	SyncGridFromWorld();                          // 連続座標をグリッドへ反映
+	if (Tile* t = GetMap()->GetTile(m_gridX, m_gridZ)) {
+		t->occupant = this;
+		if (t->structure) t->structure->OnEnter(this);   // 足元の罠
 	}
-	//プレーヤーと味方の距離を再計算、攻撃範囲内かどうか
-	Player* player = m_context->GetPlayer();
-	Ally* ally = m_context->GetAlly();
-	Unit* targetInRange = nullptr;
-
-	// チェック Playerは範囲内か
-	if (this->CanTarget(player) > 0 && !player->IsInvincible()) {
-		int d = GetMap()->CalculateDistance(m_gridX, m_gridZ, player->GetUnitGridX(), player->GetUnitGridZ());
-		if (d <= ATTACK_RANGE) targetInRange = player;
-	}
-	// チェック Ally は範囲内か(優先でAllyロック)
-	if (this->CanTarget(ally) && !ally->IsInvincible()) {
-		int d = GetMap()->CalculateDistance(m_gridX, m_gridZ, ally->GetUnitGridX(), ally->GetUnitGridZ());
-		if (d <= ATTACK_RANGE) targetInRange = ally;
-	}
-
-	if (targetInRange) {
-		StartCharge(targetInRange);
-		return;
-	}
-	EnemyEndAction();
+	// 接近後、幾何的に攻撃可能ならチャージ／攻撃できなければターン終了
+	if (m_moveTarget && WouldHitVictim(m_moveTarget)) StartCharge(m_moveTarget);
+	else EnemyEndAction();
+	m_moveTarget = nullptr;
 }
 
-void Enemy::StartCharge(Unit* target) {
+void Enemy::StartCharge(Unit * target) {
 	if (target) {
-		m_lockedGridX = target->GetUnitGridX();
-		m_lockedGridZ = target->GetUnitGridZ();
-		// 前の段階で残っていた反転（フリップ）状態を強制的に中断し、SetFacing が確実に適用されるようにする
-		m_isTurning = false;
-		//向きの再設定
-		Vector3 myPos = GetMap()->GetWorldPosition(m_gridX, m_gridZ);
-		Vector3 targetPos = GetMap()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-		SetFacingFromVector(targetPos - myPos);
+		m_lockedVictim = target;
+		m_isTurning = false;   // 残っていたフリップを中断し、SetFacing を確実に反映
+		SetFacingFromVector(target->GetSRT().pos - m_srt.pos);   // 連続座標で向きを合わせる
 	}
 
 	if (m_isTurning) {
@@ -478,6 +433,7 @@ void Enemy::Die() {
 	// 死亡時に蓄力（チャージ）状態を強制クリアし、警告UIの残存を防止する
 	m_isCharging = false;
 	m_pendingCharge = false;
+	m_lockedVictim = nullptr;
 
 	if (m_context && GetMap()) {
 		Tile* myTile = GetMap()->GetTile(m_gridX, m_gridZ);
@@ -517,62 +473,30 @@ void Enemy::DrawUI() {
 void Enemy::OnDrawFloorUI(float /*deltaSeconds*/) {
 	if (m_currentHP <= 0) return;
 
-	// --- 移動中かつ移動範囲データが存在する場合、薄い緑色で描画 ---
-	if (m_state == EnemyState::MOVING && m_context && GetMap() && !m_moveRangeTiles.empty()) {
-		GetMap()->DrawColoredTiles(m_moveRangeTiles, MOVE_RANGE_COLOR);
+	// 蓄力中：攻撃予警範囲（矩形・危険範囲）＋被弾円＋着地点の円を床レイヤーに描画
+	if (m_isCharging && CanTarget(m_lockedVictim)) {
+		Vector3 c; float yaw; GetAttackBox(c, yaw);
+		DrawWarningBox(c, yaw, ENEMY_WARN_SIZE, ENEMY_WARN_COLOR);   // 危険範囲（常に表示）
+		DrawHitRing(m_lockedVictim);                                  // 被弾円（常に表示）
+		if (WillHitLockedVictim()) DrawLandingRing(m_lockedVictim);   // 命中見込み時のみ
 	}
 
-	// TODO(Phase 2): 敵のロックを格子(m_lockedGridX/Z)から Unit* へ変更後、
-	// DrawPushForecast(victim) を接続して押し出しプレビューを表示する。
-	// 現状は victim(Unit*) を持たないため未接続（攻撃予告矢印は OnDrawOverlay 側で描画）。
+	// 移動中：移動可能円（予算）を表示（敵は赤系）
+	if (m_state == EnemyState::MOVING) DrawMoveRangeCircle();
 }
 
 void Enemy::OnDrawOverlay(float /*deltaSeconds*/) {
 	if (m_currentHP <= 0) return;
 
-	// 敵の攻撃意図（赤い矢印）を最前面に描画
-	if (m_isCharging && m_attackArrowRenderer && m_context && GetMap()) {
-		if (m_enemyShader) m_enemyShader->SetGPU();
-
-		Vector3 myPos = GetMap()->GetWorldPosition(m_gridX, m_gridZ);
-		Vector3 targetPos = GetMap()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
-		Vector3 arrowPos = myPos + (targetPos - myPos) * ATTACK_ARROW_POS_RATIO;
-		arrowPos.y += ZFight::EnemyArrow; // Overlayレイヤー内での浮かせ具合を調整
-
-		Vector3 diff = targetPos - myPos;
-		float rotY = 0.0f;
-		if (diff.x > AXIS_BIAS_THRESHOLD)       rotY = 0.0f;
-		else if (diff.x < -AXIS_BIAS_THRESHOLD) rotY = PI;
-		else if (diff.z > AXIS_BIAS_THRESHOLD)  rotY = -PI / 2.0f;
-		else if (diff.z < -AXIS_BIAS_THRESHOLD) rotY = PI / 2.0f;
-
-		Matrix4x4 world = Matrix4x4::CreateScale(Vector3(ATTACK_ARROW_SCALE, ATTACK_ARROW_SCALE, ATTACK_ARROW_SCALE))
-			* Matrix4x4::CreateRotationY(rotY)
-			* Matrix4x4::CreateTranslation(arrowPos);
-
-		Renderer::SetWorldMatrix(&world);
-		if (auto* mat = m_attackArrowRenderer->GetMaterial(0)) {
-			MATERIAL old = mat->GetData();
-			MATERIAL temp = old;
-			temp.Diffuse = ATTACK_ARROW_COLOR;
-			mat->SetMaterial(temp);
-			m_attackArrowRenderer->Draw();
-			mat->SetMaterial(old);
-		}
-
-		// ターゲットのタイルに誰かが存在し、かつそれが自分自身でない場合、
-		
-		// そのユニットがどこへ押し出されるかのプレビューを継続的に表示する
-		Tile* lockedTile = GetMap()->GetTile(m_lockedGridX, m_lockedGridZ);
-		if (lockedTile && this->CanTarget(lockedTile->occupant)) {
-			lockedTile->occupant->DrawPushPreview(m_facing);
-		}
+	// 蓄力中：ロック対象への放物線状の予測矢印を最前面に描画（敵／罠に遮られない）
+	if (m_isCharging && WillHitLockedVictim()) {
+		DrawForecastArrow(m_lockedVictim);
 	}
 }
 
 void Enemy::ReleaseChargeAttack() {
 	m_state = EnemyState::ATTACKING;
-	Vector3 targetGridPos = GetMap()->GetWorldPosition(m_lockedGridX, m_lockedGridZ);
+	Vector3 targetGridPos = m_lockedVictim ? m_lockedVictim->GetSRT().pos : m_srt.pos;
 	StartAttackAnimation(targetGridPos);
 	m_attackTimer = 0.0f;
 	m_isCharging = false;

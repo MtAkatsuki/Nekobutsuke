@@ -15,6 +15,8 @@
 #include "../../GamePlay/Manager/EnemyManager.h"
 #include "../Character/Ally.h"
 #include "../../System/ForecastTunables.h"
+#include "../Character/Player.h"
+#include "../Character/Enemy.h"
 
 namespace {
 	// ---------------------------------------------------------
@@ -53,12 +55,6 @@ namespace {
 	// ノックバック（スライディング）演出パラメータ
 	const float SLIDE_ARC_HEIGHT = 1.0f;   // ノックバック曲線の頂点高さ（落下時の弧の高さ）
 	const float SLIDE_TUMBLE_TURNS = 0.0f;  // 転がる回転の回数（1.0 = 360度1回転）
-
-	// 押し出しプレビュー矢印の表示パラメータ
-	const float PUSH_ARROW_POS_RATIO = 0.2f;                            // 現在地→対象地間の矢印配置比率
-	const Vector3 PUSH_ARROW_SCALE = Vector3(1.0f, 1.0f, 1.5f);         // 矢印の表示スケール（進行方向に伸ばす）
-	const Color PUSH_ARROW_WARN_COLOR = Color(1.0f, 1.0f, 0.0f, 0.7f);  // 衝突予測時：黄色
-	const Color PUSH_ARROW_SAFE_COLOR = Color(0.6f, 0.6f, 0.6f, 0.9f);  // 安全移動時：灰色
 }
 
 Unit::Unit(GameContext* context) : GameObject(context) {
@@ -133,41 +129,6 @@ void Unit::TakeDamage(int damage, Unit* attacker) {
 	}
 
 	OnHpChanged();
-}
-
-int Unit::SimulatePushChainDamage(MapManager* map, int fromX, int fromZ,
-	Direction pushDir, int collisionDamage,
-	const Unit* ignoreOccupant) {
-	if (!map) return 0;
-
-	DirOffset offset = DirOffset::From(pushDir);
-	int pushX = fromX + offset.x;
-	int pushZ = fromZ + offset.z;
-
-	bool isBlocked = !map->IsWalkable(pushX, pushZ);
-	Tile* nextTile = map->GetTile(pushX, pushZ);
-	if (nextTile && nextTile->occupant && nextTile->occupant != ignoreOccupant) isBlocked = true;
-
-	if (isBlocked) {
-		// 壁や他のユニットに衝突する場合
-		return collisionDamage;
-	}
-	// 衝突せずスムーズに押し出される場合、足元の未発動の罠を確認
-	if (Trap* trap = Trap::GetArmedTrap(nextTile)) {
-		return trap->GetTrapDamage();
-	}
-	return 0;
-}
-
-int Unit::CalculateExpectedDamage(int baseDamage, bool isPush, Direction pushDir) {
-	int expectedDamage = baseDamage;
-
-	// 押し出し攻撃の場合、移動先の状況によって追加の連鎖ダメージを予測する
-	if (isPush && m_context && GetMap()) {
-		expectedDamage += SimulatePushChainDamage(
-			GetMap(), m_gridX, m_gridZ, pushDir, m_onPushDamage);
-	}
-	return expectedDamage;
 }
 
 int Unit::CalculateExpectedDamage(int baseDamage, bool isPush, const Vector3& pushDir) {
@@ -487,54 +448,6 @@ void Unit::DrawUI() {
 	m_previewDamage = 0;
 }
 
-void Unit::DrawPushPreview(Direction pushDir) {
-	if (!m_pushArrowMesh) m_pushArrowMesh = MeshManager::GetRenderer<CStaticMeshRenderer>("arrow_push_mesh");
-	if (!m_pushArrowMesh || !m_context || !GetMap()) return;
-
-	MapManager* map = GetMap();
-	DirOffset offset = DirOffset::From(pushDir);
-
-	int targetX = m_gridX + offset.x;
-	int targetZ = m_gridZ + offset.z;
-
-	bool isBlocked = !map->IsWalkable(targetX, targetZ);
-	Tile* targetTile = map->GetTile(targetX, targetZ);
-	if (targetTile && targetTile->occupant) isBlocked = true;
-
-	Vector3 myPos = map->GetWorldPosition(m_gridX, m_gridZ);
-	Vector3 targetPos = map->GetWorldPosition(targetX, targetZ);
-
-	// 描画位置を現在地と対象地の間に設定
-	Vector3 arrowPos = myPos + (targetPos - myPos) * PUSH_ARROW_POS_RATIO;
-	arrowPos.y += ZFight::Arrow;
-
-	float rotY = 0.0f;
-	if (offset.x == 1)       rotY = 0.0f;
-	else if (offset.x == -1) rotY = PI;
-	else if (offset.z == 1)  rotY = -PI / 2.0f;
-	else if (offset.z == -1) rotY = PI / 2.0f;
-
-	Matrix4x4 world = Matrix4x4::CreateScale(PUSH_ARROW_SCALE)
-		* Matrix4x4::CreateRotationY(rotY)
-		* Matrix4x4::CreateTranslation(arrowPos);
-
-	// 衝突が予測される場合は黄色、安全に移動できる場合は灰色で視覚的フィードバックを提供する
-	Color arrowColor = isBlocked ? PUSH_ARROW_WARN_COLOR : PUSH_ARROW_SAFE_COLOR;
-
-	Renderer::SetWorldMatrix(&world);
-	Renderer::DisableCulling(false);
-	if (auto* mat = m_pushArrowMesh->GetMaterial(0)) {
-		MATERIAL old = mat->GetData();
-		MATERIAL temp = old;
-		temp.Diffuse = arrowColor;
-		mat->SetMaterial(temp);
-		m_pushArrowMesh->Draw();
-		mat->SetMaterial(old);
-	}
-	Renderer::DisableCulling(true);
-
-}
-
 void Unit::StartDeathFly() {
 	m_isDeathFlying = true;
 	Vector3 diff = m_srt.pos - m_hitSourcePos;
@@ -652,8 +565,7 @@ Unit::PushResult Unit::SimulatePush(GameContext* ctx, const Vector3& fromPos,
 // 敵の被弾円：床レイヤーに描画し、その後に描画される敵／罠が上に乗る
 void Unit::DrawHitRing(Unit* target) {
 	if (!target) return;
-	DrawGroundRing(target->GetSRT().pos, ForecastUI::HitRingRadius,
-		ForecastUI::HitRingBorder, ForecastUI::HitRingColor);
+	DrawGroundRing(target->GetSRT().pos, ForecastUI::HitRingRadius, ForecastUI::HitRingColor);
 }
 
 // 着地点の円：床レイヤー
@@ -666,7 +578,7 @@ void Unit::DrawLandingRing(Unit* target) {
 		PUSH_DIST, target->GetBodyRadius(), 0, target);
 	const Color col = r.blocked ? Color(1.0f, 0.3f, 0.2f, 1.0f) : Color(0.4f, 1.0f, 0.5f, 1.0f);
 	Vector3 spot = r.blocked ? (target->GetSRT().pos + dir * PUSH_DIST) : r.landingPos;
-	DrawGroundRing(spot, ForecastUI::LandingRingRadius, ForecastUI::LandingRingBorder, col);
+	DrawGroundRing(spot, ForecastUI::LandingRingRadius, col);
 }
 
 // 放物線状の矢印（最前面）＋衝突予測エフェクト
@@ -686,82 +598,41 @@ void Unit::DrawForecastArrow(Unit* target) {
 	}
 }
 
-// 円（塗り＋一定幅のボーダー）。床レイヤー用：depth-read-only で地面に貼り、敵／罠が上に乗る
-void Unit::DrawGroundRing(const Vector3& center, float radius, float borderThickness, const Color& color) {
+// 円（塗り＋スムーズなライン）。プレイヤーの移動範囲円（DrawActionCircle/Line）と同じメッシュ・同じ方式。
+// 床レイヤー用：depth-read-only で地面に貼り、敵／罠が上に乗る（踏まれる）
+void Unit::DrawGroundRing(const Vector3 & center, float radius, const Color & color) {
 	CStaticMeshRenderer* fill = MeshManager::GetRenderer<CStaticMeshRenderer>("action_ring_mesh");
+	CStaticMeshRenderer* line = MeshManager::GetRenderer<CStaticMeshRenderer>("action_ring_line_attack_mesh");
 	CShader* fx = MeshManager::GetShader<CShader>("fxshader");
+	if (!fx) return;
 
-	// 塗り：半透明ディスク
-	if (fill && fx) {
-		Vector3 p = center; p.y = ZFight::RangePanel;
-		Matrix4x4 w = Matrix4x4::CreateScale(radius * 2.0f, 1.0f, radius * 2.0f)
-			* Matrix4x4::CreateTranslation(p);
+	auto drawOne = [&](CStaticMeshRenderer* r, float scale, float yLift, const Color& c, BOOL tex) {
+		if (!r) return;
+		Vector3 p = center; p.y = ZFight::RangePanel + yLift;
+		Matrix4x4 w = Matrix4x4::CreateScale(scale, 1.0f, scale) * Matrix4x4::CreateTranslation(p);
 		fx->SetGPU();
 		Renderer::SetBlendState(BS_ALPHABLEND);
 		Renderer::DisableCulling(false);
 		Renderer::SetDepthReadOnly();
 		Renderer::SetWorldMatrix(&w);
-		if (auto* mat = fill->GetMaterial(0)) {
+		if (auto* mat = r->GetMaterial(0)) {
 			MATERIAL old = mat->GetData(), tmp = old;
-			tmp.Diffuse = Color(color.x, color.y, color.z, ForecastUI::RingFillAlpha);
-			tmp.TextureEnable = TRUE;
-			mat->SetMaterial(tmp); fill->Draw(); mat->SetMaterial(old);
+			tmp.Diffuse = c; tmp.TextureEnable = tex;
+			mat->SetMaterial(tmp); r->Draw(); mat->SetMaterial(old);
 		}
 		Renderer::SetDepthEnable(true);
 		Renderer::DisableCulling(true);
 		Renderer::SetBlendState(BS_NONE);
-	}
-
-	// ボーダー：一定幅＋半透明
-	DrawRingBorder(center, radius, borderThickness,
-		Color(color.x, color.y, color.z, ForecastUI::RingBorderAlpha));
-}
-
-// 一定幅の円環ボーダー（小箱を円周上に並べる）。床レイヤー用（depth-read-only）
-void Unit::DrawRingBorder(const Vector3& center, float radius, float thickness,
-	const Color& color, int segments) {
-	CStaticMeshRenderer* box = ModelRegistry::RegisterModel(
-		"fx_particle_box", "Assets/model/obj/fx_cube.obj", "Assets/model/obj");
-	CShader* fx = MeshManager::GetShader<CShader>("fxshader");
-	if (!box || !fx) return;
-	if (segments < 8) segments = 8;
-
-	const float H = 0.02f;                 // Y方向の薄さ（地面に密着させる）
-	const float TWO_PI = 6.2831853f;
-
-	fx->SetGPU();
-	Renderer::SetBlendState(BS_ALPHABLEND);
-	Renderer::DisableCulling(false);
-	Renderer::SetDepthReadOnly();
-
-	auto ringPt = [&](float a) {
-		return Vector3(center.x + cosf(a) * radius,
-			ZFight::RangePanel + 0.003f, center.z + sinf(a) * radius);
 		};
 
-	Vector3 prev = ringPt(0.0f);
-	for (int i = 1; i <= segments; ++i) {
-		Vector3 cur = ringPt(TWO_PI * (float)i / (float)segments);
-		Vector3 seg = cur - prev; float len = seg.Length();
-		if (len > 1e-4f) {
-			float rotY = -atan2f(seg.z, seg.x);        // 箱の +X をこの弦に合わせる
-			Vector3 mid = (prev + cur) * 0.5f;
-			Matrix4x4 w = Matrix4x4::CreateScale(len * 0.5f, H, thickness * 0.5f)
-				* Matrix4x4::CreateRotationY(rotY)
-				* Matrix4x4::CreateTranslation(mid);
-			Renderer::SetWorldMatrix(&w);
-			if (auto* mat = box->GetMaterial(0)) {
-				MATERIAL old = mat->GetData(), tmp = old;
-				tmp.Diffuse = color; tmp.TextureEnable = FALSE;
-				mat->SetMaterial(tmp); box->Draw(); mat->SetMaterial(old);
-			}
-		}
-		prev = cur;
-	}
-	Renderer::SetDepthEnable(true);
-	Renderer::DisableCulling(true);
-	Renderer::SetBlendState(BS_NONE);
+	// 塗り（action_ring は ±0.5 → 直径分の scale = radius*2、白αテクスチャ）
+	drawOne(fill, radius * 2.0f, 0.0f,
+		Color(color.x, color.y, color.z, ForecastUI::RingFillAlpha), TRUE);
+	// ライン（ring_line は ±1 → scale = radius。DrawActionCircleLine と同じ 0.99 で塗りの縁の内側へ）
+	drawOne(line, radius * 2.0f * 0.99f, 0.002f,
+		Color(color.x, color.y, color.z, ForecastUI::RingBorderAlpha), FALSE);
 }
+
 
 // 放物線状の矢印：最前面オーバーレイを前提（深度／ブレンドはパス側に任せる）＋半透明
 void Unit::DrawArcArrow(const Vector3& from, const Vector3& to, const Color& color) {
@@ -787,3 +658,87 @@ void Unit::DrawArcArrow(const Vector3& from, const Vector3& to, const Color& col
 	Renderer::DisableCulling(true);
 }
 
+void Unit::DrawWarningBox(const Vector3& center, float yaw, float size, const Color& color) {
+	CStaticMeshRenderer* box = MeshManager::GetRenderer<CStaticMeshRenderer>("range_panel_mesh");
+	CShader* fx = MeshManager::GetShader<CShader>("fxshader");
+	if (!box || !fx) return;
+
+	Vector3 p = center; p.y = ZFight::RangePanel;
+	Matrix4x4 w = Matrix4x4::CreateScale(size, 1.0f, size)
+		* Matrix4x4::CreateRotationY(yaw)
+		* Matrix4x4::CreateTranslation(p);
+	fx->SetGPU();
+	Renderer::SetBlendState(BS_ALPHABLEND);
+	Renderer::DisableCulling(false);
+	Renderer::SetDepthReadOnly();
+	Renderer::SetWorldMatrix(&w);
+	if (auto* mat = box->GetMaterial(0)) {
+		MATERIAL old = mat->GetData(), tmp = old;
+		tmp.Diffuse = color; tmp.TextureEnable = FALSE;
+		mat->SetMaterial(tmp); box->Draw(); mat->SetMaterial(old);
+	}
+	Renderer::SetDepthEnable(true);
+	Renderer::DisableCulling(true);
+	Renderer::SetBlendState(BS_NONE);
+}
+
+void Unit::DrawMoveCircle(const Vector3& center, float radius, const Color& fillColor, const Color& lineColor) {
+	CStaticMeshRenderer* fill = MeshManager::GetRenderer<CStaticMeshRenderer>("action_ring_mesh");
+	CStaticMeshRenderer* line = MeshManager::GetRenderer<CStaticMeshRenderer>("action_ring_line_mesh"); // ±1
+	CShader* fx = MeshManager::GetShader<CShader>("fxshader");
+	if (!fx) return;
+	auto drawOne = [&](CStaticMeshRenderer* r, float scale, float yLift, const Color& c, BOOL tex) {
+		if (!r) return;
+		Vector3 p = center; p.y = ZFight::RangePanel + yLift;
+		Matrix4x4 w = Matrix4x4::CreateScale(scale, 1.0f, scale) * Matrix4x4::CreateTranslation(p);
+		fx->SetGPU();
+		Renderer::SetBlendState(BS_ALPHABLEND);
+		Renderer::DisableCulling(false);
+		Renderer::SetDepthReadOnly();
+		Renderer::SetWorldMatrix(&w);
+		if (auto* mat = r->GetMaterial(0)) {
+			MATERIAL old = mat->GetData(), tmp = old;
+			tmp.Diffuse = c; tmp.TextureEnable = tex;
+			mat->SetMaterial(tmp); r->Draw(); mat->SetMaterial(old);
+		}
+		Renderer::SetDepthEnable(true);
+		Renderer::DisableCulling(true);
+		Renderer::SetBlendState(BS_NONE);
+		};
+	drawOne(fill, radius * 2.0f, 0.0f, fillColor, TRUE);   // action_ring は ±0.5 → *2
+	drawOne(line, radius * 0.99f, 0.002f, lineColor, FALSE);  // ring_line は ±1 → *0.99
+}
+
+void Unit::DrawMoveRangeCircle() {
+	DrawMoveCircle(m_moveOrigin, m_moveBudget, s_moveFillColor, s_moveLineColor);
+}
+
+Vector3 Unit::ClampToMoveCircle(const Vector3& pos) const {
+	Vector3 d = pos - m_moveOrigin; d.y = 0.0f;
+	float dist = d.Length();
+	if (dist > m_moveBudget && dist > 0.0001f) {
+		d *= (m_moveBudget / dist);
+		Vector3 r = m_moveOrigin + d; r.y = pos.y; return r;
+	}
+	return pos;
+}
+
+// 全ユニット共通の円 vs 円衝突（自分・死亡は除外）。接近対象も含めて押し出す
+// → 敵は対象への接触距離（半径の合計）でピタッと停止
+Vector3 Unit::ResolveUnitCollision(const Vector3& pos) const {
+	Vector3 c = pos;
+	auto pushOut = [&](Unit* u) {
+		if (!u || u == this || u->GetHP() <= 0) return;
+		Vector3 d = c - u->GetSRT().pos; d.y = 0.0f;
+		float dist = d.Length();
+		float minDist = m_bodyRadius + u->GetBodyRadius();
+		if (dist < minDist && dist > 0.0001f) c += d * ((minDist - dist) / dist);
+		};
+	if (m_context) {
+		pushOut(m_context->GetPlayer());
+		pushOut(m_context->GetAlly());
+		if (m_context->GetEnemyManager())
+			for (Enemy* e : m_context->GetEnemyManager()->GetAllEnemies()) pushOut(e);
+	}
+	return c;
+}

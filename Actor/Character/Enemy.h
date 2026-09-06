@@ -49,9 +49,10 @@ public:
     bool IsDeadFlying() const {
         return m_state == EnemyState::DEAD_FLYING || m_state == EnemyState::DEATH_SHAKE;
     }
-    bool IsCharging() const { return m_isCharging; }
-    int GetLockedGridX() const { return m_lockedGridX; }
-    int GetLockedGridZ() const { return m_lockedGridZ; }
+    bool IsCharging() const { return m_isCharging; }	
+    Unit* GetLockedVictim() const { return m_lockedVictim; }
+    int GetLockedGridX() const { return m_lockedVictim ? m_lockedVictim->GetUnitGridX() : -1; }
+    int GetLockedGridZ() const { return m_lockedVictim ? m_lockedVictim->GetUnitGridZ() : -1; }
     int GetEnemyDamage() const { return m_enemyDamage; }
     // 初期向きをプレイヤー方向へ設定する（斜めの場合は水平方向を優先）
     void SetInitialFacingToPlayer();
@@ -59,6 +60,7 @@ public:
     void ResetCharge() {
         m_isCharging = false;
         m_pendingCharge = false;
+        m_lockedVictim = nullptr;
     }
 
     // ---------------------------------------------------------
@@ -94,10 +96,6 @@ private:
     bool TryActOnTarget(Unit* target);
     // 行動を終了し IDLE へ戻す
     void EnemyEndAction();
-    // 指定経路への移動を開始する
-    void EnemyStartMoveTo(std::vector<Tile*> path);
-    // 移動アニメーションを 1 フレーム進める
-    void UpdateMove(float deltaSeconds);
     // 移動完了時の着地処理。攻撃範囲内ならチャージへ移行する
     void OnMoveFinished();
     // ターゲットをロックオンし、突進前の蓄力（チャージ）に入る
@@ -109,14 +107,20 @@ private:
     // 吹き飛び中の更新（基底の死亡飛翔処理へ委譲）
     void DeathFlyingUpdate(float delta);
     virtual void OnDeathFlyComplete() override;
+    // ロック対象が命中する見込みがあるか（有効かつ攻撃範囲内） 
+    bool WillHitLockedVictim() const;
+    // 攻撃予警範囲（矩形）の中心と yaw を算出（ロック対象へ向く連続方向） 
+    void GetAttackBox(Vector3& center, float& yaw) const;
+
+    bool DriveTowardVictim(float dt);       // 対象へ連続接近（壁沿い移動＋移動距離のクランプ）。停止時に true
+    bool WouldHitVictim(Unit* v) const;     // v へ向いた矩形 ∩ v の被弾円
+    void SyncGridFromWorld();               // 連続座標 → 論理グリッド m_gridX/Z（発動なし）
 
 
     // =========================================================
     // メンバー変数
     // =========================================================
     CShader* m_enemyShader = nullptr;
-    CStaticMeshRenderer* m_pushArrowRenderer = nullptr;
-    CStaticMeshRenderer* m_attackArrowRenderer = nullptr;
     std::unique_ptr<EnemyActionUI> m_actionUI;
 
     EnemyState m_state = EnemyState::IDLE;
@@ -125,21 +129,15 @@ private:
     int m_displayOrder = 0;
     float m_deathShakeTimer = 0.0f;
 
-    // --- パス・移動 ---
-    std::vector<Tile*> m_currentPath;
-    std::vector<Tile*> m_moveRangeTiles;
-    int m_pathIndex = 0;
-    Vector3 m_targetWorldPos;
+    // --- 連続座標での接近（移動予算＝距離） ---
+    Unit* m_moveTarget = nullptr;// 接近対象
+
 
     // --- 攻撃・チャージ ---
     float m_attackTimer = 0.0f;
     bool m_isMyTurn = false;
-    int m_lockedGridX = -1;
-    int m_lockedGridZ = -1;
+    Unit* m_lockedVictim = nullptr;   // ロック対象（連続座標で直接参照）
     bool m_isCharging = false;
     bool m_pendingCharge = false;
     Vector3 m_shakeOffset = Vector3(0, 0, 0); // 蓄力中の震え。m_srt.pos を汚さず描画時のみ加算する
-
-    // --- ノックバック ---
-    int m_kbOldX = 0, m_kbOldZ = 0;
 };

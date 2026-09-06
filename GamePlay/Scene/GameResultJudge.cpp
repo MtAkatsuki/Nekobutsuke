@@ -85,7 +85,7 @@ bool GameResultJudge::IsFieldBusyForClear() const {
 	Player* player = m_context ? m_context->GetPlayer() : nullptr;
 	if (player) {
 		PlayerState pState = player->GetState();
-		if (pState == PlayerState::ANIM_MOVE || pState == PlayerState::ANIM_ATTACK) {
+		if (pState == PlayerState::ANIM_ATTACK) {
 			return true;
 		}
 	}

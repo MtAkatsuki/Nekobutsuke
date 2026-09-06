@@ -310,6 +310,7 @@ void GameScene::LoadRenderResources() {
 		{"arrow_push_mesh",     "Assets/model/obj/arrow_push.obj",          "Assets/model/obj/"},
 		{"action_ring_line_mesh", "Assets/model/obj/ring_line.obj", "Assets/model/obj/"},
 		{"arrow_arc_mesh", "Assets/model/obj/arrow_arc_mesh.obj", "Assets/model/obj/"},
+		{"action_ring_line_attack_mesh", "Assets/model/obj/ring_line_attack.obj", "Assets/model/obj/"},
 	};
 	for (const auto& m : models) {
 		ModelRegistry::RegisterModel(m.name, m.path, m.texDir);
@@ -738,7 +739,7 @@ void GameScene::ProcessEscapeEvent()
 {
 	if (!m_isEscapeActive || !m_player || !m_ally || !m_ally->IsEscapeDone()) return;
 
-	if (m_player->GetState() == PlayerState::MENU_MAIN &&
+	if (m_player->GetState() == PlayerState::FREE_MOVE &&
 		m_player->GetUnitGridX() == m_escapeGridX &&
 		m_player->GetUnitGridZ() == m_escapeGridZ) {
 
