@@ -9,7 +9,6 @@
 #include "../../Types/Direction.h"
 #include "../../GamePlay/Manager/TurnManager.h"
 #include "../../Types/PlayerState.h"
-#include "../../Types/AttackType.h"
 #include "../../System/collision.h"
 
 class MapManager;
@@ -38,7 +37,6 @@ public:
     // 状態とクエリ (Status & Queries)
     // ---------------------------------------------------------
     PlayerState GetState() const { return m_state; }
-    int GetCurrentMovePoints() const { return m_currentMovePoints; }
     bool IsCelebrationDone() const { return m_isCelebrationDone; }
     void SetMenuHold(bool h) { m_menuHold = h; }   //カメラ帰還＋UI再生中は GameScene 側でメニュー操作を無効化
 
@@ -55,7 +53,7 @@ public:
     // ---------------------------------------------------------
 	// Debug / テスト用 (Debug / Testing)
     // ---------------------------------------------------------
-    void DebugForceAttack(Direction dir, AttackType type = AttackType::Push);
+    void DebugForceAttack();
 
 
     virtual void DrawUI() override;   // 玩家HP + 攻撃モードのロックHUD
@@ -114,7 +112,6 @@ private:
     CShader* m_playerShader = nullptr;
 
     PlayerState m_state = PlayerState::WAITING;
-    bool canControl = false;
     bool m_menuHold = false;
     // 現在フレームの操作コマンドを保持
     PlayerCommand m_currentCmd;

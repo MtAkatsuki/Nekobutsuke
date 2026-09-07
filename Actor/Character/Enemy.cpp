@@ -37,6 +37,8 @@ namespace {
 	const float ENEMY_WARN_OFFSET = 1.0f;   // 自分の正面方向への配置距離
 	const Color ENEMY_WARN_COLOR = Color(1.0f, 0.2f, 0.2f, 0.25f); // 薄い赤（危険範囲）
 
+	const float WAYPOINT_ARRIVE = 0.3f; // 中継点への到達しきい値
+
 }
 
 //Spawnファクトリー
@@ -62,7 +64,6 @@ void Enemy::Init() {
 	m_moveSpeed = MOVE_SPEED;
 
 	m_maxMovePoints = INITIAL_MOVE_POINTS;
-	m_currentMovePoints = m_maxMovePoints;
 	m_maxHP = INITIAL_HP;
 	m_currentHP = m_maxHP;
 	m_state = EnemyState::IDLE;
@@ -126,11 +127,6 @@ void Enemy::Update(float deltaSeconds) {
 		return; // これ以降のAIや移動処理はさせない
 	}
 
-	if (m_isMyTurn && m_state == EnemyState::IDLE) {
-		ExecuteAI();
-		m_isMyTurn = false;
-	}
-
 	if (m_actionUI) m_actionUI->Update(deltaSeconds);
 
 	// 敵のダメージ予測を計算し、ロック対象へ設定
@@ -143,7 +139,7 @@ void Enemy::Update(float deltaSeconds) {
 
 	switch (m_state) {
 	case EnemyState::MOVING:
-		if (DriveTowardVictim(deltaSeconds)) OnMoveFinished();
+		if (DriveAlongPath(deltaSeconds)) OnMoveFinished();
 		break;
 
 	case EnemyState::ATTACKING:
@@ -247,7 +243,6 @@ void Enemy::EnemyStartAction() {
 
 	else {
 		m_pendingCharge = false;
-		ResetMovePoints();
 		m_moveOrigin = m_srt.pos;// 移動予算円の中心
 		m_moveBudget = (float)m_maxMovePoints * 1.0f;
 		ExecuteAI();
@@ -317,20 +312,6 @@ void Enemy::ExecuteAI() {
 	EnemyEndAction();
 }
 
-bool Enemy::TryActOnTarget(Unit* target) {
-	if (!target) return false;
-	// すでに幾何的に攻撃可能なら → チャージ
-	if (WouldHitVictim(target)) { StartCharge(target); return true; }
-	// それ以外は連続接近を開始（移動予算内で可能な限り接近）
-	m_moveTarget = target;
-	m_state = EnemyState::MOVING;
-	// 連続移動中はグリッド占有を解除
-	if (Tile* t = GetMap()->GetTile(m_gridX, m_gridZ))
-		if (t->occupant == this) t->occupant = nullptr;
-	return true;
-}
-
-
 bool Enemy::WouldHitVictim(Unit* v) const {
 	if (!CanTarget(v)) return false;
 	using namespace GM31::GE::Collision;
@@ -360,34 +341,6 @@ void Enemy::GetAttackBox(Vector3& center, float& yaw) const {
 	center = m_srt.pos + dir * ENEMY_WARN_OFFSET;
 }
 
-bool Enemy::DriveTowardVictim(float dt) {
-	if (!m_moveTarget) return true;
-	Vector3 toV = m_moveTarget->GetSRT().pos - m_srt.pos; toV.y = 0.0f;
-	float distToV = toV.Length();
-	float contact = m_bodyRadius + m_moveTarget->GetBodyRadius();
-	if (distToV <= contact + 0.02f) return true;   // 接触＝これ以上接近できない
-
-	Vector3 dir = toV / distToV;
-	Vector3 before = m_srt.pos;
-
-	Vector3 newPos = m_srt.pos + dir * (m_moveSpeed * dt);
-	newPos = GetMap()->ResolveCircleCollision(newPos, m_bodyRadius);   // 壁に沿って移動
-	newPos = ResolveUnitCollision(newPos);// 他ユニットを回避
-	Vector3 clamped = ClampToMoveCircle(newPos);
-	bool atBudget = (clamped - newPos).LengthSquared() > 1e-8f;
-	newPos = clamped;
-	newPos.y = m_srt.pos.y;
-	m_srt.pos = newPos;
-	SetFacingYaw(atan2f(dir.x, dir.z));
-	SyncGridFromWorld();
-	UpdateWorldMatrix();
-
-	if (atBudget) return true;                         // 移動予算を使い切った
-	Vector3 moved = m_srt.pos - before; moved.y = 0.0f;
-	if (moved.LengthSquared() < 1e-8f) return true;    // 壁に阻まれて進めない＝これ以上進めない
-	return false;
-}
-
 void Enemy::SyncGridFromWorld() {
 	int gx, gz;
 	if (GetMap() && GetMap()->WorldToGrid(m_srt.pos, gx, gz)) { m_gridX = gx; m_gridZ = gz; }
@@ -397,7 +350,6 @@ void Enemy::OnMoveFinished() {
 	m_state = EnemyState::IDLE;
 	SyncGridFromWorld();                          // 連続座標をグリッドへ反映
 	if (Tile* t = GetMap()->GetTile(m_gridX, m_gridZ)) {
-		t->occupant = this;
 		if (t->structure) t->structure->OnEnter(this);   // 足元の罠
 	}
 	// 接近後、幾何的に攻撃可能ならチャージ／攻撃できなければターン終了
@@ -434,11 +386,6 @@ void Enemy::Die() {
 	m_isCharging = false;
 	m_pendingCharge = false;
 	m_lockedVictim = nullptr;
-
-	if (m_context && GetMap()) {
-		Tile* myTile = GetMap()->GetTile(m_gridX, m_gridZ);
-		if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
-	}
 
 	// 死亡の瞬間：震えと同時に多色バーストを爆散させる
 	if (GetEffectManager()) {
@@ -507,3 +454,93 @@ void Enemy::ReleaseChargeAttack() {
 
 void Enemy::PlayActionOrderBounce(int times) { if (m_actionUI) m_actionUI->PlayBounce(times); }
 bool Enemy::IsActionOrderBouncing() const { return m_actionUI && m_actionUI->IsBouncing(); }
+
+bool Enemy::TryActOnTarget(Unit* target) {
+	if (!target) return false;
+	if (WouldHitVictim(target)) { StartCharge(target); return true; }
+	m_moveTarget = target;
+	BuildPathTo(target);              // ← 障害物回避用の経路を毎ターン構築
+	m_state = EnemyState::MOVING;
+	return true;
+}
+
+bool Enemy::DriveAlongPath(float dt) {
+	if (!m_moveTarget) return true;
+
+	// 目標点：残りウェイポイントがあればそれ、無ければ victim 本体
+	bool towardVictim = (m_waypointIndex >= m_pathWaypoints.size());
+	Vector3 goal = towardVictim ? m_moveTarget->GetSRT().pos : m_pathWaypoints[m_waypointIndex];
+	Vector3 to = goal - m_srt.pos; to.y = 0.0f;
+	float dist = to.Length();
+
+	// 到達判定
+	if (towardVictim) {
+		float contact = m_bodyRadius + m_moveTarget->GetBodyRadius();
+		if (dist <= contact + 0.02f) return true;         // victim 接触＝完了
+	}
+	else if (dist <= WAYPOINT_ARRIVE) { ++m_waypointIndex; return false; } // 次の点へ
+	if (dist < 1e-4f) { if (!towardVictim) ++m_waypointIndex; return false; }
+
+	Vector3 dir = to / dist;
+	Vector3 before = m_srt.pos;
+
+	Vector3 newPos = m_srt.pos + dir * (m_moveSpeed * dt);
+	newPos = GetMap()->ResolveCircleCollision(newPos, m_bodyRadius);   // 壁沿い移動
+	newPos = ResolveUnitCollision(newPos);                            // 他ユニット回避
+	Vector3 clamped = ClampToMoveCircle(newPos);                      // 移動予算クランプ
+	bool atBudget = (clamped - newPos).LengthSquared() > 1e-8f;
+	newPos = clamped;
+	newPos.y = m_srt.pos.y;
+	m_srt.pos = newPos;
+	SetFacingYaw(atan2f(dir.x, dir.z));
+	SyncGridFromWorld();
+	UpdateWorldMatrix();
+
+	if (atBudget) return true;                          // 移動予算を使い切った
+	Vector3 moved = m_srt.pos - before; moved.y = 0.0f;
+	if (moved.LengthSquared() < 1e-8f) return true;     // 壁で詰まった
+	return false;
+}
+
+void Enemy::BuildPathTo(Unit* target) {
+	m_pathWaypoints.clear();
+	m_waypointIndex = 0;
+	if (!target || !GetMap()) return;
+
+	int gx, gz;
+	if (!GetMap()->WorldToGrid(m_srt.pos, gx, gz)) return;
+	auto cells = GetMap()->FindWallPath(gx, gz, target->GetUnitGridX(), target->GetUnitGridZ());
+	if (cells.size() < 2) return;   // 経路なし／同じグリッド → 空のまま（drive が直接 victim へ）
+
+	std::vector<Vector3> pts;
+	for (auto& c : cells) {
+		Vector3 w = GetMap()->GetWorldPosition(c.first, c.second); w.y = 0.0f;
+		pts.push_back(w);
+	}
+
+	// string-pulling：現在地から見通せる最遠点まで飛ばし、拐点だけ残す
+	Vector3 anchor = m_srt.pos; anchor.y = 0.0f;
+	size_t i = 1;
+	while (i < pts.size()) {
+		size_t farthest = i;
+		for (size_t j = i; j < pts.size(); ++j) {
+			if (SegmentClear(anchor, pts[j])) farthest = j; else break;
+		}
+		m_pathWaypoints.push_back(pts[farthest]);
+		anchor = pts[farthest];
+		i = farthest + 1;
+	}
+}
+
+bool Enemy::SegmentClear(const Vector3& a, const Vector3& b) const {
+	if (!GetMap()) return false;
+	Vector3 d = b - a; d.y = 0.0f;
+	float len = d.Length();
+	if (len < 1e-4f) return true;
+	Vector3 step = d / len;
+	const float SAMPLE = 0.25f;
+	for (float t = 0.0f; t <= len; t += SAMPLE) {
+		if (GetMap()->CircleHitsWall(a + step * t, m_bodyRadius)) return false;
+	}
+	return !GetMap()->CircleHitsWall(b, m_bodyRadius);
+}

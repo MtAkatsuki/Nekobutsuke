@@ -200,7 +200,6 @@ void GameScene::Dispose()
 
 	//占有者（ユニット参照）をクリアする
 	if (m_mapManager) {
-		m_mapManager->ClearOccupants();
 		m_mapManager->SetScene(nullptr);
 	}
 

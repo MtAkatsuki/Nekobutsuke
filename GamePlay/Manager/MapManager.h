@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include    <functional>
 #include	<memory>
+#include <vector> 
+#include <utility>
 #include	"../../System/CShader.h"
 #include    "../../System/CIndexBuffer.h"
 #include    "../../System/CVertexBuffer.h"
@@ -27,12 +29,11 @@ struct Tile {
 	TileType type;
 	int gridX, gridZ;
 	bool isWalkable;
-	class Unit* occupant = nullptr;
 
 	// 静的オブジェクトレイヤー (壁、トラップ等のマップ構造物)
 	class MapObject* structure = nullptr;
 
-	Tile() : type(TileType::FLOOR), gridX(0), gridZ(0), isWalkable(true), occupant(nullptr) {}
+	Tile() : type(TileType::FLOOR), gridX(0), gridZ(0), isWalkable(true){}
 };
 
 // =========================================================
@@ -54,8 +55,6 @@ public:
 	// ---------------------------------------------------------
 	// 空間クエリ・属性取得
 	// ---------------------------------------------------------
-	// 境界内かつ占有者・通行不可の構造物が無ければ true
-	bool IsWalkable(int gridX, int gridZ) const;
 	Vector3 GetWorldPosition(int gridX, int gridZ) const;
 	Vector3 GetWorldPosition(const Tile& tile) const;
 
@@ -78,17 +77,9 @@ public:
 	// アルゴリズム・経路探索
 	// ---------------------------------------------------------
 	int CalculateDistance(int x1, int z1, int x2, int z2) const { return std::abs(x1 - x2) + std::abs(z1 - z2); }
-	// BFS で経路を返す。開始・目標マス自体は含まず、目標の手前で停止する。
-	// ignoreTraps=true は罠を通行可能扱いにする（プレイヤー用）
-	std::vector<Tile*> FindPaths(int startX, int startZ, int goalX, int goalZ, bool ignoreTraps = false);
-	// maxSteps 歩以内に到達可能なマスを BFS で返す（開始マスも含む）
-	std::vector<Tile*> GetReachableTiles(int startX, int startZ, int maxSteps);
 
-	// ---------------------------------------------------------
-	// 描画・状態操作
-	// ---------------------------------------------------------
-	void DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX::SimpleMath::Color& color);
-	void ClearOccupants();
+	// 壁のみ（occupant 無視）の4近傍BFS。start→goal の格子列を返す（到達不可なら空） 
+	std::vector<std::pair<int, int>> FindWallPath(int startX, int startZ, int goalX, int goalZ) const;
 
 	// ---------------------------------------------------------
 	// カメラ検査
@@ -117,9 +108,8 @@ private:
 
 	const Tile* GetTileAtWorld(const Vector3& world) const;
 
-	// 移動衝突用：そのセルが壁・通行不可家具か（occupant は見ない＝ユニットは素通り）
+	// 移動衝突用：そのセルが壁・通行不可家具か
 	bool IsBlockedForCollision(int gx, int gz) const;
-
 private:
 	int m_mapWidth;
 	int m_mapDepth;

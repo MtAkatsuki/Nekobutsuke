@@ -141,11 +141,6 @@ int Unit::CalculateExpectedDamage(int baseDamage, bool isPush, const Vector3& pu
 	return expected;
 }
 
-bool Unit::IsValidMoveTarget(int targetX, int targetZ) {
-	if (GetMap() == nullptr) return false;
-	return GetMap()->IsWalkable(targetX, targetZ);
-}
-
 void Unit::OnPushed(const Vector3& pushDir, Unit* attacker) {
 	if (!CanBePushed()) return;
 	if (attacker) m_hitSourcePos = attacker->GetSRT().pos;

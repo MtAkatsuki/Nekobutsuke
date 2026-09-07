@@ -180,7 +180,7 @@ void GameSceneDebugUI::DrawActionCamPanel() {
         ImGui::SliderFloat("Attack Lead", &Camera::ATTACK_ZOOM_LEAD, 0.0f, 1.0f, "%.2f");
         if (isPlayerPhase && player && ImGui::Button("Test Attack Cam", ImVec2(-1, 30))) {
             SpawnDebugEnemyInFront(-1);
-            player->DebugForceAttack(player->GetFacing());
+            player->DebugForceAttack();
         }
     }
 
@@ -201,7 +201,7 @@ void GameSceneDebugUI::DrawActionCamPanel() {
         ImGui::SliderFloat("Pan Max Dist", &Camera::KILLCAM_PAN_MAX_DIST, 0.0f, 6.0f, "%.1f");
         if (isPlayerPhase && player && ImGui::Button("Test Kill Cam", ImVec2(-1, 30))) {
             SpawnDebugEnemyInFront(1);
-            player->DebugForceAttack(player->GetFacing());
+            player->DebugForceAttack();
         }
     }
 
@@ -451,8 +451,6 @@ Enemy* GameSceneDebugUI::SpawnDebugEnemyInFront(int hp) {
     if (m_debugEnemy) {
         if (m_context->GetEnemyManager())
             m_context->GetEnemyManager()->RemoveEnemy(m_debugEnemy);
-        Tile* prev = m_mapManager->GetTile(m_debugEnemy->GetUnitGridX(), m_debugEnemy->GetUnitGridZ());
-        if (prev && prev->occupant == m_debugEnemy) prev->occupant = nullptr;
         m_debugEnemy->Destroy();
         m_debugEnemy = nullptr;
     }
@@ -466,7 +464,6 @@ Enemy* GameSceneDebugUI::SpawnDebugEnemyInFront(int hp) {
     auto enemy = Enemy::Spawn(m_context, gx, gz, m_mapManager->GetWorldPosition(gx, gz));
     if (hp > 0) enemy->DebugSetHP(hp);
 
-    t->occupant = enemy.get();
     Enemy* raw = enemy.get();
     if (m_context->GetEnemyManager()) m_context->GetEnemyManager()->RegisterEnemy(raw);
     m_scene.AddObject(std::move(enemy));

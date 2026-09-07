@@ -122,7 +122,6 @@
     <ClInclude Include="System\IniConfig.h" />
     <ClInclude Include="System\Utility\CSVParser.h" />
     <ClInclude Include="System\Utility\IniParser.h" />
-    <ClInclude Include="Types\AttackType.h" />
     <ClInclude Include="Types\DialogueType.h" />
     <ClInclude Include="Types\MapModelType.h" />
     <ClInclude Include="Types\PlayerState.h" />

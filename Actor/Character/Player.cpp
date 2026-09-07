@@ -89,7 +89,6 @@ void Player::Init() {
 	m_srt.rot.y = m_targetRot.y;
 
 	m_maxMovePoints = INITIAL_MOVE_POINTS;
-	m_currentMovePoints = m_maxMovePoints;
 	m_maxHP = INITIAL_HP;
 	m_currentHP = m_maxHP;
 
@@ -199,8 +198,6 @@ void Player::SetPreviewDamage(int dmg) {
 }
 
 void Player::StartTurn() {
-	canControl = true;
-	ResetMovePoints();
 	m_isZoomedIn = false;
 
 	m_moveOrigin = m_srt.pos;
@@ -218,7 +215,6 @@ void Player::EndTurn() {
 	// 罠で死んだら死亡演出に任せ、通常のターン終了処理は行わない（state を上書きしない）
 	if (m_state == PlayerState::DEAD_FLYING) return;
 
-	canControl = false;
 	m_state = PlayerState::WAITING;
 	m_context->GetUIManager()->CloseMenu();
 	GetTurnManager()->RequestEndTurn();
@@ -234,10 +230,7 @@ void Player::TakeDamage(int damage, Unit* attacker) {
 
 void Player::Die() {
 	m_state = PlayerState::DEAD_FLYING;
-	if (m_context && GetMap()) {
-		Tile* myTile = GetMap()->GetTile(m_gridX, m_gridZ);
-		if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
-	}
+
 	Camera* cam = m_context ? m_context->GetCamera() : nullptr;
 
 	if (m_killedByHazard) {
@@ -275,9 +268,6 @@ void Player::OnDeathFlyComplete() {
 void Player::OnTurnChanged(TurnState state) {
 	if (state == TurnState::PlayerPhase) {
 		StartTurn();
-	}
-	else if (state == TurnState::EnemyPhase) {
-		canControl = false;
 	}
 }
 
@@ -416,7 +406,7 @@ void Player::LoadPlayerResources() {
 	m_aimCrossSprite = std::make_unique<CSprite>(AIM_CROSS_W, AIM_CROSS_H, "Assets/texture/UI/ui_aim_cross.png");
 }
 
-void Player::DebugForceAttack(Direction /*dir*/, AttackType /*type*/) {
+void Player::DebugForceAttack() {
 	SelectNearestEnemy();                 // 前方の敵をロック
 	if (m_aimTarget) ExecuteAttack();     // 新AIM攻撃で発動（KillCam/AttackZoomも実行）
 }

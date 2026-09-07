@@ -112,7 +112,10 @@ private:
     // 攻撃予警範囲（矩形）の中心と yaw を算出（ロック対象へ向く連続方向） 
     void GetAttackBox(Vector3& center, float& yaw) const;
 
-    bool DriveTowardVictim(float dt);       // 対象へ連続接近（壁沿い移動＋移動距離のクランプ）。停止時に true
+    bool DriveAlongPath(float dt);                 // ウェイポイント追従（壁沿い移動＋回避＋移動予算）
+    void BuildPathTo(Unit* target);                // BFS＋string-pulling で経路構築
+    bool SegmentClear(const Vector3& a, const Vector3& b) const; // 線分の壁に対するLOS判定
+
     bool WouldHitVictim(Unit* v) const;     // v へ向いた矩形 ∩ v の被弾円
     void SyncGridFromWorld();               // 連続座標 → 論理グリッド m_gridX/Z（発動なし）
 
@@ -131,11 +134,12 @@ private:
 
     // --- 連続座標での接近（移動予算＝距離） ---
     Unit* m_moveTarget = nullptr;// 接近対象
+    std::vector<Vector3> m_pathWaypoints;   // 障害物回避用の中継点（ワールド座標）
+    size_t m_waypointIndex = 0;
 
 
     // --- 攻撃・チャージ ---
     float m_attackTimer = 0.0f;
-    bool m_isMyTurn = false;
     Unit* m_lockedVictim = nullptr;   // ロック対象（連続座標で直接参照）
     bool m_isCharging = false;
     bool m_pendingCharge = false;

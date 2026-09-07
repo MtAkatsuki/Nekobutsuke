@@ -606,9 +606,6 @@
     <ClInclude Include="Types\PlayerState.h">
       <Filter>Types</Filter>
     </ClInclude>
-    <ClInclude Include="Types\AttackType.h">
-      <Filter>Types</Filter>
-    </ClInclude>
     <ClInclude Include="Types\DialogueType.h">
       <Filter>Types</Filter>
     </ClInclude>

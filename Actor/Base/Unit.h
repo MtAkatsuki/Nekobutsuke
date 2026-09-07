@@ -53,7 +53,6 @@ public:
 	Direction GetFacing() const { return m_facing; }
 
 	void SetGridPosition(int x, int z) { m_gridX = x; m_gridZ = z; }
-	virtual void ResetMovePoints() { m_currentMovePoints = m_maxMovePoints; }
 
 
 	// ---------------------------------------------------------
@@ -73,7 +72,6 @@ public:
 	// 攻撃プレビューヒントのダメージ値を設定（UI描画用）
 	virtual void SetPreviewDamage(int dmg) { m_previewDamage = dmg; }
 	void DebugSetHP(int hp) { m_currentHP = hp; }
-	bool IsValidMoveTarget(int targetX, int targetZ);
 	// 無敵状態のゲッター・セッター
 	bool IsInvincible() const { return m_isInvincible; }
 	void SetInvincible(bool value) { m_isInvincible = value; }
@@ -220,7 +218,6 @@ protected:
 	int m_gridX = 0;
 	int m_gridZ = 0;
 	int m_maxMovePoints = 0;
-	int m_currentMovePoints = 0;
 	float m_moveSpeed = 0.0f;
 	Direction m_facing;
 

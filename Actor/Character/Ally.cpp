@@ -64,7 +64,6 @@ void Ally::Init()
     m_maxHP = INITIAL_HP;
     m_currentHP = m_maxHP;
     m_maxMovePoints = 0;// 味方は自立移動しない
-    m_currentMovePoints = m_maxMovePoints;
     m_srt.scale = Vector3(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
     SetFacing(Direction::South);
     UpdateWorldMatrix();
@@ -112,11 +111,6 @@ void Ally::Update(float deltaSeconds) {
             m_escapeAlpha = 0.0f;
             m_escapeState = EscapeState::Done; // 完全に消失
 
-            // 占有していたタイルを解放
-            if (m_context && GetMap()) {
-                Tile* t = GetMap()->GetTile(m_gridX, m_gridZ);
-                if (t && t->occupant == this) t->occupant = nullptr;
-            }
             // 吹き出しUIを閉じる
             if (m_context && m_context->GetDialogueUI()) {
                 m_context->GetDialogueUI()->HideDialogue();
@@ -179,10 +173,6 @@ void Ally::TakeDamage(int damage, Unit* attacker) {
     Unit::TakeDamage(damage, attacker);
     if (m_currentHP <= 0 && !IsEscaping() && !m_isDeadFlying) {
         m_isDeadFlying = true;
-        if (m_context && GetMap()) {
-            Tile* myTile = GetMap()->GetTile(m_gridX, m_gridZ);
-            if (myTile && myTile->occupant == this) myTile->occupant = nullptr;
-        }
         StartDeathFly();
         if (m_context && m_context->GetCamera())
             m_context->GetCamera()->PlayKillCam(m_hitSourcePos, m_srt.pos,true);

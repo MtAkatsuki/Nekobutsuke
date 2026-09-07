@@ -103,234 +103,6 @@ const std::vector<Tile>& MapManager::GetAllTiles()const
 	return m_grid;
 }
 
-//通過できるかの検査
-bool MapManager::IsWalkable(int gridX, int gridZ) const
-{
-	const Tile* targetTile = GetTile(gridX, gridZ);
-
-	if (targetTile == nullptr) { return false; }//マップの境界外
-	//Unitの占有検査
-	if (targetTile->occupant != nullptr) {
-		return false;
-	}
-
-	//  静的オブジェクト（障害物・構造物）のチェック
-	// ターゲットとなるタイルに壁やオブジェクトが存在するかを確認
-	if (targetTile->structure != nullptr) {
-
-		// オブジェクトの通行可能フラグ（IsWalkable）を確認
-		if (!targetTile->structure->IsWalkable()) {
-			// 壁などの通行不可能な構造物がある場合、移動不可（false）を返す
-			return false;
-		}
-	}
-	return true;
-}
-
-std::vector<Tile*> MapManager::FindPaths(int startX, int startZ, int goalX, int goalZ, bool ignoreTraps)
-{
-	//境界とスタットポイントの検査
-	Tile* startTile = GetTile(startX, startZ);
-	Tile* goalTile = GetTile(goalX, goalZ);
-
-	if (!startTile || !goalTile) { return {}; }//無効なスタートまたはゴール,GetTileがnullptrを返す
-	if (startTile == goalTile) { return {}; }//スタートとゴールが同じ、移動しない
-
-	//幅優先探索ときのTileを保存するキュー
-	std::queue<Tile*> frontier;
-	//スタットポイントをキューに追加(for循環最初の目標)
-	frontier.push(startTile);
-
-	//Tile を追跡するマップ,key=currentTile,value=前のTile
-	std::unordered_map<Tile*, Tile*> cameFrom;
-	cameFrom[startTile] = nullptr; //スタットポイントの前のTileはなし
-
-	//行き止まりのとき一番近いTileを移動
-	//探索中で見つかったゴールに一番近いTileを保存
-	Tile* bestTile = startTile;
-	int minDistance = CalculateDistance(startX, startZ, goalX, goalZ);
-
-	bool foundPath = false;
-
-	//BFS探索ループ
-	while (!frontier.empty())
-	{
-		Tile* currentTile = frontier.front();//キューの先頭を取得
-		frontier.pop();//キューの先頭を削除(探索したTileを削除)
-
-		//currentからgoalまでの距離を計算
-		int currentDistance = CalculateDistance(currentTile->gridX, currentTile->gridZ, goalX, goalZ);
-
-		//もしcurrentTileは前のbestTileより近いなら、bestTileを更新
-		if (currentDistance < minDistance)
-		{
-			minDistance = currentDistance;//一番近い距離を今の距離に更新、次はまた新しいのcurrentDistanceを比較
-			bestTile = currentTile;//bestTileを今到達したcurrentTileに更新
-		}
-		//ゴールに到達したら探索終了
-		if (currentTile == goalTile)
-		{
-			foundPath = true;
-			bestTile = currentTile;//bestTileをゴールに設定(最後に見つかったTile)
-			break;
-		}
-
-		//隣接するタイルを調査(上下左右)
-		int dx[] = { -1, 1, 0, 0 };
-		int dz[] = { 0, 0, -1, 1 };
-
-		for (int i = 0; i < 4; ++i)
-		{
-			int nextX = currentTile->gridX + dx[i];
-			int nextZ = currentTile->gridZ + dz[i];
-			Tile* nextTile = GetTile(nextX, nextZ);
-			//GetTileがnullptrを返すか、通過できないTile、すでに調査したTileはスキップ(came_from.count == 0)
-			if (nextTile && cameFrom.find(nextTile) == cameFrom.end())
-			{
-				//地形検査
-				bool isWalkable = IsWalkable(nextX, nextZ);
-				if (!isWalkable) { continue; }//通過できないならスキップ
-
-				// AI専用ロジックをパラメータで制御
-				// ignoreTraps が false（AIの場合）：TRAP（トラップ）を進入不可（通行禁止）として扱う
-				// ignoreTraps が true（プレイヤーの場合）：トラップを無視して通行可能とする
-				if (!ignoreTraps) {
-					if (nextTile->structure && nextTile->structure->GetType() == MapModelType::TRAP) {
-						// トラップがあるタイルはスキップ（経路候補から除外）
-						continue;
-					}
-				}
-
-
-				//Unit検査
-				if (nextTile->occupant != nullptr)
-				{
-					//特殊ケース:ゴールTileは通過できなくても追加、後でゴールの隣接Tileを取得するために
-					if (nextTile != goalTile) { continue; }
-				}
-				frontier.push(nextTile);//ゴールでもキューに追加
-				cameFrom[nextTile] = currentTile;//前のTileを記録
-			}
-		}
-	}
-
-	//foundPathがfalseの場合、もしくはfoundPathがtrueの場合、どっちもbestTile(すなわち取得できる一番ゴールに近いTile)からパスを再構築
-	//もしfoundPathがtrueの場合、bestTileはgoalTileになる
-	//もしfoundPathがfalseの場合、bestTileはスタットポイントに一番近いTileになる
-	std::vector<Tile*> path;
-	Tile* currentTile = bestTile;
-
-	//実行できるゴールがある時、cameFromに保存されたTileをpathに追加
-	while (currentTile != startTile)
-	{
-		path.push_back(currentTile);//unordered_mapは順番がないので、vectorに入れて後でreverseする
-		currentTile = cameFrom[currentTile];//元のcurrentTileをpathに入れた後、前のTileに更新、ループで繰り返し
-	}
-
-	std::reverse(path.begin(), path.end());//pathを逆順にする、スタットポイントからゴールまでの順番に
-
-	//最後はゴールTileの隣接Tileを取得するために、ゴールTileをpathから削除
-	if (foundPath && !path.empty())
-	{
-		if (path.back() == goalTile)
-		{
-			path.pop_back();//ゴールTileをpathから削除、移動先として含めない
-		}
-	}
-
-	return path;
-}
-
-//移動範囲のタイルを取得(BFS)-スタート点の引数を渡す
-std::vector<Tile*> MapManager::GetReachableTiles(int startX, int startZ, int maxSteps)
-{
-	std::vector<Tile*> reachables;
-	Tile* startTile = GetTile(startX, startZ);
-	if (!startTile) return reachables;
-
-	//データ構造初期化およびスタートタイルの追加
-	//BFS用のキュー:<Tile*,int>ペア、intはスタートからのステップ数
-	std::queue<std::pair<Tile*, int>> q;//FIFO
-	q.push({ startTile, 0 });
-
-	//訪問済みタイルを追跡するセット（unordered_setでO(1)判定）
-	std::unordered_set<Tile*> visited;
-	visited.insert(startTile);
-	reachables.push_back(startTile);//スタートタイルも移動範囲内に含む
-
-	while (!q.empty()) //キューが空になるまでループ
-	{
-		auto [current, dist] = q.front();//キューの先頭を取得,current=Tile*,dist=int
-		q.pop();//キューの先頭を削除
-
-		//最大ステップ数に達したらスキップ、以降の隣接タイルは追加しない
-		// (Tile自身はすでに前回のループで追加された)
-		//次のq.front()実行する
-		if (dist >= maxSteps) continue;
-
-		int dx[] = { -1, 1, 0, 0 };
-		int dz[] = { 0, 0, -1, 1 };
-
-		for (int i = 0; i < 4; ++i)
-		{
-			int nx = current->gridX + dx[i];
-			int nz = current->gridZ + dz[i];
-			Tile* next = GetTile(nx, nz);
-
-			if (next && IsWalkable(nx, nz))
-			{
-				// insert の戻り値で「未訪問なら追加」を一度に判定（O(1)）
-				if (visited.insert(next).second)
-				{
-					reachables.push_back(next);
-					q.push({ next, dist + 1 });
-				}
-			}
-		}
-	}
-	return reachables;
-}
-
-//移動範囲のタイルを色付きで描画
-void MapManager::DrawColoredTiles(const std::vector<Tile*>& tiles, const DirectX::SimpleMath::Color& color)
-{
-	if (tiles.empty() || !m_rangeRenderer) { return; }
-	//マテリアル取得
-	CMaterial* mtrl = m_rangeRenderer->GetMaterial(0);
-	if (!mtrl) { return; }
-	//元のマテリアルデータを保存
-	MATERIAL original = mtrl->GetData();
-
-	//純色半透明のマテリアルを作成
-	MATERIAL temp = original;
-	temp.Diffuse = color;
-	temp.Ambient = color;//環境ライトは同じ色に、明るさの確保
-	temp.TextureEnable = FALSE;//テクスチャ無効化、色だけで描画
-	mtrl->SetMaterial(temp);
-
-	//各タイルを描画
-	for (Tile* t : tiles)
-	{
-		Vector3 pos = GetWorldPosition(t->gridX, t->gridZ);
-		pos.y += ZFight::RangePanel; //少し浮かせて描画
-
-		//見やすいために少し小さくする
-		Matrix4x4 world = Matrix4x4::CreateScale(RANGE_TILE_SCALE) * Matrix4x4::CreateTranslation(pos);
-		Renderer::SetWorldMatrix(&world);
-		m_rangeRenderer->Draw();
-	}
-
-	//元のマテリアルに戻す
-	mtrl->SetMaterial(original);
-}
-
-void MapManager::ClearOccupants()
-{
-	// 全グリッドを走査し、占有者（ユニット参照）をクリアする。
-	for (auto& tile : m_grid) {
-		tile.occupant = nullptr;
-	}
-}
 
 
 // ---------------------------------------------------------
@@ -384,7 +156,6 @@ void MapManager::SetupGridDimensions(const std::vector<std::vector<std::string>>
 		m_grid[i].gridZ = i / m_mapWidth;
 		m_grid[i].type = TileType::FLOOR;
 		m_grid[i].isWalkable = true;
-		m_grid[i].occupant = nullptr;
 		m_grid[i].structure = nullptr;
 	}
 }
@@ -478,18 +249,15 @@ void MapManager::SpawnDynamicEntities(const std::vector<std::vector<std::string>
 					pPlayer->SetPosition(worldPos);
 					pPlayer->UpdateWorldMatrix();
 				}
-				GetTile(x, z)->occupant = pPlayer;
 			}
 			else if (token == "A") {
 				auto ally = Ally::Spawn(context, x, z, worldPos);
-				GetTile(x, z)->occupant = ally.get();
 				context->SetAlly(ally.get());
 				unitsToSpawn.push_back(std::move(ally));
 			}
 			else if (token[0] == 'E') {
 
 				auto enemy = Enemy::Spawn(context, x, z, worldPos);
-				GetTile(x, z)->occupant = enemy.get();
 
 				if (context->GetEnemyManager()) context->GetEnemyManager()->RegisterEnemy(enemy.get());
 				unitsToSpawn.push_back(std::move(enemy));
@@ -550,7 +318,7 @@ bool MapManager::IsBlockedForCollision(int gx, int gz) const {
 	const Tile* t = GetTile(gx, gz);
 	if (!t) return true;                                   // マップ外は壁扱い（場外へ出さない）
 	if (t->structure && !t->structure->IsWalkable()) return true; // 壁・通行不可家具
-	return false;                                          // occupant は移動を妨げない
+	return false; 
 }
 
 Vector3 MapManager::ResolveCircleCollision(const Vector3& center, float radius) const {
@@ -611,4 +379,40 @@ bool MapManager::CircleHitsWall(const Vector3& center, float radius) const {
 		}
 	}
 	return false;
+}
+
+std::vector<std::pair<int, int>> MapManager::FindWallPath(int sx, int sz, int gx, int gz) const {
+	std::vector<std::pair<int, int>> result;
+	const int W = m_mapWidth, D = m_mapDepth;
+	auto inBounds = [&](int x, int z) { return x >= 0 && x < W && z >= 0 && z < D; };
+	if (!inBounds(sx, sz) || !inBounds(gx, gz)) return result;
+	if (IsBlockedForCollision(gx, gz)) return result;   // goal が壁なら不可
+
+	auto idx = [&](int x, int z) { return z * W + x; };
+	std::vector<int> prev(W * D, -2);   // -2=未訪問, -1=始点
+	std::queue<int> q;
+	prev[idx(sx, sz)] = -1;
+	q.push(idx(sx, sz));
+	const int dx[] = { 1,-1,0,0 }, dz[] = { 0,0,1,-1 };
+	bool found = false;
+
+	while (!q.empty()) {
+		int cur = q.front(); q.pop();
+		int cx = cur % W, cz = cur / W;
+		if (cx == gx && cz == gz) { found = true; break; }
+		for (int i = 0; i < 4; ++i) {
+			int nx = cx + dx[i], nz = cz + dz[i];
+			if (!inBounds(nx, nz)) continue;
+			if (prev[idx(nx, nz)] != -2) continue;
+			if (IsBlockedForCollision(nx, nz)) continue;
+			prev[idx(nx, nz)] = cur;
+			q.push(idx(nx, nz));
+		}
+	}
+	if (!found) return result;
+
+	for (int cur = idx(gx, gz); cur != -1; cur = prev[cur])
+		result.push_back({ cur % W, cur / W });
+	std::reverse(result.begin(), result.end());   // goal→start を start→goal へ
+	return result;
 }
